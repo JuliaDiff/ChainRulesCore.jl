@@ -12,7 +12,7 @@ return that calculated differential value.
 For example:
 
 ```julia-repl
-julia> using ChainRules: frule, rrule, AbstractRule
+julia> using AbstractChainRules: frule, rrule, AbstractRule
 
 julia> x, y = rand(2);
 
@@ -61,7 +61,7 @@ Base.getindex(rule::AbstractRule, i::Integer) = i == 1 ? rule : throw(BoundsErro
 """
     accumulate(Δ, rule::AbstractRule, args...)
 
-Return `Δ + rule(args...)` evaluated in a manner that supports ChainRules'
+Return `Δ + rule(args...)` evaluated in a manner that supports AbstractChainRules'
 various `AbstractDifferential` types.
 
 This method intended to be customizable for specific rules/input types. For
@@ -232,7 +232,7 @@ rules, where e.g. `frule` is used within a `rrule` definition. For example,
 broadcasted functions may not themselves be forward-mode *primitives*, but are
 often forward-mode *differentiable*.
 
-ChainRules, by design, is decoupled from any specific AD implementation. How,
+AbstractChainRules, by design, is decoupled from any specific AD implementation. How,
 then, do we know which AD to fall back to when there isn't a primitive defined?
 
 Well, if you're a greedy AD implementation, you can just overload `frule` and/or
@@ -244,12 +244,12 @@ It turns out, Cassette solves this problem nicely by allowing AD authors to
 overload the fallbacks w.r.t. their own context. Example using ForwardDiff:
 
 ```
-using ChainRules, ForwardDiff, Cassette
+using AbstractChainRules, ForwardDiff, Cassette
 
 Cassette.@context MyChainRuleCtx
 
 # ForwardDiff, itself, can call `my_frule` instead of
-# `frule` to utilize the ForwardDiff-injected ChainRules
+# `frule` to utilize the ForwardDiff-injected AbstractChainRules
 # infrastructure
 my_frule(args...) = Cassette.overdub(MyChainRuleCtx(), frule, args...)
 
@@ -410,7 +410,7 @@ A convenience macro that generates simple scalar forward or reverse rules using
 the provided partial derivatives. Specifically, generates the corresponding
 methods for `frule` and `rrule`:
 
-    function ChainRules.frule(::typeof(f), x₁::Number, x₂::Number, ...)
+    function AbstractChainRules.frule(::typeof(f), x₁::Number, x₂::Number, ...)
         Ω = f(x₁, x₂, ...)
         \$(statement₁, statement₂, ...)
         return Ω, (Rule((Δx₁, Δx₂, ...) -> ∂f₁_∂x₁ * Δx₁ + ∂f₁_∂x₂ * Δx₂ + ...),
@@ -418,7 +418,7 @@ methods for `frule` and `rrule`:
                    ...)
     end
 
-    function ChainRules.rrule(::typeof(f), x₁::Number, x₂::Number, ...)
+    function AbstractChainRules.rrule(::typeof(f), x₁::Number, x₂::Number, ...)
         Ω = f(x₁, x₂, ...)
         \$(statement₁, statement₂, ...)
         return Ω, (Rule((ΔΩ₁, ΔΩ₂, ...) -> ∂f₁_∂x₁ * ΔΩ₁ + ∂f₂_∂x₁ * ΔΩ₂ + ...),
@@ -453,7 +453,7 @@ is equivalent to:
                  (∂f₂_∂x₁, ∂f₂_∂x₂, ...),
                  ...)
 
-For examples, see ChainRules' `rules` directory.
+For examples, see AbstractChainRules' `rules` directory.
 
 See also: [`frule`](@ref), [`rrule`](@ref), [`AbstractRule`](@ref)
 """
@@ -493,12 +493,12 @@ macro scalar_rule(call, maybe_setup, partials...)
     forward_rules = length(forward_rules) == 1 ? forward_rules[1] : Expr(:tuple, forward_rules...)
     reverse_rules = length(reverse_rules) == 1 ? reverse_rules[1] : Expr(:tuple, reverse_rules...)
     return quote
-        function ChainRules.frule(::typeof($f), $(inputs...))
+        function AbstractChainRules.frule(::typeof($f), $(inputs...))
             $(esc(:Ω)) = $call
             $(setup_stmts...)
             return $(esc(:Ω)), $forward_rules
         end
-        function ChainRules.rrule(::typeof($f), $(inputs...))
+        function AbstractChainRules.rrule(::typeof($f), $(inputs...))
             $(esc(:Ω)) = $call
             $(setup_stmts...)
             return $(esc(:Ω)), $reverse_rules

@@ -140,7 +140,7 @@ function mul_wirtinger(a::Wirtinger, b::Wirtinger)
           such that we assume the chain rule application is of the form `f_a ∘ f_b`
           instead of `f_b ∘ f_a`. However, picking such a convention is likely to
           lead to silently incorrect derivatives due to commutativity assumptions
-          in downstream generic code that deals with the reals. Thus, ChainRules
+          in downstream generic code that deals with the reals. Thus, AbstractChainRules
           makes this operation an error instead.
           """)
 end
