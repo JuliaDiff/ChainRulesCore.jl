@@ -1,5 +1,5 @@
 name = "AbstractChainRules"
-uuid = "082447d4-558c-5d27-93f4-14fc19e9eca2"
+uuid = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 version = "0.1.0"
 
 [deps]
