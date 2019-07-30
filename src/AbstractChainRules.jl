@@ -7,6 +7,4 @@ export AbstractRule, Rule, frule, rrule
 
 include("differentials.jl")
 include("rules.jl")
-
-
 end # module
