@@ -42,36 +42,4 @@ dummy_identity(x) = x
         @test rule[1] == rule
         @test_throws BoundsError rule[2]
     end
-    @testset "helper functions" begin
-        # Hits fallback, since we can't update `Diagonal`s in place
-        X = Diagonal([1, 1])
-        Y = copy(X)
-        @test AbstractChainRules._update!(X, [1 2; 3 4]) == [2 2; 3 5]
-        @test X == Y  # no change to X
-
-        X = [1 2; 3 4]
-        Y = copy(X)
-        @test AbstractChainRules._update!(X, Diagonal([1, 1])) == [2 2; 3 5]
-        @test X != Y  # X has been updated
-
-        # Reusing above X
-        @test AbstractChainRules._update!(X, Zero()) === X
-        @test AbstractChainRules._update!(Zero(), X) === X
-        @test AbstractChainRules._update!(Zero(), Zero()) === Zero()
-
-        X = (A=[1 0; 0 1], B=[2 2; 2 2])
-        Y = deepcopy(X)
-        @test AbstractChainRules._update!(X, Y) == (A=[2 0; 0 2], B=[4 4; 4 4])
-        @test X.A != Y.A
-        @test X.B != Y.B
-
-        try
-            # We defined a 2-arg method for `cool` but no `rrule`
-            AbstractChainRules._checked_rrule(cool, 1.0, 2.0)
-        catch e
-            @test e isa ArgumentError
-            @test e.msg == "can't differentiate `cool(::Float64, ::Float64)`; no " *
-                           "matching `rrule` is defined"
-        end
-    end
 end
