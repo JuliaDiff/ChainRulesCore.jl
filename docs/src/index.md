@@ -1,10 +1,10 @@
 ```@meta
-DocTestSetup = :(using AbstractChainRules)
-CurrentModule = AbstractChainRules
+DocTestSetup = :(using ChainRulesCore)
+CurrentModule = ChainRulesCore
 ```
 
-# AbstractChainRules
+# ChainRulesCore
 
-Hello! Welcome to AbstractChainRules's documentation.
+Hello! Welcome to ChainRulesCore's documentation.
 
-For an initial overview of AbstractChainRules, please see the README. Otherwise, feel free to peruse available documentation via the sidebar.
+For an initial overview of ChainRulesCore, please see the README. Otherwise, feel free to peruse available documentation via the sidebar.

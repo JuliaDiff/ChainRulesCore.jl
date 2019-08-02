@@ -14,9 +14,9 @@ dummy_identity(x) = x
         @test rrule(cool, 1) === nothing
         @test rrule(cool, 1; iscool=true) === nothing
 
-        AbstractChainRules.@scalar_rule(Main.cool(x), one(x))
+        ChainRulesCore.@scalar_rule(Main.cool(x), one(x))
         @test hasmethod(rrule, Tuple{typeof(cool),Number})
-        AbstractChainRules.@scalar_rule(Main.cool(x::String), "wow such dfdx")
+        ChainRulesCore.@scalar_rule(Main.cool(x::String), "wow such dfdx")
         @test hasmethod(rrule, Tuple{typeof(cool),String})
         # Ensure those are the *only* methods that have been defined
         cool_methods = Set(m.sig for m in methods(rrule) if _second(m.sig) == typeof(cool))

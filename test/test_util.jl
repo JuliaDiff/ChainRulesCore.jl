@@ -18,7 +18,7 @@ end
 
 function frule_test(f, xẋs::Tuple{Any, Any}...; rtol=1e-9, atol=1e-9, fdm=_fdm, kwargs...)
     xs, ẋs = collect(zip(xẋs...))
-    Ω, dΩ_rule = AbstractChainRules.frule(f, xs...)
+    Ω, dΩ_rule = ChainRulesCore.frule(f, xs...)
     @test f(xs...) == Ω
 
     dΩ_ad, dΩ_fd = dΩ_rule(ẋs...), jvp(fdm, xs->f(xs...), (xs, ẋs))
@@ -38,14 +38,14 @@ All keyword arguments except for `fdm` are passed to `isapprox`.
 """
 function rrule_test(f, ȳ, (x, x̄)::Tuple{Any, Any}; rtol=1e-9, atol=1e-9, fdm=_fdm, kwargs...)
     # Check correctness of evaluation.
-    fx, dx = AbstractChainRules.rrule(f, x)
+    fx, dx = ChainRulesCore.rrule(f, x)
     @test fx ≈ f(x)
 
     # Correctness testing via finite differencing.
     x̄_ad, x̄_fd = dx(ȳ), j′vp(fdm, f, ȳ, x)
     @test isapprox(x̄_ad, x̄_fd; rtol=rtol, atol=atol, kwargs...)
 
-    # Assuming x̄_ad to be correct, check that other AbstractChainRules mechanisms are correct.
+    # Assuming x̄_ad to be correct, check that other ChainRulesCore mechanisms are correct.
     test_accumulation(x̄, dx, ȳ, x̄_ad)
     test_accumulation(Zero(), dx, ȳ, x̄_ad)
 end
@@ -97,7 +97,7 @@ function rrule_test(f, ȳ, xx̄s::Tuple{Any, Any}...; rtol=1e-9, atol=1e-9, fdm
         end
     end
 
-    # Assuming the above to be correct, check that other AbstractChainRules mechanisms are correct.
+    # Assuming the above to be correct, check that other ChainRulesCore mechanisms are correct.
     for (x̄, rule, x̄_ad) in zip(x̄s, rules, x̄s_ad)
         x̄ === nothing && continue
         test_accumulation(x̄, rule, ȳ, x̄_ad)
@@ -119,7 +119,7 @@ function Base.isapprox(d_ad::Thunk, d_fd; kwargs...)
 end
 
 function test_accumulation(x̄, dx, ȳ, partial)
-    @test all(extern(AbstractChainRules.add(x̄, partial)) .≈ extern(x̄) .+ extern(partial))
+    @test all(extern(ChainRulesCore.add(x̄, partial)) .≈ extern(x̄) .+ extern(partial))
     test_accumulate(x̄, dx, ȳ, partial)
     test_accumulate!(x̄, dx, ȳ, partial)
     test_store!(x̄, dx, ȳ, partial)

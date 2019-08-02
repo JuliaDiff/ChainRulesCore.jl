@@ -1,11 +1,11 @@
-using AbstractChainRules
+using ChainRulesCore
 using Documenter
 
-makedocs(modules=[AbstractChainRules],
-         sitename="AbstractChainRules",
+makedocs(modules=[ChainRulesCore],
+         sitename="ChainRulesCore",
          authors="Jarrett Revels and other contributors",
          pages=["Introduction" => "index.md",
                 "Getting Started" => "getting_started.md",
-                "AbstractChainRules API Documentation" => "api.md"])
+                "ChainRulesCore API Documentation" => "api.md"])
 
-deploydocs(repo="github.com/JuliaDiff/AbstractChainRules.jl.git")
+deploydocs(repo="github.com/JuliaDiff/ChainRulesCore.jl.git")
