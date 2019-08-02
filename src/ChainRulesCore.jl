@@ -1,4 +1,4 @@
-module AbstractChainRules
+module ChainRulesCore
 using Cassette
 using Base.Broadcast: materialize, materialize!, broadcasted, Broadcasted, broadcastable
 
