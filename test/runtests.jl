@@ -8,8 +8,6 @@ using ChainRulesCore: extern, accumulate, accumulate!, store!, @scalar_rule,
     DNE, Thunk, Casted, DNERule
 using Base.Broadcast: broadcastable
 
-#include("test_util.jl")
-
 @testset "ChainRulesCore" begin
     include("differentials.jl")
     include("rules.jl")
