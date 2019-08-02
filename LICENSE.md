@@ -1,4 +1,4 @@
-The ChainRules.jl package is licensed under the MIT "Expat" License:
+The AbstractChainRules.jl package is licensed under the MIT "Expat" License:
 
 > Copyright (c) 2018: Jarrett Revels.
 >

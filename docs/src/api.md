@@ -1,24 +1,24 @@
-# ChainRules API Documentation
+# AbstractChainRules API Documentation
 
 ```@docs
-ChainRules.frule
-ChainRules.rrule
-ChainRules.AbstractRule
-ChainRules.Rule
-ChainRules.DNERule
-ChainRules.WirtingerRule
-ChainRules.accumulate
-ChainRules.accumulate!
-ChainRules.store!
+AbstractChainRules.frule
+AbstractChainRules.rrule
+AbstractChainRules.AbstractRule
+AbstractChainRules.Rule
+AbstractChainRules.DNERule
+AbstractChainRules.WirtingerRule
+AbstractChainRules.accumulate
+AbstractChainRules.accumulate!
+AbstractChainRules.store!
 ```
 
 ```@docs
-ChainRules.AbstractDifferential
-ChainRules.extern
-ChainRules.Casted
-ChainRules.Wirtinger
-ChainRules.Thunk
-ChainRules.Zero
-ChainRules.DNE
-ChainRules.One
+AbstractChainRules.AbstractDifferential
+AbstractChainRules.extern
+AbstractChainRules.Casted
+AbstractChainRules.Wirtinger
+AbstractChainRules.Thunk
+AbstractChainRules.Zero
+AbstractChainRules.DNE
+AbstractChainRules.One
 ```
