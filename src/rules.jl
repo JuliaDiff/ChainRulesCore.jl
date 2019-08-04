@@ -184,11 +184,23 @@ DNERule(args...) = DNE()
 #####
 
 """
-TODO
+    WirtingerRule([𝒟::Type, ]P::AbstractRule, C::AbstractRule)
+Construct a `WirtingerRule` object, which is an `AbstractRule` that consists of
+an `AbstractRule` for both the primal derivative ``∂/∂x`` and the conjugate
+derivative ``∂/∂x̅``. If the domain `𝒟` is specified, return a `Rule` evaluating
+to `P(Δ) + C(Δ)` if `𝒟 <: Real`, otherwise return `WirtingerRule(P, C)`.
 """
 struct WirtingerRule{P<:AbstractRule,C<:AbstractRule} <: AbstractRule
     primal::P
     conjugate::C
+end
+
+function WirtingerRule(𝒟::Type, primal::AbstractRule, conjugate::AbstractRule)
+    if 𝒟 <: Real || eltype(𝒟) <: Real
+        return Rule((args...) -> add(primal(args...), conjugate(args...)))
+    else
+        return WirtingerRule(primal, conjugate)
+    end
 end
 
 function (rule::WirtingerRule)(args...)
@@ -436,16 +448,16 @@ macro scalar_rule(call, maybe_setup, partials...)
         end
     end
     if all(Meta.isexpr(partial, :tuple) for partial in partials)
-        forward_rules = Any[rule_from_partials(partial.args...) for partial in partials]
+        forward_rules = Any[rule_from_partials(input, partial.args...) for (input, partial) in zip(inputs, partials)]
         reverse_rules = Any[]
         for i in 1:length(inputs)
             reverse_partials = [partial.args[i] for partial in partials]
-            push!(reverse_rules, rule_from_partials(reverse_partials...))
+            push!(reverse_rules, rule_from_partials(inputs[i], reverse_partials...))
         end
     else
         @assert length(inputs) == 1 && all(!Meta.isexpr(partial, :tuple) for partial in partials)
-        forward_rules = Any[rule_from_partials(partial) for partial in partials]
-        reverse_rules = Any[rule_from_partials(partials...)]
+        forward_rules = Any[rule_from_partials(input, partial) for (input, partial) in zip(inputs, partials)]
+        reverse_rules = Any[rule_from_partials(inputs[1], partials...)]
     end
     forward_rules = length(forward_rules) == 1 ? forward_rules[1] : Expr(:tuple, forward_rules...)
     reverse_rules = length(reverse_rules) == 1 ? reverse_rules[1] : Expr(:tuple, reverse_rules...)
@@ -463,7 +475,7 @@ macro scalar_rule(call, maybe_setup, partials...)
     end
 end
 
-function rule_from_partials(∂s...)
+function rule_from_partials(input_arg, ∂s...)
     wirtinger_indices = findall(x -> Meta.isexpr(x, :call) && x.args[1] === :Wirtinger,  ∂s)
     ∂s = map(esc, ∂s)
     Δs = [Symbol(string(:Δ, i)) for i in 1:length(∂s)]
@@ -496,7 +508,7 @@ function rule_from_partials(∂s...)
         conjugate_rule = :(Rule($Δs_tuple -> add($(∂_mul_Δs_conjugate...))))
         return quote
             $(∂_wirtinger_defs...)
-            WirtingerRule($primal_rule, $conjugate_rule)
+            WirtingerRule(typeof($input_arg), $primal_rule, $conjugate_rule)
         end
     end
 end
