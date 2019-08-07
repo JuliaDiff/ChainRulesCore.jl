@@ -153,7 +153,10 @@ mul_wirtinger(a, b::Wirtinger) = Wirtinger(mul(a, b.primal), mul(a, b.conjugate)
 #####
 
 """
-TODO
+    Casted(v)
+
+This differential wraps another differential (including a number-like type)
+to indicate that it should be lazily broadcast.
 """
 struct Casted{V} <: AbstractDifferential
     value::V
@@ -184,11 +187,13 @@ mul_casted(a, b::Casted) = Casted(broadcasted(mul, a, b.value))
 #####
 
 """
-TODO
+    Zero()
+The additive identity for differentials.
+This is basically the same as `0`.
 """
 struct Zero <: AbstractDifferential end
 
-extern(x::Zero) = false
+extern(x::Zero) = false  # false is a strong 0. E.g. `false * NaN = 0.0`
 
 Base.Broadcast.broadcastable(::Zero) = Ref(Zero())
 
@@ -208,7 +213,11 @@ mul_zero(::Any, ::Zero) = Zero()
 #####
 
 """
-TODO
+    DNE()
+
+This differential indicates that the derivative Does Not Exist (D.N.E).
+This is not the cast that it is not implemented, but rather that it mathematically
+is not defined.
 """
 struct DNE <: AbstractDifferential end
 
@@ -232,11 +241,13 @@ mul_dne(::Any, ::DNE) = DNE()
 #####
 
 """
-TODO
+     One()
+The Differential which is the multiplicative identity.
+Basically, this represents `1`.
 """
 struct One <: AbstractDifferential end
 
-extern(x::One) = true
+extern(x::One) = true  # true is a strong 1.
 
 Base.Broadcast.broadcastable(::One) = Ref(One())
 
@@ -256,7 +267,9 @@ mul_one(a, ::One) = a
 #####
 
 """
-TODO
+    Thunk(()->v)
+A thunk is a deferred computation.
+It wraps a zero argument closure that when invoked returns a differential.
 """
 struct Thunk{F} <: AbstractDifferential
     f::F
