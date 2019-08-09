@@ -73,6 +73,10 @@ eval(defs)
 
 @inline mul(x) = x
 
+@inline add(a, b, c, d...) = add(add(a, b), c, d...)
+
+@inline mul(a, b, c, d...) = mul(mul(a, b), c, d...)
+
 #####
 ##### `Wirtinger`
 #####
