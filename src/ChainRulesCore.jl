@@ -8,4 +8,5 @@ export extern, cast, store!, Wirtinger, Zero, One, Casted, DNE, Thunk, DNERule
 
 include("differentials.jl")
 include("rules.jl")
+include("rule_definition_tools.jl")
 end # module
