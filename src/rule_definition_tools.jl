@@ -136,7 +136,7 @@ function rule_from_partials(input_arg, ∂s...)
                 push!(∂_mul_Δs_conjugate, ∂_mul_Δ)
             end
         end
-        primal_rule = :(Rule($Δs_tuple -> add($(∂_mul_Δs_primal...))))
+        primalgit remote add upstream_rule = :(Rule($Δs_tuple -> add($(∂_mul_Δs_primal...))))
         conjugate_rule = :(Rule($Δs_tuple -> add($(∂_mul_Δs_conjugate...))))
         return quote
             $(∂_wirtinger_defs...)
