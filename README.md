@@ -4,18 +4,10 @@
 [![Coveralls](https://coveralls.io/repos/github/JuliaDiff/ChainRulesCore.jl/badge.svg?branch=master)](https://coveralls.io/github/JuliaDiff/ChainRulesCore.jl?branch=master)
 [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://JuliaDiff.github.io/ChainRules.jl/latest)
 
-The ChainRulesCore package provides a variety of common utilities that can be used by downstream automatic differentiation (AD) tools to define and execute forward-, reverse-, and mixed-mode primitives.
+The ChainRulesCore package provides a light-weight dependency for defining sensitivities for functions in your packages, without you needing to depend on ChainRules itself.
 
-This package is a WIP; the framework is essentially there, but there are a bunch of TODOs, virtually no tests, etc. PRs welcome! Documentation is incoming, which should help if you'd like to contribute.
+This will allow your package to be used with [ChainRules.jl](https://github.com/JuliaDiff/ChainRules.jl), which aims to provide a variety of common utilities that can be used by downstream automatic differentiation (AD) tools to define and execute forward-, reverse-, and mixed-mode primitives.
 
-Here are some of the basic goals for the package:
-
-- First-class support for complex differentiation via Wirtinger derivatives.
-
-- Mixed-mode composability without being coupled to a specific AD implementation.
-
-- Propagation semantics built-in, with default implementations that allow rule authors to easily opt-in to common optimizations (fusion, increment elision, memoization, etc.).
-
-- Control-inverted design: rule authors can fully specify derivatives in a concise manner while naturally allowing the caller to compute only what they need.
+This package is a work in progress; the framework is essentially there, but there are a bunch of TODOs, virtually no tests, etc. PRs welcome! The API is mostly documented, which should help if you'd like to contribute.
 
 The ChainRulesCore source code follows the [YASGuide](https://github.com/jrevels/YASGuide).
