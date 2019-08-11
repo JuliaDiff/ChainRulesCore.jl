@@ -2,7 +2,7 @@
 
 [![Travis](https://travis-ci.org/JuliaDiff/ChainRulesCore.jl.svg?branch=master)](https://travis-ci.org/JuliaDiff/ChainRulesCore.jl)
 [![Coveralls](https://coveralls.io/repos/github/JuliaDiff/ChainRulesCore.jl/badge.svg?branch=master)](https://coveralls.io/github/JuliaDiff/ChainRulesCore.jl?branch=master)
-[![](https://img.shields.io/badge/docs-latest-blue.svg)](https://JuliaDiff.github.io/ChainRulesCore.jl/latest)
+[![](https://img.shields.io/badge/docs-latest-blue.svg)](https://JuliaDiff.github.io/ChainRules.jl/latest)
 
 The ChainRulesCore package provides a variety of common utilities that can be used by downstream automatic differentiation (AD) tools to define and execute forward-, reverse-, and mixed-mode primitives.
 
