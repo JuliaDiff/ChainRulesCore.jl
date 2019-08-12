@@ -11,7 +11,7 @@ return that calculated differential value.
 
 For example:
 
-```julia-repl
+```jldoctest
 julia> using ChainRulesCore: frule, rrule, AbstractRule
 
 julia> x, y = rand(2);
@@ -262,7 +262,7 @@ Examples:
 
 unary input, unary output scalar function:
 
-```julia-repl
+```jldoctest
 julia> x = rand();
 
 julia> sinx, dsin = frule(sin, x);
@@ -276,7 +276,7 @@ true
 
 unary input, binary output scalar function:
 
-```julia-repl
+```jldoctest
 julia> x = rand();
 
 julia> sincosx, (dsin, dcos) = frule(sincos, x);
@@ -318,7 +318,7 @@ Examples:
 
 unary input, unary output scalar function:
 
-```julia-repl
+```jldoctest
 julia> x = rand();
 
 julia> sinx, dx = rrule(sin, x);
@@ -332,7 +332,7 @@ true
 
 binary input, unary output scalar function:
 
-```julia-repl
+```jldoctest
 julia> x, y = rand(2);
 
 julia> hypotxy, (dx, dy) = rrule(hypot, x, y);
