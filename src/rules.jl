@@ -11,7 +11,7 @@ return that calculated differential value.
 
 For example:
 
-```julia-repl
+```jldoctest
 julia> using ChainRulesCore: frule, rrule, AbstractRule
 
 julia> x, y = rand(2);
@@ -26,7 +26,7 @@ true
 
 julia> Δx, Δy = rand(2);
 
-julia> dh(Δx, Δy) == ((y / h) * Δx + (x / h) * Δy)
+julia> dh(Δx, Δy) == ((x / h) * Δx + (y / h) * Δy)
 true
 
 julia> h, (dx, dy) = rrule(hypot, x, y);
@@ -39,10 +39,10 @@ true
 
 julia> Δh = rand();
 
-julia> dx(Δh) == (y / h) * Δh
+julia> dx(Δh) == (x / h) * Δh
 true
 
-julia> dy(Δh) == (x / h) * Δh
+julia> dy(Δh) == (y / h) * Δh
 true
 ```
 
@@ -262,7 +262,7 @@ Examples:
 
 unary input, unary output scalar function:
 
-```julia-repl
+```jldoctest
 julia> x = rand();
 
 julia> sinx, dsin = frule(sin, x);
@@ -276,7 +276,7 @@ true
 
 unary input, binary output scalar function:
 
-```julia-repl
+```jldoctest
 julia> x = rand();
 
 julia> sincosx, (dsin, dcos) = frule(sincos, x);
@@ -318,7 +318,7 @@ Examples:
 
 unary input, unary output scalar function:
 
-```julia-repl
+```jldoctest
 julia> x = rand();
 
 julia> sinx, dx = rrule(sin, x);
@@ -332,7 +332,7 @@ true
 
 binary input, unary output scalar function:
 
-```julia-repl
+```jldoctest
 julia> x, y = rand(2);
 
 julia> hypotxy, (dx, dy) = rrule(hypot, x, y);
@@ -340,10 +340,10 @@ julia> hypotxy, (dx, dy) = rrule(hypot, x, y);
 julia> hypotxy == hypot(x, y)
 true
 
-julia> dx(1) == (y / hypot(x, y))
+julia> dx(1) == (x / hypot(x, y))
 true
 
-julia> dy(1) == (x / hypot(x, y))
+julia> dy(1) == (y / hypot(x, y))
 true
 ```
 
