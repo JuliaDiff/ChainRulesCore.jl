@@ -209,8 +209,8 @@ add_zero(::Zero, b) = b
 add_zero(a, ::Zero) = a
 
 mul_zero(::Zero, ::Zero) = Zero()
-mul_zero(::Zero, x::Any) = zero(x)
-mul_zero(x::Any, ::Zero) = zero(x)
+mul_zero(::Zero, x::Any) = Zero()
+mul_zero(x::Any, ::Zero) = Zero()
 
 #####
 ##### `DNE`
