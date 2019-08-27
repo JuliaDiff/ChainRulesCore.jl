@@ -88,7 +88,7 @@ macro scalar_rule(call, maybe_setup, partials...)
         end
     else
         @assert length(inputs) == 1 && all(!Meta.isexpr(partial, :tuple) for partial in partials)
-        forward_rules = Any[rule_from_partials(input, partial) for (input, partial) in zip(inputs, partials)]
+        forward_rules = Any[rule_from_partials(inputs[1], partial) for partial in partials]
         reverse_rules = Any[rule_from_partials(inputs[1], partials...)]
     end
     forward_rules = length(forward_rules) == 1 ? forward_rules[1] : Expr(:tuple, forward_rules...)
