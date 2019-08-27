@@ -80,7 +80,8 @@ macro scalar_rule(call, maybe_setup, partials...)
         end
     end
     if all(Meta.isexpr(partial, :tuple) for partial in partials)
-        forward_rules = Any[rule_from_partials(:(promote($(inputs...))[1]), partial.args...) for partial in partials]
+        input_rep = :(first(promote($(inputs...))))  # stand-in with the right type for an input
+        forward_rules = Any[rule_from_partials(input_rep, partial.args...) for partial in partials]
         reverse_rules = Any[]
         for i in 1:length(inputs)
             reverse_partials = [partial.args[i] for partial in partials]

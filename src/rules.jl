@@ -184,27 +184,35 @@ DNERule(args...) = DNE()
 #####
 
 """
-    WirtingerRule([𝒟::Type, ]P::AbstractRule, C::AbstractRule)
+    WirtingerRule(primal::AbstractRule, conjugate::AbstractRule)
+
 Construct a `WirtingerRule` object, which is an `AbstractRule` that consists of
 an `AbstractRule` for both the primal derivative ``∂/∂x`` and the conjugate
-derivative ``∂/∂x̅``. If the domain `𝒟` is specified, return a `Rule` evaluating
-to `P(Δ) + C(Δ)` if `𝒟 <: Real`, otherwise return `WirtingerRule(P, C)`.
+derivative ``∂/∂x̅``. If the domain `𝒟` of the function might be real, consider
+calling `AbstractRule(𝒟, primal, conjugate)` instead, to make use of a more
+efficient representation wherever possible.
 """
 struct WirtingerRule{P<:AbstractRule,C<:AbstractRule} <: AbstractRule
     primal::P
     conjugate::C
 end
 
-function WirtingerRule(𝒟::Type, primal::AbstractRule, conjugate::AbstractRule)
+function (rule::WirtingerRule)(args...)
+    return Wirtinger(rule.primal(args...), rule.conjugate(args...))
+end
+
+"""
+    AbstractRule(𝒟::Type, primal::AbstractRule, conjugate::AbstractRule)
+
+Return a `Rule` evaluating to `primal(Δ) + conjugate(Δ)` if `𝒟 <: Real`,
+otherwise return `WirtingerRule(P, C)`.
+"""
+function AbstractRule(𝒟::Type, primal::AbstractRule, conjugate::AbstractRule)
     if 𝒟 <: Real || eltype(𝒟) <: Real
         return Rule((args...) -> add(primal(args...), conjugate(args...)))
     else
         return WirtingerRule(primal, conjugate)
     end
-end
-
-function (rule::WirtingerRule)(args...)
-    return Wirtinger(rule.primal(args...), rule.conjugate(args...))
 end
 
 #####
