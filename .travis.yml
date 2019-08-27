@@ -6,9 +6,11 @@ julia:
   - 1.0
   - 1.1
   - 1.2
+  - 1.3
   - nightly
 matrix:
   allow_failures:
+  - julia: 1.3
   - julia: nightly
 notifications:
   email: false
@@ -19,3 +21,19 @@ notifications:
 after_success:
   # push coverage results to Coveralls
   - julia -e 'using Pkg; Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
+
+jobs:
+  include:
+    # Make sure ChainRules.jl works with this
+    - state: Integration
+      name: ChainRules master integration tests
+      julia: 1.0
+      os: linux
+      script:
+        - git clone "https://github.com/JuliaDiff/ChainRules.jl.git"
+        # Start julia with  the project set to newly cloned subdir ChainRules.jl
+        # dev the current directory to get the version of ChainRulesCore that we are testing
+        # update everything to resolve and sortout any versions,
+        # finally test the ChainRules.jl
+        - julia --project="ChainRules.jl" -e "using Pkg; Pkg.pkg\"dev .\"; Pkg.pkg\"up\"; Pkg.pkg\"test\""
+      after_success: skip
