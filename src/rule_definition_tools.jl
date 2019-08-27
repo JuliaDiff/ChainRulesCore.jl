@@ -84,7 +84,7 @@ macro scalar_rule(call, maybe_setup, partials...)
         reverse_rules = Any[]
         for i in 1:length(inputs)
             reverse_partials = [partial.args[i] for partial in partials]
-            push!(reverse_rules, rule_from_partials(inputs[i], reverse_partials...))
+            push!(reverse_rules, rule_from_partials(reverse_partials...))
         end
     else
         @assert length(inputs) == 1 && all(!Meta.isexpr(partial, :tuple) for partial in partials)
@@ -107,7 +107,7 @@ macro scalar_rule(call, maybe_setup, partials...)
     end
 end
 
-function rule_from_partials(input_arg, ∂s...)
+function rule_from_partials(∂s...)
     wirtinger_indices = findall(x -> Meta.isexpr(x, :call) && x.args[1] === :Wirtinger,  ∂s)
     ∂s = map(esc, ∂s)
     Δs = [Symbol(string(:Δ, i)) for i in 1:length(∂s)]
@@ -140,7 +140,7 @@ function rule_from_partials(input_arg, ∂s...)
         conjugate_rule = :(Rule($Δs_tuple -> add($(∂_mul_Δs_conjugate...))))
         return quote
             $(∂_wirtinger_defs...)
-            WirtingerRule(typeof($input_arg), $primal_rule, $conjugate_rule)
+            WirtingerRule($primal_rule, $conjugate_rule)
         end
     end
 end
