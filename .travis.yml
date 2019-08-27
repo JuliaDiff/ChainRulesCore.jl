@@ -6,9 +6,11 @@ julia:
   - 1.0
   - 1.1
   - 1.2
+  - 1.3
   - nightly
 matrix:
   allow_failures:
+  - julia: 1.3
   - julia: nightly
 notifications:
   email: false
@@ -19,3 +21,16 @@ notifications:
 after_success:
   # push coverage results to Coveralls
   - julia -e 'using Pkg; Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
+
+jobs:
+  include:
+    # Make sure ChainRules.jl works with this
+    - state: Integration
+      julia:
+        - 1.0
+        - 1.1
+        - 1.2
+      os: linux
+      script:
+        - julia -e 'using Pkg: @pkg_str; pkg\"dev . ChainRules\"; pkg\"up\"; pkg\"test ChainRules\"'
+      after_success: skip
