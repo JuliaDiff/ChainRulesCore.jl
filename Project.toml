@@ -4,7 +4,6 @@ version = "0.1.0"
 
 [deps]
 Cassette = "7057c7e9-c182-5462-911a-8362d720325c"
-ChainRules = "082447d4-558c-5d27-93f4-14fc19e9eca2"
 
 [compat]
 Cassette = "^0.2"
