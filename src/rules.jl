@@ -184,11 +184,23 @@ DNERule(args...) = DNE()
 #####
 
 """
-TODO
+    WirtingerRule([𝒟::Type, ]P::AbstractRule, C::AbstractRule)
+Construct a `WirtingerRule` object, which is an `AbstractRule` that consists of
+an `AbstractRule` for both the primal derivative ``∂/∂x`` and the conjugate
+derivative ``∂/∂x̅``. If the domain `𝒟` is specified, return a `Rule` evaluating
+to `P(Δ) + C(Δ)` if `𝒟 <: Real`, otherwise return `WirtingerRule(P, C)`.
 """
 struct WirtingerRule{P<:AbstractRule,C<:AbstractRule} <: AbstractRule
     primal::P
     conjugate::C
+end
+
+function WirtingerRule(𝒟::Type, primal::AbstractRule, conjugate::AbstractRule)
+    if 𝒟 <: Real || eltype(𝒟) <: Real
+        return Rule((args...) -> add(primal(args...), conjugate(args...)))
+    else
+        return WirtingerRule(primal, conjugate)
+    end
 end
 
 function (rule::WirtingerRule)(args...)
