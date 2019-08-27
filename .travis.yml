@@ -35,5 +35,5 @@ jobs:
         # dev the current directory to get the version of ChainRulesCore that we are testing
         # update everything to resolve and sortout any versions,
         # finally test the ChainRules.jl
-        - julia --project="ChainRules.jl" -e "using Pkg; Pkg.develop(\".\"); Pkg.update(); Pkg.test()"
+       - julia --project="ChainRules.jl" -e "using Pkg; Pkg.pkg\"dev .\"; Pkg.pkg\"up\"; Pkg.pkg\"test\""
       after_success: skip
