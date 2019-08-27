@@ -30,5 +30,6 @@ jobs:
       julia: 1.0
       os: linux
       script:
-        - julia --project="." -e "using Pkg; Pkg.pkg\"dev ChainRules\"; Pkg.instantiate(); Pkg.pkg\"up\"; Pkg.pkg\"test ChainRules\""
+        - git clone "https://github.com/JuliaDiff/ChainRules.jl.git"
+        - julia --project="ChainRules.jl" -e "using Pkg; Pkg.pkg\"dev .\"; Pkg.pkg\"up\"; Pkg.pkg\"test\""
       after_success: skip
