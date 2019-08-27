@@ -141,7 +141,7 @@ function rule_from_partials(input_arg, ∂s...)
         conjugate_rule = :(Rule($Δs_tuple -> add($(∂_mul_Δs_conjugate...))))
         return quote
             $(∂_wirtinger_defs...)
-            WirtingerRule(typeof($input_arg), $primal_rule, $conjugate_rule)
+            AbstractRule(typeof($input_arg), $primal_rule, $conjugate_rule)
         end
     end
 end
