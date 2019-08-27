@@ -26,8 +26,9 @@ jobs:
   include:
     # Make sure ChainRules.jl works with this
     - state: Integration
+      name: ChainRules
       julia: 1.0
       os: linux
       script:
-        - julia -e "using Pkg; Pkg.pkg\"dev . ChainRules\"; Pkg.pkg\"up\"; Pkg.pkg\"test ChainRules\""
+        - julia -e "using Pkg; Pkg.pkg\"dev ChainRules\"; Pkg.pkg\"up\"; Pkg.pkg\"test ChainRules\""
       after_success: skip
