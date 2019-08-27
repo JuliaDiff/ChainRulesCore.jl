@@ -32,5 +32,5 @@ jobs:
         - 1.2
       os: linux
       script:
-        - julia -e 'using Pkg: \@pkg_str; pkg\"dev . ChainRules\"; pkg\"up\"; pkg\"test ChainRules\"'
+        - julia -e "using Pkg.@pkg_str; pkg\"dev . ChainRules\"; pkg\"up\"; pkg\"test ChainRules\""
       after_success: skip
