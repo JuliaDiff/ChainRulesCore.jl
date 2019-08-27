@@ -47,7 +47,7 @@ dummy_identity(x) = x
         myabs2(x) = abs2(x)
 
         function frule(::typeof(myabs2), x)
-            return abs2(x), WirtingerRule(
+            return abs2(x), AbstractRule(
                 typeof(x),
                 Rule(Δx -> Δx * x'),
                 Rule(Δx -> Δx * x)
