@@ -14,7 +14,8 @@ methods for `frule` and `rrule`:
     function ChainRulesCore.frule(::typeof(f), x₁::Number, x₂::Number, ...)
         Ω = f(x₁, x₂, ...)
         \$(statement₁, statement₂, ...)
-        return Ω, (Rule((Δx₁, Δx₂, ...) -> ∂f₁_∂x₁ * Δx₁ + ∂f₁_∂x₂ * Δx₂ + ...),
+        return Ω, (ZERO_RULE,
+                   Rule((Δx₁, Δx₂, ...) -> ∂f₁_∂x₁ * Δx₁ + ∂f₁_∂x₂ * Δx₂ + ...),
                    Rule((Δx₁, Δx₂, ...) -> ∂f₂_∂x₁ * Δx₁ + ∂f₂_∂x₂ * Δx₂ + ...),
                    ...)
     end
@@ -22,7 +23,8 @@ methods for `frule` and `rrule`:
     function ChainRulesCore.rrule(::typeof(f), x₁::Number, x₂::Number, ...)
         Ω = f(x₁, x₂, ...)
         \$(statement₁, statement₂, ...)
-        return Ω, (Rule((ΔΩ₁, ΔΩ₂, ...) -> ∂f₁_∂x₁ * ΔΩ₁ + ∂f₂_∂x₁ * ΔΩ₂ + ...),
+        return Ω, (NO_FIELDS_RULE,
+                   Rule((ΔΩ₁, ΔΩ₂, ...) -> ∂f₁_∂x₁ * ΔΩ₁ + ∂f₂_∂x₁ * ΔΩ₂ + ...),
                    Rule((ΔΩ₁, ΔΩ₂, ...) -> ∂f₁_∂x₂ * ΔΩ₁ + ∂f₂_∂x₂ * ΔΩ₂ + ...),
                    ...)
     end
@@ -34,11 +36,16 @@ Constraints may also be explicitly be provided to override the `Number` constrai
 e.g. `f(x₁::Complex, x₂)`, which will constrain `x₁` to `Complex` and `x₂` to
 `Number`.
 
-Note that the result of `f(x₁, x₂, ...)` is automatically bound to `Ω`. This
+At present this does not support defining rules for closures/functors.
+This the first returned rule, representing the derivative with respect to the
+function itself, is always the `NO_FIELDS_RULE` (reverse-mode),
+or `ZERO_RULE` (forward-mode).
+
+The result of `f(x₁, x₂, ...)` is automatically bound to `Ω`. This
 allows the primal result to be conveniently referenced (as `Ω`) within the
 derivative/setup expressions.
 
-Note that the `@setup` argument can be elided if no setup code is need. In other
+The `@setup` argument can be elided if no setup code is need. In other
 words:
 
     @scalar_rule(f(x₁, x₂, ...),
@@ -92,9 +99,18 @@ macro scalar_rule(call, maybe_setup, partials...)
         forward_rules = Any[rule_from_partials(inputs[1], partial) for partial in partials]
         reverse_rules = Any[rule_from_partials(inputs[1], partials...)]
     end
-    forward_rules = length(forward_rules) == 1 ? forward_rules[1] : Expr(:tuple, forward_rules...)
-    reverse_rules = length(reverse_rules) == 1 ? reverse_rules[1] : Expr(:tuple, reverse_rules...)
+
+    # First pseudo-partial is derivative WRT function itself.  Since this macro does not
+    # support closures, it is just the empty NamedTuple
+    forward_rules = Expr(:tuple, ZERO_RULE, forward_rules...)
+    reverse_rules = Expr(:tuple, NO_FIELDS_RULE, reverse_rules...)
     return quote
+        if fieldcount(typeof($f)) > 0
+            throw(ArgumentError(
+                "@scalar_rule cannot be used on closures/functors (such as $f)"
+            ))
+        end
+
         function ChainRulesCore.frule(::typeof($f), $(inputs...))
             $(esc(:Ω)) = $call
             $(setup_stmts...)
