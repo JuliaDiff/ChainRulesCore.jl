@@ -7,6 +7,7 @@ export @scalar_rule, @thunk
 export extern, cast, store!, Wirtinger, Zero, One, Casted, DNE, Thunk, DNERule
 
 include("differentials.jl")
+include("rule_types.jl")
 include("rules.jl")
 include("rule_definition_tools.jl")
 end # module

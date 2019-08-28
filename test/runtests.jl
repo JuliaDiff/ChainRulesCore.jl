@@ -11,4 +11,5 @@ using Base.Broadcast: broadcastable
 @testset "ChainRulesCore" begin
     include("differentials.jl")
     include("rules.jl")
+    include("rule_types.jl")
 end
