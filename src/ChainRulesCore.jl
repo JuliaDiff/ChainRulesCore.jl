@@ -3,7 +3,8 @@ using Base.Broadcast: materialize, materialize!, broadcasted, Broadcasted, broad
 
 export AbstractRule, Rule, frule, rrule
 export @scalar_rule, @thunk
-export extern, cast, store!, Wirtinger, Zero, One, Casted, DNE, Thunk, DNERule
+export extern, cast, store!
+export Wirtinger, Zero, One, Casted, DNE, Thunk, DNERule
 export NO_FIELDS_RULE, ZERO_RULE
 
 include("differentials.jl")

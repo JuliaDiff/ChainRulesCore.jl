@@ -160,6 +160,9 @@ Rule(f) = Rule{Core.Typeof(f),Nothing}(f, nothing)
 
 (rule::Rule{F})(args...) where {F} = Cassette.overdub(RULE_CONTEXT, rule.f, args...)
 
+Base.show(io::IO, rule::Rule{<:Any, Nothing}) = print(io, "Rule($(rule.f))")
+Base.show(io::IO, rule::Rule) = print(io, "Rule($(rule.f), $(rule.u))")
+
 # Specialized accumulation
 # TODO: Does this need to be overdubbed in the rule context?
 accumulate!(Δ, rule::Rule{F,U}, args...) where {F,U<:Function} = rule.u(Δ, args...)
@@ -173,7 +176,7 @@ The most notable use for this is for the reverse-mode derivative with respect to
 function itself, when that function is not a closure.
 The rule returns an empty `NamedTuple` for all inputs.
 """
-const NO_FIELDS_RULE = Rule((args...)->NamedTuple())
+const NO_FIELDS_RULE = Rule(function no_fields(args...) NamedTuple() end)
 
 """
     ZERO_RULE
@@ -182,7 +185,7 @@ This is a rule that returns `Zero()` regardless of input.
 The most notable use for this is for the forward-mode derivative with respect to the
 function itself, when that function is not a closure.
 """
-const ZERO_RULE = Rule((args...)->Zero())
+const ZERO_RULE = Rule(function always_zero(args...) Zero() end)
 
 
 
