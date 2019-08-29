@@ -1,6 +1,6 @@
 name = "ChainRulesCore"
 uuid = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 Cassette = "7057c7e9-c182-5462-911a-8362d720325c"
