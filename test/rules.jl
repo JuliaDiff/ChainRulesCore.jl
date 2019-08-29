@@ -1,3 +1,7 @@
+# Define these in own module so can rerun test and new instances will be defined if we re`include` this file
+
+using ChainRulesCore
+export cool, _second, dummy_identity
 cool(x) = x + 1
 cool(x, y) = x + y + 1
 

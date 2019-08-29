@@ -3,9 +3,9 @@
         w = Wirtinger(1+1im, 2+2im)
         @test wirtinger_primal(w) == 1+1im
         @test wirtinger_conjugate(w) == 2+2im
-        @test add_wirtinger(w, w) == Wirtinger(2+2im, 4+4im)
-        # TODO: other add_wirtinger methods stack overflow
-        @test_throws ErrorException mul_wirtinger(w, w)
+        @test +(w, w) == Wirtinger(2+2im, 4+4im)
+        # TODO: other + methods stack overflow
+        @test_throws ErrorException w*w
         @test_throws ErrorException extern(w)
         for x in w
             @test x === w
@@ -16,12 +16,12 @@
     @testset "Zero" begin
         z = Zero()
         @test extern(z) === false
-        @test add_zero(z, z) == z
-        @test add_zero(z, 1) == 1
-        @test add_zero(1, z) == 1
-        @test mul_zero(z, z) == z
-        @test mul_zero(z, 1) == z
-        @test mul_zero(1, z) == z
+        @test +(z, z) == z
+        @test +(z, 1) == 1
+        @test +(1, z) == 1
+        @test *(z, z) == z
+        @test *(z, 1) == z
+        @test *(1, z) == z
         for x in z
             @test x === z
         end
@@ -31,16 +31,25 @@
     @testset "One" begin
         o = One()
         @test extern(o) === true
-        @test add_one(o, o) == 2
-        @test add_one(o, 1) == 2
-        @test add_one(1, o) == 2
-        @test mul_one(o, o) == o
-        @test mul_one(o, 1) == 1
-        @test mul_one(1, o) == 1
+        @test +(o, o) == 2
+        @test +(o, 1) == 2
+        @test +(1, o) == 2
+        @test *(o, o) == o
+        @test *(o, 1) == 1
+        @test *(1, o) == 1
         for x in o
             @test x === o
         end
         @test broadcastable(o) isa Ref{One}
         @test conj(o) == o
+    end
+
+
+    @testset "No ambiguities in $f" for f in (+, *)
+        # We don't use `Test.detect_ambiguities` as we are only interested in
+        # The +, and * operations.
+        for m1 in methods(f), m2 in methods(f)
+            @test !Base.isambiguous(m1, m2)
+        end
     end
 end

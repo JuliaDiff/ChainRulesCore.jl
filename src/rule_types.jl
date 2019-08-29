@@ -116,15 +116,6 @@ store!(Δ, rule::AbstractRule, args...) = materialize!(Δ, broadcastable(rule(ar
 ##### `Rule`
 #####
 
-Cassette.@context RuleContext
-
-const RULE_CONTEXT = Cassette.disablehooks(RuleContext())
-
-Cassette.overdub(::RuleContext, ::typeof(+), a, b) = add(a, b)
-Cassette.overdub(::RuleContext, ::typeof(*), a, b) = mul(a, b)
-
-Cassette.overdub(::RuleContext, ::typeof(add), a, b) = add(a, b)
-Cassette.overdub(::RuleContext, ::typeof(mul), a, b) = mul(a, b)
 
 """
     Rule(propation_function[, updating_function])
@@ -158,7 +149,7 @@ end
 # constructor based on a `UnionAll`, we get `Rule{Type{Thing}}` instead of `Rule{UnionAll}`
 Rule(f) = Rule{Core.Typeof(f),Nothing}(f, nothing)
 
-(rule::Rule{F})(args...) where {F} = Cassette.overdub(RULE_CONTEXT, rule.f, args...)
+(rule::Rule)(args...) = rule.f(args...)
 
 Base.show(io::IO, rule::Rule{<:Any, Nothing}) = print(io, "Rule($(rule.f))")
 Base.show(io::IO, rule::Rule) = print(io, "Rule($(rule.f), $(rule.u))")
@@ -212,7 +203,7 @@ otherwise return `WirtingerRule(P, C)`.
 """
 function AbstractRule(𝒟::Type, primal::AbstractRule, conjugate::AbstractRule)
     if 𝒟 <: Real || eltype(𝒟) <: Real
-        return Rule((args...) -> add(primal(args...), conjugate(args...)))
+        return Rule((args...) -> +(primal(args...), conjugate(args...)))
     else
         return WirtingerRule(primal, conjugate)
     end
