@@ -12,6 +12,15 @@
         @test_throws BoundsError rule[2]
     end
 
+    @testset "Rule" begin
+        @testset "show" begin
+            @test occursin(r"^Rule\(.*foo.*\)$", repr(Rule(function foo() 1 end)))
+            @test occursin(r"^Rule\(.*identity.*\)$", repr(Rule(identity)))
+
+            @test occursin(r"^Rule\(.*identity.*\,.*\+.*\)$", repr(Rule(identity, +)))
+        end
+    end
+
     @testset "WirtingerRule" begin
         myabs2(x) = abs2(x)
 

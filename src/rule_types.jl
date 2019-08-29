@@ -160,6 +160,9 @@ Rule(f) = Rule{Core.Typeof(f),Nothing}(f, nothing)
 
 (rule::Rule{F})(args...) where {F} = Cassette.overdub(RULE_CONTEXT, rule.f, args...)
 
+Base.show(io::IO, rule::Rule{<:Any, Nothing}) = print(io, "Rule($(rule.f))")
+Base.show(io::IO, rule::Rule) = print(io, "Rule($(rule.f), $(rule.u))")
+
 # Specialized accumulation
 # TODO: Does this need to be overdubbed in the rule context?
 accumulate!(Δ, rule::Rule{F,U}, args...) where {F,U<:Function} = rule.u(Δ, args...)
@@ -214,4 +217,3 @@ function AbstractRule(𝒟::Type, primal::AbstractRule, conjugate::AbstractRule)
         return WirtingerRule(primal, conjugate)
     end
 end
-
