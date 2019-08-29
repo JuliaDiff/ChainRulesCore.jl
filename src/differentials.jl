@@ -26,6 +26,8 @@ Additionally, all subtypes of `AbstractDifferential` support `Base.iterate` and
 """
 abstract type AbstractDifferential end
 
+Base.:+(x::AbstractDifferential) = x
+
 """
     extern(x)
 

@@ -78,7 +78,7 @@ accumulate(Δ, rule::Rule{typeof(df)}, x) = # customized `accumulate` implementa
 
 See also: [`accumulate!`](@ref), [`store!`](@ref), [`AbstractRule`](@ref)
 """
-accumulate(Δ, rule::AbstractRule, args...) = add(Δ, rule(args...))
+accumulate(Δ, rule::AbstractRule, args...) = Δ + rule(args...)
 
 """
     accumulate!(Δ, rule::AbstractRule, args...)
@@ -91,7 +91,7 @@ Note that this function internally calls `Base.Broadcast.materialize!(Δ, ...)`.
 See also: [`accumulate`](@ref), [`store!`](@ref), [`AbstractRule`](@ref)
 """
 function accumulate!(Δ, rule::AbstractRule, args...)
-    return materialize!(Δ, broadcastable(add(cast(Δ), rule(args...))))
+    return materialize!(Δ, broadcastable(cast(Δ) + rule(args...)))
 end
 
 accumulate!(Δ::Number, rule::AbstractRule, args...) = accumulate(Δ, rule, args...)
