@@ -75,7 +75,7 @@ wirtinger_primal(x) = x
 wirtinger_conjugate(x::Wirtinger) = x.conjugate
 wirtinger_conjugate(::Any) = Zero()
 
-extern(x::Wirtinger) = error("`Wirtinger` cannot be converted into an external type.")
+extern(x::Wirtinger) = throw(ArgumentError("`Wirtinger` cannot be converted to an external type."))
 
 Base.Broadcast.broadcastable(w::Wirtinger) = Wirtinger(broadcastable(w.primal),
                                                        broadcastable(w.conjugate))
@@ -145,7 +145,7 @@ is not defined.
 """
 struct DNE <: AbstractDifferential end
 
-extern(x::DNE) = error("`DNE` cannot be converted into an external type.")
+extern(x::DNE) = throw(ArgumentError("`DNE` cannot be converted to an external type."))
 
 Base.Broadcast.broadcastable(::DNE) = Ref(DNE())
 

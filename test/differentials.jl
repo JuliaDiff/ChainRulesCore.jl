@@ -11,7 +11,7 @@
 
         # TODO: other + methods stack overflow
         @test_throws ErrorException w*w
-        @test_throws ErrorException extern(w)
+        @test_throws ArgumentError extern(w)
         for x in w
             @test x === w
         end
