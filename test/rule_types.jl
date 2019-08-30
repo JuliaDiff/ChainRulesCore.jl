@@ -24,7 +24,7 @@
     @testset "WirtingerRule" begin
         myabs2(x) = abs2(x)
 
-        function frule(::typeof(myabs2), x)
+        function ChainRulesCore.frule(::typeof(myabs2), x)
             return abs2(x), AbstractRule(
                 typeof(x),
                 Rule(Δx -> Δx * x'),
@@ -39,6 +39,7 @@
 
         df = @inferred _df(One())
         @test df === x + x
+
 
         Δ = rand(Complex{Int64})
         df = @inferred _df(Δ)
