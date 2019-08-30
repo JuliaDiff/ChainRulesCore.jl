@@ -5,11 +5,11 @@ export AbstractRule, Rule, frule, rrule
 export @scalar_rule, @thunk
 export extern, cast, store!
 export Wirtinger, Zero, One, Casted, DNE, Thunk, DNERule
-export NO_FIELDS_RULE, ZERO_RULE
+export NO_FIELDS
 
 include("differentials.jl")
 include("differential_arithmetic.jl")
 include("rule_types.jl")
 include("rules.jl")
-include("rule_definition_tools.jl")
+#include("rule_definition_tools.jl")
 end # module

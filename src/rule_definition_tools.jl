@@ -14,19 +14,22 @@ methods for `frule` and `rrule`:
     function ChainRulesCore.frule(::typeof(f), x₁::Number, x₂::Number, ...)
         Ω = f(x₁, x₂, ...)
         \$(statement₁, statement₂, ...)
-        return Ω, (ZERO_RULE,
-                   Rule((Δx₁, Δx₂, ...) -> ∂f₁_∂x₁ * Δx₁ + ∂f₁_∂x₂ * Δx₂ + ...),
-                   Rule((Δx₁, Δx₂, ...) -> ∂f₂_∂x₁ * Δx₁ + ∂f₂_∂x₂ * Δx₂ + ...),
-                   ...)
+        return Ω, (_, Δx₁, Δx₂, ...) -> (
+                (∂f₁_∂x₁ * Δx₁ + ∂f₁_∂x₂ * Δx₂ + ...),
+                (∂f₂_∂x₁ * Δx₁ + ∂f₂_∂x₂ * Δx₂ + ...),
+                ...
+            )
     end
 
     function ChainRulesCore.rrule(::typeof(f), x₁::Number, x₂::Number, ...)
         Ω = f(x₁, x₂, ...)
         \$(statement₁, statement₂, ...)
-        return Ω, (NO_FIELDS_RULE,
-                   Rule((ΔΩ₁, ΔΩ₂, ...) -> ∂f₁_∂x₁ * ΔΩ₁ + ∂f₂_∂x₁ * ΔΩ₂ + ...),
-                   Rule((ΔΩ₁, ΔΩ₂, ...) -> ∂f₁_∂x₂ * ΔΩ₁ + ∂f₂_∂x₂ * ΔΩ₂ + ...),
-                   ...)
+        return Ω, (ΔΩ₁, ΔΩ₂, ...) -> (
+                NO_FIELDS,
+                ∂f₁_∂x₁ * ΔΩ₁ + ∂f₂_∂x₁ * ΔΩ₂ + ...),
+                ∂f₁_∂x₂ * ΔΩ₁ + ∂f₂_∂x₂ * ΔΩ₂ + ...),
+                ...
+            )
     end
 
 If no type constraints in `f(x₁, x₂, ...)` within the call to `@scalar_rule` are
@@ -36,10 +39,10 @@ Constraints may also be explicitly be provided to override the `Number` constrai
 e.g. `f(x₁::Complex, x₂)`, which will constrain `x₁` to `Complex` and `x₂` to
 `Number`.
 
-At present this does not support defining rules for closures/functors.
-This the first returned rule, representing the derivative with respect to the
-function itself, is always the `NO_FIELDS_RULE` (reverse-mode),
-or `ZERO_RULE` (forward-mode).
+At present this does not support defining for closures/functors.
+Thus in reverse-mode, the first returned partial,
+representing the derivative with respect to the function itself, is always `NO_FIELDS`.
+And in forwards-mode, the first input to the returned propergator is always ignored.
 
 The result of `f(x₁, x₂, ...)` is automatically bound to `Ω`. This
 allows the primal result to be conveniently referenced (as `Ω`) within the
@@ -86,11 +89,54 @@ macro scalar_rule(call, maybe_setup, partials...)
             call.args[i] = esc(arg)
         end
     end
-    if all(Meta.isexpr(partial, :tuple) for partial in partials)
+
+    partials = map(partials) do partial
+        if Meta.isexpr(partial, :tuple)
+            partial
+        else
+            @assert length(inputs) == 1
+            Expr(:tuple, partial)
+        end
+    end
+    @show partials
+
+    ############################################################
+    # Make pullback
+    #(TODO: move to own function)
+    # TODO: Wirtinger
+    
+    Δs = [Symbol(string(:Δ, i)) for i in 1:length(partials)]
+    pullback_returns = map(eachindex(inputs)) do input_i
+        ∂s = [partials.args[input_i] for partial in partials]
+        ∂s = map(esc, ∂s)
+
+        # Notice: the thunking of `∂s[i] (potentially) saves us some computation
+        # if `Δs[i]` is a `AbstractDifferential` otherwise it is computed as soon
+        # as the pullback is evaluated
+        ∂_mul_Δs = [:(@thunk($(∂s[i])) * $(Δs[i])) for i in 1:length(∂s)]
+        :(+($(∂_mul_Δs...)))
+    else
+
+    pullback = quote
+        function $(Symbol(nameof(f), :_pullback))($(Δs...))
+            return (ChainRulesCore.NO_FIELDS, $(pullback_returns...))
+        end
+    end
+
+    ########################################
+    quote
+        function ChainRulesCore.rrule(::typeof($f), $(inputs...))
+            $(esc(:Ω)) = $call
+            $(setup_stmts...)
+            return $(esc(:Ω)), $esc(pullback)
+        end
+    end
+end
+#==
+    if !all(Meta.isexpr(partial, :tuple) for partial in partials)
         input_rep = :(first(promote($(inputs...))))  # stand-in with the right type for an input
         forward_rules = Any[rule_from_partials(input_rep, partial.args...) for partial in partials]
-        reverse_rules = Any[]
-        for i in 1:length(inputs)
+        reverse_rules = map(1:length(inputs) do i
             reverse_partials = [partial.args[i] for partial in partials]
             push!(reverse_rules, rule_from_partials(inputs[i], reverse_partials...))
         end
@@ -103,7 +149,7 @@ macro scalar_rule(call, maybe_setup, partials...)
     # First pseudo-partial is derivative WRT function itself.  Since this macro does not
     # support closures, it is just the empty NamedTuple
     forward_rules = Expr(:tuple, ZERO_RULE, forward_rules...)
-    reverse_rules = Expr(:tuple, NO_FIELDS_RULE, reverse_rules...)
+    reverse_rules = Expr(:tuple, NO_FIELDS, reverse_rules...)
     return quote
         if fieldcount(typeof($f)) > 0
             throw(ArgumentError(
@@ -123,7 +169,13 @@ macro scalar_rule(call, maybe_setup, partials...)
         end
     end
 end
+==#
 
+@macroexpand(@scalar_rule(one(x), Zero()))
+
+
+
+#==
 function rule_from_partials(input_arg, ∂s...)
     wirtinger_indices = findall(x -> Meta.isexpr(x, :call) && x.args[1] === :Wirtinger,  ∂s)
     ∂s = map(esc, ∂s)
@@ -161,3 +213,4 @@ function rule_from_partials(input_arg, ∂s...)
         end
     end
 end
+==#

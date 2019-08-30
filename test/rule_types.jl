@@ -1,5 +1,6 @@
 
 @testset "rule types" begin
+    #==
     @testset "iterating and indexing rules" begin
         _, rule = frule(dummy_identity, 1)
         i = 0
@@ -11,7 +12,8 @@
         @test rule[1] == rule
         @test_throws BoundsError rule[2]
     end
-
+    ==#
+    
     @testset "Rule" begin
         @testset "show" begin
             @test occursin(r"^Rule\(.*foo.*\)$", repr(Rule(function foo() 1 end)))

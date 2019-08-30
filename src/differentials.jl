@@ -227,3 +227,11 @@ end
 Base.conj(x::Thunk) = @thunk(conj(extern(x)))
 
 Base.show(io::IO, x::Thunk) = println(io, "Thunk($(repr(x.f)))")
+
+"""
+    NO_FIELDS
+Constant for the reverse-mode derivative with respect to a structure that has no fields.
+The most notable use for this is for the reverse-mode derivative with respect to the
+function itself, when that function is not a closure.
+"""
+const NO_FIELDS = DNE()

@@ -51,12 +51,15 @@ See also: [`frule`](@ref), [`rrule`](@ref), [`Rule`](@ref), [`DNERule`](@ref), [
 abstract type AbstractRule end
 
 # this ensures that consumers don't have to special-case rule destructuring
-Base.iterate(rule::AbstractRule) = (rule, nothing)
+Base.iterate(rule::AbstractRule) = (@warn "iterating rules is going away"; (rule, nothing))
 Base.iterate(::AbstractRule, ::Any) = nothing
 
 # This ensures we don't need to check whether the result of `rrule`/`frule` is a tuple
 # in order to get the `i`th rule (assuming it's 1)
-Base.getindex(rule::AbstractRule, i::Integer) = i == 1 ? rule : throw(BoundsError())
+function Base.getindex(rule::AbstractRule, i::Integer)
+    @warn "iterating rules is going away"
+    return i == 1 ? rule : throw(BoundsError())
+end
 
 """
     accumulate(Δ, rule::AbstractRule, args...)
@@ -78,7 +81,7 @@ accumulate(Δ, rule::Rule{typeof(df)}, x) = # customized `accumulate` implementa
 
 See also: [`accumulate!`](@ref), [`store!`](@ref), [`AbstractRule`](@ref)
 """
-accumulate(Δ, rule::AbstractRule, args...) = Δ + rule(args...)
+accumulate(Δ, rule, args...) = Δ + rule(args...)
 
 """
     accumulate!(Δ, rule::AbstractRule, args...)
@@ -90,11 +93,11 @@ Note that this function internally calls `Base.Broadcast.materialize!(Δ, ...)`.
 
 See also: [`accumulate`](@ref), [`store!`](@ref), [`AbstractRule`](@ref)
 """
-function accumulate!(Δ, rule::AbstractRule, args...)
+function accumulate!(Δ, rule, args...)
     return materialize!(Δ, broadcastable(cast(Δ) + rule(args...)))
 end
 
-accumulate!(Δ::Number, rule::AbstractRule, args...) = accumulate(Δ, rule, args...)
+accumulate!(Δ::Number, rule, args...) = accumulate(Δ, rule, args...)
 
 """
     store!(Δ, rule::AbstractRule, args...)
@@ -110,7 +113,7 @@ to be customizable for specific rules/input types.
 
 See also: [`accumulate`](@ref), [`accumulate!`](@ref), [`AbstractRule`](@ref)
 """
-store!(Δ, rule::AbstractRule, args...) = materialize!(Δ, broadcastable(rule(args...)))
+store!(Δ, rule, args...) = materialize!(Δ, broadcastable(rule(args...)))
 
 #####
 ##### `Rule`
