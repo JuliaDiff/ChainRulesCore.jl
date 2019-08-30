@@ -1,5 +1,5 @@
 #==
-All differential need to define + and *.
+All differentials need to define + and *.
 That happens here.
 
 We just use @eval to define all the combinations for AbstractDifferential
