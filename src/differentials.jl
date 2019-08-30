@@ -188,7 +188,7 @@ macro thunk(body)
     return :(Thunk(() -> $(esc(body))))
 end
 
-@inline extern(x::Thunk{F}) where {F} = x.f()
+@inline extern(x::Thunk) = x.f()
 
 Base.Broadcast.broadcastable(x::Thunk) = broadcastable(extern(x))
 
