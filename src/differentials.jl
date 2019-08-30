@@ -67,9 +67,6 @@ struct Wirtinger{P,C} <: AbstractDifferential
                        conjugate::Union{Number,AbstractDifferential})
         return new{typeof(primal),typeof(conjugate)}(primal, conjugate)
     end
-    function Wirtinger(primal, conjugate)
-        error("`Wirtinger` only supports elements of type <: Union{Number,AbstractDifferential} for now")
-    end
 end
 
 wirtinger_primal(x::Wirtinger) = x.primal
@@ -78,7 +75,7 @@ wirtinger_primal(x) = x
 wirtinger_conjugate(x::Wirtinger) = x.conjugate
 wirtinger_conjugate(::Any) = Zero()
 
-extern(x::Wirtinger) = error("`Wirtinger` cannot be converted into an external type.")
+extern(x::Wirtinger) = throw(ArgumentError("`Wirtinger` cannot be converted to an external type."))
 
 Base.Broadcast.broadcastable(w::Wirtinger) = Wirtinger(broadcastable(w.primal),
                                                        broadcastable(w.conjugate))
@@ -86,7 +83,8 @@ Base.Broadcast.broadcastable(w::Wirtinger) = Wirtinger(broadcastable(w.primal),
 Base.iterate(x::Wirtinger) = (x, nothing)
 Base.iterate(::Wirtinger, ::Any) = nothing
 
-Base.conj(x::Wirtinger) = error("`conj(::Wirtinger)` not yet defined")
+# TODO: define `conj` for` `Wirtinger`
+Base.conj(x::Wirtinger) = throw(MethodError(conj, x))
 
 
 #####
@@ -147,7 +145,9 @@ is not defined.
 """
 struct DNE <: AbstractDifferential end
 
-extern(x::DNE) = error("`DNE` cannot be converted into an external type.")
+function extern(x::DNE)
+    throw(ArgumentError("Derivative does not exit. Cannot be converted to an external type."))
+end
 
 Base.Broadcast.broadcastable(::DNE) = Ref(DNE())
 
@@ -190,7 +190,7 @@ macro thunk(body)
     return :(Thunk(() -> $(esc(body))))
 end
 
-@inline extern(x::Thunk{F}) where {F} = x.f()
+@inline extern(x::Thunk) = x.f()
 
 Base.Broadcast.broadcastable(x::Thunk) = broadcastable(extern(x))
 
