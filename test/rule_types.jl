@@ -42,8 +42,6 @@
 
 
         Δ = rand(Complex{Int64})
-
-
         df = @inferred _df(Δ)
         @test df === Δ * (x + x)
 
