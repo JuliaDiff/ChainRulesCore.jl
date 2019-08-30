@@ -16,7 +16,7 @@
             @test x === w
         end
         @test broadcastable(w) == w
-        @test_throws ErrorException conj(w)
+        @test_throws MethodError conj(w)
     end
     @testset "Zero" begin
         z = Zero()

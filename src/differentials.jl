@@ -67,9 +67,6 @@ struct Wirtinger{P,C} <: AbstractDifferential
                        conjugate::Union{Number,AbstractDifferential})
         return new{typeof(primal),typeof(conjugate)}(primal, conjugate)
     end
-    function Wirtinger(primal, conjugate)
-        error("`Wirtinger` only supports elements of type <: Union{Number,AbstractDifferential} for now")
-    end
 end
 
 wirtinger_primal(x::Wirtinger) = x.primal
@@ -86,7 +83,8 @@ Base.Broadcast.broadcastable(w::Wirtinger) = Wirtinger(broadcastable(w.primal),
 Base.iterate(x::Wirtinger) = (x, nothing)
 Base.iterate(::Wirtinger, ::Any) = nothing
 
-Base.conj(x::Wirtinger) = error("`conj(::Wirtinger)` not yet defined")
+# TODO: define `conj` for` `Wirtinger`
+Base.conj(x::Wirtinger) = throw(MethodError(conj, x))
 
 
 #####
