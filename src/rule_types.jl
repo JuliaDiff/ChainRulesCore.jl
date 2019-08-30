@@ -47,6 +47,10 @@ true
 ```
 
 See also: [`frule`](@ref), [`rrule`](@ref), [`Rule`](@ref), [`DNERule`](@ref), [`WirtingerRule`](@ref)
+
+!!! note
+
+    In Zygote, or JAX terminology an instance of an `AbstractRule` would be called a _pullback_.
 """
 abstract type AbstractRule end
 
