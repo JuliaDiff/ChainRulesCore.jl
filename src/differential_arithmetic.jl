@@ -37,11 +37,11 @@ function Base.:+(a::Wirtinger, b::Wirtinger)
 end
 
 for T in (:Casted, :Zero, :DNE, :One, :Thunk, :Any)
-    @eval Base.:+(a::Wirtinger, b::$T) = a, Wirtinger(b + Zero())
+    @eval Base.:+(a::Wirtinger, b::$T) = a + Wirtinger(b, Zero())
     @eval Base.:+(a::$T, b::Wirtinger) = Wirtinger(a, Zero()) + b
 
-    @eval Base.:*(a::Wirtinger, b::$T) = Wirtinger(*(a.primal, b), a.conjugate * b)
-    @eval Base.:*(a::$T, b::Wirtinger) = Wirtinger(*(a, b.primal), a * b.conjugate)
+    @eval Base.:*(a::Wirtinger, b::$T) = Wirtinger(a.primal * b, a.conjugate * b)
+    @eval Base.:*(a::$T, b::Wirtinger) = Wirtinger(a * b.primal, a * b.conjugate)
 end
 
 
