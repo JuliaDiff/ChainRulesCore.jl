@@ -33,15 +33,15 @@ function Base.:*(a::Wirtinger, b::Wirtinger)
 end
 
 function Base.:+(a::Wirtinger, b::Wirtinger)
-    return Wirtinger(+(a.primal, b.primal), +(a.conjugate, b.conjugate))
+    return Wirtinger(+(a.primal, b.primal), a.conjugate + b.conjugate)
 end
 
 for T in (:Casted, :Zero, :DNE, :One, :Thunk, :Any)
-    @eval Base.:+(a::Wirtinger, b::$T) = +(a, Wirtinger(b, Zero()))
-    @eval Base.:+(a::$T, b::Wirtinger) = +(Wirtinger(a, Zero()), b)
+    @eval Base.:+(a::Wirtinger, b::$T) = a, Wirtinger(b + Zero())
+    @eval Base.:+(a::$T, b::Wirtinger) = Wirtinger(a, Zero()) + b
 
-    @eval Base.:*(a::Wirtinger, b::$T) = Wirtinger(*(a.primal, b), *(a.conjugate, b))
-    @eval Base.:*(a::$T, b::Wirtinger) = Wirtinger(*(a, b.primal), *(a, b.conjugate))
+    @eval Base.:*(a::Wirtinger, b::$T) = Wirtinger(*(a.primal, b), a.conjugate * b)
+    @eval Base.:*(a::$T, b::Wirtinger) = Wirtinger(*(a, b.primal), a * b.conjugate)
 end
 
 
@@ -78,23 +78,23 @@ for T in (:One, :Thunk, :Any)
 end
 
 
-Base.:+(a::One, b::One) = +(extern(a), extern(b))
+Base.:+(a::One, b::One) = extern(a) + extern(b)
 Base.:*(::One, ::One) = One()
 for T in (:Thunk, :Any)
-    @eval Base.:+(a::One, b::$T) = +(extern(a), b)
-    @eval Base.:+(a::$T, b::One) = +(a, extern(b))
+    @eval Base.:+(a::One, b::$T) = extern(a) + b
+    @eval Base.:+(a::$T, b::One) = a + extern(b)
 
     @eval Base.:*(::One, b::$T) = b
     @eval Base.:*(a::$T, ::One) = a
 end
 
 
-Base.:+(a::Thunk, b::Thunk) = +(extern(a), extern(b))
-Base.:*(a::Thunk, b::Thunk) = *(extern(a), extern(b))
+Base.:+(a::Thunk, b::Thunk) = extern(a) + extern(b)
+Base.:*(a::Thunk, b::Thunk) = extern(a) * extern(b)
 for T in (:Any,)  #This loop is redundant but for consistency...
-    @eval Base.:+(a::Thunk, b::$T) = +(extern(a), b)
-    @eval Base.:+(a::$T, b::Thunk) = +(a, extern(b))
+    @eval Base.:+(a::Thunk, b::$T) = extern(a) + b
+    @eval Base.:+(a::$T, b::Thunk) = a + extern(b)
 
-    @eval Base.:*(a::Thunk, b::$T) = *(extern(a), b)
-    @eval Base.:*(a::$T, b::Thunk) = *(a, extern(b))
+    @eval Base.:*(a::Thunk, b::$T) = extern(a) * b
+    @eval Base.:*(a::$T, b::Thunk) = a * extern(b)
 end

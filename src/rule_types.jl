@@ -203,7 +203,7 @@ otherwise return `WirtingerRule(P, C)`.
 """
 function AbstractRule(𝒟::Type, primal::AbstractRule, conjugate::AbstractRule)
     if 𝒟 <: Real || eltype(𝒟) <: Real
-        return Rule((args...) -> +(primal(args...), conjugate(args...)))
+        return Rule((args...) -> (primal(args...) + conjugate(args...)))
     else
         return WirtingerRule(primal, conjugate)
     end
