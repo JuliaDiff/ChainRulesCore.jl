@@ -1,13 +1,17 @@
-using ChainRulesCore
-export cool, _second, dummy_identity
+#######
+# Demo setup
+
 cool(x) = x + 1
 cool(x, y) = x + y + 1
 
-_second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
-
 # a rule we define so we can test rules
 dummy_identity(x) = x
+
 @scalar_rule(dummy_identity(x), One())
+
+#######
+
+_second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
 
 @testset "frule and rrule" begin
     @test frule(cool, 1) === nothing
