@@ -44,12 +44,15 @@
         @test conj(o) == o
     end
 
-
     @testset "No ambiguities in $f" for f in (+, *)
         # We don't use `Test.detect_ambiguities` as we are only interested in
-        # The +, and * operations.
-        for m1 in methods(f), m2 in methods(f)
-            @test !Base.isambiguous(m1, m2)
-        end
+        # the +, and * operations. We also would catch any that are unrelated
+        # to this package. but that is not a problem. Since no such failings
+        # occur in our dependencies.
+
+        ambig_methods = [
+            (m1, m2) for m1 in methods(f), m2 in methods(f) if Base.isambiguous(m1, m2)
+        ]
+        @test isempty(ambig_methods)
     end
 end
