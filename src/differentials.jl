@@ -145,7 +145,9 @@ is not defined.
 """
 struct DNE <: AbstractDifferential end
 
-extern(x::DNE) = throw(ArgumentError("`DNE` cannot be converted to an external type."))
+function extern(x::DNE)
+    throw(ArgumentError("Derivative does not exit. Cannot be converted to an external type."))
+end
 
 Base.Broadcast.broadcastable(::DNE) = Ref(DNE())
 
