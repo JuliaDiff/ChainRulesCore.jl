@@ -40,6 +40,7 @@ wrapped by `x`, such that mutating `extern(x)` might mutate `x` itself.
 @inline extern(x) = x
 
 @inline Base.conj(x::AbstractDifferential) = x
+@inline Base.transpose(x::AbstractDifferential) = x
 
 #####
 ##### `Wirtinger`
@@ -196,13 +197,18 @@ Base.Broadcast.broadcastable(x::Thunk) = broadcastable(extern(x))
 
 @inline function Base.iterate(x::Thunk)
     externed = extern(x)
-    element, state = iterate(externed)
+    next = iterate(externed)
+    next === nothing && return nothing
+    element, state = next
     return element, (externed, state)
 end
 
 @inline function Base.iterate(::Thunk, (externed, state))
-    element, new_state = iterate(externed, state)
+    next = iterate(externed, state)
+    next === nothing && return nothing
+    element, new_state = next
     return element, (externed, new_state)
 end
 
 Base.conj(x::Thunk) = @thunk(conj(extern(x)))
+Base.transpose(x::Union{Thunk,Casted}) = @thunk(transpose(extern(x)))

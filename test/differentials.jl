@@ -17,7 +17,31 @@
         end
         @test broadcastable(w) == w
         @test_throws MethodError conj(w)
+        @test transpose(w) == w
     end
+
+    @testset "Casted" begin
+        f, x, y = +, 2.1, [1, 2, 3]
+        c = cast(f, x, y)
+        ext = f.(x, y)
+        @test extern(c) == ext
+        @test extern(c + 2) == ext .+ 2
+        @test extern(c + Zero()) == ext
+        @test extern(c + One()) == ext .+ true
+        @test extern(c + c) == ext .+ ext
+        @test extern(3 * c) == 3 .* ext
+        @test extern(Zero() * c) == false .* c
+        @test extern(One() * c) == ext
+        @test extern(c * c) == ext .* ext
+        for (i,c_i) in enumerate(c)
+            @test c_i == ext[i]
+        end
+        @test broadcastable(c) == Broadcast.broadcasted(f, x, y)
+        @test extern(conj(c)) == ext
+        @test extern(conj(im * c)) == -im .* ext
+        @test extern(transpose(c)) == transpose(ext)
+    end
+
     @testset "Zero" begin
         z = Zero()
         @test extern(z) === false
@@ -32,7 +56,9 @@
         end
         @test broadcastable(z) isa Ref{Zero}
         @test conj(z) == z
+        @test transpose(z) == z
     end
+
     @testset "One" begin
         o = One()
         @test extern(o) === true
@@ -47,6 +73,26 @@
         end
         @test broadcastable(o) isa Ref{One}
         @test conj(o) == o
+        @test transpose(o) == o
+    end
+
+    @testset "Thunk" begin
+        f, x = transpose, [1, 2, 3]
+        t = @thunk(f(x))
+        ext = f(x)
+        @test extern(t) == ext
+        @test extern(t + Zero()) == ext
+        @test extern(t + t) == ext + ext
+        @test extern(3 * t) == 3 * ext
+        @test Zero() * t == Zero()
+        @test extern(One() * t) == ext
+        for (i,t_i) in enumerate(t)
+            @test t_i == ext[i]
+        end
+        @test broadcastable(t) == broadcastable(ext)
+        @test extern(conj(t)) == ext
+        @test extern(conj(im * t)) == -im .* ext
+        @test extern(transpose(t)) == x
     end
 
     @testset "No ambiguities in $f" for f in (+, *)
