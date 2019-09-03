@@ -61,59 +61,6 @@ function Base.getindex(rule::AbstractRule, i::Integer)
     return i == 1 ? rule : throw(BoundsError())
 end
 
-"""
-    accumulate(Δ, rule::AbstractRule, args...)
-
-Return `Δ + rule(args...)` evaluated in a manner that supports ChainRulesCore'
-various `AbstractDifferential` types.
-
-This method intended to be customizable for specific rules/input types. For
-example, here is pseudocode to overload `accumulate` w.r.t. a specific forward
-differentiation rule for a given function `f`:
-
-```
-df(x) = # forward differentiation primitive implementation
-
-frule(::typeof(f), x) = (f(x), Rule(df))
-
-accumulate(Δ, rule::Rule{typeof(df)}, x) = # customized `accumulate` implementation
-```
-
-See also: [`accumulate!`](@ref), [`store!`](@ref), [`AbstractRule`](@ref)
-"""
-accumulate(Δ, rule, args...) = Δ + rule(args...)
-
-"""
-    accumulate!(Δ, rule::AbstractRule, args...)
-
-Similar to [`accumulate`](@ref), but compute `Δ + rule(args...)` in-place,
-storing the result in `Δ`.
-
-Note that this function internally calls `Base.Broadcast.materialize!(Δ, ...)`.
-
-See also: [`accumulate`](@ref), [`store!`](@ref), [`AbstractRule`](@ref)
-"""
-function accumulate!(Δ, rule, args...)
-    return materialize!(Δ, broadcastable(cast(Δ) + rule(args...)))
-end
-
-accumulate!(Δ::Number, rule, args...) = accumulate(Δ, rule, args...)
-
-"""
-    store!(Δ, rule::AbstractRule, args...)
-
-Compute `rule(args...)` and store the result in `Δ`, potentially avoiding
-intermediate temporary allocations that might be necessary for alternative
-approaches (e.g. `copyto!(Δ, extern(rule(args...)))`)
-
-Note that this function internally calls `Base.Broadcast.materialize!(Δ, ...)`.
-
-Like [`accumulate`](@ref) and [`accumulate!`](@ref), this function is intended
-to be customizable for specific rules/input types.
-
-See also: [`accumulate`](@ref), [`accumulate!`](@ref), [`AbstractRule`](@ref)
-"""
-store!(Δ, rule, args...) = materialize!(Δ, broadcastable(rule(args...)))
 
 #####
 ##### `Rule`
@@ -157,9 +104,6 @@ Rule(f) = Rule{Core.Typeof(f),Nothing}(f, nothing)
 Base.show(io::IO, rule::Rule{<:Any, Nothing}) = print(io, "Rule($(rule.f))")
 Base.show(io::IO, rule::Rule) = print(io, "Rule($(rule.f), $(rule.u))")
 
-# Specialized accumulation
-# TODO: Does this need to be overdubbed in the rule context?
-accumulate!(Δ, rule::Rule{F,U}, args...) where {F,U<:Function} = rule.u(Δ, args...)
 
 #####
 ##### `DNERule`
@@ -211,3 +155,68 @@ function AbstractRule(𝒟::Type, primal::AbstractRule, conjugate::AbstractRule)
         return WirtingerRule(primal, conjugate)
     end
 end
+
+
+"""
+    accumulate(Δ, ∂)
+
+Return `Δ + ∂` evaluated in a manner that supports ChainRulesCore'
+various `AbstractDifferential` types.
+
+#TODO: update these docs
+
+This method intended to be customizable for specific rules/input types. For
+example, here is pseudocode to overload `accumulate` w.r.t. a specific forward
+differentiation rule for a given function `f`:
+
+```
+df(x) = # forward differentiation primitive implementation
+
+frule(::typeof(f), x) = (f(x), Rule(df))
+
+accumulate(Δ, rule::Rule{typeof(df)}, x) = # customized `accumulate` implementation
+```
+
+See also: [`accumulate!`](@ref), [`store!`](@ref), [`AbstractRule`](@ref)
+"""
+accumulate(Δ, ∂) = Δ + ∂
+
+"""
+    accumulate!(Δ, rule::AbstractRule, args...)
+
+# TODO: Update these docs
+
+Similar to [`accumulate`](@ref), but compute `Δ + rule(args...)` in-place,
+storing the result in `Δ`.
+
+Note that this function internally calls `Base.Broadcast.materialize!(Δ, ...)`.
+
+See also: [`accumulate`](@ref), [`store!`](@ref), [`AbstractRule`](@ref)
+"""
+function accumulate!(Δ, ∂)
+    return materialize!(Δ, broadcastable(cast(Δ) + ∂))
+end
+
+accumulate!(Δ::Number, ∂) = accumulate(Δ, ∂)
+
+# TODO: replace this:
+# accumulate!(Δ, rule::Rule{F,U}, args...) where {F,U<:Function} = rule.u(Δ, args...)
+
+
+"""
+    store!(Δ, ∂)
+
+TODO: Rewrite these docs
+
+Compute `rule(args...)` and store the result in `Δ`, potentially avoiding
+intermediate temporary allocations that might be necessary for alternative
+approaches (e.g. `copyto!(Δ, extern(rule(args...)))`)
+
+Note that this function internally calls `Base.Broadcast.materialize!(Δ, ...)`.
+
+Like [`accumulate`](@ref) and [`accumulate!`](@ref), this function is intended
+to be customizable for specific rules/input types.
+
+See also: [`accumulate`](@ref), [`accumulate!`](@ref), [`AbstractRule`](@ref)
+"""
+store!(Δ, ∂) = materialize!(Δ, broadcastable(∂))
