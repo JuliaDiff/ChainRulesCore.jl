@@ -1,8 +1,8 @@
 
 @testset "rule types" begin
-    #==
+    # The following is deprecated and should be remove next release
     @testset "iterating and indexing rules" begin
-        _, rule = frule(dummy_identity, 1)
+        rule = Rule(identity)
         i = 0
         for r in rule
             @test r === rule
@@ -12,8 +12,8 @@
         @test rule[1] == rule
         @test_throws BoundsError rule[2]
     end
-    ==#
-    
+
+
     @testset "Rule" begin
         @testset "show" begin
             @test occursin(r"^Rule\(.*foo.*\)$", repr(Rule(function foo() 1 end)))
