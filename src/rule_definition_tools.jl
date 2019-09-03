@@ -183,7 +183,7 @@ macro scalar_rule(call, maybe_setup, partials...)
         if Meta.isexpr(partial, :tuple)
             partial
         else
-            @assert length(inputs) == 1
+            length(inputs) == 1 || error("Invalid use of `@scalar_rule`")
             Expr(:tuple, partial)
         end
     end
@@ -192,7 +192,7 @@ macro scalar_rule(call, maybe_setup, partials...)
     # Main body: defining the results of the frule/rrule
 
     # An expression that when evaluated will return the type of the input domain.
-    # Multiple repetitions of this expression should optimize ot. But if it does not then
+    # Multiple repetitions of this expression should optimize out. But if it does not then
     # may need to move its definition into the body of the `rrule`/`frule`
     𝒟 = :(typeof(first(promote($(call.args[2:end]...)))))
 

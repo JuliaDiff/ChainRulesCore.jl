@@ -241,9 +241,10 @@ const NO_FIELDS = DNE()
 """
     differential(𝒟::Type, der)
 
-For some differential (e.g. a `Number`, `AbstractDifferential`, `Matrix`, etc.),
-convert it to another differential that is more suited for the domain given by
-the type 𝒟.
+Converts, if required, a differential object `der`
+(e.g. a `Number`, `AbstractDifferential`, `Matrix`, etc.),
+to another  differential that is more suited for the domain given by the type 𝒟.
+Often this will behave as the identity function on `der`.
 """
 function differential(::Type{<:Union{<:Real, AbstractArray{<:Real}}}, w::Wirtinger)
     return wirtinger_primal(w) + wirtinger_conjugate(w)
