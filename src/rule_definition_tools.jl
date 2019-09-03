@@ -2,6 +2,7 @@
 
 """
     propagator_name(f, propname)
+
 Determines a reasonable name for the propagator function.
 The name doesn't really matter too much as it is a local function to be returned
 by `frule` or `rrule`, but a good name make debugging easier.
