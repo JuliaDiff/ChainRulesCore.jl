@@ -31,7 +31,7 @@ _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
 
     frx, cool_pushforward = frule(cool, 1)
     @test frx == 2
-    @test cool_pushforward(NamedTuple(), 1) == (1,)
+    @test cool_pushforward(NamedTuple(), 1) == 1
     rrx, cool_pullback = rrule(cool, 1)
     self, rr1 = cool_pullback(1)
     @test self == NO_FIELDS
@@ -54,11 +54,11 @@ end
 
         Δ = One()
         df = @inferred myabs2_pushforward(NamedTuple(), Δ)
-        @test df === (x + x,)
+        @test df === x + x
 
         Δ = rand(Complex{Int64})
         df = @inferred myabs2_pushforward(NamedTuple(), Δ)
-        @test df === (Δ * (x + x),)
+        @test df === Δ * (x + x)
     end
 
     @testset "complex input" begin
@@ -67,11 +67,11 @@ end
         @test f === abs2(z)
 
         df = @inferred myabs2_pushforward(NamedTuple(), One())
-        @test df === (Wirtinger(z', z),)
+        @test df === Wirtinger(z', z)
 
         Δ = rand(Complex{Int64})
         df = @inferred myabs2_pushforward(NamedTuple(), Δ)
-        @test df === (Wirtinger(Δ * z', Δ * z),)
+        @test df === Wirtinger(Δ * z', Δ * z)
     end
 end
 
@@ -132,8 +132,8 @@ end
         fx, f_pushforward = res
         df(Δx, Δp) = f_pushforward(NamedTuple(), Δx, Δp)
 
-        df_dx, = df(One(), Zero())
-        df_dp,= df(Zero(), One())
+        df_dx = df(One(), Zero())
+        df_dp = df(Zero(), One())
         @test fx == f(x, p)  # Check we still get the normal value, right
         @test extern(df_dx) isa expected_type_df_dx
         @test extern(df_dp) isa expected_type_df_dp

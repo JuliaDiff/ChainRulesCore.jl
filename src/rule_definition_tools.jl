@@ -208,12 +208,17 @@ macro scalar_rule(call, maybe_setup, partials...)
             ∂s = partials[output_i].args
             propagation_expr(𝒟, Δs, ∂s)
         end
-
+        if n_outputs > 1
+            # For forward-mode we only return a tuple if output actually a tuple.
+            pushforward_returns = Expr(:tuple, pushforward_returns...)
+        else
+            pushforward_returns = pushforward_returns[1]
+        end
         quote
             # _ is the input derivative w.r.t. function internals. since we do not
             # allow closures/functors with @scalar_rule, it is always ignored
             function $(propagator_name(f, :pushforward))(_, $(Δs...))
-                return $(Expr(:tuple, pushforward_returns...))
+                $pushforward_returns
             end
         end
     end
