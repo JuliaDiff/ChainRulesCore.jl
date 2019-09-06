@@ -49,6 +49,25 @@
         @test conj(o) == o
     end
 
+    @testset "Thunk" begin
+        @test @thunk(3) isa Thunk
+
+        @testset "show" begin
+            rep = repr(Thunk(rand))
+            @test occursin(r"Thunk\(.*rand.*\)", rep)
+        end
+
+        @testset "Externing" begin
+            @test extern(@thunk(3)) == 3
+            @test extern(@thunk(@thunk(3))) == 3
+        end
+
+        @testset "calling thunks should call inner function" begin
+            @test (@thunk(3))() == 3
+            @test (@thunk(@thunk(3)))() isa Thunk
+        end
+    end
+
     @testset "No ambiguities in $f" for f in (+, *)
         # We don't use `Test.detect_ambiguities` as we are only interested in
         # the +, and * operations. We also would catch any that are unrelated
