@@ -181,6 +181,24 @@ Base.iterate(::One, ::Any) = nothing
     Thunk(()->v)
 A thunk is a deferred computation.
 It wraps a zero argument closure that when invoked returns a differential.
+
+Calling that thunk, calls the wrapped closure.
+`extern`ing thunks applies recursively, it also externs the differial that the closure returns.
+If you do not want that, then simply call the thunk
+
+```
+julia> t = @thunk(@thunk(3))
+Thunk(var"##7#9"())
+
+julia> extern(t)
+3
+
+julia> t()
+Thunk(var"##8#10"())
+
+julia> t()()
+3
+```
 """
 struct Thunk{F} <: AbstractDifferential
     f::F
@@ -190,7 +208,8 @@ macro thunk(body)
     return :(Thunk(() -> $(esc(body))))
 end
 
-@inline extern(x::Thunk) = x.f()
+(x::Thunk)() = x.f()
+@inline extern(x::Thunk) = extern(x())
 
 Base.Broadcast.broadcastable(x::Thunk) = broadcastable(extern(x))
 
@@ -206,3 +225,5 @@ end
 end
 
 Base.conj(x::Thunk) = @thunk(conj(extern(x)))
+
+Base.show(io::IO, x::Thunk) = println(io, "Thunk($(repr(x.f)))")
