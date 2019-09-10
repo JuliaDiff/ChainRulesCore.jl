@@ -179,7 +179,7 @@ accumulate(Δ, rule::Rule{typeof(df)}, x) = # customized `accumulate` implementa
 
 See also: [`accumulate!`](@ref), [`store!`](@ref), [`AbstractRule`](@ref)
 """
-accumulate(Δ, ∂) = Δ + ∂
+accumulate(Δ, ∂) = Δ .+ ∂
 
 """
     accumulate!(Δ, rule::AbstractRule, args...)
