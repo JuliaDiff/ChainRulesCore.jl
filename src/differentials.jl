@@ -281,7 +281,7 @@ end
 
 # The real reason we have this:
 accumulate!(Δ, ∂::InplaceableThunk) = ∂.add!(Δ)
-
+store!(Δ, ∂::InplaceableThunk) = ∂.add!((Δ.*=false))  # zero i, then add to it.
 
 """
     NO_FIELDS
