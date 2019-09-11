@@ -247,6 +247,43 @@ Base.conj(x::Thunk) = @thunk(conj(extern(x)))
 Base.show(io::IO, x::Thunk) = println(io, "Thunk($(repr(x.f)))")
 
 """
+    InplaceableThunk(val::Thunk, add!::Function)
+
+A wrapper for a `Thunk`, that allows it to define an inplace `add!` function,
+which is used internally in `accumulate!(Δ, ::InplaceableThunk)`.
+
+`add!` should be defined such that: `ithunk.add!(Δ) = Δ .+= ithunk.val`
+but it should do this more efficently than simply doing this directly.
+(Otherwise one can just use a normal `Thunk`).
+
+Most operations on an `InplaceableThunk` treat it just like a normal `Thunk`;
+and destroy its inplacability.
+"""
+struct InplaceableThunk{T<:Thunk, F} <: AbstractDifferential
+    val::T
+    add!::F
+end
+
+(x::InplaceableThunk)() = x.val()
+@inline extern(x::InplaceableThunk) = extern(x.val)
+
+Base.Broadcast.broadcastable(x::InplaceableThunk) = broadcastable(x.val)
+
+@inline function Base.iterate(x::InplaceableThunk, args...)
+    return iterate(x.val, args...)
+end
+
+Base.conj(x::InplaceableThunk) = conj(x.val)
+
+function Base.show(io::IO, x::InplaceableThunk)
+    println(io, "InplaceableThunk($(repr(x.val)), $(repr(x.add!)))")
+end
+
+# The real reason we have this:
+accumulate!(Δ, ∂::InplaceableThunk) = ∂.add!(Δ)
+
+
+"""
     NO_FIELDS
 
 Constant for the reverse-mode derivative with respect to a structure that has no fields.
@@ -255,7 +292,6 @@ function itself, when that function is not a closure.
 """
 const NO_FIELDS = DNE()
 
-####
 """
     differential(𝒟::Type, der)
 
