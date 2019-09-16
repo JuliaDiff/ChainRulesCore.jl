@@ -174,6 +174,24 @@ Base.iterate(::One, ::Any) = nothing
 
 
 #####
+##### `AbstractThunk
+#####
+abstract type AbstractThunk <: AbstractDifferential end
+
+Base.Broadcast.broadcastable(x::AbstractThunk) = broadcastable(extern(x))
+
+@inline function Base.iterate(x::AbstractThunk)
+    externed = extern(x)
+    element, state = iterate(externed)
+    return element, (externed, state)
+end
+
+@inline function Base.iterate(::AbstractThunk, (externed, state))
+    element, new_state = iterate(externed, state)
+    return element, (externed, new_state)
+end
+
+#####
 ##### `Thunk`
 #####
 
@@ -218,7 +236,7 @@ itself a `Thunk`.
 If you got the expression from another `rrule` (or `frule`), you don't need to
 `@thunk` it since it will have been thunked if required, by the defining rule.
 """
-struct Thunk{F} <: AbstractDifferential
+struct Thunk{F} <: AbstractThunk
     f::F
 end
 
@@ -226,23 +244,12 @@ macro thunk(body)
     return :(Thunk(() -> $(esc(body))))
 end
 
+# have to define this here after `@thunk` and `Thunk` is defined
+Base.conj(x::AbstractThunk) = @thunk(conj(extern(x)))
+
+
 (x::Thunk)() = x.f()
 @inline extern(x::Thunk) = extern(x())
-
-Base.Broadcast.broadcastable(x::Thunk) = broadcastable(extern(x))
-
-@inline function Base.iterate(x::Thunk)
-    externed = extern(x)
-    element, state = iterate(externed)
-    return element, (externed, state)
-end
-
-@inline function Base.iterate(::Thunk, (externed, state))
-    element, new_state = iterate(externed, state)
-    return element, (externed, new_state)
-end
-
-Base.conj(x::Thunk) = @thunk(conj(extern(x)))
 
 Base.show(io::IO, x::Thunk) = println(io, "Thunk($(repr(x.f)))")
 
@@ -259,7 +266,7 @@ but it should do this more efficently than simply doing this directly.
 Most operations on an `InplaceableThunk` treat it just like a normal `Thunk`;
 and destroy its inplacability.
 """
-struct InplaceableThunk{T<:Thunk, F} <: AbstractDifferential
+struct InplaceableThunk{T<:Thunk, F} <: AbstractThunk
     val::T
     add!::F
 end
@@ -267,21 +274,13 @@ end
 (x::InplaceableThunk)() = x.val()
 @inline extern(x::InplaceableThunk) = extern(x.val)
 
-Base.Broadcast.broadcastable(x::InplaceableThunk) = broadcastable(x.val)
-
-@inline function Base.iterate(x::InplaceableThunk, args...)
-    return iterate(x.val, args...)
-end
-
-Base.conj(x::InplaceableThunk) = conj(x.val)
-
 function Base.show(io::IO, x::InplaceableThunk)
     println(io, "InplaceableThunk($(repr(x.val)), $(repr(x.add!)))")
 end
 
 # The real reason we have this:
 accumulate!(Δ, ∂::InplaceableThunk) = ∂.add!(Δ)
-store!(Δ, ∂::InplaceableThunk) = ∂.add!((Δ.*=false))  # zero i, then add to it.
+store!(Δ, ∂::InplaceableThunk) = ∂.add!((Δ.*=false))  # zero it, then add to it.
 
 """
     NO_FIELDS
