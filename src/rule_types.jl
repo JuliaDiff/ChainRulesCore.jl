@@ -11,7 +11,7 @@ return that calculated differential value.
 
 For example:
 
-```jldoctest
+```
 julia> using ChainRulesCore: frule, rrule, AbstractRule
 
 julia> x, y = rand(2);
