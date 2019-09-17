@@ -7,7 +7,7 @@ subtypes, as we know the full set that might be encountered.
 Thus we can avoid any ambiguities.
 
 Notice:
-    The precidence goes: (:Wirtinger, :Casted, :Zero, :DNE, :One, :Thunk, :Any)
+    The precidence goes: (:Wirtinger, :Casted, :Zero, :DNE, :One, :AbstractThunk, :Any)
     Thus each of the @eval loops creating definitions of + and *
     defines the combination this type with all types of  lower precidence.
     This means each eval loops is 1 item smaller than the previous.
@@ -36,7 +36,7 @@ function Base.:+(a::Wirtinger, b::Wirtinger)
     return Wirtinger(+(a.primal, b.primal), a.conjugate + b.conjugate)
 end
 
-for T in (:Casted, :Zero, :DNE, :One, :Thunk, :Any)
+for T in (:Casted, :Zero, :DNE, :One, :AbstractThunk, :Any)
     @eval Base.:+(a::Wirtinger, b::$T) = a + Wirtinger(b, Zero())
     @eval Base.:+(a::$T, b::Wirtinger) = Wirtinger(a, Zero()) + b
 
@@ -47,7 +47,7 @@ end
 
 Base.:+(a::Casted, b::Casted) = Casted(broadcasted(+, a.value, b.value))
 Base.:*(a::Casted, b::Casted) = Casted(broadcasted(*, a.value, b.value))
-for T in (:Zero, :DNE, :One, :Thunk, :Any)
+for T in (:Zero, :DNE, :One, :AbstractThunk, :Any)
     @eval Base.:+(a::Casted, b::$T) = Casted(broadcasted(+, a.value, b))
     @eval Base.:+(a::$T, b::Casted) = Casted(broadcasted(+, a, b.value))
 
@@ -58,7 +58,7 @@ end
 
 Base.:+(::Zero, b::Zero) = Zero()
 Base.:*(::Zero, ::Zero) = Zero()
-for T in (:DNE, :One, :Thunk, :Any)
+for T in (:DNE, :One, :AbstractThunk, :Any)
     @eval Base.:+(::Zero, b::$T) = b
     @eval Base.:+(a::$T, ::Zero) = a
 
@@ -69,7 +69,7 @@ end
 
 Base.:+(::DNE, ::DNE) = DNE()
 Base.:*(::DNE, ::DNE) = DNE()
-for T in (:One, :Thunk, :Any)
+for T in (:One, :AbstractThunk, :Any)
     @eval Base.:+(::DNE, b::$T) = b
     @eval Base.:+(a::$T, ::DNE) = a
 
@@ -80,7 +80,7 @@ end
 
 Base.:+(a::One, b::One) = extern(a) + extern(b)
 Base.:*(::One, ::One) = One()
-for T in (:Thunk, :Any)
+for T in (:AbstractThunk, :Any)
     @eval Base.:+(a::One, b::$T) = extern(a) + b
     @eval Base.:+(a::$T, b::One) = a + extern(b)
 
@@ -89,12 +89,12 @@ for T in (:Thunk, :Any)
 end
 
 
-Base.:+(a::Thunk, b::Thunk) = extern(a) + extern(b)
-Base.:*(a::Thunk, b::Thunk) = extern(a) * extern(b)
-for T in (:Any,)  #This loop is redundant but for consistency...
-    @eval Base.:+(a::Thunk, b::$T) = extern(a) + b
-    @eval Base.:+(a::$T, b::Thunk) = a + extern(b)
+Base.:+(a::AbstractThunk, b::AbstractThunk) = extern(a) + extern(b)
+Base.:*(a::AbstractThunk, b::AbstractThunk) = extern(a) * extern(b)
+for T in (:Any,)
+    @eval Base.:+(a::AbstractThunk, b::$T) = extern(a) + b
+    @eval Base.:+(a::$T, b::AbstractThunk) = a + extern(b)
 
-    @eval Base.:*(a::Thunk, b::$T) = extern(a) * b
-    @eval Base.:*(a::$T, b::Thunk) = a * extern(b)
+    @eval Base.:*(a::AbstractThunk, b::$T) = extern(a) * b
+    @eval Base.:*(a::$T, b::AbstractThunk) = a * extern(b)
 end

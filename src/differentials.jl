@@ -174,6 +174,24 @@ Base.iterate(::One, ::Any) = nothing
 
 
 #####
+##### `AbstractThunk
+#####
+abstract type AbstractThunk <: AbstractDifferential end
+
+Base.Broadcast.broadcastable(x::AbstractThunk) = broadcastable(extern(x))
+
+@inline function Base.iterate(x::AbstractThunk)
+    externed = extern(x)
+    element, state = iterate(externed)
+    return element, (externed, state)
+end
+
+@inline function Base.iterate(::AbstractThunk, (externed, state))
+    element, new_state = iterate(externed, state)
+    return element, (externed, new_state)
+end
+
+#####
 ##### `Thunk`
 #####
 
@@ -181,8 +199,9 @@ Base.iterate(::One, ::Any) = nothing
     Thunk(()->v)
 A thunk is a deferred computation.
 It wraps a zero argument closure that when invoked returns a differential.
+`@thunk(v)` is a macro that expands into `Thunk(()->v)`.
 
-Calling that thunk, calls the wrapped closure.
+Calling a thunk, calls the wrapped closure.
 `extern`ing thunks applies recursively, it also externs the differial that the closure returns.
 If you do not want that, then simply call the thunk
 
@@ -199,8 +218,24 @@ Thunk(var"##8#10"())
 julia> t()()
 3
 ```
+
+### When to `@thunk`?
+When writing `rrule`s (and to a lesser exent `frule`s), it is important to `@thunk`
+appropriately.
+Propagation rule's that return multiple derivatives are not able to do all the computing themselves.
+ By `@thunk`ing the work required for each, they then compute only what is needed.
+
+#### So why not thunk everything?
+`@thunk` creates a closure over the expression, which (effectively) creates a `struct`
+with a field for each variable used in the expression, and call overloaded.
+
+Do not use `@thunk` if this would be equal or more work than actually evaluating the expression itself. Examples being:
+- The expression wrapping something in a `struct`, such as `Adjoint(x)` or `Diagonal(x)`
+- The expression being a constant
+- The expression being itself a `thunk`
+- The expression being from another `rrule` or `frule` (it would be `@thunk`ed if required by the defining rule already)
 """
-struct Thunk{F} <: AbstractDifferential
+struct Thunk{F} <: AbstractThunk
     f::F
 end
 
@@ -208,22 +243,62 @@ macro thunk(body)
     return :(Thunk(() -> $(esc(body))))
 end
 
+# have to define this here after `@thunk` and `Thunk` is defined
+Base.conj(x::AbstractThunk) = @thunk(conj(extern(x)))
+
+
 (x::Thunk)() = x.f()
 @inline extern(x::Thunk) = extern(x())
 
-Base.Broadcast.broadcastable(x::Thunk) = broadcastable(extern(x))
-
-@inline function Base.iterate(x::Thunk)
-    externed = extern(x)
-    element, state = iterate(externed)
-    return element, (externed, state)
-end
-
-@inline function Base.iterate(::Thunk, (externed, state))
-    element, new_state = iterate(externed, state)
-    return element, (externed, new_state)
-end
-
-Base.conj(x::Thunk) = @thunk(conj(extern(x)))
-
 Base.show(io::IO, x::Thunk) = println(io, "Thunk($(repr(x.f)))")
+
+"""
+    InplaceableThunk(val::Thunk, add!::Function)
+
+A wrapper for a `Thunk`, that allows it to define an inplace `add!` function,
+which is used internally in `accumulate!(Δ, ::InplaceableThunk)`.
+
+`add!` should be defined such that: `ithunk.add!(Δ) = Δ .+= ithunk.val`
+but it should do this more efficently than simply doing this directly.
+(Otherwise one can just use a normal `Thunk`).
+
+Most operations on an `InplaceableThunk` treat it just like a normal `Thunk`;
+and destroy its inplacability.
+"""
+struct InplaceableThunk{T<:Thunk, F} <: AbstractThunk
+    val::T
+    add!::F
+end
+
+(x::InplaceableThunk)() = x.val()
+@inline extern(x::InplaceableThunk) = extern(x.val)
+
+function Base.show(io::IO, x::InplaceableThunk)
+    println(io, "InplaceableThunk($(repr(x.val)), $(repr(x.add!)))")
+end
+
+# The real reason we have this:
+accumulate!(Δ, ∂::InplaceableThunk) = ∂.add!(Δ)
+store!(Δ, ∂::InplaceableThunk) = ∂.add!((Δ.*=false))  # zero it, then add to it.
+
+"""
+    NO_FIELDS
+
+Constant for the reverse-mode derivative with respect to a structure that has no fields.
+The most notable use for this is for the reverse-mode derivative with respect to the
+function itself, when that function is not a closure.
+"""
+const NO_FIELDS = DNE()
+
+"""
+    refine_differential(𝒟::Type, der)
+
+Converts, if required, a differential object `der`
+(e.g. a `Number`, `AbstractDifferential`, `Matrix`, etc.),
+to another  differential that is more suited for the domain given by the type 𝒟.
+Often this will behave as the identity function on `der`.
+"""
+function refine_differential(::Type{<:Union{<:Real, AbstractArray{<:Real}}}, w::Wirtinger)
+    return wirtinger_primal(w) + wirtinger_conjugate(w)
+end
+refine_differential(::Any, der) = der  # most of the time leave it alone.
