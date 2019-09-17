@@ -25,13 +25,13 @@ propagator_name(fname::QuoteNode, propname::Symbol) = propagator_name(fname.valu
 """
     propagation_expr(𝒟, Δs, ∂s)
 
-    Returns the expression for the propagation of
-    the input gradient `Δs` though the partials `∂s`.
+Returns the expression for the propagation of
+the input gradient `Δs` though the partials `∂s`.
 
-    𝒟 is an expression that when evaluated returns the type-of the input domain.
-    For example if the derivative is being taken at the point `1` it returns `Int`.
-    if it is taken at `1+1im` it returns `Complex{Int}`.
-    At present it is ignored for non-Wirtinger derivatives.
+𝒟 is an expression that when evaluated returns the type-of the input domain.
+For example if the derivative is being taken at the point `1` it returns `Int`.
+if it is taken at `1+1im` it returns `Complex{Int}`.
+At present it is ignored for non-Wirtinger derivatives.
 """
 function propagation_expr(𝒟, Δs, ∂s)
     wirtinger_indices = findall(∂s) do ex
