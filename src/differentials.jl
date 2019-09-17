@@ -201,7 +201,6 @@ A thunk is a deferred computation.
 It wraps a zero argument closure that when invoked returns a differential.
 `@thunk(v)` is a macro that expands into `Thunk(()->v)`.
 
-
 Calling a thunk, calls the wrapped closure.
 `extern`ing thunks applies recursively, it also externs the differial that the closure returns.
 If you do not want that, then simply call the thunk
@@ -222,19 +221,19 @@ julia> t()()
 
 ### When to `@thunk`?
 When writing `rrule`s (and to a lesser exent `frule`s), it is important to `@thunk`
-appropriately. Propagation rule's that return multiple deriviatives are able to not
-do all the work of computing all of them only to have just one used.
-By `@thunk`ing the work required for each, they can only be computed when needed.
+appropriately.
+Propagation rule's that return multiple derivatives are not able to do all the computing themselves.
+ By `@thunk`ing the work required for each, they then compute only what is needed.
 
 #### So why not thunk everything?
-`@thunk` creates a closure over the expression, which is basically a struct with a
-field for each variable used in the expression (closed over), and call overloaded.
-If this would be equal or more work than actually evaluating the expression then don't do
-it. An example would be if the expression itself is just wrapping something in a struct.
-Such as `Adjoint(x)` or `Diagonal(x)`. Or if the expression is a constant, or is
-itself a `Thunk`.
-If you got the expression from another `rrule` (or `frule`), you don't need to
-`@thunk` it since it will have been thunked if required, by the defining rule.
+`@thunk` creates a closure over the expression, which (effectively) creates a `struct`
+with a field for each variable used in the expression, and call overloaded.
+
+Do not use `@thunk` if this would be equal or more work than actually evaluating the expression itself. Examples being:
+- The expression wrapping something in a `struct`, such as `Adjoint(x)` or `Diagonal(x)`
+- The expression being a constant
+- The expression being itself a `thunk`
+- The expression being from another `rrule` or `frule` (it would be `@thunk`ed if required by the defining rule already)
 """
 struct Thunk{F} <: AbstractThunk
     f::F
