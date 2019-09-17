@@ -4,7 +4,7 @@
 
 #=
 In some weird ideal sense, the fallback for e.g. `frule` should actually be "get
-the derivative via forward-ode AD". This is necessary to enable mixed-mode
+the derivative via forward-mode AD". This is necessary to enable mixed-mode
 rules, where e.g. `frule` is used within a `rrule` definition. For example,
 broadcasted functions may not themselves be forward-mode *primitives*, but are
 often forward-mode *differentiable*.
