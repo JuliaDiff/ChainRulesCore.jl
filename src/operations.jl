@@ -19,8 +19,8 @@ storing the result in `Δ`.
 Note: this function may not actually store the result in `Δ` if `Δ` is immutable,
 so it is best to always call this as `Δ = accumulate!(Δ, ∂)` just in-case.
 
-This function is overloadable by [`InplaceableThunk`s](@ref).
-See also: [`accumulate`](@ref), [`store!`](@ref), [`AbstractRule`](@ref)
+This function is overloadable by using a [`InplaceThunk`](@ref).
+See also: [`accumulate`](@ref), [`store!`](@ref).
 """
 function accumulate!(Δ, ∂)
     return materialize!(Δ, broadcastable(cast(Δ) + ∂))
