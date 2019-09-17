@@ -253,33 +253,33 @@ Base.conj(x::AbstractThunk) = @thunk(conj(extern(x)))
 Base.show(io::IO, x::Thunk) = println(io, "Thunk($(repr(x.f)))")
 
 """
-    InplaceThunk(val::Thunk, add!::Function)
+    InplaceableThunk(val::Thunk, add!::Function)
 
 A wrapper for a `Thunk`, that allows it to define an inplace `add!` function,
-which is used internally in `accumulate!(Δ, ::InplaceThunk)`.
+which is used internally in `accumulate!(Δ, ::InplaceableThunk)`.
 
 `add!` should be defined such that: `ithunk.add!(Δ) = Δ .+= ithunk.val`
 but it should do this more efficently than simply doing this directly.
 (Otherwise one can just use a normal `Thunk`).
 
-Most operations on an `InplaceThunk` treat it just like a normal `Thunk`;
+Most operations on an `InplaceableThunk` treat it just like a normal `Thunk`;
 and destroy its inplacability.
 """
-struct InplaceThunk{T<:Thunk, F} <: AbstractThunk
+struct InplaceableThunk{T<:Thunk, F} <: AbstractThunk
     val::T
     add!::F
 end
 
-(x::InplaceThunk)() = x.val()
-@inline extern(x::InplaceThunk) = extern(x.val)
+(x::InplaceableThunk)() = x.val()
+@inline extern(x::InplaceableThunk) = extern(x.val)
 
-function Base.show(io::IO, x::InplaceThunk)
-    println(io, "InplaceThunk($(repr(x.val)), $(repr(x.add!)))")
+function Base.show(io::IO, x::InplaceableThunk)
+    println(io, "InplaceableThunk($(repr(x.val)), $(repr(x.add!)))")
 end
 
 # The real reason we have this:
-accumulate!(Δ, ∂::InplaceThunk) = ∂.add!(Δ)
-store!(Δ, ∂::InplaceThunk) = ∂.add!((Δ.*=false))  # zero it, then add to it.
+accumulate!(Δ, ∂::InplaceableThunk) = ∂.add!(Δ)
+store!(Δ, ∂::InplaceableThunk) = ∂.add!((Δ.*=false))  # zero it, then add to it.
 
 """
     NO_FIELDS
