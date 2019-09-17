@@ -81,7 +81,7 @@ function wirtinger_propagation_expr(𝒟, wirtinger_indices, Δs, ∂s)
     return quote  # This will be a block, so will have value equal to last statement
         $(∂_wirtinger_defs...)
         w = Wirtinger($primal_sum, $conjugate_sum)
-        differential($𝒟, w)
+        refine_differential($𝒟, w)
     end
 end
 
