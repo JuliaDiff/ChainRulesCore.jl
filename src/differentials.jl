@@ -63,10 +63,6 @@ The two fields of the returned instance can be accessed generically via the
 struct Wirtinger{P,C} <: AbstractDifferential
     primal::P
     conjugate::C
-    function Wirtinger(primal::Union{Number,AbstractDifferential},
-                       conjugate::Union{Number,AbstractDifferential})
-        return new{typeof(primal),typeof(conjugate)}(primal, conjugate)
-    end
 end
 
 wirtinger_primal(x::Wirtinger) = x.primal
