@@ -42,12 +42,28 @@ wrapped by `x`, such that mutating `extern(x)` might mutate `x` itself.
 @inline Base.conj(x::AbstractDifferential) = x
 
 #####
+##### `AbstractWirtinger`
+#####
+
+abstract type AbstractWirtinger <: AbstractDifferential end
+
+wirtinger_primal(x) = x
+wirtinger_conjugate(::Any) = Zero()
+
+extern(x::AbstractWirtinger) = throw(ArgumentError("`AbstractWirtinger` cannot be converted to an external type."))
+
+Base.iterate(x::AbstractWirtinger) = (x, nothing)
+Base.iterate(::AbstractWirtinger, ::Any) = nothing
+
+# `conj` is not defined for `AbstractWirtinger`
+Base.conj(x::AbstractWirtinger) = throw(MethodError(conj, x))
+
+#####
 ##### `Wirtinger`
 #####
 
 """
-    Wirtinger(primal::Union{Number,AbstractDifferential},
-              conjugate::Union{Number,AbstractDifferential})
+    Wirtinger(primal, conjugate)
 
 Returns a `Wirtinger` instance representing the complex differential:
 
@@ -60,18 +76,13 @@ where `primal` corresponds to `∂f/∂z * dz` and `conjugate` corresponds to `�
 The two fields of the returned instance can be accessed generically via the
 [`wirtinger_primal`](@ref) and [`wirtinger_conjugate`](@ref) methods.
 """
-struct Wirtinger{P,C} <: AbstractDifferential
+struct Wirtinger{P,C} <: AbstractWirtinger
     primal::P
     conjugate::C
 end
 
 wirtinger_primal(x::Wirtinger) = x.primal
-wirtinger_primal(x) = x
-
 wirtinger_conjugate(x::Wirtinger) = x.conjugate
-wirtinger_conjugate(::Any) = Zero()
-
-extern(x::Wirtinger) = throw(ArgumentError("`Wirtinger` cannot be converted to an external type."))
 
 Base.Broadcast.broadcastable(w::Wirtinger) = Wirtinger(broadcastable(w.primal),
                                                        broadcastable(w.conjugate))
@@ -79,9 +90,18 @@ Base.Broadcast.broadcastable(w::Wirtinger) = Wirtinger(broadcastable(w.primal),
 Base.iterate(x::Wirtinger) = (x, nothing)
 Base.iterate(::Wirtinger, ::Any) = nothing
 
-# TODO: define `conj` for` `Wirtinger`
-Base.conj(x::Wirtinger) = throw(MethodError(conj, x))
+#####
+##### `ComplexGradient`
+#####
 
+struct ComplexGradient{T} <: AbstractWirtinger
+    val::T
+end
+
+wirtinger_primal(x::ComplexGradient) = conj(wirtinger_conjugate(x))
+wirtinger_conjugate(x::ComplexGradient) = x.val / 2
+
+Base.Broadcast.broadcastable(x::ComplexGradient) = ComplexGradient(broadcastable(x.val))
 
 #####
 ##### `Casted`

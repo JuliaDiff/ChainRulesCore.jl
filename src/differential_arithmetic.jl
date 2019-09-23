@@ -7,14 +7,15 @@ subtypes, as we know the full set that might be encountered.
 Thus we can avoid any ambiguities.
 
 Notice:
-    The precidence goes: (:Wirtinger, :Casted, :Zero, :DNE, :One, :AbstractThunk, :Any)
+    The precidence goes: (:AbstractWirtinger, :Casted, :Zero, :DNE, :One, :AbstractThunk, :Any)
     Thus each of the @eval loops creating definitions of + and *
     defines the combination this type with all types of  lower precidence.
     This means each eval loops is 1 item smaller than the previous.
 ==#
 
 
-function Base.:*(a::Wirtinger, b::Wirtinger)
+function Base.:*(a::Union{Complex,AbstractWirtinger},
+                 b::Union{Complex,AbstractWirtinger})
     error("""
           Cannot multiply two Wirtinger objects; this error likely means a
           `WirtingerRule` was inappropriately defined somewhere. Multiplication
@@ -32,17 +33,32 @@ function Base.:*(a::Wirtinger, b::Wirtinger)
           """)
 end
 
-function Base.:+(a::Wirtinger, b::Wirtinger)
-    return Wirtinger(+(a.primal, b.primal), a.conjugate + b.conjugate)
+function Base.:+(a::AbstractWirtinger, b::AbstractWirtinger)
+    return Wirtinger(wirtinger_primal(a) + wirtinger_primal(b),
+                     wirtinger_conjugate(a) + wirtinger_conjugate(b))
 end
 
-for T in (:Casted, :Zero, :DNE, :One, :AbstractThunk, :Any)
-    @eval Base.:+(a::Wirtinger, b::$T) = a + Wirtinger(b, Zero())
-    @eval Base.:+(a::$T, b::Wirtinger) = Wirtinger(a, Zero()) + b
+Base.:+(a::ComplexGradient, b::ComplexGradient) = ComplexGradient(a.val + b.val)
+
+for T in (:Casted, :Zero, :DNE, :One, :AbstractThunk)
+    @eval Base.:+(a::AbstractWirtinger, b::$T) = a + Wirtinger(b, Zero())
+    @eval Base.:+(a::$T, b::AbstractWirtinger) = Wirtinger(a, Zero()) + b
 
     @eval Base.:*(a::Wirtinger, b::$T) = Wirtinger(a.primal * b, a.conjugate * b)
     @eval Base.:*(a::$T, b::Wirtinger) = Wirtinger(a * b.primal, a * b.conjugate)
+
+    @eval Base.:*(a::ComplexGradient, b::$T) = ComplexGradient(a.val * b)
+    @eval Base.:*(a::$T, b::ComplexGradient) = ComplexGradient(a * b.val)
 end
+
+Base.:+(a::AbstractWirtinger, b) = a + Wirtinger(b, Zero())
+Base.:+(a, b::AbstractWirtinger) = Wirtinger(a, Zero()) + b
+
+Base.:*(a::Wirtinger, b::Real) = Wirtinger(a.primal * b, a.conjugate * b)
+Base.:*(a::Real, b::Wirtinger) = Wirtinger(a * b.primal, a * b.conjugate)
+
+Base.:*(a::ComplexGradient, b::Real) = ComplexGradient(a.val * b)
+Base.:*(a::Real, b::ComplexGradient) = ComplexGradient(a * b.val)
 
 
 Base.:+(a::Casted, b::Casted) = Casted(broadcasted(+, a.value, b.value))
