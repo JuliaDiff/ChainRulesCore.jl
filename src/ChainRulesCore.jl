@@ -4,8 +4,8 @@ using Base.Broadcast: materialize, materialize!, broadcasted, Broadcasted, broad
 export frule, rrule
 export wirtinger_conjugate, wirtinger_primal, refine_differential
 export @scalar_rule, @thunk
-export extern, cast, store!
-export Wirtinger, Zero, One, Casted, DNE, Thunk, InplaceableThunk
+export extern, chain, cast, store!
+export Wirtinger, ComplexGradient, Zero, One, Casted, DNE, Thunk, InplaceableThunk
 export NO_FIELDS
 
 include("differentials.jl")

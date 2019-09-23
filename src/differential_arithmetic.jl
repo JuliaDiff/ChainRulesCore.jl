@@ -114,3 +114,40 @@ for T in (:Any,)
     @eval Base.:*(a::AbstractThunk, b::$T) = extern(a) * b
     @eval Base.:*(a::$T, b::AbstractThunk) = a * extern(b)
 end
+
+function chain(outer, inner; swap_order=false)
+    if swap_order
+        return Wirtinger(
+                         wirtinger_primal(inner) * wirtinger_primal(outer) +
+                         conj(wirtinger_conjugate(inner)) * wirtinger_conjugate(outer),
+                         wirtinger_conjugate(inner) * wirtinger_primal(outer) +
+                         conj(wirtinger_primal(inner) * wirtinger_conjugate(outer))
+                        ) |> refine_differential
+    end
+    return Wirtinger(
+                     wirtinger_primal(outer) * wirtinger_primal(inner) +
+                     wirtinger_conjugate(outer) * conj(wirtinger_conjugate(inner)),
+                     wirtinger_primal(outer) * wirtinger_conjugate(inner) +
+                     wirtinger_conjugate(outer) * conj(wirtinger_primal(inner))
+                    ) |> refine_differential
+end
+
+function chain(outer::ComplexGradient, inner; swap_order=false)
+    if swap_order
+        return ComplexGradient(
+                               wirtinger_conjugate(inner) + conj(wirtinger_primal(inner)) * 
+                               outer.val
+                              )
+    end
+    return ComplexGradient(
+                           outer.val *
+                           (wirtinger_conjugate(inner) + conj(wirtinger_primal(inner)))
+                          )
+end
+
+function chain(outer::ComplexGradient, inner::ComplexGradient; swap_order=false)
+    if swap_order
+        return ComplexGradient(conj(inner.val) * outer.val)
+    end
+    return ComplexGradient(outer.val * conj(inner.val))
+end

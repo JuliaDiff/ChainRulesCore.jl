@@ -307,7 +307,7 @@ function itself, when that function is not a closure.
 const NO_FIELDS = DNE()
 
 """
-    refine_differential(𝒟::Type, der)
+    refine_differential([𝒟::Type, ]der)
 
 Converts, if required, a differential object `der`
 (e.g. a `Number`, `AbstractDifferential`, `Matrix`, etc.),
@@ -315,6 +315,10 @@ to another  differential that is more suited for the domain given by the type �
 Often this will behave as the identity function on `der`.
 """
 function refine_differential(::Type{<:Union{<:Real, AbstractArray{<:Real}}}, w::Wirtinger)
+    w = refine_differential(w)
     return wirtinger_primal(w) + wirtinger_conjugate(w)
 end
-refine_differential(::Any, der) = der  # most of the time leave it alone.
+refine_differential(::Any, der) = refine_differential(der)  # most of the time leave it alone.
+
+refine_differential(w::Wirtinger{<:Any,Zero}) = w.primal
+refine_differential(der::Any) = der
