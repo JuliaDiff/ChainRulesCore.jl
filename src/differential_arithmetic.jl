@@ -115,7 +115,7 @@ for T in (:Any,)
     @eval Base.:*(a::$T, b::AbstractThunk) = a * extern(b)
 end
 
-function chain(outer, inner; swap_order=false)
+@inline function chain(outer, inner, swap_order=false)
     if swap_order
         return Wirtinger(
                          wirtinger_primal(inner) * wirtinger_primal(outer) +
@@ -132,10 +132,10 @@ function chain(outer, inner; swap_order=false)
                     ) |> refine_differential
 end
 
-function chain(outer::ComplexGradient, inner; swap_order=false)
+@inline function chain(outer::ComplexGradient, inner, swap_order=false)
     if swap_order
         return ComplexGradient(
-                               wirtinger_conjugate(inner) + conj(wirtinger_primal(inner)) * 
+                               (wirtinger_conjugate(inner) + conj(wirtinger_primal(inner))) * 
                                outer.val
                               )
     end
@@ -145,7 +145,7 @@ function chain(outer::ComplexGradient, inner; swap_order=false)
                           )
 end
 
-function chain(outer::ComplexGradient, inner::ComplexGradient; swap_order=false)
+@inline function chain(outer::ComplexGradient, inner::ComplexGradient, swap_order=false)
     if swap_order
         return ComplexGradient(conj(inner.val) * outer.val)
     end
