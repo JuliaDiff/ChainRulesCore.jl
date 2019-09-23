@@ -47,8 +47,15 @@ wrapped by `x`, such that mutating `extern(x)` might mutate `x` itself.
 
 abstract type AbstractWirtinger <: AbstractDifferential end
 
+unwrap_wirtinger(x) = x
+unwrap_wirtinger(x::Union{Casted,AbstractThunk}) = unwrap_wirtinger(extern(x))
+
 wirtinger_primal(x) = x
+wirtinger_primal(x::Union{Casted,AbstractThunk}) =
+    throw(ArgumentError("`wirtinger_primal` is not defined for $(typeof(x)). Call `unwrap_wirtinger` first")
 wirtinger_conjugate(::Any) = Zero()
+wirtinger_primal(x::Union{Casted,AbstractThunk}) =
+    throw(ArgumentError("`wirtinger_conjugate` is not defined for $(typeof(x)). Call `unwrap_wirtinger` first")
 
 extern(x::AbstractWirtinger) = throw(ArgumentError("`AbstractWirtinger` cannot be converted to an external type."))
 
