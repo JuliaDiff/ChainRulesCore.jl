@@ -97,7 +97,9 @@ end
         abs_to_pow(x::Complex, p),
         @setup(u = abs(x)),
         (
-            p == 0 ? Zero() : p * u^(p-1) * Wirtinger(x' / 2u, x / 2u),
+            p == 0 ? Zero() : let v = p * u^(p-1) / 2u
+                Wirtinger(x' * v, x * v)
+            end,
             Ω * log(abs(x))
         )
     )
