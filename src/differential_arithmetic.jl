@@ -116,7 +116,7 @@ for T in (:Any,)
 end
 
 @inline chain(outer, inner, swap_order=false) =
-    _chain(unwrap_wirtiner(outer), unwrap_wirtinger(inner), swap_order)
+    _chain(unthunk(outer), unthunk(inner), swap_order)
 
 @inline function _chain(outer, inner, swap_order)
     if swap_order
