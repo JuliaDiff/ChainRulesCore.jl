@@ -156,7 +156,7 @@ function scalar_frule_expr(𝒟, f, call, setup_stmts, inputs, partials)
     Δs = [Symbol(string(:Δ, i)) for i in 1:n_inputs]
     pushforward_returns = map(1:n_outputs) do output_i
         ∂s = partials[output_i].args
-        propagation_expr(𝒟, Δs, ∂s)
+        frule_propagation_expr(𝒟, Δs, ∂s)
     end
     if n_outputs > 1
         # For forward-mode we only return a tuple if output actually a tuple.
@@ -193,7 +193,7 @@ function scalar_rrule_expr(𝒟, f, call, setup_stmts, inputs, partials)
     # 1 partial derivative per input
     pullback_returns = map(1:n_inputs) do input_i
         ∂s = [partial.args[input_i] for partial in partials]
-        propagation_expr(𝒟, Δs, ∂s)
+        rrule_propagation_expr(𝒟, Δs, ∂s)
     end
 
     pullback = quote
@@ -222,56 +222,16 @@ end
     if it is taken at `1+1im` it returns `Complex{Int}`.
     At present it is ignored for non-Wirtinger derivatives.
 """
-function propagation_expr(𝒟, Δs, ∂s)
-    wirtinger_indices = findall(∂s) do ex
-        Meta.isexpr(ex, :call) && ex.args[1] === :Wirtinger
-    end
+function frule_propagation_expr(𝒟, Δs, ∂s)
     ∂s = map(esc, ∂s)
-    if isempty(wirtinger_indices)
-        return standard_propagation_expr(Δs, ∂s)
-    else
-        return wirtinger_propagation_expr(𝒟, wirtinger_indices, Δs, ∂s)
-    end
+    ∂_mul_Δs = [:(chain(@thunk($(∂s[i])), $(Δs[i]))) for i in 1:length(∂s)]
+    return :(refine_differential($𝒟, +($(∂_mul_Δs...))))
 end
 
-function standard_propagation_expr(Δs, ∂s)
-    # This is basically Δs ⋅ ∂s
-
-    # Notice: the thunking of `∂s[i] (potentially) saves us some computation
-    # if `Δs[i]` is a `AbstractDifferential` otherwise it is computed as soon
-    # as the pullback is evaluated
-    ∂_mul_Δs = [:(@thunk($(∂s[i])) * $(Δs[i])) for i in 1:length(∂s)]
-    return :(+($(∂_mul_Δs...)))
-end
-
-function wirtinger_propagation_expr(𝒟, wirtinger_indices, Δs, ∂s)
-    ∂_mul_Δs_primal = Any[]
-    ∂_mul_Δs_conjugate = Any[]
-    ∂_wirtinger_defs = Any[]
-    for i in 1:length(∂s)
-        if i in wirtinger_indices
-            Δi = Δs[i]
-            ∂i = Symbol(string(:∂, i))
-            push!(∂_wirtinger_defs, :($∂i = $(∂s[i])))
-            ∂f∂i_mul_Δ = :(wirtinger_primal($∂i) * wirtinger_primal($Δi))
-            ∂f∂ī_mul_Δ̄ = :(conj(wirtinger_conjugate($∂i)) * wirtinger_conjugate($Δi))
-            ∂f̄∂i_mul_Δ = :(wirtinger_conjugate($∂i) * wirtinger_primal($Δi))
-            ∂f̄∂ī_mul_Δ̄ = :(conj(wirtinger_primal($∂i)) * wirtinger_conjugate($Δi))
-            push!(∂_mul_Δs_primal, :($∂f∂i_mul_Δ + $∂f∂ī_mul_Δ̄))
-            push!(∂_mul_Δs_conjugate, :($∂f̄∂i_mul_Δ + $∂f̄∂ī_mul_Δ̄))
-        else
-            ∂_mul_Δ = :(@thunk($(∂s[i])) * $(Δs[i]))
-            push!(∂_mul_Δs_primal, ∂_mul_Δ)
-            push!(∂_mul_Δs_conjugate, ∂_mul_Δ)
-        end
-    end
-    primal_sum = :(+($(∂_mul_Δs_primal...)))
-    conjugate_sum = :(+($(∂_mul_Δs_conjugate...)))
-    return quote  # This will be a block, so will have value equal to last statement
-        $(∂_wirtinger_defs...)
-        w = Wirtinger($primal_sum, $conjugate_sum)
-        refine_differential($𝒟, w)
-    end
+function rrule_propagation_expr(𝒟, Δs, ∂s)
+    ∂s = map(esc, ∂s)
+    ∂_mul_Δs = [:(chain($(Δs[i]), @thunk($(∂s[i])))) for i in 1:length(∂s)]
+    return :(refine_differential($𝒟, +($(∂_mul_Δs...))))
 end
 
 """
