@@ -55,7 +55,8 @@ extern(x::AbstractWirtinger) = throw(ArgumentError("`AbstractWirtinger` cannot b
 Base.iterate(x::AbstractWirtinger) = (x, nothing)
 Base.iterate(::AbstractWirtinger, ::Any) = nothing
 
-# `conj` is not defined for `AbstractWirtinger`
+# `conj` is not defined for `AbstractWirtinger`.
+# Need this method to override the definition of `conj` for `AbstractDifferential`.
 Base.conj(x::AbstractWirtinger) = throw(MethodError(conj, x))
 
 #####
