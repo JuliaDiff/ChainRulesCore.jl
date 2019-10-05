@@ -46,9 +46,9 @@ end
 
     @testset "real input" begin
         # even though our rule was define in terms of Wirtinger,
-        # pushforward result will be real as real (even if seed is Compex)
+        # pushforward result will be real as real (even if seed is Complex)
 
-        x = rand(Float64)
+        x = 5.0
         f, myabs2_pushforward = frule(myabs2, x)
         @test f === x^2
 
@@ -56,22 +56,22 @@ end
         df = @inferred myabs2_pushforward(NamedTuple(), Δ)
         @test df === x + x
 
-        Δ = rand(Complex{Int64})
+        Δ = 2.0 + 3.0im
         df = @inferred myabs2_pushforward(NamedTuple(), Δ)
-        @test df === Δ * (x + x)
+        @test df === (Δ + conj(Δ)) * x
     end
 
     @testset "complex input" begin
-        z = rand(Complex{Float64})
+        z = 5.0 + 7.0im
         f, myabs2_pushforward = frule(myabs2, z)
         @test f === abs2(z)
 
         df = @inferred myabs2_pushforward(NamedTuple(), One())
         @test df === Wirtinger(z', z)
 
-        Δ = rand(Complex{Int64})
+        Δ = 2.0 + 3.0im
         df = @inferred myabs2_pushforward(NamedTuple(), Δ)
-        @test df === Wirtinger(Δ * z', Δ * z)
+        @test df === Wirtinger(Δ * conj(z), conj(Δ) * z)
     end
 end
 
@@ -97,7 +97,9 @@ end
         abs_to_pow(x::Complex, p),
         @setup(u = abs(x)),
         (
-            p == 0 ? Zero() : p * u^(p-1) * Wirtinger(x' / 2u, x / 2u),
+            p == 0 ? Zero() : let v = p * u^(p-1) / 2u
+                Wirtinger(x' * v, x * v)
+            end,
             Ω * log(abs(x))
         )
     )
@@ -132,11 +134,11 @@ end
         fx, f_pushforward = res
         df(Δx, Δp) = f_pushforward(NamedTuple(), Δx, Δp)
 
-        df_dx::Thunk = df(One(), Zero())
-        df_dp::Thunk = df(Zero(), One())
+        df_dx = df(One(), Zero())
+        df_dp = df(Zero(), One())
         @test fx == f(x, p)  # Check we still get the normal value, right
-        @test df_dx() isa expected_type_df_dx
-        @test df_dp() isa expected_type_df_dp
+        @test df_dx isa expected_type_df_dx
+        @test df_dp isa expected_type_df_dp
 
 
         res = rrule(f, x, p)
@@ -145,7 +147,7 @@ end
         dself, df_dx, df_dp = f_pullback(One())
         @test fx == f(x, p)  # Check we still get the normal value, right
         @test dself == NO_FIELDS
-        @test df_dx() isa expected_type_df_dx
-        @test df_dp() isa expected_type_df_dp
+        @test df_dx isa expected_type_df_dx
+        @test df_dp isa expected_type_df_dp
     end
 end

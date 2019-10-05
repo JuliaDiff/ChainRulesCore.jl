@@ -42,12 +42,29 @@ wrapped by `x`, such that mutating `extern(x)` might mutate `x` itself.
 @inline Base.conj(x::AbstractDifferential) = x
 
 #####
+##### `AbstractWirtinger`
+#####
+
+abstract type AbstractWirtinger <: AbstractDifferential end
+
+wirtinger_primal(x) = x
+wirtinger_conjugate(::Any) = Zero()
+
+extern(x::AbstractWirtinger) = throw(ArgumentError("`AbstractWirtinger` cannot be converted to an external type."))
+
+Base.iterate(x::AbstractWirtinger) = (x, nothing)
+Base.iterate(::AbstractWirtinger, ::Any) = nothing
+
+# `conj` is not defined for `AbstractWirtinger`.
+# Need this method to override the definition of `conj` for `AbstractDifferential`.
+Base.conj(x::AbstractWirtinger) = throw(MethodError(conj, x))
+
+#####
 ##### `Wirtinger`
 #####
 
 """
-    Wirtinger(primal::Union{Number,AbstractDifferential},
-              conjugate::Union{Number,AbstractDifferential})
+    Wirtinger(primal, conjugate)
 
 Returns a `Wirtinger` instance representing the complex differential:
 
@@ -60,22 +77,13 @@ where `primal` corresponds to `∂f/∂z * dz` and `conjugate` corresponds to `�
 The two fields of the returned instance can be accessed generically via the
 [`wirtinger_primal`](@ref) and [`wirtinger_conjugate`](@ref) methods.
 """
-struct Wirtinger{P,C} <: AbstractDifferential
+struct Wirtinger{P,C} <: AbstractWirtinger
     primal::P
     conjugate::C
-    function Wirtinger(primal::Union{Number,AbstractDifferential},
-                       conjugate::Union{Number,AbstractDifferential})
-        return new{typeof(primal),typeof(conjugate)}(primal, conjugate)
-    end
 end
 
 wirtinger_primal(x::Wirtinger) = x.primal
-wirtinger_primal(x) = x
-
 wirtinger_conjugate(x::Wirtinger) = x.conjugate
-wirtinger_conjugate(::Any) = Zero()
-
-extern(x::Wirtinger) = throw(ArgumentError("`Wirtinger` cannot be converted to an external type."))
 
 Base.Broadcast.broadcastable(w::Wirtinger) = Wirtinger(broadcastable(w.primal),
                                                        broadcastable(w.conjugate))
@@ -83,9 +91,18 @@ Base.Broadcast.broadcastable(w::Wirtinger) = Wirtinger(broadcastable(w.primal),
 Base.iterate(x::Wirtinger) = (x, nothing)
 Base.iterate(::Wirtinger, ::Any) = nothing
 
-# TODO: define `conj` for` `Wirtinger`
-Base.conj(x::Wirtinger) = throw(MethodError(conj, x))
+#####
+##### `ComplexGradient`
+#####
 
+struct ComplexGradient{T} <: AbstractWirtinger
+    val::T
+end
+
+wirtinger_primal(x::ComplexGradient) = conj(wirtinger_conjugate(x))
+wirtinger_conjugate(x::ComplexGradient) = x.val / 2
+
+Base.Broadcast.broadcastable(x::ComplexGradient) = ComplexGradient(broadcastable(x.val))
 
 #####
 ##### `Casted`
@@ -191,6 +208,14 @@ end
     return element, (externed, new_state)
 end
 
+unthunk(x) = x
+unthunk(x::AbstractThunk) = unthunk(x())
+
+wirtinger_primal(::Union{AbstractThunk}) =
+    throw(ArgumentError("`wirtinger_primal` is not defined for `AbstractThunk`. Call `unthunk` first."))
+wirtinger_conjugate(::Union{AbstractThunk}) =
+    throw(ArgumentError("`wirtinger_primal` is not defined for `AbstractThunk`. Call `unthunk` first."))
+
 #####
 ##### `Thunk`
 #####
@@ -291,7 +316,7 @@ function itself, when that function is not a closure.
 const NO_FIELDS = DNE()
 
 """
-    refine_differential(𝒟::Type, der)
+    refine_differential([𝒟::Type, ]der)
 
 Converts, if required, a differential object `der`
 (e.g. a `Number`, `AbstractDifferential`, `Matrix`, etc.),
@@ -299,6 +324,10 @@ to another  differential that is more suited for the domain given by the type �
 Often this will behave as the identity function on `der`.
 """
 function refine_differential(::Type{<:Union{<:Real, AbstractArray{<:Real}}}, w::Wirtinger)
+    w = refine_differential(w)
     return wirtinger_primal(w) + wirtinger_conjugate(w)
 end
-refine_differential(::Any, der) = der  # most of the time leave it alone.
+refine_differential(::Any, der) = refine_differential(der)  # most of the time leave it alone.
+
+refine_differential(w::Wirtinger{<:Any,Zero}) = w.primal
+refine_differential(der::Any) = der
