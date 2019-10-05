@@ -148,6 +148,14 @@ end
                           )
 end
 
+@inline function _chain(outer::Real, inner::ComplexGradient, swap_order)
+    if swap_order
+        return ComplexGradient(inner.val * outer)
+    end
+    return ComplexGradient(outer * inner.val)
+end
+
+# don't know if we actually need this, shouldn't really occur in actual code
 @inline function _chain(outer::ComplexGradient, inner::ComplexGradient, swap_order)
     if swap_order
         return ComplexGradient(conj(inner.val) * outer.val)
