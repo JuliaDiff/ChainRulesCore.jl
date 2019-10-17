@@ -22,12 +22,9 @@ so it is best to always call this as `Δ = accumulate!(Δ, ∂)` just in-case.
 This function is overloadable by using a [`InplaceThunk`](@ref).
 See also: [`accumulate`](@ref), [`store!`](@ref).
 """
-function accumulate!(Δ, ∂)
-    return materialize!(Δ, broadcastable(cast(Δ) + ∂))
-end
+accumulate!(Δ, ∂) = store!(Δ, accumulate(Δ, ∂))
 
 accumulate!(Δ::Number, ∂) = accumulate(Δ, ∂)
-
 
 
 """

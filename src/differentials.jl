@@ -86,33 +86,6 @@ Base.iterate(::Wirtinger, ::Any) = nothing
 # TODO: define `conj` for` `Wirtinger`
 Base.conj(x::Wirtinger) = throw(MethodError(conj, x))
 
-
-#####
-##### `Casted`
-#####
-
-"""
-    Casted(v)
-
-This differential wraps another differential (including a number-like type)
-to indicate that it should be lazily broadcast.
-"""
-struct Casted{V} <: AbstractDifferential
-    value::V
-end
-
-cast(x) = Casted(x)
-cast(f, args...) = Casted(broadcasted(f, args...))
-
-extern(x::Casted) = materialize(broadcasted(extern, x.value))
-
-Base.Broadcast.broadcastable(x::Casted) = x.value
-
-Base.iterate(x::Casted) = iterate(x.value)
-Base.iterate(x::Casted, state) = iterate(x.value, state)
-
-Base.conj(x::Casted) = cast(conj, x.value)
-
 #####
 ##### `Zero`
 #####
