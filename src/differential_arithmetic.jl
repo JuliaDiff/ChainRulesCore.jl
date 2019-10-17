@@ -7,7 +7,7 @@ subtypes, as we know the full set that might be encountered.
 Thus we can avoid any ambiguities.
 
 Notice:
-    The precidence goes: (:Wirtinger, :Casted, :Zero, :DNE, :One, :AbstractThunk, :Any)
+    The precidence goes: (:Wirtinger, :Zero, :DNE, :One, :AbstractThunk, :Any)
     Thus each of the @eval loops creating definitions of + and *
     defines the combination this type with all types of  lower precidence.
     This means each eval loops is 1 item smaller than the previous.
@@ -36,23 +36,12 @@ function Base.:+(a::Wirtinger, b::Wirtinger)
     return Wirtinger(+(a.primal, b.primal), a.conjugate + b.conjugate)
 end
 
-for T in (:Casted, :Zero, :DNE, :One, :AbstractThunk, :Any)
+for T in (:Zero, :DNE, :One, :AbstractThunk, :Any)
     @eval Base.:+(a::Wirtinger, b::$T) = a + Wirtinger(b, Zero())
     @eval Base.:+(a::$T, b::Wirtinger) = Wirtinger(a, Zero()) + b
 
     @eval Base.:*(a::Wirtinger, b::$T) = Wirtinger(a.primal * b, a.conjugate * b)
     @eval Base.:*(a::$T, b::Wirtinger) = Wirtinger(a * b.primal, a * b.conjugate)
-end
-
-
-Base.:+(a::Casted, b::Casted) = Casted(broadcasted(+, a.value, b.value))
-Base.:*(a::Casted, b::Casted) = Casted(broadcasted(*, a.value, b.value))
-for T in (:Zero, :DNE, :One, :AbstractThunk, :Any)
-    @eval Base.:+(a::Casted, b::$T) = Casted(broadcasted(+, a.value, b))
-    @eval Base.:+(a::$T, b::Casted) = Casted(broadcasted(+, a, b.value))
-
-    @eval Base.:*(a::Casted, b::$T) = Casted(broadcasted(*, a.value, b))
-    @eval Base.:*(a::$T, b::Casted) = Casted(broadcasted(*, a, b.value))
 end
 
 
