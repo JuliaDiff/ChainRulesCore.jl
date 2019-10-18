@@ -214,7 +214,7 @@ unthunk(x::AbstractThunk) = unthunk(x())
 wirtinger_primal(::Union{AbstractThunk}) =
     throw(ArgumentError("`wirtinger_primal` is not defined for `AbstractThunk`. Call `unthunk` first."))
 wirtinger_conjugate(::Union{AbstractThunk}) =
-    throw(ArgumentError("`wirtinger_primal` is not defined for `AbstractThunk`. Call `unthunk` first."))
+    throw(ArgumentError("`wirtinger_conjugate` is not defined for `AbstractThunk`. Call `unthunk` first."))
 
 #####
 ##### `Thunk`
