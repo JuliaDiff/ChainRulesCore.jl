@@ -148,6 +148,7 @@ Base.Broadcast.broadcastable(::Zero) = Ref(Zero())
 Base.iterate(x::Zero) = (x, nothing)
 Base.iterate(::Zero, ::Any) = nothing
 
+Base.real(::Zero) = Zero()
 
 #####
 ##### `DNE`
@@ -189,6 +190,7 @@ Base.Broadcast.broadcastable(::One) = Ref(One())
 Base.iterate(x::One) = (x, nothing)
 Base.iterate(::One, ::Any) = nothing
 
+Base.real(::One) = One()
 
 #####
 ##### `AbstractThunk
@@ -215,6 +217,8 @@ wirtinger_primal(::Union{AbstractThunk}) =
     throw(ArgumentError("`wirtinger_primal` is not defined for `AbstractThunk`. Call `unthunk` first."))
 wirtinger_conjugate(::Union{AbstractThunk}) =
     throw(ArgumentError("`wirtinger_conjugate` is not defined for `AbstractThunk`. Call `unthunk` first."))
+
+Base.real(x::AbstractThunk) = real(x())
 
 #####
 ##### `Thunk`

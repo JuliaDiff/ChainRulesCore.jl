@@ -102,7 +102,6 @@
                 @test refine_differential(typeof(1.0 + 1im), g) === g
                 @test refine_differential(typeof([1.0 + 1im]), g) === g
 
-                c isa Thunk && continue
                 @test refine_differential(typeof(1.2), g) == real(c)
                 @test refine_differential(typeof([1.2]), g) == real(c)
             end
