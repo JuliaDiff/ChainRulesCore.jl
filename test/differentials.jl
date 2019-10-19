@@ -82,11 +82,31 @@
 
 
     @testset "Refine Differential" begin
-        @test refine_differential(typeof(1.0 + 1im), Wirtinger(2,2)) == Wirtinger(2,2)
-        @test refine_differential(typeof([1.0 + 1im]), Wirtinger(2,2)) == Wirtinger(2,2)
+        for (p, c) in (
+                       (2, -3),
+                       (2.0 + im, 5.0 - 3.0im),
+                       ([1+im, 2-im], [-3+im, 4+im]),
+                       (@thunk(1+2), @thunk(4-3)),
+                      )
+            w = Wirtinger(p, c)
+            @testset "$w" begin
+                @test refine_differential(typeof(1.0 + 1im), w) === w
+                @test refine_differential(typeof([1.0 + 1im]), w) === w
 
-        @test refine_differential(typeof(1.2), Wirtinger(2,2)) == 4
-        @test refine_differential(typeof([1.2]), Wirtinger(2,2)) == 4
+                @test refine_differential(typeof(1.2), w) == p + c
+                @test refine_differential(typeof([1.2]), w) == p + c
+            end
+
+            g = ComplexGradient(c)
+            @testset "$g" begin
+                @test refine_differential(typeof(1.0 + 1im), g) === g
+                @test refine_differential(typeof([1.0 + 1im]), g) === g
+
+                c isa Thunk && continue
+                @test refine_differential(typeof(1.2), g) == real(c)
+                @test refine_differential(typeof([1.2]), g) == real(c)
+            end
+        end
 
         # For most differentials, in most domains, this does nothing
         for der in (DNE(), @thunk(23), [1 2], One(), Zero(), 0.0)

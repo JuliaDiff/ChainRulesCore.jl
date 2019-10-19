@@ -329,9 +329,15 @@ Converts, if required, a differential object `der`
 to another  differential that is more suited for the domain given by the type 𝒟.
 Often this will behave as the identity function on `der`.
 """
+function refine_differential end
+
 function refine_differential(::Type{<:Union{<:Real, AbstractArray{<:Real}}}, w::Wirtinger)
     w = refine_differential(w)
     return wirtinger_primal(w) + wirtinger_conjugate(w)
+end
+function refine_differential(::Type{<:Union{<:Real, AbstractArray{<:Real}}}, g::ComplexGradient)
+    g = refine_differential(g.val)
+    return real(g)
 end
 refine_differential(::Any, der) = refine_differential(der)  # most of the time leave it alone.
 
