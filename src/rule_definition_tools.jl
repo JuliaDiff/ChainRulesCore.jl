@@ -241,13 +241,33 @@ Returns `@thunk body`, except for when `body` is a call to [`Wirtinger`](@ref) o
 In this case, it is equivalent to `Wirtinger(@thunk(primal), @thunk(conjugate))` / `ComplexGradient(@thunk primal)`.
 """
 macro _thunk(body)
-    if body isa Expr && body.head == :call
-        fname = body.args[1]
-        if fname in (:Wirtinger, :ComplexGradient)
-            return :($fname($((:(@thunk $(esc(i))) for i in body.args[2:end])...)))
+    return _thunk(body)
+end
+
+function _thunk(body)
+    if body isa Expr 
+        if body.head == :call
+            fname = body.args[1]
+            if fname in (:Wirtinger, :ComplexGradient)
+                return :($fname($(thunk_assert_no_wirtinger.(body.args[2:end])...)))
+            end
+        elseif body.head == :escape
+            return Expr(:escape, _thunk(body.args[1]))
         end
     end
-    return :(@thunk $(esc(body)))
+    return thunk_assert_no_wirtinger(body)
+end
+
+thunk_assert_no_wirtinger(body) = quote
+    Thunk(
+          function()
+              res = $(esc(body))
+              res isa AbstractWirtinger && error("""
+                  Couldn't automatically handle `AbstractWirtinger` in `@scalar_rule.
+                  Make sure `Wirtinger`/`ComplexGradient` is the outermost function call or write the rule manually.""")
+              return res
+          end
+         )
 end
 
 """
