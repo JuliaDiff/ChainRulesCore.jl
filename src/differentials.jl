@@ -66,9 +66,6 @@ wirtinger_conjugate(::Any) = Zero()
 
 extern(x::AbstractWirtinger) = throw(ArgumentError("`AbstractWirtinger` cannot be converted to an external type."))
 
-Base.iterate(x::AbstractWirtinger) = (x, nothing)
-Base.iterate(::AbstractWirtinger, ::Any) = nothing
-
 # `conj` is not defined for `AbstractWirtinger`.
 # Need this method to override the definition of `conj` for `AbstractDifferential`.
 Base.conj(x::AbstractWirtinger) = throw(MethodError(conj, x))
@@ -101,9 +98,6 @@ wirtinger_conjugate(x::Wirtinger) = x.conjugate
 
 Base.Broadcast.broadcastable(w::Wirtinger) = Wirtinger(broadcastable(w.primal),
                                                        broadcastable(w.conjugate))
-
-Base.iterate(x::Wirtinger) = (x, nothing)
-Base.iterate(::Wirtinger, ::Any) = nothing
 
 #####
 ##### `ComplexGradient`
@@ -238,9 +232,9 @@ end
 unthunk(x) = x
 unthunk(x::AbstractThunk) = unthunk(x())
 
-wirtinger_primal(::Union{AbstractThunk}) =
+wirtinger_primal(::AbstractThunk) =
     throw(ArgumentError("`wirtinger_primal` is not defined for `AbstractThunk`. Call `unthunk` first."))
-wirtinger_conjugate(::Union{AbstractThunk}) =
+wirtinger_conjugate(::AbstractThunk) =
     throw(ArgumentError("`wirtinger_conjugate` is not defined for `AbstractThunk`. Call `unthunk` first."))
 
 Base.real(x::AbstractThunk) = real(x())

@@ -241,15 +241,13 @@ Returns `@thunk body`, except for when `body` is a call to [`Wirtinger`](@ref) o
 In this case, it is equivalent to `Wirtinger(@thunk(primal), @thunk(conjugate))` / `ComplexGradient(@thunk primal)`.
 """
 function _thunk(body)
-    if body isa Expr 
-        if body.head == :call
-            fname = body.args[1]
-            if fname in (:Wirtinger, :ComplexGradient)
-                return :($fname($(thunk_assert_no_wirtinger.(body.args[2:end])...)))
-            end
-        elseif body.head == :escape
-            return Expr(:escape, _thunk(body.args[1]))
+    if Meta.isexpr(body, :call)
+        fname = body.args[1]
+        if fname in (:Wirtinger, :ComplexGradient)
+            return :($fname($(thunk_assert_no_wirtinger.(body.args[2:end])...)))
         end
+    elseif Meta.isexpr(body, :escape)
+        return Expr(:escape, _thunk(body.args[1]))
     end
     return thunk_assert_no_wirtinger(body)
 end
