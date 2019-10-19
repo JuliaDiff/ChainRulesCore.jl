@@ -224,14 +224,30 @@ end
 """
 function frule_propagation_expr(𝒟, Δs, ∂s)
     ∂s = map(esc, ∂s)
-    ∂_mul_Δs = [:(chain(@thunk($(∂s[i])), $(Δs[i]))) for i in 1:length(∂s)]
+    ∂_mul_Δs = [:(chain(@_thunk($(∂s[i])), $(Δs[i]))) for i in 1:length(∂s)]
     return :(refine_differential($𝒟, +($(∂_mul_Δs...))))
 end
 
 function rrule_propagation_expr(𝒟, Δs, ∂s)
     ∂s = map(esc, ∂s)
-    ∂_mul_Δs = [:(chain($(Δs[i]), @thunk($(∂s[i])))) for i in 1:length(∂s)]
+    ∂_mul_Δs = [:(chain($(Δs[i]), @_thunk($(∂s[i])))) for i in 1:length(∂s)]
     return :(refine_differential($𝒟, +($(∂_mul_Δs...))))
+end
+
+"""
+    @_thunk body
+
+Returns `@thunk body`, except for when `body` is a call to [`Wirtinger`](@ref) or [`ComplexGradient`](@ref).
+In this case, it is equivalent to `Wirtinger(@thunk(primal), @thunk(conjugate))` / `ComplexGradient(@thunk primal)`.
+"""
+macro _thunk(body)
+    if body isa Expr && body.head == :call
+        fname = body.args[1]
+        if fname in (:Wirtinger, :ComplexGradient)
+            return :($fname($((:(@thunk $(esc(i))) for i in body.args[2:end])...)))
+        end
+    end
+    return :(@thunk $(esc(body)))
 end
 
 """

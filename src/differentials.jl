@@ -296,16 +296,9 @@ end
 """
     @thunk body
 
-Returns `Thunk(() -> body)`, except for when `body` is a call to [`Wirtinger`](@ref) or [`ComplexGradient`](@ref).
-In this case, it is equivalent to `Wirtinger(@thunk(primal), @thunk(conjugate))` / `ComplexGradient(@thunk primal)`.
+Returns `Thunk(() -> body)`
 """
 macro thunk(body)
-    if body isa Expr && body.head == :call
-        fname = body.args[1]
-        if fname in (:Wirtinger, :ComplexGradient)
-            return :($fname($((:(@thunk $i) for i in body.args[2:end])...)))
-        end
-    end
     return :(Thunk(() -> $(esc(body))))
 end
 
