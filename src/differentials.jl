@@ -45,6 +45,20 @@ wrapped by `x`, such that mutating `extern(x)` might mutate `x` itself.
 ##### `AbstractWirtinger`
 #####
 
+"""
+    AbstractWirtinger <: AbstractDifferential
+
+Represents the differential of a non-holomorphic function taking complex input.
+
+All subtypes implement [`wirtinger_primal`](@ref) and [`wirtinger_conjugate`](@ref).
+
+All subtypes wrap real/holomorphic differentials, and should always be the outermost wrapper.
+E.g., a typical differential would look like this:
+```
+Wirtinger(@thunk(::AbstractArray{Number}), @thunk(::AbstractArray{<:Number}))
+```
+`@thunk` and `AbstractArray` are, of course, optional.
+"""
 abstract type AbstractWirtinger <: AbstractDifferential end
 
 wirtinger_primal(x) = x
@@ -64,7 +78,7 @@ Base.conj(x::AbstractWirtinger) = throw(MethodError(conj, x))
 #####
 
 """
-    Wirtinger(primal, conjugate)
+    Wirtinger(primal, conjugate) <: [`AbstractWirtinger`](@ref)
 
 Returns a `Wirtinger` instance representing the complex differential:
 
@@ -95,12 +109,23 @@ Base.iterate(::Wirtinger, ::Any) = nothing
 ##### `ComplexGradient`
 #####
 
+"""
+    ComplexGradient(val) <: [`AbstractWirtinger`](@ref)
+
+Returns a `ComplexGradient` instance representing the complex differential:
+
+```
+df = ∂f/∂Re(z) * dRe(z) + im * ∂f/∂Im(z) * dIm(z)
+```
+
+where `f` is a `ℂ(^n) -> ℝ(^m)` function and `val` corresponds to `df`.
+"""
 struct ComplexGradient{T} <: AbstractWirtinger
     val::T
 end
 
 wirtinger_primal(x::ComplexGradient) = conj(wirtinger_conjugate(x))
-wirtinger_conjugate(x::ComplexGradient) = x.val / 2
+wirtinger_conjugate(x::ComplexGradient) = (1//2) * x.val
 
 Base.Broadcast.broadcastable(x::ComplexGradient) = ComplexGradient(broadcastable(x.val))
 
@@ -268,6 +293,12 @@ struct Thunk{F} <: AbstractThunk
     f::F
 end
 
+"""
+    @thunk body
+
+Returns `Thunk(() -> body)`, except for when `body` is a call to [`Wirtinger`](@ref) or [`ComplexGradient`](@ref).
+In this case, it is equivalent to `Wirtinger(@thunk(primal), @thunk(conjugate))` / `ComplexGradient(@thunk primal)`.
+"""
 macro thunk(body)
     if body isa Expr && body.head == :call
         fname = body.args[1]
