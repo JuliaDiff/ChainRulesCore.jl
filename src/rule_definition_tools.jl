@@ -224,26 +224,22 @@ end
 """
 function frule_propagation_expr(𝒟, Δs, ∂s)
     ∂s = map(esc, ∂s)
-    ∂_mul_Δs = [:(chain(@_thunk($(∂s[i])), $(Δs[i]))) for i in 1:length(∂s)]
+    ∂_mul_Δs = [:(chain($(_thunk(∂s[i])), $(Δs[i]))) for i in 1:length(∂s)]
     return :(refine_differential($𝒟, +($(∂_mul_Δs...))))
 end
 
 function rrule_propagation_expr(𝒟, Δs, ∂s)
     ∂s = map(esc, ∂s)
-    ∂_mul_Δs = [:(chain($(Δs[i]), @_thunk($(∂s[i])))) for i in 1:length(∂s)]
+    ∂_mul_Δs = [:(chain($(Δs[i]), $(_thunk(∂s[i])))) for i in 1:length(∂s)]
     return :(refine_differential($𝒟, +($(∂_mul_Δs...))))
 end
 
 """
-    @_thunk body
+    _thunk(body)
 
 Returns `@thunk body`, except for when `body` is a call to [`Wirtinger`](@ref) or [`ComplexGradient`](@ref).
 In this case, it is equivalent to `Wirtinger(@thunk(primal), @thunk(conjugate))` / `ComplexGradient(@thunk primal)`.
 """
-macro _thunk(body)
-    return _thunk(body)
-end
-
 function _thunk(body)
     if body isa Expr 
         if body.head == :call
@@ -261,8 +257,8 @@ end
 thunk_assert_no_wirtinger(body) = quote
     Thunk(
           function()
-              res = $(esc(body))
-              res isa AbstractWirtinger && error("""
+              res = $body
+              res isa ChainRulesCore.AbstractWirtinger && error("""
                   Couldn't automatically handle `AbstractWirtinger` in `@scalar_rule.
                   Make sure `Wirtinger`/`ComplexGradient` is the outermost function call or write the rule manually.""")
               return res
