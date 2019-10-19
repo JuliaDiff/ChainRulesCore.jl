@@ -265,6 +265,12 @@ struct Thunk{F} <: AbstractThunk
 end
 
 macro thunk(body)
+    if body isa Expr && body.head == :call
+        fname = body.args[1]
+        if fname in (:Wirtinger, :ComplexGradient)
+            return :($fname($((:(@thunk $i) for i in body.args[2:end])...)))
+        end
+    end
     return :(Thunk(() -> $(esc(body))))
 end
 
