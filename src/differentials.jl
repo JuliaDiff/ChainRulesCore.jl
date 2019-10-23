@@ -212,8 +212,17 @@ struct Thunk{F} <: AbstractThunk
     f::F
 end
 
+
+"""
+    @thunk expr
+
+Define a [`Thunk`](@ref) wrapping the `expr`, to lazily defer its evaluation.
+"""
 macro thunk(body)
-    return :(Thunk(() -> $(esc(body))))
+    # Basically `:(Thunk(() -> $(esc(body))))` but use the location where it is defined.
+    # so we get useful stack traces if it errors.
+    func = Expr(:->, Expr(:tuple), Expr(:block, __source__, body))
+    return :(Thunk($(esc(func))))
 end
 
 # have to define this here after `@thunk` and `Thunk` is defined
