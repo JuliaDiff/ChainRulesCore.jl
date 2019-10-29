@@ -284,6 +284,66 @@ function itself, when that function is not a closure.
 """
 const NO_FIELDS = DoesNotExist()
 
+
+"""
+    Composite{Primal, T} <: AbstractDifferential
+
+This type represents the differential for a `struct`/`NamedTuple`, or `Tuple`.
+`Primal` is the the corresponding primal type that this is a differential for.
+
+`Composite{Primal}` should have fields (technically properties), that match to a subset of the
+fields of the primal type; and each should be a differential type matching to the primal
+type of that field.
+Fields of the Primal that are not present in the Composite are treated as `Zero`.
+
+`T` is an implementation detail representing the backing datastructure.
+For Tuple it will be a Tuple, and for everything else it will be a `NamedTuple`.
+It should not be passed in by user.
+"""
+struct Composite{Primal, T} <: AbstractDifferential
+    backing::T
+end
+
+
+function Composite{Primal}(;kwargs...) where Primal
+    backing = (; kwargs...)
+    return Composite{Primal, typeof(backing)}(backing)
+end
+
+function Composite{Primal}(args...) where Primal
+    return Composite{Primal, typeof(args)}(args)
+end
+
+function Base.show(io::IO, comp::Composite{Primal})
+    print(io, "Composite{")
+    show(io, Primal)
+    print(io, "}")
+    # allow Tuple or NamedTuple `show` to do the rendering of brackets etc
+    show(io, comp.backing)
+end
+
+#TODO think about this, for if we are missing fields
+#Base.convert(::Type{Primal}, comp::Composite{Primal})
+Base.convert(::Type{<:NamedTuple}, comp::Composite{<:Any, <:NamedTuple}) = comp.backing
+Base.convert(::Type{<:Tuple}, comp::Composite{<:Any, <:Tuple}) = comp.backing
+
+Base.getindex(comp::Composite, idx) = getindex(comp.backing)
+Base.getproperty(comp::Composite, idx) = getproperty(comp.backing, idx)
+Base.propertynames(comp::Composite) = propertynames(comp.backing)
+Base.iterate(comp::Compositem, args...) = iterate(comp.backing, args...)
+Base.length(comp::Composite) = length(comp.backing)
+
+map(f, comp::Composite{Primal, <:Tuple}) where Primal = Composite{Primal}(map(f, comp.backing))
+function map(f, comp::Composite{Primal, <:NamedTuple{L}}) where{Primal, L}
+    vals = map(f, Tuple(comp.backing))
+    named_vals = NamedTuple{L, typeof(vals)}(vals)
+    return Composite{Primal}(named_vals)
+end
+
+Base.conj(comp::Composite{Primal}) = map(conj, comp)
+
+#==============================================================================#
+
 """
     refine_differential(𝒟::Type, der)
 
