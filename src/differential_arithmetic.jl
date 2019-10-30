@@ -7,7 +7,8 @@ subtypes, as we know the full set that might be encountered.
 Thus we can avoid any ambiguities.
 
 Notice:
-    The precidence goes: (:Wirtinger, :Zero, :DoesNotExist, :One, :AbstractThunk, :Any)
+    The precedence goes:
+    `Wirtinger, Zero, DoesNotExist, One, AbstractThunk, Composite, Any`
     Thus each of the @eval loops creating definitions of + and *
     defines the combination this type with all types of  lower precidence.
     This means each eval loops is 1 item smaller than the previous.
@@ -93,69 +94,19 @@ end
 # We intentionally do not define, `Base.*(::Composite, ::Composite)` as that is not meaningful
 # In general one doesn't have to represent multiplications of 2 differentials
 # Only of a differential and a scaling factor (generally `Real`)
-Base.*(s::Any, comp::Composite) = map(x->s*x, comp)
-Base.*(comp::Composite, s::Any) = s*comp
+Base.:*(s::Any, comp::Composite) = map(x->s*x, comp)
+Base.:*(comp::Composite, s::Any) = map(x->x*s, comp)
 
-function Base.:+(a::Composite{Primal, NamedTuple{an}}, b::Composite{Primal, NamedTuple{bn}}) where Primal
-    # Base on the `merge(:;NamedTuple, ::NamedTuple)` code from Base.
-    # https://github.com/JuliaLang/julia/blob/592748adb25301a45bd6edef3ac0a93eed069852/base/namedtuple.jl#L220-L231
-    if @generated
-        names = Base.merge_names(an, bn)
-        types = Base.merge_types(names, a, b)
 
-        vals = map(names) do field
-            a_field = :(getproperty(:a, $(QuoteNode(field))))
-            b_field = :(getproperty(:b, $(QuoteNode(field))))
-            val_expr = if Base.sym_in(field, an)
-                if Base.sym_in(field, bn)
-                    # in both
-                    :($a_field + $b_field)
-                else
-                    # only in `an`
-                    a_field
-                end
-            else # must be in `b` only
-                b_field
-            end
-        end
-        return :(NamedTuple{$names, $types}(($(vals...),)))
-    else
-        names = Base.merge_names(an, bn)
-        types = Base.merge_types(names, typeof(a), typeof(b))
-        vals = map(names) do field
-            val_expr = if Base.sym_in(field, an)
-                a_field = getproperty(a, field)
-                if Base.sym_in(field, bn)
-                    # in both
-                    b_field = getproperty(a, field)
-                    :($a_field + $b_field)
-                else
-                    # only in `an`
-                    a_field
-                end
-            else # must be in `b` only
-                b_field = getproperty(a, field)
-                b_field
-            end
-        end
-        NamedTuple{names,types}(map(n->getfield(sym_in(n, bn) ? b : a, n), names))
-    end
+function Base.:+(a::Composite{P}, b::Composite{P}) where P
+    data = elementwise_add(backing(a), backing(b))
+    return Composite{P, typeof(data)}(data)
+end
+function Base.:+(a::P, d::Composite{P}) where P
+    try
+        return construct(P, elementwise_add(backing(a), backing(d)))
+    catch err
+        throw(PrimalAdditionFailedException(a, d, err))
     end
 end
-
-# this should not need to be generated, # TODO test that
-function Base.:+(a::Composite{Primal, <:Tuple}, b::Composite{Primal, <:Tuple}) where Primal
-    # TODO: should we even allow it on different lengths?
-    short, long =  length(a) < length(b) ? (a.backing, b.backing) : (b.backing, a.backing)
-    backing = ntuple(length(long)) do ii
-        long_val = getfield(long, ii)
-        if ii <= length(short)
-            short_val = getfield(short, ii)
-            return short_val + long_val
-        else
-            return long_val
-        end
-    end
-
-    return Composite{Primal, typeof(backing)}(backing)
-end
+Base.:+(a::Composite{P}, b::P) where P = b + a
