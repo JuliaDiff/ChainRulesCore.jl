@@ -1,6 +1,6 @@
 module ChainRulesCore
 using Base.Broadcast: materialize, materialize!, broadcasted, Broadcasted, broadcastable
-using LinearAlgebra
+using LinearAlgebra: I
 
 export frule, rrule
 export wirtinger_conjugate, wirtinger_primal, refine_differential
