@@ -68,7 +68,7 @@ end
 
 
 strong_one(primal::Number) = true
-strong_one(primal::AbstractMatrix) = LinearAlgebra.I
+strong_one(primal::AbstractMatrix) = I
 strong_one(primal) = one(primal)
 
 Base.:+(a::One, b::One) = extern(a) + extern(b)  # This is not well-defined.
