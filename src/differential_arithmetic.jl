@@ -67,11 +67,15 @@ for T in (:One, :AbstractThunk, :Any)
 end
 
 
-Base.:+(a::One, b::One) = extern(a) + extern(b)
+strong_one(primal::Number) = true
+strong_one(primal::AbstractMatrix) = LinearAlgebra.I
+strong_one(primal) = one(primal)
+
+Base.:+(a::One, b::One) = extern(a) + extern(b)  # This is not well-defined.
 Base.:*(::One, ::One) = One()
 for T in (:AbstractThunk, :Any)
-    @eval Base.:+(a::One, b::$T) = extern(a) + b
-    @eval Base.:+(a::$T, b::One) = a + extern(b)
+    @eval Base.:+(a::One, b::$T) = strong_one(b) + b
+    @eval Base.:+(a::$T, b::One) = a + strong_one(a)
 
     @eval Base.:*(::One, b::$T) = b
     @eval Base.:*(a::$T, ::One) = a
