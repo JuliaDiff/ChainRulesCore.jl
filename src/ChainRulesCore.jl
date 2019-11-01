@@ -4,7 +4,7 @@ using Base.Broadcast: materialize, materialize!, broadcasted, Broadcasted, broad
 export frule, rrule
 export wirtinger_conjugate, wirtinger_primal, refine_differential
 export @scalar_rule, @thunk
-export extern, cast, store!
+export extern, store!
 export Wirtinger, Zero, One, DoesNotExist, Thunk, InplaceableThunk
 export NO_FIELDS
 
