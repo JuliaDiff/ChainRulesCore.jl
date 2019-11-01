@@ -4,7 +4,7 @@ using ChainRulesCore
 using LinearAlgebra: Diagonal
 using ChainRulesCore: extern, accumulate, accumulate!, store!, @scalar_rule,
     Wirtinger, wirtinger_primal, wirtinger_conjugate,
-    Zero, One, DoesNotExist, Thunk
+    Zero, DoesNotExist, Thunk
 using Base.Broadcast: broadcastable
 
 @testset "ChainRulesCore" begin

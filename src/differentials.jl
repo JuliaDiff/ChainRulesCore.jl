@@ -63,8 +63,10 @@ The two fields of the returned instance can be accessed generically via the
 struct Wirtinger{P,C} <: AbstractDifferential
     primal::P
     conjugate::C
-    function Wirtinger(primal::Union{Number,AbstractDifferential},
-                       conjugate::Union{Number,AbstractDifferential})
+    function Wirtinger(
+        primal::Union{Number,AbstractDifferential},
+        conjugate::Union{Number,AbstractDifferential},
+    )
         return new{typeof(primal),typeof(conjugate)}(primal, conjugate)
     end
 end
@@ -75,10 +77,13 @@ wirtinger_primal(x) = x
 wirtinger_conjugate(x::Wirtinger) = x.conjugate
 wirtinger_conjugate(::Any) = Zero()
 
-extern(x::Wirtinger) = throw(ArgumentError("`Wirtinger` cannot be converted to an external type."))
+function extern(x::Wirtinger)
+    return throw(ArgumentError("`Wirtinger` cannot be converted to an external type."))
+end
 
-Base.Broadcast.broadcastable(w::Wirtinger) = Wirtinger(broadcastable(w.primal),
-                                                       broadcastable(w.conjugate))
+function Base.Broadcast.broadcastable(w::Wirtinger)
+    return Wirtinger(broadcastable(w.primal), broadcastable(w.conjugate))
+end
 
 Base.iterate(x::Wirtinger) = (x, nothing)
 Base.iterate(::Wirtinger, ::Any) = nothing
@@ -104,7 +109,6 @@ Base.Broadcast.broadcastable(::Zero) = Ref(Zero())
 Base.iterate(x::Zero) = (x, nothing)
 Base.iterate(::Zero, ::Any) = nothing
 
-
 #####
 ##### `DoesNotExist`
 #####
@@ -126,25 +130,6 @@ Base.Broadcast.broadcastable(::DoesNotExist) = Ref(DoesNotExist())
 
 Base.iterate(x::DoesNotExist) = (x, nothing)
 Base.iterate(::DoesNotExist, ::Any) = nothing
-
-#####
-##### `One`
-#####
-
-"""
-     One()
-The Differential which is the multiplicative identity.
-Basically, this represents `1`.
-"""
-struct One <: AbstractDifferential end
-
-extern(x::One) = true  # true is a strong 1.
-
-Base.Broadcast.broadcastable(::One) = Ref(One())
-
-Base.iterate(x::One) = (x, nothing)
-Base.iterate(::One, ::Any) = nothing
-
 
 #####
 ##### `AbstractThunk

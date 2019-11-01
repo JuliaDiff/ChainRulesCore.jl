@@ -1,12 +1,11 @@
-@testset "Differentials" begin
+@testset "differentials" begin
     @testset "Wirtinger" begin
         w = Wirtinger(1+1im, 2+2im)
         @test wirtinger_primal(w) == 1+1im
         @test wirtinger_conjugate(w) == 2+2im
         @test w + w == Wirtinger(2+2im, 4+4im)
 
-        @test w + One() == w + 1 == w + Thunk(()->1) == Wirtinger(2+1im, 2+2im)
-        @test w * One() == One() * w == w
+        @test w + 1 == w + Thunk(()->1) == Wirtinger(2+1im, 2+2im)
         @test w * 2 == 2 * w == Wirtinger(2 + 2im, 4 + 4im)
 
         # TODO: other + methods stack overflow
@@ -33,22 +32,6 @@
         @test broadcastable(z) isa Ref{Zero}
         @test conj(z) == z
     end
-    @testset "One" begin
-        o = One()
-        @test extern(o) === true
-        @test o + o == 2
-        @test o + 1 == 2
-        @test 1 + o == 2
-        @test o * o == o
-        @test o * 1 == 1
-        @test 1 * o == 1
-        for x in o
-            @test x === o
-        end
-        @test broadcastable(o) isa Ref{One}
-        @test conj(o) == o
-    end
-
     @testset "Thunk" begin
         @test @thunk(3) isa Thunk
 
@@ -71,7 +54,6 @@
             @test (@thunk(3))() == 3
             @test (@thunk(@thunk(3)))() isa Thunk
         end
-
         @testset "erroring thunks should include the source in the backtrack" begin
             expected_line = (@__LINE__) + 2  # for testing it is at right palce
             try
@@ -109,7 +91,7 @@
         @test refine_differential(typeof([1.2]), Wirtinger(2,2)) == 4
 
         # For most differentials, in most domains, this does nothing
-        for der in (DoesNotExist(), @thunk(23), @thunk(Wirtinger(2,2)), [1 2], One(), Zero(), 0.0)
+        for der in (DoesNotExist(), @thunk(23), @thunk(Wirtinger(2,2)), [1 2], Zero(), 0.0)
             for 𝒟 in typeof.((1.0 + 1im, [1.0 + 1im], 1.2, [1.2]))
                 @test refine_differential(𝒟, der) === der
             end

@@ -36,7 +36,7 @@ function Base.:+(a::Wirtinger, b::Wirtinger)
     return Wirtinger(+(a.primal, b.primal), a.conjugate + b.conjugate)
 end
 
-for T in (:Zero, :DoesNotExist, :One, :AbstractThunk, :Any)
+for T in (:Zero, :DoesNotExist, :AbstractThunk, :Any)
     @eval Base.:+(a::Wirtinger, b::$T) = a + Wirtinger(b, Zero())
     @eval Base.:+(a::$T, b::Wirtinger) = Wirtinger(a, Zero()) + b
 
@@ -47,7 +47,7 @@ end
 
 Base.:+(::Zero, b::Zero) = Zero()
 Base.:*(::Zero, ::Zero) = Zero()
-for T in (:DoesNotExist, :One, :AbstractThunk, :Any)
+for T in (:DoesNotExist, :AbstractThunk, :Any)
     @eval Base.:+(::Zero, b::$T) = b
     @eval Base.:+(a::$T, ::Zero) = a
 
@@ -58,23 +58,12 @@ end
 
 Base.:+(::DoesNotExist, ::DoesNotExist) = DoesNotExist()
 Base.:*(::DoesNotExist, ::DoesNotExist) = DoesNotExist()
-for T in (:One, :AbstractThunk, :Any)
+for T in (:AbstractThunk, :Any)
     @eval Base.:+(::DoesNotExist, b::$T) = b
     @eval Base.:+(a::$T, ::DoesNotExist) = a
 
     @eval Base.:*(::DoesNotExist, ::$T) = DoesNotExist()
     @eval Base.:*(::$T, ::DoesNotExist) = DoesNotExist()
-end
-
-
-Base.:+(a::One, b::One) = extern(a) + extern(b)
-Base.:*(::One, ::One) = One()
-for T in (:AbstractThunk, :Any)
-    @eval Base.:+(a::One, b::$T) = extern(a) + b
-    @eval Base.:+(a::$T, b::One) = a + extern(b)
-
-    @eval Base.:*(::One, b::$T) = b
-    @eval Base.:*(a::$T, ::One) = a
 end
 
 
