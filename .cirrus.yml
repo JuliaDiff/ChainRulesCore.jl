@@ -11,7 +11,8 @@ task:
   build_script:
     - cirrusjl build
   test_script:
-    - git clone "https://github.com/JuliaDiff/ChainRules.jl.git"
+    - pkg install -y git
+    - julia git clone "https://github.com/JuliaDiff/ChainRules.jl.git"
     # This is a special integration test to see if we broke ChainRules.jl with latest ChainRulesCore.jl changes 
     # Start julia with  the project set to newly cloned subdir ChainRules.jl
     # dev the current directory to get the version of ChainRulesCore that we are testing
