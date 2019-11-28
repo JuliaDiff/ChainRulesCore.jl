@@ -7,7 +7,8 @@ subtypes, as we know the full set that might be encountered.
 Thus we can avoid any ambiguities.
 
 Notice:
-    The precidence goes: (:Wirtinger, :Zero, :DoesNotExist, :One, :AbstractThunk, :Any)
+    The precedence goes:
+    `Wirtinger, Zero, DoesNotExist, One, AbstractThunk, Composite, Any`
     Thus each of the @eval loops creating definitions of + and *
     defines the combination this type with all types of  lower precidence.
     This means each eval loops is 1 item smaller than the previous.
@@ -87,3 +88,25 @@ for T in (:Any,)
     @eval Base.:*(a::AbstractThunk, b::$T) = unthunk(a) * b
     @eval Base.:*(a::$T, b::AbstractThunk) = a * unthunk(b)
 end
+
+################## Composite ##############################################################
+
+# We intentionally do not define, `Base.*(::Composite, ::Composite)` as that is not meaningful
+# In general one doesn't have to represent multiplications of 2 differentials
+# Only of a differential and a scaling factor (generally `Real`)
+Base.:*(s::Any, comp::Composite) = map(x->s*x, comp)
+Base.:*(comp::Composite, s::Any) = map(x->x*s, comp)
+
+
+function Base.:+(a::Composite{P}, b::Composite{P}) where P
+    data = elementwise_add(backing(a), backing(b))
+    return Composite{P, typeof(data)}(data)
+end
+function Base.:+(a::P, d::Composite{P}) where P
+    try
+        return construct(P, elementwise_add(backing(a), backing(d)))
+    catch err
+        throw(PrimalAdditionFailedException(a, d, err))
+    end
+end
+Base.:+(a::Composite{P}, b::P) where P = b + a

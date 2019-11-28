@@ -1,15 +1,25 @@
 module ChainRulesCore
-using Base.Broadcast: materialize, materialize!, broadcasted, Broadcasted, broadcastable
+using Base.Broadcast: broadcasted, Broadcasted, broadcastable, materialize, materialize!
 
 export frule, rrule
-export wirtinger_conjugate, wirtinger_primal, refine_differential
+export refine_differential, wirtinger_conjugate, wirtinger_primal
 export @scalar_rule, @thunk
 export extern, store!, unthunk
-export Wirtinger, Zero, One, DoesNotExist, Thunk, InplaceableThunk
+export Composite, DoesNotExist, InplaceableThunk, One, Thunk, Wirtinger, Zero
 export NO_FIELDS
 
-include("differentials.jl")
+include("compat.jl")
+
+include("differentials/abstract_differential.jl")
+include("differentials/wirtinger.jl")
+include("differentials/zero.jl")
+include("differentials/does_not_exist.jl")
+include("differentials/one.jl")
+include("differentials/thunks.jl")
+include("differentials/composite.jl")
+
 include("differential_arithmetic.jl")
+
 include("operations.jl")
 include("rules.jl")
 include("rule_definition_tools.jl")

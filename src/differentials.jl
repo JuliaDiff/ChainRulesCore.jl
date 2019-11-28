@@ -149,6 +149,7 @@ Base.iterate(::One, ::Any) = nothing
 #####
 ##### `AbstractThunk
 #####
+
 abstract type AbstractThunk <: AbstractDifferential end
 
 Base.Broadcast.broadcastable(x::AbstractThunk) = broadcastable(extern(x))
@@ -237,8 +238,17 @@ macro thunk(body)
     return :(Thunk($(esc(func))))
 end
 
+"""
+    unthunk(x)
+
+`unthunk` removes 1 layer of thunking from an `AbstractThunk`,
+and on all other types is the `identity` function.
+"""
+unthunk(x) = x
+unthunk(x::Thunk) = x()
+
 # have to define this here after `@thunk` and `Thunk` is defined
-Base.conj(x::AbstractThunk) = @thunk(conj(extern(x)))
+Base.conj(x::AbstractThunk) = @thunk(conj(unthunk(x)))
 
 (x::Thunk)() = x.f()
 @inline unthunk(x::Thunk) = x()
@@ -283,6 +293,73 @@ The most notable use for this is for the reverse-mode derivative with respect to
 function itself, when that function is not a closure.
 """
 const NO_FIELDS = DoesNotExist()
+
+
+"""
+    Composite{P, T} <: AbstractDifferential
+
+This type represents the differential for a `struct`/`NamedTuple`, or `Tuple`.
+`P` is the the corresponding primal type that this is a differential for.
+
+`Composite{P}` should have fields (technically properties), that match to a subset of the
+fields of the primal type; and each should be a differential type matching to the primal
+type of that field.
+Fields of the P that are not present in the Composite are treated as `Zero`.
+
+`T` is an implementation detail representing the backing data structure.
+For Tuple it will be a Tuple, and for everything else it will be a `NamedTuple`.
+It should not be passed in by user.
+"""
+struct Composite{P, T} <: AbstractDifferential
+    # Note: If T is a Tuple, then P is also a Tuple
+    # (but potentially a different one, as it doesn't contain differentials)
+    backing::T
+end
+
+function Composite{P}(; kwargs...) where P
+    backing = (; kwargs...)  # construct as NamedTuple
+    return Composite{P, typeof(backing)}(backing)
+end
+
+function Composite{P}(args...) where P
+    return Composite{P, typeof(args)}(args)
+end
+
+function Base.show(io::IO, comp::Composite{P}) where P
+    print(io, "Composite{")
+    show(io, P)
+    print(io, "}")
+    # allow Tuple or NamedTuple `show` to do the rendering of brackets etc
+    show(io, backing(comp))
+end
+
+Base.convert(::Type{<:NamedTuple}, comp::Composite{<:Any, <:NamedTuple}) = backing(comp)
+Base.convert(::Type{<:Tuple}, comp::Composite{<:Any, <:Tuple}) = backing(comp)
+
+Base.getindex(comp::Composite, idx) = getindex(backing(comp), idx)
+Base.getproperty(comp::Composite, idx::Int) = getproperty(backing(comp), idx)  # for Tuple
+Base.getproperty(comp::Composite, idx::Symbol) = getproperty(backing(comp), idx)
+Base.propertynames(comp::Composite) = propertynames(backing(comp))
+
+Base.iterate(comp::Composite, args...) = iterate(backing(comp), args...)
+Base.length(comp::Composite) = length(backing(comp))
+Base.eltype(::Type{<:Composite{<:Any, T}}) where T = eltype(T)
+
+function Base.map(f, comp::Composite{P, <:Tuple}) where P
+    vals::Tuple = map(f, backing(comp))
+    return Composite{P, typeof(vals)}(vals)
+end
+function Base.map(f, comp::Composite{P, <:NamedTuple{L}}) where{P, L}
+    vals = map(f, Tuple(backing(comp)))
+    named_vals = NamedTuple{L, typeof(vals)}(vals)
+    return Composite{P, typeof(named_vals)}(named_vals)
+end
+
+Base.conj(comp::Composite) = map(conj, comp)
+
+extern(comp::Composite) = backing(map(extern, comp))  # gives a NamedTuple or Tuple
+
+#==============================================================================#
 
 """
     refine_differential(𝒟::Type, der)
