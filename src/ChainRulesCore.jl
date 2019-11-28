@@ -24,6 +24,4 @@ include("operations.jl")
 include("rules.jl")
 include("rule_definition_tools.jl")
 
-Base.@deprecate_binding DNE DoesNotExist
-
 end # module
