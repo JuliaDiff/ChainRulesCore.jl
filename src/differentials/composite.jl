@@ -205,4 +205,4 @@ Constant for the reverse-mode derivative with respect to a structure that has no
 The most notable use for this is for the reverse-mode derivative with respect to the
 function itself, when that function is not a closure.
 """
-const NO_FIELDS = DoesNotExist()
+const NO_FIELDS = Zero()
