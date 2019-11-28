@@ -8,8 +8,14 @@ export extern, store!, unthunk
 export Composite, DoesNotExist, InplaceableThunk, One, Thunk, Wirtinger, Zero
 export NO_FIELDS
 
-include("differentials.jl")
-include("composite_core.jl")
+include("differentials/abstract_differential.jl")
+include("differentials/wirtinger.jl")
+include("differentials/zero.jl")
+include("differentials/does_not_exist.jl")
+include("differentials/one.jl")
+include("differentials/thunks.jl")
+include("differentials/composite.jl")
+
 include("differential_arithmetic.jl")
 
 include("operations.jl")

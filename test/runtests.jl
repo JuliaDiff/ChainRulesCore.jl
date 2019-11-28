@@ -9,6 +9,14 @@ using ChainRulesCore: extern, accumulate, accumulate!, store!,
 using Base.Broadcast: broadcastable
 
 @testset "ChainRulesCore" begin
-    include("differentials.jl")
+    include("differentials_common.jl")
+    @testset "differentials" begin
+        include("differentials/wirtinger.jl")
+        include("differentials/zero.jl")
+        include("differentials/one.jl")
+        include("differentials/thunks.jl")
+        include("differentials/composite.jl")
+    end
+
     include("rules.jl")
 end
