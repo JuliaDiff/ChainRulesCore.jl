@@ -164,6 +164,18 @@ end
     return element, (externed, new_state)
 end
 
+"""
+    unthunk(x)
+
+On `AbstractThunk`s this removes 1 layer of thunking.
+On any other type, it is the identity operation.
+
+In contrast to `extern` this is nonrecursive.
+"""
+@inline unthunk(x) = x
+
+@inline extern(x::AbstractThunk) = extern(unthunk(x))
+
 #####
 ##### `Thunk`
 #####
@@ -228,9 +240,9 @@ end
 # have to define this here after `@thunk` and `Thunk` is defined
 Base.conj(x::AbstractThunk) = @thunk(conj(extern(x)))
 
-
 (x::Thunk)() = x.f()
-@inline extern(x::Thunk) = extern(x())
+@inline unthunk(x::Thunk) = x()
+
 
 Base.show(io::IO, x::Thunk) = println(io, "Thunk($(repr(x.f)))")
 
@@ -252,8 +264,8 @@ struct InplaceableThunk{T<:Thunk, F} <: AbstractThunk
     add!::F
 end
 
-(x::InplaceableThunk)() = x.val()
-@inline extern(x::InplaceableThunk) = extern(x.val)
+@inline unthunk(x::InplaceableThunk) = unthunk(x.val)
+(x::InplaceableThunk)() = unthunk(x)
 
 function Base.show(io::IO, x::InplaceableThunk)
     println(io, "InplaceableThunk($(repr(x.val)), $(repr(x.add!)))")

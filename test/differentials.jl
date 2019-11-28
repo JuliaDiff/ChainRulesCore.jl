@@ -62,6 +62,11 @@
             @test extern(@thunk(@thunk(3))) == 3
         end
 
+        @testset "unthunk" begin
+            @test unthunk(@thunk(3)) == 3
+            @test unthunk(@thunk(@thunk(3))) isa Thunk
+        end
+
         @testset "calling thunks should call inner function" begin
             @test (@thunk(3))() == 3
             @test (@thunk(@thunk(3)))() isa Thunk
