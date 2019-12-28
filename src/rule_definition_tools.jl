@@ -236,11 +236,7 @@ end
 
 function standard_propagation_expr(Δs, ∂s)
     # This is basically Δs ⋅ ∂s
-
-    # Notice: the thunking of `∂s[i] (potentially) saves us some computation
-    # if `Δs[i]` is a `AbstractDifferential` otherwise it is computed as soon
-    # as the pullback is evaluated
-    ∂_mul_Δs = [:(@thunk($(∂s[i])) * $(Δs[i])) for i in 1:length(∂s)]
+    ∂_mul_Δs = ntuple(i->:($(∂s[i]) * $(Δs[i])), length(∂s))
     return :(+($(∂_mul_Δs...)))
 end
 
@@ -260,7 +256,7 @@ function wirtinger_propagation_expr(𝒟, wirtinger_indices, Δs, ∂s)
             push!(∂_mul_Δs_primal, :($∂f∂i_mul_Δ + $∂f∂ī_mul_Δ̄))
             push!(∂_mul_Δs_conjugate, :($∂f̄∂i_mul_Δ + $∂f̄∂ī_mul_Δ̄))
         else
-            ∂_mul_Δ = :(@thunk($(∂s[i])) * $(Δs[i]))
+            ∂_mul_Δ = :($(∂s[i])) * $(Δs[i]))
             push!(∂_mul_Δs_primal, ∂_mul_Δ)
             push!(∂_mul_Δs_conjugate, ∂_mul_Δ)
         end
