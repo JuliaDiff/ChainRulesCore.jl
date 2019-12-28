@@ -45,10 +45,10 @@ julia> t()()
 ### When to `@thunk`?
 When writing `rrule`s (and to a lesser exent `frule`s), it is important to `@thunk`
 appropriately.
-Propagation rule's that return multiple derivatives may not hae all deriviatives used.
+Propagation rules that return multiple derivatives may not have all deriviatives used.
  By `@thunk`ing the work required for each derivative, they then compute only what is needed.
 
-#### How to thunks prevent work?
+#### How do thunks prevent work?
 If we have `res = pullback(...) = @thunk(f(x)), @thunk(g(x))`
 then if we did `dx + res[1]` then only `f(x)` would be evaluated, not `g(x)`.
 Also if we did `Zero() * res[1]` then the result would be `Zero()` and `f(x)` would not be evaluated.
