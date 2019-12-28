@@ -45,18 +45,25 @@ julia> t()()
 ### When to `@thunk`?
 When writing `rrule`s (and to a lesser exent `frule`s), it is important to `@thunk`
 appropriately.
-Propagation rule's that return multiple derivatives are not able to do all the computing themselves.
- By `@thunk`ing the work required for each, they then compute only what is needed.
+Propagation rules that return multiple derivatives may not have all deriviatives used.
+ By `@thunk`ing the work required for each derivative, they then compute only what is needed.
+
+#### How do thunks prevent work?
+If we have `res = pullback(...) = @thunk(f(x)), @thunk(g(x))`
+then if we did `dx + res[1]` then only `f(x)` would be evaluated, not `g(x)`.
+Also if we did `Zero() * res[1]` then the result would be `Zero()` and `f(x)` would not be evaluated.
 
 #### So why not thunk everything?
 `@thunk` creates a closure over the expression, which (effectively) creates a `struct`
 with a field for each variable used in the expression, and call overloaded.
 
 Do not use `@thunk` if this would be equal or more work than actually evaluating the expression itself. Examples being:
-- The expression wrapping something in a `struct`, such as `Adjoint(x)` or `Diagonal(x)`
 - The expression being a constant
+- The expression is merely wrapping something in a `struct`, such as `Adjoint(x)` or `Diagonal(x)`
 - The expression being itself a `thunk`
 - The expression being from another `rrule` or `frule` (it would be `@thunk`ed if required by the defining rule already)
+- There is only one derivative being returned, so from the fact that the user called `frule`/`rrule` 
+they clearly will want to use that one.
 """
 struct Thunk{F} <: AbstractThunk
     f::F
