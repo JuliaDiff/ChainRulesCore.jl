@@ -132,11 +132,11 @@ end
         fx, f_pushforward = res
         df(Δx, Δp) = f_pushforward(NamedTuple(), Δx, Δp)
 
-        df_dx::Thunk = df(One(), Zero())
-        df_dp::Thunk = df(Zero(), One())
+        df_dx = df(One(), Zero())
+        df_dp = df(Zero(), One())
         @test fx == f(x, p)  # Check we still get the normal value, right
-        @test df_dx() isa expected_type_df_dx
-        @test df_dp() isa expected_type_df_dp
+        @test df_dx isa expected_type_df_dx
+        @test df_dp isa expected_type_df_dp
 
 
         res = rrule(f, x, p)
@@ -145,7 +145,7 @@ end
         dself, df_dx, df_dp = f_pullback(One())
         @test fx == f(x, p)  # Check we still get the normal value, right
         @test dself == NO_FIELDS
-        @test df_dx() isa expected_type_df_dx
-        @test df_dp() isa expected_type_df_dp
+        @test df_dx isa expected_type_df_dx
+        @test df_dp isa expected_type_df_dp
     end
 end
