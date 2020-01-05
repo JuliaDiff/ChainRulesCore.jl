@@ -8,43 +8,11 @@ Thus we can avoid any ambiguities.
 
 Notice:
     The precedence goes:
-    `Wirtinger, Zero, DoesNotExist, One, AbstractThunk, Composite, Any`
+    `Zero, DoesNotExist, One, AbstractThunk, Composite, Any`
     Thus each of the @eval loops creating definitions of + and *
     defines the combination this type with all types of  lower precidence.
     This means each eval loops is 1 item smaller than the previous.
 ==#
-
-
-function Base.:*(a::Wirtinger, b::Wirtinger)
-    error("""
-          Cannot multiply two Wirtinger objects; this error likely means a
-          `WirtingerRule` was inappropriately defined somewhere. Multiplication
-          of two Wirtinger objects is not defined because chain rule application
-          often expands into a non-commutative operation in the Wirtinger
-          calculus. To put it another way: simply given two Wirtinger objects
-          and no other information, we can't know "locally" which components to
-          conjugate in order to implement the chain rule. We could pick a
-          convention; for example, we could define `a::Wirtinger * b::Wirtinger`
-          such that we assume the chain rule application is of the form `f_a ∘ f_b`
-          instead of `f_b ∘ f_a`. However, picking such a convention is likely to
-          lead to silently incorrect derivatives due to commutativity assumptions
-          in downstream generic code that deals with the reals. Thus, ChainRulesCore
-          makes this operation an error instead.
-          """)
-end
-
-function Base.:+(a::Wirtinger, b::Wirtinger)
-    return Wirtinger(+(a.primal, b.primal), a.conjugate + b.conjugate)
-end
-
-for T in (:Zero, :DoesNotExist, :One, :AbstractThunk, :Any)
-    @eval Base.:+(a::Wirtinger, b::$T) = a + Wirtinger(b, Zero())
-    @eval Base.:+(a::$T, b::Wirtinger) = Wirtinger(a, Zero()) + b
-
-    @eval Base.:*(a::Wirtinger, b::$T) = Wirtinger(a.primal * b, a.conjugate * b)
-    @eval Base.:*(a::$T, b::Wirtinger) = Wirtinger(a * b.primal, a * b.conjugate)
-end
-
 
 Base.:+(::Zero, b::Zero) = Zero()
 Base.:*(::Zero, ::Zero) = Zero()

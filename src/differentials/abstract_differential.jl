@@ -40,13 +40,3 @@ wrapped by `x`, such that mutating `extern(x)` might mutate `x` itself.
 @inline extern(x) = x
 
 @inline Base.conj(x::AbstractDifferential) = x
-
-"""
-    refine_differential(𝒟::Type, der)
-
-Converts, if required, a differential object `der`
-(e.g. a `Number`, `AbstractDifferential`, `Matrix`, etc.),
-to another  differential that is more suited for the domain given by the type 𝒟.
-Often this will behave as the identity function on `der`.
-"""
-refine_differential(::Any, der) = der  # most of the time leave it alone.

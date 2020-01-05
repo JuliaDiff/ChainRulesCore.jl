@@ -2,16 +2,14 @@ module ChainRulesCore
 using Base.Broadcast: broadcasted, Broadcasted, broadcastable, materialize, materialize!
 
 export frule, rrule
-export refine_differential, wirtinger_conjugate, wirtinger_primal
 export @scalar_rule, @thunk
 export extern, store!, unthunk
-export Composite, DoesNotExist, InplaceableThunk, One, Thunk, Wirtinger, Zero
+export Composite, DoesNotExist, InplaceableThunk, One, Thunk, Zero
 export NO_FIELDS
 
 include("compat.jl")
 
 include("differentials/abstract_differential.jl")
-include("differentials/wirtinger.jl")
 include("differentials/zero.jl")
 include("differentials/does_not_exist.jl")
 include("differentials/one.jl")
