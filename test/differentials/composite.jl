@@ -4,6 +4,11 @@ struct Foo
     y::Float64
 end
 
+# For testing Primal + Composite performance
+struct Bar
+    x::Float64
+end
+
 # For testing Composite: it is an invarient of the type that x2 = 2x
 # so simple addition can not be defined
 struct StructWithInvariant
@@ -93,6 +98,7 @@ end
         @testset "Structs" begin
             @test Foo(3.5, 1.5) + Composite{Foo}(x=2.5) == Foo(6.0, 1.5)
             @test Composite{Foo}(x=2.5) + Foo(3.5, 1.5) == Foo(6.0, 1.5)
+            @test (@allocated Bar(0.5) + Composite{Bar}(; x=0.5)) == 0
         end
 
         @testset "Tuples" begin
