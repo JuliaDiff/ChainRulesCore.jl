@@ -98,7 +98,7 @@ end
         @testset "Structs" begin
             @test Foo(3.5, 1.5) + Composite{Foo}(x=2.5) == Foo(6.0, 1.5)
             @test Composite{Foo}(x=2.5) + Foo(3.5, 1.5) == Foo(6.0, 1.5)
-            @test allocs(@benchmark Bar(0.5) + Composite{Bar}(; x=0.5)) == 0
+            @test (@allocated Bar(0.5) + Composite{Bar}(; x=0.5)) == 0
         end
 
         @testset "Tuples" begin
