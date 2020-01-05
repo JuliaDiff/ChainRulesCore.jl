@@ -1,6 +1,7 @@
 # TODO: more tests!
 using Test
 using ChainRulesCore
+using BenchmarkTools
 using LinearAlgebra: Diagonal
 using ChainRulesCore: extern, accumulate, accumulate!, store!,
     Composite, @scalar_rule,

@@ -77,22 +77,14 @@ backing(x::Tuple) = x
 backing(x::NamedTuple) = x
 backing(x::Composite) = getfield(x, :backing)
 
-function backing(x::T)::NamedTuple where T
-    !isstructtype(T) && throw(DomainError(T, "backing can only be use on composite types"))
-    nfields = fieldcount(T)
-    names = ntuple(ii->fieldname(T, ii), nfields)
-    types = ntuple(ii->fieldtype(T, ii), nfields)
+@generated function backing(x)::NamedTuple
+    !isstructtype(x) && throw(DomainError(x, "backing can only be use on composite types"))
+    nfields = fieldcount(x)
+    names = ntuple(ii->fieldname(x, ii), nfields)
+    types = ntuple(ii->fieldtype(x, ii), nfields)
 
-    if @generated
-        # @btime (()->ChainRulesCore.backing(Foo(1.0, 2.0)))()
-        ## 5.590 ns (1 allocation: 32 bytes)
-
-        vals = Expr(:tuple, ntuple(ii->:(getfield(x, $ii)), nfields)...)
-        return :(NamedTuple{$names, Tuple{$(types...)}}($vals))
-    else
-        vals = ntuple(ii->getfield(x, ii), nfields)
-        return NamedTuple{names, Tuple{types...}}(vals)
-    end
+    vals = Expr(:tuple, ntuple(ii->:(getfield(x, $ii)), nfields)...)
+    return :(NamedTuple{$names, Tuple{$(types...)}}($vals))
 end
 
 """
