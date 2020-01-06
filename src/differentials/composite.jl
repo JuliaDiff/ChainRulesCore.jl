@@ -77,16 +77,6 @@ backing(x::Tuple) = x
 backing(x::NamedTuple) = x
 backing(x::Composite) = getfield(x, :backing)
 
-function backing(x)::NamedTuple
-    
-
-    else
-        !isstructtype(x) && throw(DomainError(x, "backing can only be use on composite types"))
-        nfields = fieldcount(x)
-        names = ntuple(ii->fieldname(x, ii), nfields)
-        types = ntuple(ii->fieldtype(x, ii), nfields)
-
-end
 
 function backing(x::T)::NamedTuple where T
     # note: all computation outside the if @generated happens at runtime.
@@ -95,16 +85,16 @@ function backing(x::T)::NamedTuple where T
     if @generated
         !isstructtype(T) && throw(DomainError(T, "backing can only be use on composite types"))
         nfields = fieldcount(T)
-        names = ntuple(ii->fieldname(T, ii), nfields)
-        types = ntuple(ii->fieldtype(T, ii), nfields)
+        names = fieldnames(T)
+        types = fieldtypes(T)
         
         vals = Expr(:tuple, ntuple(ii->:(getfield(x, $ii)), nfields)...)
         return :(NamedTuple{$names, Tuple{$(types...)}}($vals))
     else
         !isstructtype(T) && throw(DomainError(T, "backing can only be use on composite types"))
         nfields = fieldcount(T)
-        names = ntuple(ii->fieldname(T, ii), nfields)
-        types = ntuple(ii->fieldtype(T, ii), nfields)
+        names = fieldnames(T)
+        types = fieldtypes(T)
 
         vals = ntuple(ii->getfield(x, ii), nfields)
         return NamedTuple{names, Tuple{types...}}(vals)
