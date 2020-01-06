@@ -77,14 +77,38 @@ backing(x::Tuple) = x
 backing(x::NamedTuple) = x
 backing(x::Composite) = getfield(x, :backing)
 
-@generated function backing(x)::NamedTuple
-    !isstructtype(x) && throw(DomainError(x, "backing can only be use on composite types"))
-    nfields = fieldcount(x)
-    names = ntuple(ii->fieldname(x, ii), nfields)
-    types = ntuple(ii->fieldtype(x, ii), nfields)
+function backing(x)::NamedTuple
+    
 
-    vals = Expr(:tuple, ntuple(ii->:(getfield(x, $ii)), nfields)...)
-    return :(NamedTuple{$names, Tuple{$(types...)}}($vals))
+    else
+        !isstructtype(x) && throw(DomainError(x, "backing can only be use on composite types"))
+        nfields = fieldcount(x)
+        names = ntuple(ii->fieldname(x, ii), nfields)
+        types = ntuple(ii->fieldtype(x, ii), nfields)
+
+end
+
+function backing(x::T)::NamedTuple where T
+    # note: all computation outside the if @generated happens at runtime.
+    # so the first 4 lines of the branchs look the same, but can not be moved out.
+    # see https://github.com/JuliaLang/julia/issues/34283
+    if @generated
+        !isstructtype(T) && throw(DomainError(T, "backing can only be use on composite types"))
+        nfields = fieldcount(T)
+        names = ntuple(ii->fieldname(T, ii), nfields)
+        types = ntuple(ii->fieldtype(T, ii), nfields)
+        
+        vals = Expr(:tuple, ntuple(ii->:(getfield(x, $ii)), nfields)...)
+        return :(NamedTuple{$names, Tuple{$(types...)}}($vals))
+    else
+        !isstructtype(T) && throw(DomainError(T, "backing can only be use on composite types"))
+        nfields = fieldcount(T)
+        names = ntuple(ii->fieldname(T, ii), nfields)
+        types = ntuple(ii->fieldtype(T, ii), nfields)
+
+        vals = ntuple(ii->getfield(x, ii), nfields)
+        return NamedTuple{names, Tuple{types...}}(vals)
+    end
 end
 
 """
