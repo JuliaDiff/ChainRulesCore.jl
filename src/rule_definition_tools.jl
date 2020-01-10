@@ -215,10 +215,7 @@ function propagation_expr(Δs, ∂s)
     # This is basically Δs ⋅ ∂s
     ∂s = map(esc, ∂s)
 
-    # Notice: the thunking of `∂s[i] (potentially) saves us some computation
-    # if `Δs[i]` is a `AbstractDifferential` otherwise it is computed as soon
-    # as the pullback is evaluated
-    ∂_mul_Δs = [:(@thunk($(∂s[i])) * $(Δs[i])) for i in 1:length(∂s)]
+    ∂_mul_Δs = ntuple(i->:($(∂s[i]) * $(Δs[i])), length(∂s))
     return :(+($(∂_mul_Δs...)))
 end
 
