@@ -10,6 +10,7 @@ using Base.Broadcast: broadcastable
 @testset "ChainRulesCore" begin
     @testset "differentials" begin
         include("differentials/zero.jl")
+        include("differentials/does_not_exist.jl")
         include("differentials/one.jl")
         include("differentials/thunks.jl")
         include("differentials/composite.jl")

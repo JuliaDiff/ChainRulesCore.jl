@@ -8,22 +8,11 @@ Thus we can avoid any ambiguities.
 
 Notice:
     The precedence goes:
-    `Zero, DoesNotExist, One, AbstractThunk, Composite, Any`
-    Thus each of the @eval loops creating definitions of + and *
+    `DoesNotExist, Zero, One, AbstractThunk, Composite, Any`
+    Thus each of the @eval loops create most definitions of + and *
     defines the combination this type with all types of  lower precidence.
     This means each eval loops is 1 item smaller than the previous.
 ==#
-
-Base.:+(::Zero, b::Zero) = Zero()
-Base.:*(::Zero, ::Zero) = Zero()
-for T in (:DoesNotExist, :One, :AbstractThunk, :Any)
-    @eval Base.:+(::Zero, b::$T) = b
-    @eval Base.:+(a::$T, ::Zero) = a
-
-    @eval Base.:*(::Zero, ::$T) = Zero()
-    @eval Base.:*(::$T, ::Zero) = Zero()
-end
-
 
 Base.:+(::DoesNotExist, ::DoesNotExist) = DoesNotExist()
 Base.:*(::DoesNotExist, ::DoesNotExist) = DoesNotExist()
@@ -33,6 +22,24 @@ for T in (:One, :AbstractThunk, :Any)
 
     @eval Base.:*(::DoesNotExist, ::$T) = DoesNotExist()
     @eval Base.:*(::$T, ::DoesNotExist) = DoesNotExist()
+end
+# `DoesNotExist` and `Zero` have special relationship,
+# DoesNotExist wins add, Zero wins *. This is (in theory) to allow `*` to be used for
+# selecting things.
+Base.:+(::DoesNotExist, ::Zero) = DoesNotExist()
+Base.:+(::Zero, ::DoesNotExist) = DoesNotExist()
+Base.:*(::DoesNotExist, ::Zero) = Zero()
+Base.:*(::Zero, ::DoesNotExist) = Zero()
+
+
+Base.:+(::Zero, b::Zero) = Zero()
+Base.:*(::Zero, ::Zero) = Zero()
+for T in (:One, :AbstractThunk, :Any)
+    @eval Base.:+(::Zero, b::$T) = b
+    @eval Base.:+(a::$T, ::Zero) = a
+
+    @eval Base.:*(::Zero, ::$T) = Zero()
+    @eval Base.:*(::$T, ::Zero) = Zero()
 end
 
 
