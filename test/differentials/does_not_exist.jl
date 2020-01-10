@@ -9,14 +9,14 @@
     @test 1 * dne == dne
 
     @test Zero() + dne == dne
-    @test dne + Zero == dne
+    @test dne + Zero() == dne
 
-    @test Zero()*dne == Zero()
-    @test dne*Zero == Zero()
+    @test Zero() * dne == Zero()
+    @test dne * Zero() == Zero()
 
     for x in dne
         @test x === dne
     end
-    @test broadcastable(dne) isa Ref{dneero}
+    @test broadcastable(dne) isa Ref{DoesNotExist}
     @test conj(dne) == dne
 end
