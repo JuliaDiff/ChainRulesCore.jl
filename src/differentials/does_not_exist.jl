@@ -13,7 +13,7 @@ If you are adding this differential to a primal then something is wrong.
 A optimization package making use of this might like to check for such a case.
 
 !!! note:
-    This is not the case that the derivative it is not implemented,
+    This does not indicate that the derivative it is not implemented,
     but rather that mathematically it is not defined.
 
 This mostly shows up as the deriviative with respect to dimension, index, or size
