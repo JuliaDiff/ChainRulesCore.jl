@@ -2,46 +2,6 @@
 ##### `frule`/`rrule`
 #####
 
-#=
-In some weird ideal sense, the fallback for e.g. `frule` should actually be "get
-the derivative via forward-mode AD". This is necessary to enable mixed-mode
-rules, where e.g. `frule` is used within a `rrule` definition. For example,
-broadcasted functions may not themselves be forward-mode *primitives*, but are
-often forward-mode *differentiable*.
-
-ChainRulesCore, by design, is decoupled from any specific AD implementation. How,
-then, do we know which AD to fall back to when there isn't a primitive defined?
-
-Well, if you're a greedy AD implementation, you can just overload `frule` and/or
-`rrule` to use your AD directly. However, this won't play nice with other AD
-packages doing the same thing, and thus could cause load-order-dependent
-problems for downstream users.
-
-It turns out, Cassette solves this problem nicely by allowing AD authors to
-overload the fallbacks w.r.t. their own context. Example using ForwardDiff:
-
-```
-using ChainRulesCore, ForwardDiff, Cassette
-
-Cassette.@context MyChainRuleCtx
-
-# ForwardDiff, itself, can call `my_frule` instead of
-# `frule` to utilize the ForwardDiff-injected ChainRulesCore
-# infrastructure
-my_frule(args...) = Cassette.overdub(MyChainRuleCtx(), frule, args...)
-
-function Cassette.execute(::MyChainRuleCtx, ::typeof(frule), f, x::Number)
-    r = frule(f, x)
-    if isa(r, Nothing)
-        fx, df = (f(x), (_, Δx) -> ForwardDiff.derivative(f, x) * Δx)
-    else
-        fx, df = r
-    end
-    return fx, df
-end
-```
-=#
-
 """
     frule(f, x...)
 
