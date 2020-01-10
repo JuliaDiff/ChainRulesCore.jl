@@ -161,4 +161,8 @@ end
             @test (@allocated ChainRulesCore.elementwise_add(bk, bk)) <= 48
         end
     end
+
+    @testset "NO_FIELDS" begin
+        @test NO_FIELDS === Zero()
+    end
 end
