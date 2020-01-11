@@ -2,34 +2,40 @@
 ##### `frule`/`rrule`
 #####
 
+# TODO: remember to update the examples
 """
-    frule(f, x...)
+    frule(f, x..., ṡelf, Δx...)
 
-Expressing `x` as the tuple `(x₁, x₂, ...)` and the output tuple of `f(x...)`
-as `Ω`, return the tuple:
+Expressing `x` as the tuple `(x₁, x₂, ...)`, `Δx` as the tuple `(Δx₁, Δx₂,
+...)`, and the output tuple of `f(x...)` as `Ω`, return the tuple:
 
-    (Ω, (ṡelf, ẋ₁, ẋ₂, ...) -> Ω̇₁, Ω̇₂, ...)
+    (Ω, (Ω̇₁, Ω̇₂, ...))
 
 The second return value is the propagation rule, or the pushforward.
 It takes in differentials corresponding to the inputs (`ẋ₁, ẋ₂, ...`)
 and `ṡelf` the internal values of the function (for closures).
 
 
-If no method matching `frule(f, xs...)` has been defined, then return `nothing`.
+If no method matching `frule(f, x..., ṡelf, Δx...)` has been defined, then
+return `nothing`.
 
 Examples:
 
 unary input, unary output scalar function:
 
 ```
+julia> dself = Zero()
+Zero()
+
 julia> x = rand();
 
-julia> sinx, sin_pushforward = frule(sin, x);
+julia> sinx, sin_pushforward = frule(sin, x, dself, 1)
+(0.35696518021277485, 0.9341176907197836)
 
 julia> sinx == sin(x)
 true
 
-julia> sin_pushforward(NamedTuple(), 1) == cos(x)
+julia> sin_pushforward == cos(x)
 true
 ```
 
@@ -38,12 +44,12 @@ unary input, binary output scalar function:
 ```
 julia> x = rand();
 
-julia> sincosx, sincos_pushforward = frule(sincos, x);
+julia> sincosx, sincos_pushforward = frule(sincos, x, dself, 1);
 
 julia> sincosx == sincos(x)
 true
 
-julia> sincos_pushforward(NamedTuple(), 1) == (cos(x), -sin(x))
+julia> sincos_pushforward == (cos(x), -sin(x))
 true
 ```
 

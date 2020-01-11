@@ -11,4 +11,3 @@ Base.Broadcast.broadcastable(::One) = Ref(One())
 
 Base.iterate(x::One) = (x, nothing)
 Base.iterate(::One, ::Any) = nothing
-
