@@ -209,7 +209,8 @@ function propagation_expr(Δs, ∂s)
     # This is basically Δs ⋅ ∂s
     ∂s = map(esc, ∂s)
 
-    ∂_mul_Δs = ntuple(i->:($(∂s[i]) * $(Δs[i])), length(∂s))
+    # this is neccssary since we want to eagerly evaluate the result
+    ∂_mul_Δs = [:(@thunk($(∂s[i])) * $(Δs[i])) for i in 1:length(∂s)]
     return :(+($(∂_mul_Δs...)))
 end
 
