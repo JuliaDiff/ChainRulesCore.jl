@@ -2,7 +2,9 @@
 
 [![Travis](https://travis-ci.org/JuliaDiff/ChainRulesCore.jl.svg?branch=master)](https://travis-ci.org/JuliaDiff/ChainRulesCore.jl)
 [![Coveralls](https://coveralls.io/repos/github/JuliaDiff/ChainRulesCore.jl/badge.svg?branch=master)](https://coveralls.io/github/JuliaDiff/ChainRulesCore.jl?branch=master)
-[![](https://img.shields.io/badge/docs-latest-blue.svg)](https://JuliaDiff.github.io/ChainRules.jl/latest)
+[![PkgEval](https://juliaci.github.io/NanosoldierReports/pkgeval_badges/C/ChainRulesCore.svg)](https://juliaci.github.io/NanosoldierReports/pkgeval_badges/report.html)
+
+[![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https://JuliaDiff.github.io/ChainRules.jl/latest)
 
 The ChainRulesCore package provides a light-weight dependency for defining sensitivities for functions in your packages, without you needing to depend on ChainRules itself.
 
