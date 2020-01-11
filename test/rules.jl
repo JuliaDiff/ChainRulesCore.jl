@@ -13,8 +13,9 @@ dummy_identity(x) = x
 _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
 
 @testset "frule and rrule" begin
-    @test frule(cool, 1) === nothing
-    @test frule(cool, 1; iscool=true) === nothing
+    dself = Zero()
+    @test frule(cool, 1, dself, 1) === nothing
+    @test frule(cool, 1, dself, 1; iscool=true) === nothing
     @test rrule(cool, 1) === nothing
     @test rrule(cool, 1; iscool=true) === nothing
 
@@ -29,9 +30,9 @@ _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
                         Tuple{typeof(rrule),typeof(cool),String}])
     @test cool_methods == only_methods
 
-    frx, cool_pushforward = frule(cool, 1)
+    frx, cool_pushforward = frule(cool, 1, dself, 1)
     @test frx == 2
-    @test cool_pushforward(NamedTuple(), 1) == 1
+    @test cool_pushforward == 1
     rrx, cool_pullback = rrule(cool, 1)
     self, rr1 = cool_pullback(1)
     @test self == NO_FIELDS

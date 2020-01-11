@@ -86,7 +86,7 @@ function backing(x::T)::NamedTuple where T
         nfields = fieldcount(T)
         names = fieldnames(T)
         types = fieldtypes(T)
-        
+
         vals = Expr(:tuple, ntuple(ii->:(getfield(x, $ii)), nfields)...)
         return :(NamedTuple{$names, Tuple{$(types...)}}($vals))
     else
