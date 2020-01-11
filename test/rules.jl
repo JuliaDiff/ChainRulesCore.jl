@@ -8,6 +8,9 @@ cool(x, y) = x + y + 1
 dummy_identity(x) = x
 @scalar_rule(dummy_identity(x), One())
 
+nice(x) = 1
+@scalar_rule(nice(x), Zero())
+
 #######
 
 _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
@@ -31,11 +34,16 @@ _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
     @test cool_methods == only_methods
 
     frx, cool_pushforward = frule(cool, 1, dself, 1)
-    @test frx == 2
-    @test cool_pushforward == 1
+    @test frx === 2
+    @test cool_pushforward === 1
     rrx, cool_pullback = rrule(cool, 1)
     self, rr1 = cool_pullback(1)
-    @test self == NO_FIELDS
-    @test rrx == 2
-    @test rr1 == 1
+    @test self === NO_FIELDS
+    @test rrx === 2
+    @test rr1 === 1
+
+    frx, nice_pushforward = frule(nice, 1, dself, 1)
+    @test nice_pushforward === 0
+    rrx, nice_pullback = rrule(nice, 1)
+    @test (NO_FIELDS, 0) === nice_pullback(1)
 end
