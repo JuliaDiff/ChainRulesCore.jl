@@ -32,15 +32,19 @@ Base.:*(::DoesNotExist, ::Zero) = Zero()
 Base.:*(::Zero, ::DoesNotExist) = Zero()
 
 
-Base.:+(::Zero, b::Zero) = Zero()
+Base.:+(::Zero, ::Zero) = Zero()
 Base.:*(::Zero, ::Zero) = Zero()
 for T in (:One, :AbstractThunk, :Any)
     @eval Base.:+(::Zero, b::$T) = b
     @eval Base.:+(a::$T, ::Zero) = a
 
-    @eval Base.:*(::Zero, ::$T) = Zero()
-    @eval Base.:*(::$T, ::Zero) = Zero()
+    if T !== :Any
+        @eval Base.:*(::Zero, ::$T) = Zero()
+        @eval Base.:*(::$T, ::Zero) = Zero()
+    end
 end
+Base.:*(::Zero, x) = zero(x)
+Base.:*(x, ::Zero) = zero(x)
 
 
 Base.:+(a::One, b::One) = extern(a) + extern(b)
