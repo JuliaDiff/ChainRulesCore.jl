@@ -208,9 +208,19 @@ end
 function propagation_expr(Δs, ∂s)
     # This is basically Δs ⋅ ∂s
     ∂s = map(esc, ∂s)
+    n∂s = length(∂s)
 
-    ∂_mul_Δs = ntuple(i->:($(∂s[i]) * $(Δs[i])), length(∂s))
-    return :(+($(∂_mul_Δs...)))
+    ∂_mul_Δs = ntuple(i->:($(∂s[i]) .* $(Δs[i])), n∂s)
+
+    # avoiding the extra `+` operation, it is potentially
+    # expensive for vector mode AD
+    sumed_∂_mul_Δs = if n∂s > 1
+        :(.+($(∂_mul_Δs...)))
+    else
+        ∂_mul_Δs
+    end
+
+    return sumed_∂_mul_Δs
 end
 
 """
