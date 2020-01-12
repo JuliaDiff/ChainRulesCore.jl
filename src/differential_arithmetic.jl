@@ -57,12 +57,11 @@ end
 Base.:+(a::AbstractThunk, b::AbstractThunk) = unthunk(a) + unthunk(b)
 Base.:*(a::AbstractThunk, b::AbstractThunk) = unthunk(a) * unthunk(b)
 for T in (:Any,)
-    # we want to eagerly compute the result when thunk meets other types
-    @eval Base.:+(a::AbstractThunk, b::$T) = extern(a) + b
-    @eval Base.:+(a::$T, b::AbstractThunk) = a + extern(b)
+    @eval Base.:+(a::AbstractThunk, b::$T) = unthunk(a) + b
+    @eval Base.:+(a::$T, b::AbstractThunk) = a + unthunk(b)
 
-    @eval Base.:*(a::AbstractThunk, b::$T) = extern(a) * b
-    @eval Base.:*(a::$T, b::AbstractThunk) = a * extern(b)
+    @eval Base.:*(a::AbstractThunk, b::$T) = unthunk(a) * b
+    @eval Base.:*(a::$T, b::AbstractThunk) = a * unthunk(b)
 end
 
 ################## Composite ##############################################################
