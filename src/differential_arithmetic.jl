@@ -38,14 +38,10 @@ for T in (:One, :AbstractThunk, :Any)
     @eval Base.:+(::Zero, b::$T) = b
     @eval Base.:+(a::$T, ::Zero) = a
 
-    if T !== :Any
-        @eval Base.:*(::Zero, ::$T) = Zero()
-        @eval Base.:*(::$T, ::Zero) = Zero()
-    end
+    @eval Base.:*(::Zero, x::$T) = zero(x)
+    @eval Base.:*(x::$T, ::Zero) = zero(x)
 end
-Base.:*(::Zero, x) = zero(x)
-Base.:*(x, ::Zero) = zero(x)
-
+Base.zero(::AbstractDifferential) = Zero()
 
 Base.:+(a::One, b::One) = extern(a) + extern(b)
 Base.:*(::One, ::One) = One()
