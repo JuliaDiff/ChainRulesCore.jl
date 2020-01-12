@@ -41,7 +41,6 @@ for T in (:One, :AbstractThunk, :Any)
     @eval Base.:*(::Zero, x::$T) = zero(x)
     @eval Base.:*(x::$T, ::Zero) = zero(x)
 end
-Base.zero(::AbstractDifferential) = Zero()
 
 Base.:+(a::One, b::One) = extern(a) + extern(b)
 Base.:*(::One, ::One) = One()
