@@ -11,3 +11,5 @@ Base.Broadcast.broadcastable(::Zero) = Ref(Zero())
 
 Base.iterate(x::Zero) = (x, nothing)
 Base.iterate(::Zero, ::Any) = nothing
+
+Base.zero(::AbstractDifferential) = Zero()
