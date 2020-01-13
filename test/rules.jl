@@ -1,5 +1,6 @@
 #######
 # Demo setup
+using StaticArrays: @SVector
 
 cool(x) = x + 1
 cool(x, y) = x + y + 1
@@ -10,6 +11,9 @@ dummy_identity(x) = x
 
 nice(x) = 1
 @scalar_rule(nice(x), Zero())
+
+very_nice(x, y) = x + y
+@scalar_rule(very_nice(x, y), (One(), One()))
 
 #######
 
@@ -46,4 +50,9 @@ _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
     @test nice_pushforward === 0
     rrx, nice_pullback = rrule(nice, 1)
     @test (NO_FIELDS, 0) === nice_pullback(1)
+
+    sx = @SVector [1, 2]
+    sy = @SVector [3, 4]
+    # This actually is testing that @scalar_rule and `One()` play nice together, w.r.t broadcasting
+    @inferred frule(very_nice, 1, 2, Zero(), sx, sy)
 end
