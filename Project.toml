@@ -1,12 +1,13 @@
 name = "ChainRulesCore"
 uuid = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
-version = "0.5.1"
+version = "0.5.2"
 
 [deps]
 MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
 
 [compat]
 julia = "^1.0"
+MuladdMacro = "0.2.1"
 
 [extras]
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
