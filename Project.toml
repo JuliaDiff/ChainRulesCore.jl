@@ -4,7 +4,6 @@ version = "0.5.3"
 
 [deps]
 MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
-StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [compat]
 MuladdMacro = "0.2.1"
