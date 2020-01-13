@@ -33,6 +33,7 @@ function extern(x::DoesNotExist)
 end
 
 Base.Broadcast.broadcastable(::DoesNotExist) = Ref(DoesNotExist())
+Base.Broadcast.broadcasted(::Type{DoesNotExist}) = DoesNotExist()
 
 Base.iterate(x::DoesNotExist) = (x, nothing)
 Base.iterate(::DoesNotExist, ::Any) = nothing
