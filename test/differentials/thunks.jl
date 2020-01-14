@@ -35,4 +35,40 @@
             @test stackframe.file == Symbol(@__FILE__)
         end
     end
+
+
+    @testset "Broadcast" begin
+        @testset "Array" begin
+            was_unthunked = 0
+            array_thunk = @thunk begin
+                was_unthunked += 1;
+                [1.0, 2.0, 3.0]
+            end
+
+            was_unthunked = 0
+            @test array_thunk .+ fill(10, 3) .+  fill(10, 3) == [21.0, 22.0, 23.0]
+            @test was_unthunked == 1
+
+            was_unthunked = 0
+            @test array_thunk .+ 10.0 .+ 10.0 == [21.0, 22.0, 23.0]
+            @test was_unthunked == 1
+
+        end
+
+        @testset "Scalar" begin
+            was_unthunked=0
+            scalar_thunk = @thunk begin
+                was_unthunked += 1;
+                sqrt(4.0)
+            end
+
+            was_unthunked = 0
+            @test scalar_thunk .+ fill(10, 3) .+  fill(10, 3) == [22.0, 22.0, 22.0]
+            @test was_unthunked == 1
+
+            was_unthunked = 0
+            @test scalar_thunk .+ 10.0 .+ 10.0 == 22.0
+            @test was_unthunked == 1
+        end
+    end
 end

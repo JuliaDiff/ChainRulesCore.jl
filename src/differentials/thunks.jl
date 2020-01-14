@@ -1,17 +1,17 @@
 
 abstract type AbstractThunk <: AbstractDifferential end
 
-Base.Broadcast.broadcastable(x::AbstractThunk) = broadcastable(extern(x))
+Base.Broadcast.broadcastable(x::AbstractThunk) = broadcastable(unthunk(x))
 
 @inline function Base.iterate(x::AbstractThunk)
-    externed = extern(x)
-    element, state = iterate(externed)
-    return element, (externed, state)
+    val = unthunk(x)
+    element, state = iterate(val)
+    return element, (val, state)
 end
 
-@inline function Base.iterate(::AbstractThunk, (externed, state))
-    element, new_state = iterate(externed, state)
-    return element, (externed, new_state)
+@inline function Base.iterate(::AbstractThunk, (val, state))
+    element, new_state = iterate(val, state)
+    return element, (val, new_state)
 end
 
 #####
@@ -62,7 +62,7 @@ Do not use `@thunk` if this would be equal or more work than actually evaluating
 - The expression is merely wrapping something in a `struct`, such as `Adjoint(x)` or `Diagonal(x)`
 - The expression being itself a `thunk`
 - The expression being from another `rrule` or `frule` (it would be `@thunk`ed if required by the defining rule already)
-- There is only one derivative being returned, so from the fact that the user called `frule`/`rrule` 
+- There is only one derivative being returned, so from the fact that the user called `frule`/`rrule`
 they clearly will want to use that one.
 """
 struct Thunk{F} <: AbstractThunk
