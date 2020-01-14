@@ -41,7 +41,7 @@
         @testset "Array" begin
             was_unthunked = 0
             array_thunk = @thunk begin
-                was_unthunked+=1;
+                was_unthunked += 1;
                 [1.0, 2.0, 3.0]
             end
 
@@ -58,7 +58,7 @@
         @testset "Scalar" begin
             was_unthunked=0
             scalar_thunk = @thunk begin
-                was_unthunked+=1;
+                was_unthunked += 1;
                 sqrt(4.0)
             end
 
