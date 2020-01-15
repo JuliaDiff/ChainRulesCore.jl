@@ -31,6 +31,15 @@ Base.:+(::Zero, ::DoesNotExist) = DoesNotExist()
 Base.:*(::DoesNotExist, ::Zero) = Zero()
 Base.:*(::Zero, ::DoesNotExist) = Zero()
 
+Base.muladd(::Zero, x, y) = y
+Base.muladd(x, ::Zero, y) = y
+Base.muladd(x, y, ::Zero) = x*y
+
+Base.muladd(::Zero, ::Zero, y) = y
+Base.muladd(x, ::Zero, ::Zero) = Zero()
+Base.muladd(::Zero, x, ::Zero) = Zero()
+
+Base.muladd(::Zero, ::Zero, ::Zero) = Zero()
 
 Base.:+(::Zero, ::Zero) = Zero()
 Base.:*(::Zero, ::Zero) = Zero()
