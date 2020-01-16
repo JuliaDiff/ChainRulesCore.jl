@@ -1,4 +1,36 @@
 """
+    AbstractZero <: AbstractDifferential
+
+This is zero-like differential types.
+If a AD system encounter a propagator taking as input only subtypes of `AbstractZero` then
+it can stop performing any AD operations, as all propagator are linear functions, and thus
+the final result will be zero.
+
+All `AbstractZero` subtypes are singleton types.
+There are two of them [`Zero()`](@ref) and [`DoesNotExist()`](@ref).
+"""
+abstract type AbstractZero <: AbstractDifferential end
+Base.iszero(::AbstractZero) = true
+
+Base.iterate(x::AbstractZero) = (x, nothing)
+Base.iterate(::AbstractZero, ::Any) = nothing
+
+Base.Broadcast.broadcastable(x::AbstractZero) = Ref(x)
+Base.Broadcast.broadcasted(::Type{T}) where T<:AbstractZero = T()
+
+"""
+    Zero()
+The additive identity for differentials.
+This is basically the same as `0`.
+A derivative of `Zero()`. does not propagate through the primal function.
+"""
+struct Zero <: AbstractZero end
+
+extern(x::Zero) = false  # false is a strong 0. E.g. `false * NaN = 0.0`
+
+Base.zero(::AbstractDifferential) = Zero()
+
+"""
     DoesNotExist()
 
 This differential indicates that the derivative Does Not Exist (D.N.E).
@@ -26,14 +58,8 @@ arguments.
     end
 ```
 """
-struct DoesNotExist <: AbstractDifferential end
+struct DoesNotExist <: AbstractZero end
 
 function extern(x::DoesNotExist)
     throw(ArgumentError("Derivative does not exit. Cannot be converted to an external type."))
 end
-
-Base.Broadcast.broadcastable(::DoesNotExist) = Ref(DoesNotExist())
-Base.Broadcast.broadcasted(::Type{DoesNotExist}) = DoesNotExist()
-
-Base.iterate(x::DoesNotExist) = (x, nothing)
-Base.iterate(::DoesNotExist, ::Any) = nothing
