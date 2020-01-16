@@ -5,8 +5,8 @@
     @test z + 1 === 1
     @test 1 + z === 1
     @test z * z === z
-    @test z * 1 === 0
-    @test 1 * z === 0
+    @test z * 1 === Zero()
+    @test 1 * z === Zero()
     for x in z
         @test x === z
     end

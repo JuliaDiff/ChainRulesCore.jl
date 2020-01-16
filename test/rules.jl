@@ -47,9 +47,9 @@ _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
     @test rr1 === 1
 
     frx, nice_pushforward = frule(nice, 1, dself, 1)
-    @test nice_pushforward === 0
+    @test nice_pushforward === Zero()
     rrx, nice_pullback = rrule(nice, 1)
-    @test (NO_FIELDS, 0) === nice_pullback(1)
+    @test (NO_FIELDS, Zero()) === nice_pullback(1)
 
     sx = @SVector [1, 2]
     sy = @SVector [3, 4]
