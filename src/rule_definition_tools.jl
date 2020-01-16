@@ -160,14 +160,21 @@ function scalar_frule_expr(f, call, setup_stmts, inputs, partials)
         pushforward_returns = pushforward_returns[1]
     end
 
-    return quote
+    pushforward = quote
         # _ is the input derivative w.r.t. function internals. since we do not
         # allow closures/functors with @scalar_rule, it is always ignored
+        function $(propagator_name(f, :pushforward))(_, $(Δs...))
+            $pushforward_returns
+        end
+
+    end
+
+    return quote
         function ChainRulesCore.frule(::typeof($f), $(inputs...), _, $(Δs...))
             $(esc(:Ω)) = $call
             $(setup_stmts...)
-            return $(esc(:Ω)), $pushforward_returns
-        end
+            return $(esc(:Ω)), $pushforward
+       end
     end
 end
 

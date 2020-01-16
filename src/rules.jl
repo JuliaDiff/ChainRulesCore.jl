@@ -35,7 +35,7 @@ julia> sinx, sin_pushforward = frule(sin, x, dself, 1)
 julia> sinx == sin(x)
 true
 
-julia> sin_pushforward == cos(x)
+julia> sin_pushforward(dself, 1) == cos(x)
 true
 ```
 
@@ -49,7 +49,7 @@ julia> sincosx, sincos_pushforward = frule(sincos, x, dself, 1);
 julia> sincosx == sincos(x)
 true
 
-julia> sincos_pushforward == (cos(x), -sin(x))
+julia> sincos_pushforward(dself, 1) == (cos(x), -sin(x))
 true
 ```
 
