@@ -40,7 +40,7 @@ Makes a best effort attempt to convert a differential into a primal value.
 This is not always a well-defined operation.
 For two reasons:
  - It may not be possible to determine the primal type for a given differential.
- For example `Zero` is a valid differential for any primal.
+ For example, `Zero` is a valid differential for any primal.
  - The primal type might not be a vector space, thus might not be a valid differential type.
  For example, if the primal type is `DateTime`, its not a valid differential type as two
  `DateTime` can not be added (fun fact: `Milisecond` is a differential for `DateTime`).
