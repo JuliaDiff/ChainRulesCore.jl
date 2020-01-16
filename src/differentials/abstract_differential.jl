@@ -19,7 +19,7 @@ All subtypes of `AbstractDifferential` implement the following operations:
 
 In general a differential type is the type of a derivative of a value.
 The type of the value is for contrast called the primal type.
-Differntial types correspond to primal types, though the relation is not one-to-one.
+Differential types correspond to primal types, although the relation is not one-to-one.
 Subtypes of  `AbstractDifferential` are not the only differential types.
 In fact for the most common primal types, such as `Real` or `AbstractArray{Real}` the
 the differential type is the same as the primal type.
