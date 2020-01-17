@@ -19,7 +19,8 @@ Base.Broadcast.broadcastable(x::AbstractZero) = Ref(x)
 Base.Broadcast.broadcasted(::Type{T}) where T<:AbstractZero = T()
 
 """
-    Zero()
+    Zero() <: AbstractZero
+    
 The additive identity for differentials.
 This is basically the same as `0`.
 A derivative of `Zero()`. does not propagate through the primal function.
