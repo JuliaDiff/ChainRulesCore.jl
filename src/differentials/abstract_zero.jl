@@ -32,7 +32,7 @@ extern(x::Zero) = false  # false is a strong 0. E.g. `false * NaN = 0.0`
 Base.zero(::AbstractDifferential) = Zero()
 
 """
-    DoesNotExist()
+    DoesNotExist() <: AbstractZero
 
 This differential indicates that the derivative Does Not Exist (D.N.E).
 It is the differential for a Primal type that is not differentiable.
