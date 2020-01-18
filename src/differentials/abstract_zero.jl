@@ -34,7 +34,7 @@ Base.zero(::AbstractDifferential) = Zero()
 """
     DoesNotExist() <: AbstractZero
 
-This differential indicates that the derivative Does Not Exist (D.N.E).
+This differential indicates that the derivative does not exist.
 It is the differential for a Primal type that is not differentiable.
 Such an Integer, or Boolean (when not being used as a represention of a valid that normally
 would be a floating point.)
