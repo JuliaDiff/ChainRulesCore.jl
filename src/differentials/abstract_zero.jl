@@ -36,7 +36,7 @@ Base.zero(::AbstractDifferential) = Zero()
 
 This differential indicates that the derivative does not exist.
 It is the differential for a Primal type that is not differentiable.
-Such an Integer, or Boolean (when not being used as a represention of a valid that normally
+Such an Integer, or Boolean (when not being used as a represention of a value that normally
 would be a floating point.)
 The only valid way to pertube such a values is to not change it at all.
 As such, `DoesNotExist` is functionally identical to `Zero()`,
