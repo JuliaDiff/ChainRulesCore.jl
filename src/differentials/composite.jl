@@ -43,7 +43,7 @@ Base.getindex(comp::Composite, idx) = getindex(backing(comp), idx)
 Base.getproperty(comp::Composite, idx::Int) = getproperty(backing(comp), idx)  # for Tuple
 
 function Base.getproperty(
-    comp::Composite{P, NamedTuple{L}}, idx::Symbol
+    comp::Composite{P, <:NamedTuple{L}}, idx::Symbol
 ) where {P, L}
     # Need to check L directly, or else this does not constant-fold
     idx ∈ L || return Zero()
