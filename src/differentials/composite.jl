@@ -44,7 +44,7 @@ Base.getproperty(comp::Composite, idx::Int) = getproperty(backing(comp), idx)  #
 
 function Base.getproperty(
     comp::Composite{P, NamedTuple{L}}, idx::Symbol
-)  where {P, L, T}
+) where {P, L}
     # Need to check L directly, or else this does not constant-fold
     idx ∈ L || return Zero()
     return getproperty(backing(comp), idx)
