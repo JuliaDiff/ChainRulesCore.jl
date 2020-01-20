@@ -44,15 +44,51 @@ Base.getproperty(comp::Composite, idx::Int) = getproperty(backing(comp), idx)  #
 Base.getproperty(comp::Composite, idx::Symbol) = getproperty(backing(comp), idx)
 Base.propertynames(comp::Composite) = propertynames(backing(comp))
 
-Base.iterate(comp::Composite, args...) = iterate(backing(comp), args...)
-Base.length(comp::Composite) = length(backing(comp))
-Base.eltype(::Type{<:Composite{<:Any, T}}) where T = eltype(T)
+Base.length(comp::Composite{P}) where P = fieldcount(P)
+
+Base.eltype(::Type{<:Composite{<:Any, T}}) where T<:Tuple = eltype(T)
+function Base.eltype(::Type{<:Composite{P, <:NamedTuple{L,T}}}) where {P, L, T}
+    if length(L) == fieldcount(P)
+        eltype(T)
+    else
+        # Some fields are missing and will be Zero() filled
+        Union{Zero, eltype(T)}
+    end
+end
+
+Base.iterate(comp::Composite{<:Any, <:Tuple}, args...) = iterate(backing(comp), args...)
+
+function Base.iterate(comp::Composite{P, <:NamedTuple}, args...) where P
+    # Need to insert Zero() for fields in the Primal that we don't have
+    # We don't need to do this for the Tuple case as that is always the right length
+    nil_nt = zeroed_backing(P)
+    # merge also makes the order match those of the fields
+    combined = merge(nil_nt, backing(comp))
+
+    return iterate(combined, args...)
+end
+
+"""
+    zeroed_backing(P)
+
+Returns a NamedTuple with same fields as `P`, and all values `Zero()`.
+"""
+@generated function zeroed_backing(::Type{P}) where P
+    nil_base = ntuple(fieldcount(P)) do i
+        (fieldname(P, i), Zero())
+    end
+    return (; nil_base...)
+end
 
 function Base.map(f, comp::Composite{P, <:Tuple}) where P
     vals::Tuple = map(f, backing(comp))
     return Composite{P, typeof(vals)}(vals)
 end
 function Base.map(f, comp::Composite{P, <:NamedTuple{L}}) where{P, L}
+    # Note: `map` unlike `iterate` skips nonpresent fields
+    # because we know they are Zero(), and for operations we care about
+    # they will stay Zero.
+    # Arguably this should be called linear_map.
     vals = map(f, Tuple(backing(comp)))
     named_vals = NamedTuple{L, typeof(vals)}(vals)
     return Composite{P, typeof(named_vals)}(named_vals)

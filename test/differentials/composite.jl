@@ -31,16 +31,31 @@ end
 
         @test propertynames(Composite{Tuple{Float64,}}(2.0)) == (1,)
         @test getproperty(Composite{Tuple{Float64,}}(2.0), 1) == 2.0
+    end
 
-        @test length(Composite{Foo}(x=2.5)) == 1
-        @test length(Composite{Tuple{Float64,}}(2.0)) == 1
+    @testset "Eltype" begin
+        @test eltype(Composite{Foo}(x=2.5)) == Union{Zero, Float64}
+        @test eltype(Composite{Foo}(x=2.5, y=20.0)) == Float64 # no fields are Zero'ed
 
-        @test eltype(Composite{Foo}(x=2.5)) == Float64
         @test eltype(Composite{Tuple{Float64,}}(2.0)) == Float64
+    end
 
+    @testset "Collect (iterate)" begin
         # Testing iterate via collect
-        @test collect(Composite{Foo}(x=2.5)) == [2.5]
         @test collect(Composite{Tuple{Float64,}}(2.0)) == [2.0]
+
+        # For structure it needs to match order and Zero() fill to match primal
+        @test collect(Composite{Foo}(x=2.5, y=10)) == [2.5, 10]
+        @test collect(Composite{Foo}(y=10, x=2.5)) == [2.5, 10]
+        @test collect(Composite{Foo}(y=10)) == [Zero(), 10]
+        @test collect(Composite{Foo}(x=2.5)) == [2.5, Zero()]
+    end
+
+    @testset "length matches primal" begin
+        @test length(Composite{Foo}(x=2.5)) == 2
+        @test length(Composite{Foo}(x=2.5, y=3)) == 2
+        @test length(Composite{Bar}(x=2.5)) == 1
+        @test length(Composite{Tuple{Float64,}}(2.0)) == 1
     end
 
     @testset "conj" begin
