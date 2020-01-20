@@ -25,7 +25,9 @@ In fact for the most common primal types, such as `Real` or `AbstractArray{Real}
 the differential type is the same as the primal type.
 
 In a circular definition: the most important property of a differential is that it should
-be able to be added (by defining `+`) to another differential of the same primal type, this facilitates gradient descent.
+be able to be added (by defining `+`) to another differential of the same primal type.
+That allows for gradients to be accumulated.
+
 It generally also should be able to be added to a primal to give back another primal, as
 this facilitates gradient descent.
 """
