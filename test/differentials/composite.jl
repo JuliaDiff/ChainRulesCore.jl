@@ -43,6 +43,10 @@ end
         @test collect(Composite{Tuple{Float64,}}(2.0)) == [2.0]
     end
 
+    @testset "unset properties" begin
+        @test Composite{Foo}(;x=1.4).y === Zero()
+    end
+
     @testset "conj" begin
         @test conj(Composite{Foo}(x=2.0+3.0im)) == Composite{Foo}(x=2.0-3.0im)
         @test ==(
