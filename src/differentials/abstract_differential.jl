@@ -11,7 +11,7 @@ All subtypes of `AbstractDifferential` implement the following operations:
 
 `+(a, b)`: linearly combine differential `a` and differential `b`
 
-`*(a, b)`: multiply the differential `b` by the scaling factor `b`
+`*(a, b)`: multiply the differential `b` by the scaling factor `a`
 
 `Base.conj(x)`: complex conjugate of the differential `x`
 
