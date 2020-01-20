@@ -44,7 +44,7 @@ end
     end
 
     @testset "unset properties" begin
-        @test Composite{Foo}(;x=1.4).y === Zero()
+        @test Composite{Foo}(; x=1.4).y === Zero()
     end
 
     @testset "conj" begin
