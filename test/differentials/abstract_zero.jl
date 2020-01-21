@@ -17,11 +17,14 @@
             @test x === z
         end
         @test broadcastable(z) isa Ref{Zero}
-        @test conj(z) === z
         @test zero(@thunk(3)) === z
         @test zero(One()) === z
         @test zero(DoesNotExist()) === z
         @test zero(Composite{Tuple{Int,Int}}((1, 2))) === z
+        for f in (transpose, adjoint, conj)
+            @test f(z) === z
+        end
+        @test z / 2 === z / [1, 3] === z
 
         # use mutable objects to test the strong `===` condition
         x = ones(2)
@@ -32,11 +35,6 @@
         @test muladd(x, Zero(), Zero()) === Zero()
         @test muladd(Zero(), x, Zero()) === Zero()
         @test muladd(Zero(), Zero(), Zero()) === Zero()
-
-        @test z === adjoint(z) === z'
-        @test z === transpose(z)
-
-        @test z / 2 === z / [1, 3] === z
     end
 
     @testset "DoesNotExist" begin
@@ -59,6 +57,9 @@
             @test x === dne
         end
         @test broadcastable(dne) isa Ref{DoesNotExist}
-        @test conj(dne) == dne
+        for f in (transpose, adjoint, conj)
+            @test f(dne) === dne
+        end
+        @test dne / 2 === dne / [1, 3] === dne
     end
 end

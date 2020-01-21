@@ -18,6 +18,11 @@ Base.iterate(::AbstractZero, ::Any) = nothing
 Base.Broadcast.broadcastable(x::AbstractZero) = Ref(x)
 Base.Broadcast.broadcasted(::Type{T}) where T<:AbstractZero = T()
 
+# Linear operators
+Base.adjoint(z::AbstractZero) = z
+Base.transpose(z::AbstractZero) = z
+Base.:/(z::AbstractZero, ::Any) = z
+
 """
     Zero() <: AbstractZero
 
@@ -30,11 +35,6 @@ struct Zero <: AbstractZero end
 extern(x::Zero) = false  # false is a strong 0. E.g. `false * NaN = 0.0`
 
 Base.zero(::AbstractDifferential) = Zero()
-
-# Linear operators
-Base.adjoint(z::Zero) = z
-Base.transpose(z::Zero) = z
-Base.:/(z::Zero, ::Any) = z
 
 """
     DoesNotExist() <: AbstractZero
