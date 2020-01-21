@@ -6,7 +6,7 @@
 Return `Δ + ∂` evaluated in a manner that supports ChainRulesCore's
 various [`AbstractDifferential`](@ref) types.
 
-See also: [`accumulate!`](@ref), [`store!`](@ref)
+See also: [`accumulate!`](@ref)
 """
 accumulate(Δ, ∂) = Δ + ∂
 
@@ -21,7 +21,7 @@ storing the result in `Δ`.
     so it is best to always call this as `Δ = accumulate!(Δ, ∂)` just in case.
 
 This function is overloadable by using a [`InplaceThunk`](@ref).
-See also: [`accumulate`](@ref), [`store!`](@ref).
+See also: [`accumulate`](@ref)
 """
 accumulate!(Δ, ∂) = accumulate(Δ, ∂)
 accumulate!(Δ::AbstractArray, ∂) = Δ .+= ∂

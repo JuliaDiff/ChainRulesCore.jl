@@ -1,4 +1,3 @@
-
 abstract type AbstractThunk <: AbstractDifferential end
 
 Base.Broadcast.broadcastable(x::AbstractThunk) = broadcastable(unthunk(x))
@@ -130,4 +129,3 @@ end
 
 # The real reason we have this:
 accumulate!(Δ, ∂::InplaceableThunk) = ∂.add!(Δ)
-store!(Δ, ∂::InplaceableThunk) = ∂.add!((Δ.*=false))  # zero it, then add to it.

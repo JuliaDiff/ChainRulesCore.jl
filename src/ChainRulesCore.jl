@@ -3,7 +3,7 @@ using Base.Broadcast: broadcasted, Broadcasted, broadcastable, materialize, mate
 
 export frule, rrule
 export @scalar_rule, @thunk
-export extern, store!, unthunk
+export extern, unthunk
 export Composite, DoesNotExist, InplaceableThunk, One, Thunk, Zero
 export NO_FIELDS
 
