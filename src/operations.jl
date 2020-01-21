@@ -6,7 +6,7 @@
 Return `Δ + ∂` evaluated in a manner that supports ChainRulesCore's
 various `AbstractDifferential` types.
 
-See also: [`accumulate!`](@ref), [`store!`](@ref), [`AbstractRule`](@ref)
+See also: [`accumulate!`](@ref), [`store!`](@ref)
 """
 accumulate(Δ, ∂) = Δ .+ ∂
 
@@ -37,6 +37,6 @@ necessary for alternative approaches  (e.g. `copyto!(Δ, extern(∂))`)
 Like [`accumulate`](@ref) and [`accumulate!`](@ref), this function is intended
 to be customizable for specific rules/input types.
 
-See also: [`accumulate`](@ref), [`accumulate!`](@ref), [`AbstractRule`](@ref)
+See also: [`accumulate`](@ref), [`accumulate!`](@ref)
 """
 store!(Δ, ∂) = materialize!(Δ, broadcastable(∂))
