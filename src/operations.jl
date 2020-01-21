@@ -23,21 +23,5 @@ storing the result in `Δ`.
 This function is overloadable by using a [`InplaceThunk`](@ref).
 See also: [`accumulate`](@ref), [`store!`](@ref).
 """
-accumulate!(Δ, ∂) = store!(Δ, accumulate(Δ, ∂))
-
-accumulate!(Δ::Number, ∂) = accumulate(Δ, ∂)
-
-
-"""
-    store!(Δ, ∂)
-
-Stores `∂`, in `Δ`, overwriting what ever was in `Δ` before.
-potentially avoiding intermediate temporary allocations that might be
-necessary for alternative approaches  (e.g. `copyto!(Δ, extern(∂))`)
-
-Like [`accumulate`](@ref) and [`accumulate!`](@ref), this function is intended
-to be customizable for specific rules/input types.
-
-See also: [`accumulate`](@ref), [`accumulate!`](@ref)
-"""
-store!(Δ, ∂) = materialize!(Δ, broadcastable(∂))
+accumulate!(Δ, ∂) = accumulate(Δ, ∂)
+accumulate!(Δ::AbstractArray, ∂) = Δ .+= ∂
