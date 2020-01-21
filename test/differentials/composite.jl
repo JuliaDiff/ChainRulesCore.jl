@@ -73,7 +73,8 @@ end
         @test canonicalize(CFoo(x=2.5, y=10)) == CFoo(x=2.5, y=10)
         @test canonicalize(CFoo(y=10, x=2.5)) == CFoo(x=2.5, y=10)
         @test canonicalize(CFoo(y=10)) == CFoo(x=Zero(), y=10)
-        @test canonicalize(CFoo(x=2.5)) == CFoo(x=2.5, y=Zero())
+
+        @test_throws ArgumentError canonicalize(CFoo(q=99.0, x=2.5))
     end
 
     @testset "+ with other composites" begin
