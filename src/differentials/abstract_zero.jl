@@ -18,9 +18,14 @@ Base.iterate(::AbstractZero, ::Any) = nothing
 Base.Broadcast.broadcastable(x::AbstractZero) = Ref(x)
 Base.Broadcast.broadcasted(::Type{T}) where T<:AbstractZero = T()
 
+# Linear operators
+Base.adjoint(z::AbstractZero) = z
+Base.transpose(z::AbstractZero) = z
+Base.:/(z::AbstractZero, ::Any) = z
+
 """
     Zero() <: AbstractZero
-    
+
 The additive identity for differentials.
 This is basically the same as `0`.
 A derivative of `Zero()`. does not propagate through the primal function.
