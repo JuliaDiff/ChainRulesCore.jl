@@ -65,9 +65,9 @@ is equivalent to:
                  (∂f₂_∂x₁, ∂f₂_∂x₂, ...),
                  ...)
 
-For examples, see ChainRulesCore' `rules` directory.
+For examples, see ChainRules' `rulesets` directory.
 
-See also: [`frule`](@ref), [`rrule`](@ref), [`AbstractRule`](@ref)
+See also: [`frule`](@ref), [`rrule`](@ref).
 """
 macro scalar_rule(call, maybe_setup, partials...)
     call, setup_stmts, inputs, partials = _normalize_scalarrules_macro_input(
