@@ -8,7 +8,7 @@ various [`AbstractDifferential`](@ref) types.
 
 See also: [`accumulate!`](@ref), [`store!`](@ref)
 """
-accumulate(Δ, ∂) = Δ .+ ∂
+accumulate(Δ, ∂) = Δ + ∂
 
 """
     accumulate!(Δ, ∂)
