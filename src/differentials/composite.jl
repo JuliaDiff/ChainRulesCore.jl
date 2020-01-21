@@ -12,6 +12,14 @@ Fields of the P that are not present in the Composite are treated as `Zero`.
 `T` is an implementation detail representing the backing data structure.
 For Tuple it will be a Tuple, and for everything else it will be a `NamedTuple`.
 It should not be passed in by user.
+
+For `Composite`s of `Tuple`s, `iterate` and `getindex` is overloaded to behave similarly
+to for a tuple.
+For `Composite`s of `struct`s, `getproperty` is overloaded to allow for accessing values
+via `comp.fieldname`.
+Any fields not explictly present in the `Composite` are treated as being set to `Zero()`.
+To make a `Composite` have all the fields of the primal the [`canonicalize`](@ref)
+function is provided.
 """
 struct Composite{P, T} <: AbstractDifferential
     # Note: If T is a Tuple, then P is also a Tuple
@@ -106,6 +114,42 @@ function backing(x::T)::NamedTuple where T
         vals = ntuple(ii->getfield(x, ii), nfields)
         return NamedTuple{names, Tuple{types...}}(vals)
     end
+end
+
+"""
+    canonicalize(comp::Composite{P})
+
+Returns the canonical Composite type for the primal type P.
+This means it has all the same propertynames names as the primal's fields.
+And it has explict `Zero()` for all fields of `P` that are not present in `comp`.
+
+
+"""
+function canonicalize(comp::Composite{P, <:NamedTuple{L}}) where {P,L}
+    nil = _zeroed_backing(P)
+    combined = merge(nil, backing(comp))
+    if length(combined) !== fieldcount(P)
+        throw(ArgumentError(
+            "Composite fields do not match primal fields.\n" *
+            "Composite fields ($L). Primal ($P) fields: $(fieldnames(P))"
+        ))
+    end
+    return Composite{P, typeof(combined)}(combined)
+end
+
+# Tuple composites are always in their canonical form
+canonicalize(comp::Composite{<:Tuple, <:Tuple}) = comp
+
+"""
+    _zeroed_backing(P)
+
+Returns a NamedTuple with same fields as `P`, and all values `Zero()`.
+"""
+@generated function _zeroed_backing(::Type{P}) where P
+    nil_base = ntuple(fieldcount(P)) do i
+        (fieldname(P, i), Zero())
+    end
+    return (; nil_base...)
 end
 
 """
