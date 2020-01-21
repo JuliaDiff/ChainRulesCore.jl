@@ -65,7 +65,7 @@ is equivalent to:
                  (∂f₂_∂x₁, ∂f₂_∂x₂, ...),
                  ...)
 
-For examples, see ChainRulesCore' `rules` directory.
+For examples, see ChainRules' `rulesets` directory.
 
 See also: [`frule`](@ref), [`rrule`](@ref).
 """
