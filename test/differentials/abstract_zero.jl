@@ -32,6 +32,11 @@
         @test muladd(x, Zero(), Zero()) === Zero()
         @test muladd(Zero(), x, Zero()) === Zero()
         @test muladd(Zero(), Zero(), Zero()) === Zero()
+
+        @test z === adjoint(z) === z'
+        @test z === transpose(z)
+
+        @test z / 2 === z / [1, 3] === z
     end
 
     @testset "DoesNotExist" begin

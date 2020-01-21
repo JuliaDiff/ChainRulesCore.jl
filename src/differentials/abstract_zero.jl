@@ -20,7 +20,7 @@ Base.Broadcast.broadcasted(::Type{T}) where T<:AbstractZero = T()
 
 """
     Zero() <: AbstractZero
-    
+
 The additive identity for differentials.
 This is basically the same as `0`.
 A derivative of `Zero()`. does not propagate through the primal function.
@@ -30,6 +30,11 @@ struct Zero <: AbstractZero end
 extern(x::Zero) = false  # false is a strong 0. E.g. `false * NaN = 0.0`
 
 Base.zero(::AbstractDifferential) = Zero()
+
+# Linear operators
+Base.adjoint(z::Zero) = z
+Base.transpose(z::Zero) = z
+Base.:/(z::Zero, ::Any) = z
 
 """
     DoesNotExist() <: AbstractZero
