@@ -117,13 +117,11 @@ function backing(x::T)::NamedTuple where T
 end
 
 """
-    canonicalize(comp::Composite{P})
+    canonicalize(comp::Composite{P}) -> Composite{P}
 
-Returns the canonical Composite type for the primal type P.
-This means it has all the same propertynames names as the primal's fields.
-And it has explict `Zero()` for all fields of `P` that are not present in `comp`.
-
-
+Return the canonical `Composite` for the primal type `P`.
+The property names of the returned `Composite` match the field names of the primal,
+and all fields of `P` not present in the input `comp` are explictly set to `Zero()`.
 """
 function canonicalize(comp::Composite{P, <:NamedTuple{L}}) where {P,L}
     nil = _zeroed_backing(P)
@@ -131,7 +129,7 @@ function canonicalize(comp::Composite{P, <:NamedTuple{L}}) where {P,L}
     if length(combined) !== fieldcount(P)
         throw(ArgumentError(
             "Composite fields do not match primal fields.\n" *
-            "Composite fields ($L). Primal ($P) fields: $(fieldnames(P))"
+            "Composite fields: $L. Primal ($P) fields: $(fieldnames(P))"
         ))
     end
     return Composite{P, typeof(combined)}(combined)
