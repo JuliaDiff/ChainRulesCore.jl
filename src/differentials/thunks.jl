@@ -60,9 +60,6 @@ Do not use `@thunk` if this would be equal or more work than actually evaluating
 - The expression being a constant
 - The expression is merely wrapping something in a `struct`, such as `Adjoint(x)` or `Diagonal(x)`
 - The expression being itself a `thunk`
-- The expression being from another `rrule` or `frule` (it would be `@thunk`ed if required by the defining rule already)
-- There is only one derivative being returned, so from the fact that the user called `frule`/`rrule`
-they clearly will want to use that one.
 """
 struct Thunk{F} <: AbstractThunk
     f::F
@@ -105,8 +102,7 @@ Base.show(io::IO, x::Thunk) = println(io, "Thunk($(repr(x.f)))")
 """
     InplaceableThunk(val::Thunk, add!::Function)
 
-A wrapper for a `Thunk`, that allows it to define an inplace `add!` function,
-which is used internally in `accumulate!(Δ, ::InplaceableThunk)`.
+A wrapper for a `Thunk`, that allows it to define an inplace `add!` function.
 
 `add!` should be defined such that: `ithunk.add!(Δ) = Δ .+= ithunk.val`
 but it should do this more efficently than simply doing this directly.
@@ -126,6 +122,3 @@ unthunk(x::InplaceableThunk) = unthunk(x.val)
 function Base.show(io::IO, x::InplaceableThunk)
     println(io, "InplaceableThunk($(repr(x.val)), $(repr(x.add!)))")
 end
-
-# The real reason we have this:
-accumulate!(Δ, ∂::InplaceableThunk) = ∂.add!(Δ)

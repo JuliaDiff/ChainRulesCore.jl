@@ -17,7 +17,6 @@ include("differentials/composite.jl")
 
 include("differential_arithmetic.jl")
 
-include("operations.jl")
 include("rules.jl")
 include("rule_definition_tools.jl")
 

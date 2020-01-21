@@ -2,9 +2,7 @@
 using Test
 using ChainRulesCore
 using LinearAlgebra: Diagonal
-using ChainRulesCore: extern, accumulate, accumulate!,
-    Composite, @scalar_rule,
-    Zero, One, DoesNotExist, Thunk
+using ChainRulesCore: extern Composite, @scalar_rule, Zero, One, DoesNotExist, Thunk
 using Base.Broadcast: broadcastable
 
 @testset "ChainRulesCore" begin
