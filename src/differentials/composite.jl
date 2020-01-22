@@ -13,7 +13,7 @@ Fields of the P that are not present in the Composite are treated as `Zero`.
 For Tuple it will be a Tuple, and for everything else it will be a `NamedTuple`.
 It should not be passed in by user.
 
-For `Composite`s of `Tuple`s, `iterate` and `getindex` is overloaded to behave similarly
+For `Composite`s of `Tuple`s, `iterate` and `getindex` are overloaded to behave similarly
 to for a tuple.
 For `Composite`s of `struct`s, `getproperty` is overloaded to allow for accessing values
 via `comp.fieldname`.
