@@ -17,7 +17,7 @@ makedocs(
     ],
 )
 
-const repo="github.com/JuliaDiff/ChainRules.jl.git"
+const repo = "github.com/JuliaDiff/ChainRulesCore.jl.git"
 const PR = get(ENV, "TRAVIS_PULL_REQUEST", "false")
 if PR == "false"
     # Normal case, only deply docs if merging to master or release tagged
