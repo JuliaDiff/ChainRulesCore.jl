@@ -3,12 +3,12 @@
 ## What is up with the different symbols?
 
 ### `Δx`, `∂x`, `dx`
-ChainRules uses these perhaps atyptically.
+ChainRules uses these perhaps atypically.
 As a notation that is the same across propagators, regardless of direction (incontrast see `ẋ` and `x̄` below).
 
  - `Δx` is the input to a propagator, (i.e a _seed_ for a _pullback_; or a _perturbation_ for a _pushforward_)
  - `∂x` is the output of a propagator
- - `dx` could be either
+ - `dx` could be either `input` or `output`
 
 
 ### dots and bars: ``\dot{y} = \dfrac{∂y}{∂x} = \overline{x}``
@@ -28,7 +28,7 @@ Why not just return the pushforward/pullback, and let the user call `f(x)` to ge
 There are three reasons the rules also calculate the `f(x)`.
 1. For some rules an alternative way of calculating `f(x)` can give the same answer while also generating intermediate values that can be used in the calculations required to propagate the derivative.
 2. For many `rrule`s the output value is used in the definition of the pullback. For example `tan`, `sigmoid` etc.
-3. For some `frule`s there exists a single, non-separable operation that will compute both derivative and primal result. For example many of the methods for [differential equation sensitivity analysis](https://docs.juliadiffeq.org/latest/analysis/sensitivity/#sensitivity-1).
+3. For some `frule`s there exists a single, non-separable operation that will compute both derivative and primal result. For example many of the methods for [differential equation sensitivity analysis](https://docs.juliadiffeq.org/stable/analysis/sensitivity/#sensitivity-1).
 
 ## Where are the derivatives for keyword arguments?
 _pullbacks_ do not return a sensitivity for keyword arguments;
@@ -47,7 +47,7 @@ We provide both to allow for clearer writing of rules, and easier debugging.
 
 `Zero()` represents the fact that if one perturbs (adds a small change to) the matching primal there will be no change in the behavour of the primal function.
 For example in `fst(x,y) = x`, then the derivative of `fst` with respect to `y` is `Zero()`.
-`fst(10, 5) == 10` and if we add `0,1` to `5` we still get `fst(10, 5.1)=10`.
+`fst(10, 5) == 10` and if we add `0.1` to `5` we still get `fst(10, 5.1)=10`.
 
 `DoesNotExist()` represents the fact that if one perturbs the matching primal, the primal function will now error.
 For example in `access(xs, n) = xs[n]` then the derivative of `access` with respect to `n` is `DoesNotExist()`.
