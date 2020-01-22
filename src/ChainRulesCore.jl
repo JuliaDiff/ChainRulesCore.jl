@@ -4,7 +4,7 @@ using Base.Broadcast: broadcasted, Broadcasted, broadcastable, materialize, mate
 export frule, rrule
 export @scalar_rule, @thunk
 export canonicalize, extern, unthunk
-export Composite, DoesNotExist, InplaceableThunk, One, Thunk, Zero
+export Composite, DoesNotExist, InplaceableThunk, One, Thunk, Zero, AbstractZero
 export NO_FIELDS
 
 include("compat.jl")
