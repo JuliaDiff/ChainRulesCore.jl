@@ -71,7 +71,6 @@ function overlap(ang_end)
     strokepath()
 end
 
-####################
 # Actually draw it
 
 Random.seed!(16)
