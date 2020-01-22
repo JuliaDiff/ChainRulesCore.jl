@@ -64,20 +64,25 @@ end
         @test extern(Composite{Tuple{Float64,}}(@thunk(0+2.0))) == (2.0,)
     end
 
+    @testset "canonicalize" begin
+        # Testing iterate via collect
+        @test collect(Composite{Tuple{Float64,}}(2.0)) == [2.0]
+
+        # For structure it needs to match order and Zero() fill to match primal
+        CFoo = Composite{Foo}
+        @test canonicalize(CFoo(x=2.5, y=10)) == CFoo(x=2.5, y=10)
+        @test canonicalize(CFoo(y=10, x=2.5)) == CFoo(x=2.5, y=10)
+        @test canonicalize(CFoo(y=10)) == CFoo(x=Zero(), y=10)
+
+        @test_throws ArgumentError canonicalize(CFoo(q=99.0, x=2.5))
+    end
+
     @testset "+ with other composites" begin
         @testset "Structs" begin
-            @test (
-                Composite{Foo}(x=1.5) +
-                Composite{Foo}(x=2.5)
-            ) == Composite{Foo}(x=4.0)
-            @test (
-                Composite{Foo}(y=1.5) +
-                Composite{Foo}(x=2.5)
-            ) == Composite{Foo}(y=1.5, x=2.5)
-            @test (
-                Composite{Foo}(y=1.5, x=1.5) +
-                Composite{Foo}(x=2.5)
-                ) == Composite{Foo}(y=1.5, x=4.0)
+            CFoo = Composite{Foo}
+            @test  CFoo(x=1.5) + CFoo(x=2.5) == CFoo(x=4.0)
+            @test CFoo(y=1.5) + CFoo(x=2.5) == CFoo(y=1.5, x=2.5)
+            @test CFoo(y=1.5, x=1.5) + CFoo(x=2.5) == CFoo(y=1.5, x=4.0)
         end
 
         @testset "Tuples" begin
