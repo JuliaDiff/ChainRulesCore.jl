@@ -3,7 +3,7 @@ using Base.Broadcast: broadcasted, Broadcasted, broadcastable, materialize, mate
 
 export frule, rrule
 export @scalar_rule, @thunk
-export extern, store!, unthunk
+export extern, unthunk
 export Composite, DoesNotExist, InplaceableThunk, One, Thunk, Zero
 export NO_FIELDS
 
@@ -17,7 +17,6 @@ include("differentials/composite.jl")
 
 include("differential_arithmetic.jl")
 
-include("operations.jl")
 include("rules.jl")
 include("rule_definition_tools.jl")
 
