@@ -25,13 +25,11 @@ Knowing rules for more complicated functions speeds up the autodiff process as i
     Help with that is always welcomed.
 
 !!! terminology "Primal"
-Often we will talk about something as _primal_.
-That means it is related to the original problem, not its derivative.
-For example for `y = foo(x)`
-`foo` is the _primal_ function,
-computing `foo(x)` is doing the _primal_ computation.
-`y` is the _primal_ return, and `x` is a _primal_ argument.
-`typeof(y)` and `typeof(x)` are both _primal_ types.
+    Often we will talk about something as _primal_.
+    That means it is related to the original problem, not its derivative.
+    For example in `y = foo(x)`, `foo` is the _primal_ function, and computing `foo(x)` is doing the _primal_ computation.
+    `y` is the _primal_ return, and `x` is a _primal_ argument.
+    `typeof(y)` and `typeof(x)` are both _primal_ types.
 
 
 ## `frule` and `rrule`
