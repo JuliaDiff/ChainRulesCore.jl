@@ -26,6 +26,17 @@ return @thunk(∂A)
 ```
 In the bad example `foo(x)` gets computed eagerly, and all that the thunk is doing is wrapping the already calculated result in a function that returns it.
 
+Do not use `@thunk` if this would be equal or more work than actually evaluating the expression itself.
+Examples being:
+- The expression being a constant
+- The expression is merely wrapping something in a `struct`, such as `Adjoint(x)` or `Diagonal(x)`
+- The expression being itself a `thunk`
+- The expression being from another `rrule` or `frule`;
+  it would be `@thunk`ed if required by the defining rule already.
+- There is only one derivative being returned, so from the fact that the user called
+  `frule`/`rrule` they clearly will want to use that one.
+
+
 ## Be careful with using `adjoint` when you mean `transpose`
 
 Remember for complex numbers `a'` (i.e. `adjoint(a)`) takes the complex conjugate.
