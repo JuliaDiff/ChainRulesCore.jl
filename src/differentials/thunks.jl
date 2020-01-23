@@ -57,14 +57,8 @@ Also if we did `Zero() * res[1]` then the result would be `Zero()` and `f(x)` wo
 with a field for each variable used in the expression, and call overloaded.
 
 Do not use `@thunk` if this would be equal or more work than actually evaluating the expression itself.
-Examples being:
-- The expression being a constant
-- The expression is merely wrapping something in a `struct`, such as `Adjoint(x)` or `Diagonal(x)`
-- The expression being itself a `thunk`
-- The expression being from another `rrule` or `frule`;
-  it would be `@thunk`ed if required by the defining rule already.
-- There is only one derivative being returned, so from the fact that the user called
-  `frule`/`rrule` they clearly will want to use that one.
+
+For more details see the manual section [on using thunks effectively](http://www.juliadiff.org/ChainRulesCore.jl/dev/writing_good_rules.html#Use-Thunks-appropriately-1)
 """
 struct Thunk{F} <: AbstractThunk
     f::F
