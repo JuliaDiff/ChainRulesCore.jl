@@ -329,7 +329,7 @@ unthunk(ċ)
 -2.0638950738662625
 ```
 ```julia
-#### Find dfoo/dx via finite-differences
+#### Find dfoo/dx via FiniteDifferences.jl
 using FiniteDifferences
 central_fdm(5, 1)(foo, x)
 # output
