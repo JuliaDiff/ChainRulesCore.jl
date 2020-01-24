@@ -16,6 +16,7 @@ makedocs(
         "API" => "api.md",
     ],
     strict=true,
+    checkdocs=:exports,
 )
 
 const repo = "github.com/JuliaDiff/ChainRulesCore.jl.git"
