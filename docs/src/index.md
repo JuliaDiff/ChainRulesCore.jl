@@ -311,8 +311,10 @@ _, b̄ = c_pullback(extern(c̄));     # ∂c/∂b
 _, _, ā = b_pullback(extern(b̄));  # ∂c/∂a
 _, x̄ = a_pullback(extern(ā));     # ∂c/∂x = ∂f/∂x
 extern(x̄)
-# -2.0638950738662625
-
+# output
+-2.0638950738662625
+```
+```jldoctest
 #### Find dfoo/dx via frules
 x = 3;
 ẋ = 1;  # ∂x/∂x
