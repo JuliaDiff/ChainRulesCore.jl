@@ -319,11 +319,10 @@ x = 3;
 nofields = Zero();  # ∂self/∂self
 
 a, ȧ = frule(sin, x, nofields, ẋ); # ∂a/∂x
-b, ḃ = frule(*, 2, nofields, unthunk(ȧ)); # ∂b/∂x = ∂b/∂a⋅∂a/∂x
+b, ḃ = frule(*, 2, a, nofields, Zero(), unthunk(ȧ)); # ∂b/∂x = ∂b/∂a⋅∂a/∂x
 
-c, ċ = frule(asin, b, unthunk(ḃ)); # ∂c/∂x = ∂c/∂b⋅∂b/∂x = ∂f/∂x
+c, ċ = frule(asin, b, nofields, unthunk(ḃ)); # ∂c/∂x = ∂c/∂b⋅∂b/∂x = ∂f/∂x
 unthunk(ċ)
-
 # output
 -2.0638950738662625
 ```
