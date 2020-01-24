@@ -55,7 +55,7 @@ b, ḃ = frule(*, 2, a, nofields, Zero(), unthunk(ȧ)); # ∂b/∂x = ∂b/∂a�
 c, ċ = frule(asin, b, nofields, unthunk(ḃ)); # ∂c/∂x = ∂c/∂b⋅∂b/∂x = ∂f/∂x
 unthunk(ċ)
 # output
--2.0638950738662625</code></pre><pre><code class="language-julia">#### Find dfoo/dx via finite-differences
+-2.0638950738662625</code></pre><pre><code class="language-julia">#### Find dfoo/dx via FiniteDifferences.jl
 using FiniteDifferences
 central_fdm(5, 1)(foo, x)
 # output
