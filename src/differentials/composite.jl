@@ -68,14 +68,15 @@ Base.convert(::Type{<:Tuple}, comp::Composite{<:Any, <:Tuple}) = backing(comp)
 Base.convert(::Type{<:Dict}, comp::Composite{<:Dict, <:Dict}) = backing(comp)
 
 Base.getindex(comp::Composite, idx) = getindex(backing(comp), idx)
-Base.getproperty(comp::Composite, idx::Int) = getproperty(backing(comp), idx)  # for Tuple
 
+# for Tuple
+Base.getproperty(comp::Composite, idx::Int) = unthunk(getproperty(backing(comp), idx))
 function Base.getproperty(
     comp::Composite{P, <:NamedTuple{L}}, idx::Symbol
 ) where {P, L}
     # Need to check L directly, or else this does not constant-fold
     idx ∈ L || return Zero()
-    return getproperty(backing(comp), idx)
+    return unthunk(getproperty(backing(comp), idx))
 end
 
 Base.keys(comp::Composite) = keys(backing(comp))
