@@ -288,7 +288,7 @@ This was once how all neural network code worked.
 
 Using ChainRules directly also helps get a feel for it.
 
-```julia
+```jldoctest
 using ChainRules
 
 function foo(x)
@@ -299,47 +299,51 @@ function foo(x)
 end
 
 #### Find dfoo/dx via rrules
-
-# First the forward pass, accumulating rules
+#### First the forward pass, accumulating rules
 x = 3;
 a, a_pullback = rrule(sin, x);
 b, b_pullback = rrule(*, 2, a);
 c, c_pullback = rrule(asin, b)
 
-# Then the backward pass calculating gradients
+#### Then the backward pass calculating gradients
 c̄ = 1;  # ∂c/∂c
 _, b̄ = c_pullback(extern(c̄));     # ∂c/∂b
 _, _, ā = b_pullback(extern(b̄));  # ∂c/∂a
 _, x̄ = a_pullback(extern(ā));     # ∂c/∂x = ∂f/∂x
 extern(x̄)
-# -2.0638950738662625
-
+# output
+-2.0638950738662625
+```
+```jldoctest
 #### Find dfoo/dx via frules
-
 x = 3;
 ẋ = 1;  # ∂x/∂x
 nofields = Zero();  # ∂self/∂self
 
 a, ȧ = frule(sin, x, nofields, ẋ); # ∂a/∂x
-b, ḃ = frule(*, 2, nofields, unthunk(ȧ)); # ∂b/∂x = ∂b/∂a⋅∂a/∂x
+b, ḃ = frule(*, 2, a, nofields, Zero(), unthunk(ȧ)); # ∂b/∂x = ∂b/∂a⋅∂a/∂x
 
-c, ċ = frule(asin, b, unthunk(ḃ)); # ∂c/∂x = ∂c/∂b⋅∂b/∂x = ∂f/∂x
+c, ċ = frule(asin, b, nofields, unthunk(ḃ)); # ∂c/∂x = ∂c/∂b⋅∂b/∂x = ∂f/∂x
 unthunk(ċ)
-# -2.0638950738662625
-
-#### Find dfoo/dx via finite-differences
-
+# output
+-2.0638950738662625
+```
+```julia
+#### Find dfoo/dx via FiniteDifferences.jl
 using FiniteDifferences
 central_fdm(5, 1)(foo, x)
-# -2.0638950738670734
+# output
+-2.0638950738670734
 
 #### Find dfoo/dx via ForwardDiff.jl
 using ForwardDiff
 ForwardDiff.derivative(foo, x)
-# -2.0638950738662625
+# output
+-2.0638950738662625
 
 #### Find dfoo/dx via Zygote.jl
 using Zygote
 Zygote.gradient(foo, x)
-# (-2.0638950738662625,)
+# output
+(-2.0638950738662625,)
 ```

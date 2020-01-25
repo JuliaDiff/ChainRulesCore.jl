@@ -6,7 +6,7 @@ using Documenter
 
 makedocs(
     modules=[ChainRules, ChainRulesCore],
-    format=Documenter.HTML(prettyurls=false, assets = ["assets/chainrules.css"]),
+    format=Documenter.HTML(prettyurls=false, assets=["assets/chainrules.css"]),
     sitename="ChainRules",
     authors="Jarrett Revels and other contributors",
     pages=[
@@ -15,12 +15,14 @@ makedocs(
         "Writing Good Rules" => "writing_good_rules.md",
         "API" => "api.md",
     ],
+    strict=true,
+    checkdocs=:exports,
 )
 
 const repo = "github.com/JuliaDiff/ChainRulesCore.jl.git"
 const PR = get(ENV, "TRAVIS_PULL_REQUEST", "false")
 if PR == "false"
-    # Normal case, only deply docs if merging to master or release tagged
+    # Normal case, only deploy docs if merging to master or release tagged
     deploydocs(repo=repo)
 else
     @info "Deploying review docs for PR #$PR"

@@ -9,9 +9,7 @@ version = "0.3.2"
 
 [[ChainRulesCore]]
 deps = ["MuladdMacro"]
-git-tree-sha1 = "2d67fd76f99ffba4059e55be324b24bf38582a38"
-repo-rev = "ox/movedoctsD2"
-repo-url = ".."
+path = ".."
 uuid = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 version = "0.6.1"
 
