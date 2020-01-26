@@ -53,6 +53,6 @@ _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
 
     sx = @SVector [1, 2]
     sy = @SVector [3, 4]
-    # This actually is testing that @scalar_rule and `One()` play nice together, w.r.t broadcasting
+    # This is testing that @scalar_rule and `One()` play nice together, w.r.t broadcasting
     @inferred frule(very_nice, 1, 2, Zero(), sx, sy)
 end

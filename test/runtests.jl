@@ -1,9 +1,7 @@
-# TODO: more tests!
-using Test
+using Base.Broadcast: broadcastable
 using ChainRulesCore
 using LinearAlgebra: Diagonal
-using ChainRulesCore: extern, Composite, @scalar_rule, Zero, One, DoesNotExist, Thunk
-using Base.Broadcast: broadcastable
+using Test
 
 @testset "ChainRulesCore" begin
     @testset "differentials" begin
