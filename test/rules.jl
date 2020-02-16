@@ -58,6 +58,8 @@ function frule(
     return x + y + sum(z), Δx + Δy + sum(Δz)
 end
 
+frule(dargs, ::typeof(Core._apply), f, x...) = frule(dargs[2:end], f, x...)
+
 #######
 
 _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
@@ -112,6 +114,8 @@ _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
         (nothing, 3, 2.0, 1.0, 5.0), # violates type constraints
         mixed_vararg_type_constaint, 3, 2.0, 1.0, 0,
     ) == nothing
+
+    @test frule((nothing, nothing, 5.0), Core._apply, dummy_identity, 4.0) == (4.0, 5.0)
 
     @testset "broadcasting One" begin
         sx = @SVector [1, 2]
