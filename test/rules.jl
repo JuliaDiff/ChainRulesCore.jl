@@ -1,6 +1,7 @@
 #######
 # Demo setup
 using StaticArrays: @SVector
+import ChainRulesCore: frule, tail
 
 cool(x) = x + 1
 cool(x, y) = x + y + 1
@@ -14,6 +15,48 @@ nice(x) = 1
 
 very_nice(x, y) = x + y
 @scalar_rule(very_nice(x, y), (One(), One()))
+
+
+#
+# Tests that aim to ensure that the API for frules doesn't regress and make these things
+# hard to implement.
+#
+
+varargs_function(x...) = sum(x)
+function frule(dargs, ::typeof(varargs_function), x...)
+    Δx = tail(dargs)
+    return sum(x), sum(Δx)
+end
+
+mixed_vararg(x, y, z...) = x + y + sum(z)
+function frule(
+    dargs::Tuple{Any, Any, Any, Vararg},
+    ::typeof(mixed_vararg), x, y, z...,
+)
+    Δx = dargs[2]
+    Δy = dargs[3]
+    Δz = dargs[4:end]
+    return mixed_vararg(x, y, z...), Δx + Δy + sum(Δz)
+end
+
+type_constraints(x::Int, y::Float64) = x + y
+function frule(
+    (_, Δx, Δy)::Tuple{Any, Int, Float64},
+    ::typeof(type_constraints), x::Int, y::Float64,
+)
+    return type_constraints(x, y), Δx + Δy
+end
+
+mixed_vararg_type_constaint(x::Float64, y::Real, z::Vararg{Float64}) = x + y + sum(z)
+function frule(
+    dargs::Tuple{Any, Float64, Real, Vararg{Float64}},
+    ::typeof(mixed_vararg_type_constaint), x::Float64, y::Real, z::Vararg{Float64},
+)
+    Δx = dargs[2]
+    Δy = dargs[3]
+    Δz = dargs[4:end]
+    return x + y + sum(z), Δx + Δy + sum(Δz)
+end
 
 #######
 
@@ -51,9 +94,30 @@ _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
     rrx, nice_pullback = rrule(nice, 1)
     @test (NO_FIELDS, Zero()) === nice_pullback(1)
 
-    sx = @SVector [1, 2]
-    sy = @SVector [3, 4]
 
-    # This is testing that @scalar_rule and `One()` play nice together, w.r.t broadcasting
-    @inferred frule((Zero(), sx, sy), very_nice, 1, 2)
+    # Test that these run. Do not care about numerical correctness.
+    @test frule((nothing, 1.0, 1.0, 1.0), varargs_function, 0.5, 0.5, 0.5) == (1.5, 3.0)
+
+    @test frule((nothing, 1.0, 2.0, 3.0, 4.0), mixed_vararg, 1.0, 2.0, 3.0, 4.0) == (10.0, 10.0)
+
+    @test frule((nothing, 3, 2.0), type_constraints, 5, 4.0) == (9.0, 5.0)
+    @test frule((nothing, 3.0, 2.0im), type_constraints, 5, 4.0) == nothing
+
+    @test(frule(
+        (nothing, 3.0, 2.0, 1.0, 0.0),
+        mixed_vararg_type_constaint, 3.0, 2.0, 1.0, 0.0,
+    ) == (6.0, 6.0))
+
+    @test frule(
+        (nothing, 3, 2.0, 1.0, 5.0), # violates type constraints
+        mixed_vararg_type_constaint, 3, 2.0, 1.0, 0,
+    ) == nothing
+
+    @testset "broadcasting One" begin
+        sx = @SVector [1, 2]
+        sy = @SVector [3, 4]
+
+        # Test that @scalar_rule and `One()` play nice together, w.r.t broadcasting
+        @inferred frule((Zero(), sx, sy), very_nice, 1, 2)
+    end
 end
