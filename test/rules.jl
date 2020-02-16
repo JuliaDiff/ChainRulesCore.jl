@@ -1,7 +1,7 @@
 #######
 # Demo setup
 using StaticArrays: @SVector
-import ChainRulesCore: frule, tail
+import ChainRulesCore: frule
 
 cool(x) = x + 1
 cool(x, y) = x + y + 1
@@ -24,7 +24,7 @@ very_nice(x, y) = x + y
 
 varargs_function(x...) = sum(x)
 function frule(dargs, ::typeof(varargs_function), x...)
-    Δx = tail(dargs)
+    Δx = Base.tail(dargs)
     return sum(x), sum(Δx)
 end
 

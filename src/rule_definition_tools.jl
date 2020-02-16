@@ -2,13 +2,6 @@
 using MuladdMacro: @muladd
 
 """
-    tail(x::Tuple)
-
-Produce a new `Tuple` containing all but the first element of `x`.
-"""
-tail(x::Tuple) = x[2:end]
-
-"""
     @scalar_rule(f(x₁, x₂, ...),
                  @setup(statement₁, statement₂, ...),
                  (∂f₁_∂x₁, ∂f₁_∂x₂, ...),
