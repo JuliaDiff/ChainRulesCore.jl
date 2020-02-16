@@ -2,6 +2,13 @@
 using MuladdMacro: @muladd
 
 """
+    tail(x::Tuple)
+
+Produce a new `Tuple` containing all but the first element of `x`.
+"""
+tail(x::Tuple) = x[2:end]
+
+"""
     @scalar_rule(f(x₁, x₂, ...),
                  @setup(statement₁, statement₂, ...),
                  (∂f₁_∂x₁, ∂f₁_∂x₂, ...),
@@ -163,7 +170,7 @@ function scalar_frule_expr(f, call, setup_stmts, inputs, partials)
     return quote
         # _ is the input derivative w.r.t. function internals. since we do not
         # allow closures/functors with @scalar_rule, it is always ignored
-        function ChainRulesCore.frule(::typeof($f), $(inputs...), _, $(Δs...))
+        function ChainRulesCore.frule((_, $(Δs...)), ::typeof($f), $(inputs...))
             $(esc(:Ω)) = $call
             $(setup_stmts...)
             return $(esc(:Ω)), $pushforward_returns

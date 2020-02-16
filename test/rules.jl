@@ -21,8 +21,8 @@ _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
 
 @testset "frule and rrule" begin
     dself = Zero()
-    @test frule(cool, 1, dself, 1) === nothing
-    @test frule(cool, 1, dself, 1; iscool=true) === nothing
+    @test frule((dself, 1), cool, 1) === nothing
+    @test frule((dself, 1), cool, 1; iscool=true) === nothing
     @test rrule(cool, 1) === nothing
     @test rrule(cool, 1; iscool=true) === nothing
 
@@ -37,7 +37,7 @@ _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
                         Tuple{typeof(rrule),typeof(cool),String}])
     @test cool_methods == only_methods
 
-    frx, cool_pushforward = frule(cool, 1, dself, 1)
+    frx, cool_pushforward = frule((dself, 1), cool, 1)
     @test frx === 2
     @test cool_pushforward === 1
     rrx, cool_pullback = rrule(cool, 1)
@@ -46,13 +46,14 @@ _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
     @test rrx === 2
     @test rr1 === 1
 
-    frx, nice_pushforward = frule(nice, 1, dself, 1)
+    frx, nice_pushforward = frule((dself, 1), nice, 1)
     @test nice_pushforward === Zero()
     rrx, nice_pullback = rrule(nice, 1)
     @test (NO_FIELDS, Zero()) === nice_pullback(1)
 
     sx = @SVector [1, 2]
     sy = @SVector [3, 4]
+
     # This is testing that @scalar_rule and `One()` play nice together, w.r.t broadcasting
-    @inferred frule(very_nice, 1, 2, Zero(), sx, sy)
+    @inferred frule((Zero(), sx, sy), very_nice, 1, 2)
 end
