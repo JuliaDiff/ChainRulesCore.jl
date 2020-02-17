@@ -148,7 +148,7 @@ function scalar_frule_expr(f, call, setup_stmts, inputs, partials)
 
     # Δs is the input to the propagator rule
     # because this is push-forward there is one per input to the function
-    Δs = [Symbol(string(:Δ, i)) for i in 1:n_inputs]
+    Δs = [esc(Symbol(:Δ, i)) for i in 1:n_inputs]
     pushforward_returns = map(1:n_outputs) do output_i
         ∂s = partials[output_i].args
         propagation_expr(Δs, ∂s)
