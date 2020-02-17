@@ -17,7 +17,6 @@ very_nice(x, y) = x + y
 @scalar_rule(very_nice(x, y), (One(), One()))
 
 
-#
 # Tests that aim to ensure that the API for frules doesn't regress and make these things
 # hard to implement.
 #
