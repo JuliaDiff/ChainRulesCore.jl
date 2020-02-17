@@ -59,7 +59,7 @@ Almost always the _pullback_ will be declared locally within the `rrule`, and wi
 
 The `frule` is written:
 ```julia
-function frule(::typeof(foo), args..., Δself, Δargs...; kwargs...)
+function frule((Δself, Δargs...), ::typeof(foo), args...; kwargs...)
     ...
     return y, ∂Y
 end

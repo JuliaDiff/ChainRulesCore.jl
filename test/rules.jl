@@ -110,8 +110,9 @@ _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
         mixed_vararg_type_constaint, 3.0, 2.0, 1.0, 0.0,
     ) == (6.0, 6.0))
 
+    # violates type constraints, thus an frule should not be found.
     @test frule(
-        (nothing, 3, 2.0, 1.0, 5.0), # violates type constraints
+        (nothing, 3, 2.0, 1.0, 5.0),
         mixed_vararg_type_constaint, 3, 2.0, 1.0, 0,
     ) == nothing
 
