@@ -19,7 +19,6 @@ very_nice(x, y) = x + y
 
 # Tests that aim to ensure that the API for frules doesn't regress and make these things
 # hard to implement.
-#
 
 varargs_function(x...) = sum(x)
 function frule(dargs, ::typeof(varargs_function), x...)
