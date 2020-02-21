@@ -148,7 +148,7 @@ function scalar_frule_expr(f, call, setup_stmts, inputs, partials)
 
     # Δs is the input to the propagator rule
     # because this is push-forward there is one per input to the function
-    Δs = [Symbol(string(:Δ, i)) for i in 1:n_inputs]
+    Δs = [esc(Symbol(:Δ, i)) for i in 1:n_inputs]
     pushforward_returns = map(1:n_outputs) do output_i
         ∂s = partials[output_i].args
         propagation_expr(Δs, ∂s)
@@ -163,7 +163,7 @@ function scalar_frule_expr(f, call, setup_stmts, inputs, partials)
     return quote
         # _ is the input derivative w.r.t. function internals. since we do not
         # allow closures/functors with @scalar_rule, it is always ignored
-        function ChainRulesCore.frule(::typeof($f), $(inputs...), _, $(Δs...))
+        function ChainRulesCore.frule((_, $(Δs...)), ::typeof($f), $(inputs...))
             $(esc(:Ω)) = $call
             $(setup_stmts...)
             return $(esc(:Ω)), $pushforward_returns

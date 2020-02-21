@@ -2,54 +2,48 @@
 ##### `frule`/`rrule`
 #####
 
-# TODO: remember to update the examples
 """
-    frule(f, x..., ṡelf, Δx...)
+    frule((Δf, Δx...), f, x...)
 
-Expressing `x` as the tuple `(x₁, x₂, ...)`, `Δx` as the tuple `(Δx₁, Δx₂,
-...)`, and the output tuple of `f(x...)` as `Ω`, return the tuple:
+Expressing the output of `f(x...)` as `Ω`, return the tuple:
 
-    (Ω, (Ω̇₁, Ω̇₂, ...))
+    (Ω, ΔΩ)
 
-The second return value is the propagation rule, or the pushforward.
-It takes in differentials corresponding to the inputs (`ẋ₁, ẋ₂, ...`)
-and `ṡelf` the internal values of the function (for closures).
+The second return value is the differential w.r.t. the output.
 
-
-If no method matching `frule(f, x..., ṡelf, Δx...)` has been defined, then
-return `nothing`.
+If no method matching `frule((Δf, Δx...), f, x...)` has been defined, then return `nothing`.
 
 Examples:
 
 unary input, unary output scalar function:
 
-```
+```jldoctest
 julia> dself = Zero()
 Zero()
 
 julia> x = rand();
 
-julia> sinx, sin_pushforward = frule(sin, x, dself, 1)
+julia> sinx, Δsinx = frule(sin, x, dself, 1)
 (0.35696518021277485, 0.9341176907197836)
 
 julia> sinx == sin(x)
 true
 
-julia> sin_pushforward == cos(x)
+julia> Δsinx == cos(x)
 true
 ```
 
 unary input, binary output scalar function:
 
-```
+```jldoctest
 julia> x = rand();
 
-julia> sincosx, sincos_pushforward = frule(sincos, x, dself, 1);
+julia> sincosx, Δsincosx = frule(sincos, x, dself, 1);
 
 julia> sincosx == sincos(x)
 true
 
-julia> sincos_pushforward == (cos(x), -sin(x))
+julia> Δsincosx == (cos(x), -sin(x))
 true
 ```
 

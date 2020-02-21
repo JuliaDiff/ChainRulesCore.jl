@@ -59,7 +59,7 @@ Almost always the _pullback_ will be declared locally within the `rrule`, and wi
 
 The `frule` is written:
 ```julia
-function frule(::typeof(foo), args..., Δself, Δargs...; kwargs...)
+function frule((Δself, Δargs...), ::typeof(foo), args...; kwargs...)
     ...
     return y, ∂Y
 end
@@ -175,7 +175,7 @@ end
 ```
 But because it is fused into frule we see it as part of:
 ```julia
-function frule(::typeof(foo), args..., Δself, Δargs...; kwargs...)
+function frule((Δself, Δargs...), ::typeof(foo), args...; kwargs...)
     ...
     return y, ∂y
 end
@@ -183,7 +183,7 @@ end
 
 
 The input to the pushforward is often called the _perturbation_.
-If the function is `y = f(x)` often the pushforward will be written `ẏ = last(frule(f, x, ṡelf, ẋ))`.
+If the function is `y = f(x)` often the pushforward will be written `ẏ = last(frule((ṡelf, ẋ), f, x))`.
 `ẏ` is commonly used to represent the perturbation for `y`.
 
 !!! note
@@ -238,14 +238,14 @@ If we would like to know the the directional derivative of `f` for an input chan
 
 ```julia
 direction = (1.5, 0.4, -1) # (ȧ, ḃ, ċ)
-y, ẏ = frule(f, a, b, c, Zero(), direction)
+y, ẏ = frule((Zero(), direction...), f, a, b, c)
 ```
 
 On the basis directions one gets the partial derivatives of `y`:
 ```julia
-y, ∂y_∂a = frule(f, a, b, c, Zero(), 1, 0, 0)
-y, ∂y_∂b = frule(f, a, b, c, Zero(), 0, 1, 0)
-y, ∂y_∂c = frule(f, a, b, c, Zero(), 0, 0, 1)
+y, ∂y_∂a = frule((Zero(), 1, 0, 0), f, a, b, c)
+y, ∂y_∂b = frule((Zero(), 0, 1, 0), f, a, b, c)
+y, ∂y_∂c = frule((Zero(), 0, 0, 1), f, a, b, c)
 ```
 
 Similarly, the most trivial use of `rrule` and returned `pullback` is to calculate the [Gradient](https://en.wikipedia.org/wiki/Gradient):
@@ -320,10 +320,10 @@ x = 3;
 ẋ = 1;  # ∂x/∂x
 nofields = Zero();  # ∂self/∂self
 
-a, ȧ = frule(sin, x, nofields, ẋ); # ∂a/∂x
-b, ḃ = frule(*, 2, a, nofields, Zero(), unthunk(ȧ)); # ∂b/∂x = ∂b/∂a⋅∂a/∂x
+a, ȧ = frule((nofields, ẋ), sin, x); # ∂a/∂x
+b, ḃ = frule((nofields, Zero(), unthunk(ȧ)), *, 2, a); # ∂b/∂x = ∂b/∂a⋅∂a/∂x
 
-c, ċ = frule(asin, b, nofields, unthunk(ḃ)); # ∂c/∂x = ∂c/∂b⋅∂b/∂x = ∂f/∂x
+c, ċ = frule((nofields, unthunk(ḃ)), asin, b); # ∂c/∂x = ∂c/∂b⋅∂b/∂x = ∂f/∂x
 unthunk(ċ)
 # output
 -2.0638950738662625
