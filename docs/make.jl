@@ -1,11 +1,10 @@
-using ChainRules
 using ChainRulesCore
 using Documenter
 
 @show ENV
 
 makedocs(
-    modules=[ChainRules, ChainRulesCore],
+    modules=[ChainRulesCore],
     format=Documenter.HTML(prettyurls=false, assets=["assets/chainrules.css"]),
     sitename="ChainRules",
     authors="Jarrett Revels and other contributors",

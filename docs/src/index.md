@@ -1,5 +1,5 @@
 ```@meta
-DocTestSetup = :(using ChainRulesCore, ChainRules)
+DocTestSetup = :(using ChainRulesCore)
 ```
 
 # ChainRules
@@ -289,7 +289,11 @@ This was once how all neural network code worked.
 Using ChainRules directly also helps get a feel for it.
 
 ```jldoctest
-using ChainRules
+using ChainRulesCore
+
+# Define rules (alternatively get them for free via `using ChainRules`)
+@scalar_rule(sin(x), cos(x))
+@scalar_rule(asin(x), inv(sqrt(1 - x^2)))
 
 function foo(x)
     a = sin(x)
