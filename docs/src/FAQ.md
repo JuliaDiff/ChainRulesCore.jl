@@ -57,7 +57,7 @@ For example in `access(xs, n) = xs[n]` then the derivative of `access` with resp
 ## When to use ChainRules vs ChainRulesCore?
 
 [ChainRulesCore.jl](https://github.com/JuliaDiff/ChainRulesCore.jl) is a light-weight dependency for defining rules for functions in your packages, without you needing to depend on ChainRules.jl itself.
-It has no dependencies of its own.
+It has almost no dependencies of its own.
 If you only want to define rules, not use them, then you probably only want to load ChainRulesCore.jl.
 
 [ChainRules.jl](https://github.com/JuliaDiff/ChainRules.jl) provides the full functionality for AD systems, in particular it has all the rules for Base Julia and the standard libraries.
