@@ -17,14 +17,14 @@ Examples:
 
 unary input, unary output scalar function:
 
-```jldoctest
-julia> dself = Zero()
-Zero()
+```jldoctest frule
+julia> dself = NO_FIELDS;
 
-julia> x = rand();
+julia> x = rand()
+0.8236475079774124
 
-julia> sinx, Δsinx = frule(sin, x, dself, 1)
-(0.35696518021277485, 0.9341176907197836)
+julia> sinx, Δsinx = frule((dself, 1), sin, x)
+(0.7336293678134624, 0.6795498147167869)
 
 julia> sinx == sin(x)
 true
@@ -35,10 +35,8 @@ true
 
 unary input, binary output scalar function:
 
-```jldoctest
-julia> x = rand();
-
-julia> sincosx, Δsincosx = frule(sincos, x, dself, 1);
+```jldoctest frule
+julia> sincosx, Δsincosx = frule((dself, 1), sincos, x);
 
 julia> sincosx == sincos(x)
 true
@@ -69,7 +67,7 @@ Examples:
 
 unary input, unary output scalar function:
 
-```
+```jldoctest
 julia> x = rand();
 
 julia> sinx, sin_pullback = rrule(sin, x);
@@ -83,7 +81,7 @@ true
 
 binary input, unary output scalar function:
 
-```
+```jldoctest
 julia> x, y = rand(2);
 
 julia> hypotxy, hypot_pullback = rrule(hypot, x, y);

@@ -1,7 +1,3 @@
-```@meta
-DocTestSetup = :(using ChainRulesCore, ChainRules)
-```
-
 # ChainRules
 
 [ChainRules](https://github.com/JuliaDiff/ChainRules.jl) provides a variety of common utilities that can be used by downstream [automatic differentiation (AD)](https://en.wikipedia.org/wiki/Automatic_differentiation) tools to define and execute forward-, reverse-, and mixed-mode primitives.
@@ -288,62 +284,70 @@ This was once how all neural network code worked.
 
 Using ChainRules directly also helps get a feel for it.
 
-```jldoctest
-using ChainRules
+```jldoctest index; output=false
+using ChainRulesCore
 
 function foo(x)
     a = sin(x)
-    b = 2a
+    b = 0.2 + a
     c = asin(b)
     return c
 end
 
+# Define rules (alternatively get them for free via `using ChainRules`)
+@scalar_rule(sin(x), cos(x))
+@scalar_rule(+(x, y), (One(), One()))
+@scalar_rule(asin(x), inv(sqrt(1 - x^2)))
+# output
+
+```
+```jldoctest index
 #### Find dfoo/dx via rrules
 #### First the forward pass, accumulating rules
 x = 3;
 a, a_pullback = rrule(sin, x);
-b, b_pullback = rrule(*, 2, a);
+b, b_pullback = rrule(+, 0.2, a);
 c, c_pullback = rrule(asin, b)
 
 #### Then the backward pass calculating gradients
 c̄ = 1;  # ∂c/∂c
-_, b̄ = c_pullback(extern(c̄));     # ∂c/∂b
-_, _, ā = b_pullback(extern(b̄));  # ∂c/∂a
-_, x̄ = a_pullback(extern(ā));     # ∂c/∂x = ∂f/∂x
-extern(x̄)
+_, b̄ = c_pullback(unthunk(c̄));     # ∂c/∂b
+_, _, ā = b_pullback(unthunk(b̄));  # ∂c/∂a
+_, x̄ = a_pullback(unthunk(ā));     # ∂c/∂x = ∂f/∂x
+unthunk(x̄)
 # output
--2.0638950738662625
+-1.0531613736418153
 ```
-```jldoctest
+```jldoctest index
 #### Find dfoo/dx via frules
 x = 3;
 ẋ = 1;  # ∂x/∂x
 nofields = Zero();  # ∂self/∂self
 
 a, ȧ = frule((nofields, ẋ), sin, x); # ∂a/∂x
-b, ḃ = frule((nofields, Zero(), unthunk(ȧ)), *, 2, a); # ∂b/∂x = ∂b/∂a⋅∂a/∂x
+b, ḃ = frule((nofields, Zero(), unthunk(ȧ)), +, 0.2, a); # ∂b/∂x = ∂b/∂a⋅∂a/∂x
 
 c, ċ = frule((nofields, unthunk(ḃ)), asin, b); # ∂c/∂x = ∂c/∂b⋅∂b/∂x = ∂f/∂x
 unthunk(ċ)
 # output
--2.0638950738662625
+-1.0531613736418153
 ```
 ```julia
 #### Find dfoo/dx via FiniteDifferences.jl
 using FiniteDifferences
 central_fdm(5, 1)(foo, x)
 # output
--2.0638950738670734
+-1.0531613736418257
 
 #### Find dfoo/dx via ForwardDiff.jl
 using ForwardDiff
 ForwardDiff.derivative(foo, x)
 # output
--2.0638950738662625
+-1.0531613736418153
 
 #### Find dfoo/dx via Zygote.jl
 using Zygote
 Zygote.gradient(foo, x)
 # output
-(-2.0638950738662625,)
+(-1.0531613736418153,)
 ```

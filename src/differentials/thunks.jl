@@ -24,18 +24,20 @@ It wraps a zero argument closure that when invoked returns a differential.
 `@thunk(v)` is a macro that expands into `Thunk(()->v)`.
 
 Calling a thunk, calls the wrapped closure.
-`extern`ing thunks applies recursively, it also externs the differial that the closure returns.
-If you do not want that, then simply call the thunk
+If you are unsure if you have a `Thunk`, call [`unthunk`](@ref) which is a no-op when the
+argument is not a `Thunk`.
+If you need to unthunk recursively, call [`extern`](@ref), which also externs the differial
+that the closure returns.
 
-```
+```jldoctest
 julia> t = @thunk(@thunk(3))
-Thunk(var"##7#9"())
+Thunk(var"#4#6"())
 
 julia> extern(t)
 3
 
 julia> t()
-Thunk(var"##8#10"())
+Thunk(var"#5#7"())
 
 julia> t()()
 3
@@ -83,7 +85,7 @@ end
 On `AbstractThunk`s this removes 1 layer of thunking.
 On any other type, it is the identity operation.
 
-In contrast to `extern` this is nonrecursive.
+In contrast to [`extern`](@ref) this is nonrecursive.
 """
 @inline unthunk(x) = x
 
