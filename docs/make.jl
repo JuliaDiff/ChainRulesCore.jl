@@ -11,6 +11,8 @@ DocMeta.setdocmeta!(
         Random.seed!(0)  # frule doctest shows output
 
         using ChainRulesCore
+        # These rules are all actually defined in ChainRules.jl, but we redefine them here to 
+        # avoid the dependency.
         @scalar_rule(sin(x), cos(x))  # frule and rrule doctest
         @scalar_rule(sincos(x), @setup((sinx, cosx) = Ω), cosx, -sinx)  # frule doctest
         @scalar_rule(hypot(x::Real, y::Real), (x / Ω, y / Ω))  # rrule doctest
