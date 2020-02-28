@@ -50,13 +50,17 @@ For two reasons:
 Where it is defined the operation of `extern` for a primal type `P` should be
 `extern(x) = zero(P) + x`.
 
-Because of its limitations, `extern` should only really be used for testing.
-It can be useful, if you know what you are getting out, as it recursively removes thunks,
-and otherwise makes outputs more consistent with finite differencing.
-The more useful action in general is to call `+`, or in the case of thunks: [`unthunk`](@ref).
+!!! note
+    Because of its limitations, `extern` should only really be used for testing.
+    It can be useful, if you know what you are getting out, as it recursively removes
+    thunks, and otherwise makes outputs more consistent with finite differencing.
 
-Note that `extern` may return an alias (not necessarily a copy) to data
-wrapped by `x`, such that mutating `extern(x)` might mutate `x` itself.
+    The more useful action in general is to call `+`, or in the case of a [`Thunk`](@ref)
+    to call [`unthunk`](@ref).
+
+!!! warning
+    `extern` may return an alias (not necessarily a copy) to data
+    wrapped by `x`, such that mutating `extern(x)` might mutate `x` itself.
 """
 @inline extern(x) = x
 
