@@ -56,14 +56,23 @@ For example in `access(xs, n) = xs[n]` then the derivative of `access` with resp
 
 ## When to use ChainRules vs ChainRulesCore?
 
-[ChainRulesCore.jl](https://github.com/JuliaDiff/ChainRulesCore.jl) is a light-weight dependency for defining rules for functions in your packages, without you needing to depend on ChainRules itself. It has no dependencies of its own.
+[ChainRulesCore.jl](https://github.com/JuliaDiff/ChainRulesCore.jl) is a light-weight dependency for defining rules for functions in your packages, without you needing to depend on ChainRules.jl itself.
+It has almost no dependencies of its own.
+If you only want to define rules, not use them, then you probably only want to load ChainRulesCore.jl.
 
-[ChainRules.jl](https://github.com/JuliaDiff/ChainRules.jl) provides the full functionality, in particular it has all the  rules for Base Julia and the standard libraries. Its thus a much heavier package to load.
-
-If you only want to define rules, not use them then you probably only want to load ChainRulesCore.
-AD systems making use of ChainRules should load ChainRules (rather than ChainRulesCore).
+[ChainRules.jl](https://github.com/JuliaDiff/ChainRules.jl) provides the full functionality for AD systems, in particular it has all the rules for Base Julia and the standard libraries.
+It is thus a much heavier package to load.
+AD systems making use of `frule`s and `rrule`s should load ChainRules.jl.
 
 ## Where should I put my rules?
-In general, we recommend adding custom sensitivities to your own packages with ChainRulesCore, rather than adding them to ChainRules.jl.
 
-A few packages currently SpecialFunctions.jl and NaNMath.jl are in ChainRules.jl but this is a short-term measure.
+We recommend adding custom rules to your own packages with [ChainRulesCore.jl](https://github.com/JuliaDiff/ChainRulesCore.jl), rather than adding them to ChainRules.jl.
+A few packages - currently SpecialFunctions.jl and NaNMath.jl - have rules in ChainRules.jl as a short-term measure.
+
+## How do I test my rules?
+
+You can use [ChainRulesTestUtils.jl](https://github.com/JuliaDiff/ChainRulesTestUtils.jl) to test your custom rules.
+ChainRulesTestUtils.jl has some dependencies, so it is a separate package from ChainRulesCore.jl.
+This means your package can depend on the light-weight ChainRulesCore.jl, and make ChainRulesTestUtils.jl a test-only dependency.
+
+Remember to read the section on [Writing Good Rules](@ref).

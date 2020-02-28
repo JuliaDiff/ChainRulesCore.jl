@@ -76,8 +76,8 @@ This makes it a lot simpler to debug from the stacktrace.
 ## Write tests
 
 There are fairly decent tools for writing tests based on [FiniteDifferences.jl](https://github.com/JuliaDiff/FiniteDifferences.jl).
-They are in [`tests/test_utils.jl`](https://github.com/JuliaDiff/ChainRules.jl/blob/master/test/test_util.jl).
-Take a look at existing test and you should see how to do stuff.
+They are in [ChainRulesTestUtils.jl](https://github.com/JuliaDiff/ChainRulesTestUtils.jl).
+Take a look at existing [ChainRules.jl](https://github.com/JuliaDiff/ChainRules.jl) tests and you should see how to do stuff.
 
 !!! warning
     Use finite differencing to test derivatives.
