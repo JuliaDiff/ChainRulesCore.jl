@@ -3,6 +3,20 @@ using Documenter
 
 @show ENV
 
+DocMeta.setdocmeta!(
+    ChainRulesCore,
+    :DocTestSetup,
+    quote
+        using Random
+        Random.seed!(0)  # frule doctest shows output
+
+        using ChainRulesCore
+        @scalar_rule(sin(x), cos(x))  # frule and rrule doctest
+        @scalar_rule(sincos(x), @setup((sinx, cosx) = Ω), cosx, -sinx)  # frule doctest
+        @scalar_rule(hypot(x::Real, y::Real), (x / Ω, y / Ω))  # rrule doctest
+    end
+)
+
 makedocs(
     modules=[ChainRulesCore],
     format=Documenter.HTML(prettyurls=false, assets=["assets/chainrules.css"]),
