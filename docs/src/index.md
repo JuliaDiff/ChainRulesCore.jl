@@ -33,7 +33,7 @@ Knowing rules for more complicated functions speeds up the autodiff process as i
 !!! terminology "`frule` and `rrule`"
     `frule` and `rrule` are ChainRules specific terms.
     Their exact functioning is fairly ChainRules specific, though other tools have similar functions.
-    The core notion is sometimes called _custom AD primitives_, _custom adjoints_, _custom_gradients_, _custom sensitivities_.
+    The core notion is sometimes called _custom AD primitives_, _custom adjoints_, _custom gradients_, _custom sensitivities_.
 
 The rules are encoded as `frule`s and `rrule`s, for use in forward-mode and reverse-mode differentiation respectively.
 
@@ -63,7 +63,7 @@ end
 where again `y = foo(args; kwargs...)`,
 and `∂Y` is the result of propagating the derivative information forwards at that point.
 This propagation is call the pushforward.
-One could think of writing `∂Y = pushforward(Δself, Δargs)`, and often we will think of the `frule` as having the primal computation `y = foo(args...; kwargs...)`, and the push-forward `∂Y = pushforward(Δself, Δargs...)`
+Often we will think of the `frule` as having the primal computation `y = foo(args...; kwargs...)`, and the pushforward `∂Y = pushforward(Δself, Δargs...)`.
 
 
 !!! note "Why `rrule` returns a pullback but `frule` doesn't return a pushforward"
