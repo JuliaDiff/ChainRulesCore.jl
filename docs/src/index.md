@@ -63,7 +63,8 @@ end
 where again `y = foo(args; kwargs...)`,
 and `∂Y` is the result of propagating the derivative information forwards at that point.
 This propagation is call the pushforward.
-Often we will think of the `frule` as having the primal computation `y = foo(args...; kwargs...)`, and the pushforward `∂Y = pushforward(Δself, Δargs...)`.
+Often we will think of the `frule` as having the primal computation `y = foo(args...; kwargs...)`, and the pushforward `∂Y = pushforward(Δself, Δargs...)`,
+even though they are not present in seperate forms in the code.
 
 
 !!! note "Why `rrule` returns a pullback but `frule` doesn't return a pushforward"
