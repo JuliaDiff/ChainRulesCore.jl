@@ -228,9 +228,9 @@ Similarly every `pullback` returns an extra `∂self`, which for things without 
 
 ### Pullback/Pushforward and Directional Derivative/Gradient
 
-The most trivial use of the `pushforward` from within `frule` is to calculate the directional derivative:
+The most trivial use of the `pushforward` from within `frule` is to calculate the [directional derivative](https://en.wikipedia.org/wiki/Directional_derivative):
 
-If we would like to know the the directional derivative of `f` for an input change of `(1.5, 0.4, -1)`
+If we would like to know the directional derivative of `f` for an input change of `(1.5, 0.4, -1)`
 
 ```julia
 direction = (1.5, 0.4, -1) # (ȧ, ḃ, ċ)
@@ -244,7 +244,7 @@ y, ∂y_∂b = frule((Zero(), 0, 1, 0), f, a, b, c)
 y, ∂y_∂c = frule((Zero(), 0, 0, 1), f, a, b, c)
 ```
 
-Similarly, the most trivial use of `rrule` and returned `pullback` is to calculate the [Gradient](https://en.wikipedia.org/wiki/Gradient):
+Similarly, the most trivial use of `rrule` and returned `pullback` is to calculate the [gradient](https://en.wikipedia.org/wiki/Gradient):
 
 ```julia
 y, f_pullback = rrule(f, a, b, c)
@@ -259,20 +259,20 @@ And we thus have the partial derivatives ``\overline{\mathrm{self}}, = \dfrac{�
 The values that come back from pullbacks or pushforwards are not always the same type as the input/outputs of the primal function.
 They are differentials, which correspond roughly to something able to represent the difference between two values of the primal types.
 A differential might be such a regular type, like a `Number`, or a `Matrix`, matching to the original type;
-or it might be one of the `AbstractDifferential` subtypes.
+or it might be one of the [`AbstractDifferential`](@ref ChainRulesCore.AbstractDifferential) subtypes.
 
 Differentials support a number of operations.
 Most importantly: `+` and `*`, which let them act as mathematical objects.
 
 The most important `AbstractDifferential`s when getting started are the ones about avoiding work:
 
- - `Thunk`: this is a deferred computation. A thunk is a [word for a zero argument closure](https://en.wikipedia.org/wiki/Thunk). A computation wrapped in a `@thunk` doesn't get evaluated until `unthunk` is called on the thunk. `unthunk` is a no-op on non-thunked inputs.
- - `One`, `Zero`: There are special representations of `1` and `0`. They do great things around avoiding expanding `Thunks` in multiplication and (for `Zero`) addition.
+ - [`Thunk`](@ref): this is a deferred computation. A thunk is a [word for a zero argument closure](https://en.wikipedia.org/wiki/Thunk). A computation wrapped in a `@thunk` doesn't get evaluated until [`unthunk`](@ref) is called on the thunk. `unthunk` is a no-op on non-thunked inputs.
+ - [`One`](@ref), [`Zero`](@ref): There are special representations of `1` and `0`. They do great things around avoiding expanding `Thunks` in multiplication and (for `Zero`) addition.
 
 ### Other `AbstractDifferential`s:
- - `Composite{P}`: this is the differential for tuples and  structs. Use it like a `Tuple` or `NamedTuple`. The type parameter `P` is for the primal type.
- - `DoesNotExist`: Zero-like, represents that the operation on this input is not differentiable. Its primal type is normally `Integer` or `Bool`.
- - `InplaceableThunk`: it is like a `Thunk` but it can do in-place `add!`.
+ - [`Composite{P}`](@ref Composite): this is the differential for tuples and  structs. Use it like a `Tuple` or `NamedTuple`. The type parameter `P` is for the primal type.
+ - [`DoesNotExist`](@ref): Zero-like, represents that the operation on this input is not differentiable. Its primal type is normally `Integer` or `Bool`.
+ - [`InplaceableThunk`](@ref): it is like a `Thunk` but it can do in-place `add!`.
 
  -------------------------------
 
