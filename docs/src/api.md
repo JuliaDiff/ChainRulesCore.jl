@@ -30,4 +30,5 @@ Private = false
 ## Internal
 ```@docs
 ChainRulesCore.AbstractDifferential
+ChainRulesCore.debug_mode
 ```
