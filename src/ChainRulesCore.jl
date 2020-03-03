@@ -8,6 +8,7 @@ export Composite, DoesNotExist, InplaceableThunk, One, Thunk, Zero, AbstractZero
 export NO_FIELDS
 
 include("compat.jl")
+include("debug_mode.jl")
 
 include("differentials/abstract_differential.jl")
 include("differentials/abstract_zero.jl")

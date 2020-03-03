@@ -86,10 +86,15 @@ function Base.:+(a::Composite{P}, b::Composite{P}) where P
     return Composite{P, typeof(data)}(data)
 end
 function Base.:+(a::P, d::Composite{P}) where P
-    try
-        return construct(P, elementwise_add(backing(a), backing(d)))
-    catch err
-        throw(PrimalAdditionFailedException(a, d, err))
+    net_backing = elementwise_add(backing(a), backing(d))
+    if debug_mode()
+        try
+            return construct(P, net_backing)
+        catch err
+            throw(PrimalAdditionFailedException(a, d, err))
+        end
+    else
+        return construct(P, net_backing)
     end
 end
 Base.:+(a::Composite{P}, b::P) where P = b + a

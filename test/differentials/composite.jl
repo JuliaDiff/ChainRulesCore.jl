@@ -128,8 +128,19 @@ end
     @testset "+ with Primals, with inner constructor" begin
         value = StructWithInvariant(10.0)
         diff = Composite{StructWithInvariant}(x=2.0, x2=6.0)
-        @test_throws ChainRulesCore.PrimalAdditionFailedException (value + diff)
-        @test_throws ChainRulesCore.PrimalAdditionFailedException (diff + value)
+
+        @testset "with and without debug mode" begin
+            @assert ChainRulesCore.debug_mode() == false
+            @test_throws MethodError (value + diff)
+            @test_throws MethodError (diff + value)
+
+            ChainRulesCore.debug_mode() = true  # enable debug mode
+            @test_throws ChainRulesCore.PrimalAdditionFailedException (value + diff)
+            @test_throws ChainRulesCore.PrimalAdditionFailedException (diff + value)
+            ChainRulesCore.debug_mode() = false  # disable it again
+        end
+
+
 
         # Now we define constuction for ChainRulesCore.jl's purposes:
         # It is going to determine the root quanity of the invarient
