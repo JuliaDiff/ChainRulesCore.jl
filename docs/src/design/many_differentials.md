@@ -6,7 +6,7 @@ This is in-contrast to the Swift AD efforts.
 Which has one differential type, per primal type.
 (Swift uses the term associated tangent type, rather than differential type).
 
-One thing to understand about differentials is they have to form a vector space (or something very like them).
+One thing to understand about differentials is they have to form a [vector space](https://en.wikipedia.org/wiki/Vector_space) (or something very like them).
 They need to support addition to each other, they need a zero which doesn't change what it is added to, and they need to support scalar multiplication (this isn't really required, but its handy (e.g. for SGD).
 Beyond being a vector space, differentials need to be able to be added to a primal value to get back another primal value.
 Or roughly equivalently a differential is a difference between two primal values.
