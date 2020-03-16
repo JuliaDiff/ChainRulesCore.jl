@@ -73,6 +73,7 @@ Composite{DateTime}(
 So the structural differential is another type of differential.
 Since AD can only create structural differentials, unless using custom sensitivity rules; and since all custom sensitivities are only written in terms of natural differentials, as that is what is used in papers about derivatives.
 So you need to support both.
+
 ### Semi-structural differentials
 Where there is no natural differential type for the outermost type, but there is for some of its fields, which can call this a semi-structural differential.
 
