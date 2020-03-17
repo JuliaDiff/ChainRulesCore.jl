@@ -21,7 +21,8 @@ As an example, consider `DateTime`. A `DateTime` is not a vector space: there is
 For a given primal type, we say a natural differential type is one which people would intuitively think of as representing the difference between two primal values.
 It tends to already exist outside of the context of AD.
 So `Millisecond`, `Hour`, `Day` etc. are the _natural differentials_ for the `DateTime` primal.
-Note here that we already have a one primal type to many differential types relationship. We have `Millisecond` and `Hour` and `Day` all being valid differential types for `DateTime`. 
+Note here that we already have a one primal type to many differential types relationship. 
+We have `Millisecond` and `Hour` and `Day` all being valid differential types for `DateTime`. 
 In this case we _could_ convert them all to a single differential type, such as `Nanoseconds`, but that is not always a reasonable decision: we may run in to overflow, or lots of allocations if we need to use a `BigInt` to represent the number of `Nanosecond` since the start of the universe. 
 For types with more complex semantics, such as array types, these considerations are much more important.
 
@@ -32,7 +33,8 @@ The ideal choice of differential type for `getindex` on a dense array would be s
 This actually further brings us to a weirdness of differential types not actually being closed under addition, as it would be ideal for the spare array to become a dense array if summed over all elements.
 
 ### Structural differential types
-AD cannot automatically determine natural differential types for a primal. For some types we may be able to declare manually their natural differential type. Other types will not have natural differential types at all - e.g. `NamedTuple`, `Tuple`, `WebServer`, `Flux.Dense` -  so we are destined to make some up.
+AD cannot automatically determine natural differential types for a primal. For some types we may be able to declare manually their natural differential type. 
+Other types will not have natural differential types at all - e.g. `NamedTuple`, `Tuple`, `WebServer`, `Flux.Dense` -  so we are destined to make some up.
 So beyond _natural_ differential types, we also have _structural_ differential types.
 ChainRules uses `Composite{P, <:NamedTuple}` to represent a structural differential type corresponding to primal type `P`.
 `Zygote v0.4` uses `NamedTuple`.
