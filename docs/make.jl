@@ -29,6 +29,9 @@ makedocs(
         "FAQ" => "FAQ.md",
         "Writing Good Rules" => "writing_good_rules.md",
         "Debug Mode" => "debug_mode.md",
+        "Design" => [
+            "Many Differential Types" => "design/many_differentials.md",
+        ],
         "API" => "api.md",
     ],
     strict=true,
