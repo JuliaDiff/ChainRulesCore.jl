@@ -96,6 +96,7 @@ julia> struct TimeSample
 ```
 
 We can look at its structure:
+```julia
 julia> dump(TimeSample(now(), 2.6e9))
 TimeSample
   time: DateTime
