@@ -151,7 +151,7 @@ One that is for computational efficiency.
 ChainRules has [`Thunk`](@ref)s and [`InplaceThunk`](@ref)s, which wrap a computation that computes a derivative and delays that work until it is needed, either via the derivative being added to something or being [`unthunk`](@ref)ed manually.
 Thus saving time if it is never used.
 
-Another differential type used for efficiency is `Zero` which represents the hard zero (in Zygote v0.4 this is `nothing`).
+Another differential type used for efficiency is [`Zero`](@ref) which represents the hard zero (in Zygote v0.4 this is `nothing`).
 For example the derivative of `f(x, y)=2x` with respect to `y` is `Zero()`.
 Add `Zero()` to anything, and one gets back the original thing without change.
 We noted that all differentials need to be a vector space.
