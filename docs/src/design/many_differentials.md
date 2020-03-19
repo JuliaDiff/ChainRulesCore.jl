@@ -6,7 +6,7 @@ This is in-contrast to the Swift AD efforts, which has one differential type per
 !!! terminology "differential and associated tangent type"
     The use of “associated tangent type” in AD is not technically correct, as differentials naturally live in the [_cotangent_ plane](https://en.wikipedia.org/wiki/Cotangent_space) instead of the [tangent plane](https://en.wikipedia.org/wiki/Tangent_space).
     However it is often reasonable for AD to treat the cotangent plane and tangent plane as the same thing, and this was an intentional choice by the Swift team.
-    Here we will be a bit more tight with terminology and just stick to the ChainRules terminology and only say “differential type” instead of “tangent type”.
+    Here we will just stick to the ChainRules terminology and only say “differential type” instead of “tangent type”.
 
 One thing to understand about differentials is they have to form a [vector space](https://en.wikipedia.org/wiki/Vector_space)  (or something very like them).
 They need to support addition to each other, they need a zero which doesn't change what it is added to, and they need to support scalar multiplication (this isn't really required, but it is handy for things like gradient descent).
@@ -17,18 +17,22 @@ One thing to note in this example is that the primal does not have to be a vecto
 We can however always transform it to be a vector space via choosing an origin, and expressing each primal value as a differential typed distance from that origin.
 As an example, consider `DateTime`. A `DateTime` is not a vector space: there is no `zero(::DateTime)`, and `DateTime`s cannot be added to each other. The corresponding differential type is any subtype of `Period`, such as `Millisecond`, `Hour`, `Day` etc.
 
+!!! info "Torsors"
+    For a related concept, see [Torsors](http://math.ucr.edu/home/baez/torsors.html).
+    
 ## Natural differential
 
 For a given primal type, we say a natural differential type is one which people would intuitively think of as representing the difference between two primal values.
 It tends to already exist outside of the context of AD.
 So `Millisecond`, `Hour`, `Day` etc. are the _natural differentials_ for the `DateTime` primal.
+
 Note here that we already have a one primal type to many differential types relationship.
 We have `Millisecond` and `Hour` and `Day` all being valid differential types for `DateTime`.
 In this case we _could_ convert them all to a single differential type, such as `Nanoseconds`, but that is not always a reasonable decision: we may run in to overflow, or lots of allocations if we need to use a `BigInt` to represent the number of `Nanosecond` since the start of the universe.
 For types with more complex semantics, such as array types, these considerations are much more important.
 
 Natural differential types are the types people tend to think in, and thus the type they tend to write custom sensitivity rules in.
-An important special case of natural differentials, is when a primal type is a vector space (e.g. `Real`,`AbstractMatrix`) in which case it is _common_ for the natural differential type to be the same as the primal type.
+An important special case of natural differentials is when the primal type is a vector space (e.g. `Real`,`AbstractMatrix`) in which case it is _common_ for the natural differential type to be the same as the primal type.
 One exception to this is `getindex`.
 The ideal choice of differential type for `getindex` on a dense array would be some type of spare array, due to the fact the derivative will have only one non-zero element.
 This actually further brings us to a weirdness of differential types not actually being closed under addition, as it would be ideal for the spare array to become a dense array if summed over all elements.
@@ -38,8 +42,9 @@ This actually further brings us to a weirdness of differential types not actuall
 AD cannot automatically determine natural differential types for a primal. For some types we may be able to declare manually their natural differential type.
 Other types will not have natural differential types at all - e.g. `NamedTuple`, `Tuple`, `WebServer`, `Flux.Dense` -  so we are destined to make some up.
 So beyond _natural_ differential types, we also have _structural_ differential types.
-ChainRules uses `Composite{P, <:NamedTuple}` to represent a structural differential type corresponding to primal type `P`.
-`Zygote v0.4` uses `NamedTuple`.
+ChainRules uses [`Composite{P, <:NamedTuple}`](@ref Composite) to represent a structural differential type corresponding to primal type `P`.
+[Zygote](https://github.com/FluxML/Zygote.jl/) v0.4 uses `NamedTuple`.
+
 Structural differentials are derived from the structure of the input.
 Either automatically, as part of the AD, or manually as part of a custom rule.
 
@@ -57,14 +62,13 @@ The corresponding structural differential is;
 Composite{DateTime}(
     instant::Composite{UTInstant{Millisecond}}(
         periods::Composite{Millisecond}(
-                value::Int64
+            value::Int64
         )
     )
 )
-
 ```
 
-!!! note “One must be allowed to take derivatives of integer arguments”
+!!! note "One must be allowed to take derivatives of integer arguments"
     This brings up another contrast to Swift.
     In Swift `Int` is considered non-differentiable, which is quite reasonable; it doesn’t have a very good definition of the limit of a small step (as that would be some floating/fixed point type).
     `Int` is intrinsically discrete.
@@ -75,8 +79,7 @@ Composite{DateTime}(
     Julia, unlike Swift, is not well suited to handling rules about what you can and can’t do with particular types.
 
 So the structural differential is another type of differential.
-Since AD can only create structural differentials, unless using custom sensitivity rules; and since all custom sensitivities are only written in terms of natural differentials, as that is what is used in papers about derivatives.
-So you need to support both.
+We must support both natural and structual differentials, because AD can only create structural differentials, unless using custom sensitivity rules, and all custom sensitivities are only written in terms of natural differentials, as that is what is used in papers about derivatives.
 
 ## Semi-structural differentials
 
@@ -126,6 +129,7 @@ Composite{TimeSample})
 ```
 
 So the rule author has written a structural differential with some fields that are natural differentials.
+
 Another related case is for types that overload `getproperty` such as `SVD` and `QR`.
 In this case the structural differential will be based on the fields, but those fields do not always have an easy relation to what is actually used in math.
 For example, the `QR` type has fields `factors` and `t`, but we would more naturally think in terms of the properties `Q` and `R`.
@@ -143,7 +147,7 @@ ChainRules disallows the addition of `Composite{SVD}` to `Composite{QR}` since i
 
 There is another kind of unnatural differential.
 One that is for computational efficiency.
-ChainRules has `Thunk`s and `InplaceThunk`s, which wrap a computation that computes a derivative and delays that work until it is needed, either via the derivative being added to something or being `unthunk`ed manually.
+ChainRules has [`Thunk`](@ref)s and [`InplaceThunk`](@ref)s, which wrap a computation that computes a derivative and delays that work until it is needed, either via the derivative being added to something or being [`unthunk`](@ref)ed manually.
 Thus saving time if it is never used.
 
 Another differential type used for efficiency is `Zero` which represents the hard zero (in Zygote v0.4 this is `nothing`).
