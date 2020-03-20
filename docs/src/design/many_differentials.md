@@ -108,14 +108,14 @@ TimeSample
 
 Thus we see the that structural differential would be:
 ```julia
-Composite{TimeSample})
+Composite{TimeSample}(
     time::Composite{DateTime}(
         instant::Composite{UTInstant{Millisecond}}(
             periods::Composite{Millisecond}(
                 value::Int64
             )
         )
-    )
+    ),
     value::Float64
 )
 ```
@@ -123,8 +123,8 @@ Composite{TimeSample})
 But instead in the custom sensitivity rule we would write a semi-structured differential type.
 Since there is not a natural differential type for `TimeSample` but there is for `DateTime`.
 ```julia
-Composite{TimeSample})
-    time::Day
+Composite{TimeSample}(
+    time::Day,
     value::Float64
 )
 ```
