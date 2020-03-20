@@ -24,7 +24,7 @@ As an example, consider `DateTime`. A `DateTime` is not a vector space: there is
 
 For a given primal type, we say a natural differential type is one which people would intuitively think of as representing the difference between two primal values.
 It tends to already exist outside of the context of AD.
-So `Millisecond`, `Hour`, `Day` etc. are the _natural differentials_ for the `DateTime` primal.
+So `Millisecond`, `Hour`, `Day` etc. are examples of _natural differentials_ for the `DateTime` primal.
 
 Note here that we already have a one primal type to many differential types relationship.
 We have `Millisecond` and `Hour` and `Day` all being valid differential types for `DateTime`.
