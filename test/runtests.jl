@@ -1,4 +1,5 @@
 using Base.Broadcast: broadcastable
+using BenchmarkTools
 using ChainRulesCore
 using LinearAlgebra: Diagonal
 using Test

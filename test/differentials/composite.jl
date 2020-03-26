@@ -107,7 +107,7 @@ end
         @testset "Structs" begin
             @test Foo(3.5, 1.5) + Composite{Foo}(x=2.5) == Foo(6.0, 1.5)
             @test Composite{Foo}(x=2.5) + Foo(3.5, 1.5) == Foo(6.0, 1.5)
-            @test (@allocated Bar(0.5) + Composite{Bar}(; x=0.5)) == 0
+            @test (@ballocated Bar(0.5) + Composite{Bar}(; x=0.5)) == 0
         end
 
         @testset "Tuples" begin
@@ -177,8 +177,8 @@ end
 
         @testset "Internals don't allocate a ton" begin
             bk = (; x=1.0, y=2.0)
-            @test (@allocated(ChainRulesCore.construct(Foo, bk))) <= 32
-            @test (@allocated ChainRulesCore.elementwise_add(bk, bk)) <= 48
+            @test (@ballocated(ChainRulesCore.construct($Foo, $bk))) <= 32
+            @test (@ballocated ChainRulesCore.elementwise_add($bk, $bk)) <= 48
         end
     end
 
