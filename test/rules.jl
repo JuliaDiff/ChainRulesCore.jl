@@ -123,3 +123,24 @@ _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
         @inferred frule((Zero(), sx, sy), very_nice, 1, 2)
     end
 end
+
+my_mul!(Z::Matrix, X::Matrix, Y::Matrix) = mul!(Z, X, Y)
+
+function frule!((_, dZ, dX, dY), ::typeof(my_mul!), Z::Matrix, X::Matrix, Y::Matrix)
+    Z = mul!(Z, X, Y)
+    dZ = mul!(dZ, X, dY)
+    dZ = mul!(dZ, dX, Y, 1.0, 1.0)
+    return Z, dZ
+end
+
+@testset "frule!" begin
+    X = randn(2, 3)
+    Y = randn(3, 4)
+    Z = randn(2, 4)
+
+    dX = randn(2, 3)
+    dY = randn(3, 4)
+    dZ = randn(2, 4)
+
+    @test frule!((nothing, dX, dY, dZ), my_mul!, X, Y, Z) != nothing
+end

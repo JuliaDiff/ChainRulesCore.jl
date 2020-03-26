@@ -50,6 +50,21 @@ See also: [`rrule`](@ref), [`@scalar_rule`](@ref)
 frule(::Any, ::Vararg{Any}; kwargs...) = nothing
 
 """
+    frule!((Δf, Δx...), f, x...; kwargs...)
+
+Mutating version of [`frule`](@ref). Follows the same conventions as [`frule`](@ref), but
+any arguments, including `Δf` and `Δx` may be mutated by this function.
+
+```jldoctest frule!
+julia> 1 === 1
+true
+```
+
+See also: [`frule`](@ref)
+"""
+frule!(args...; kwargs...) = nothing
+
+"""
     rrule(f, x...)
 
 Expressing `x` as the tuple `(x₁, x₂, ...)` and the output tuple of `f(x...)`
