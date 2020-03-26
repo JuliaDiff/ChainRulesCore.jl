@@ -1,9 +1,13 @@
+using ChainRulesCore: has_frule, has_rrule
+
 #######
 # Demo setup
 using StaticArrays: @SVector
 
 cool(x) = x + 1
 cool(x, y) = x + y + 1
+
+no_rules(x...) = x
 
 # a rule we define so we can test rules
 dummy_identity(x) = x
@@ -14,6 +18,9 @@ nice(x) = 1
 
 very_nice(x, y) = x + y
 @scalar_rule(very_nice(x, y), (One(), One()))
+
+# A function for which no rules are to be defined.
+no_rules(x...) = x
 
 
 # Tests that aim to ensure that the API for frules doesn't regress and make these things
@@ -42,6 +49,9 @@ function ChainRulesCore.frule(
     ::typeof(type_constraints), x::Int, y::Float64,
 )
     return type_constraints(x, y), Δx + Δy
+end
+function ChainRulesCore.rrule(::typeof(type_constraints), x::Int, y::Float64)
+    return type_constraints(x, y), Δz -> (NO_FIELDS, Δz, Δz)
 end
 
 mixed_vararg_type_constaint(x::Float64, y::Real, z::Vararg{Float64}) = x + y + sum(z)
@@ -122,4 +132,18 @@ _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
         # Test that @scalar_rule and `One()` play nice together, w.r.t broadcasting
         @inferred frule((Zero(), sx, sy), very_nice, 1, 2)
     end
+
+    # Ensure has_frule / has_rrule for functions with no rules return false.
+    @test !has_frule((Tuple{Nothing, Float64}, typeof(no_rules), Float64))
+    @test !has_rrule((typeof(no_rules), Int, Float64))
+
+    # Ensure has_frule / has_rrule for function with rules return true.
+    @test has_frule((Tuple{Nothing, Float64}, typeof(dummy_identity), Int))
+    @test has_rrule((typeof(dummy_identity), Int))
+
+    # Ensure that has_frule / has_rrule respects type constraints.
+    @test has_frule((Tuple{Nothing, Int, Float64}, typeof(type_constraints), Int, Float64))
+    @test has_rrule((typeof(type_constraints), Int, Float64))
+    @test !has_frule((Tuple{Nothing, Int, String}, typeof(type_constraints), Int, Float64))
+    @test !has_rrule((typeof(type_constraints), Int, String))
 end

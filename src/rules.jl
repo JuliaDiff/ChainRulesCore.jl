@@ -50,6 +50,14 @@ See also: [`rrule`](@ref), [`@scalar_rule`](@ref)
 frule(::Any, ::Vararg{Any}; kwargs...) = nothing
 
 """
+A docstring
+"""
+function has_frule(args::Tuple)
+    ret_types = Base.return_types(frule, args)
+    return first(ret_types) !== Nothing
+end
+
+"""
     rrule(f, x...)
 
 Expressing `x` as the tuple `(x₁, x₂, ...)` and the output tuple of `f(x...)`
@@ -96,3 +104,11 @@ true
 See also: [`frule`](@ref), [`@scalar_rule`](@ref)
 """
 rrule(::Any, ::Vararg{Any}; kwargs...) = nothing
+
+"""
+A docstring
+"""
+function has_rrule(args::Tuple)
+    ret_types = Base.return_types(rrule, args)
+    return first(ret_types) != Nothing
+end
