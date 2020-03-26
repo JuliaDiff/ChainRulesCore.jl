@@ -83,7 +83,7 @@ We must support both natural and structural differentials because AD can only cr
 
 ## Semi-structural differentials
 
-Where there is no natural differential type for the outermost type, but there is for some of its fields, which can call this a semi-structural differential.
+Where there is no natural differential type for the outermost type but there is for some of its fields, we call this a "semi-structural" differential.
 
 Consider if we had a representation of a country's GDP as output by some continuous time model like a Gaussian Process, where that representation is as a sequence of `TimeSample`s
 
