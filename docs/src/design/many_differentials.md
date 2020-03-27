@@ -148,7 +148,7 @@ ChainRules disallows the addition of `Composite{SVD}` to `Composite{QR}` since i
 There is another kind of unnatural differential.
 One that is for computational efficiency.
 ChainRules has [`Thunk`](@ref)s and [`InplaceableThunk`](@ref)s, which wrap the computation of a derivative and delays that work until it is needed, either via the derivative being added to something or being [`unthunk`](@ref)ed manually,
-Thus saving time if it is never used.
+thus saving time if it is never used.
 
 Another differential type used for efficiency is [`Zero`](@ref) which represents the hard zero (in Zygote v0.4 this is `nothing`).
 For example the derivative of `f(x, y)=2x` with respect to `y` is `Zero()`.
