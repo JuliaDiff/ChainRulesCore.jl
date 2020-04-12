@@ -26,9 +26,11 @@ end
     end
 
     @testset "indexing, iterating, and properties" begin
+        @test keys(Composite{Foo}(x=2.5)) == (:x,)
         @test propertynames(Composite{Foo}(x=2.5)) == (:x,)
         @test Composite{Foo}(x=2.5).x == 2.5
 
+        @test keys(Composite{Tuple{Float64,}}(2.0)) == Base.OneTo(1)
         @test propertynames(Composite{Tuple{Float64,}}(2.0)) == (1,)
         @test getproperty(Composite{Tuple{Float64,}}(2.0), 1) == 2.0
 
