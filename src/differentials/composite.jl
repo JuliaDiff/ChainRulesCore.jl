@@ -58,6 +58,7 @@ function Base.getproperty(
     return getproperty(backing(comp), idx)
 end
 
+Base.keys(comp::Composite) = keys(backing(comp))
 Base.propertynames(comp::Composite) = propertynames(backing(comp))
 
 Base.iterate(comp::Composite, args...) = iterate(backing(comp), args...)
