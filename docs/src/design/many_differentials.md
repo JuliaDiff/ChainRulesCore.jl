@@ -13,12 +13,8 @@ They need to support addition to each other, they need a zero which doesn't chan
 Beyond being a vector space, differentials need to be able to be added to a primal value to get back another primal value.
 Or roughly equivalently a differential is a difference between two primal values.
 
-One thing to note in this example is that the primal does not have to be a vector space.
-We can however always transform it to be a vector space via choosing an origin, and expressing each primal value as a differential-typed distance from that origin.
+One thing to note in this example is that the primal does not have to be a vector.
 As an example, consider `DateTime`. A `DateTime` is not a vector space: there is no `zero(::DateTime)`, and `DateTime`s cannot be added to each other. The corresponding differential type is any subtype of `Period`, such as `Millisecond`, `Hour`, `Day` etc.
-
-!!! info "Torsors"
-    For a related concept, see [Torsors](http://math.ucr.edu/home/baez/torsors.html).
     
 ## Natural differential
 
