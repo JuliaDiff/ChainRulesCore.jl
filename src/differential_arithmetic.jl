@@ -16,7 +16,7 @@ Notice:
 
 Base.:+(::DoesNotExist, ::DoesNotExist) = DoesNotExist()
 Base.:*(::DoesNotExist, ::DoesNotExist) = DoesNotExist()
-for T in (:One, :AbstractThunk, :Any)
+for T in (:One, :AbstractThunk, :Composite, :Any)
     @eval Base.:+(::DoesNotExist, b::$T) = b
     @eval Base.:+(a::$T, ::DoesNotExist) = a
 
@@ -43,7 +43,7 @@ Base.muladd(::Zero, ::Zero, ::Zero) = Zero()
 
 Base.:+(::Zero, ::Zero) = Zero()
 Base.:*(::Zero, ::Zero) = Zero()
-for T in (:One, :AbstractThunk, :Any)
+for T in (:One, :AbstractThunk, :Composite, :Any)
     @eval Base.:+(::Zero, b::$T) = b
     @eval Base.:+(a::$T, ::Zero) = a
 
@@ -53,7 +53,7 @@ end
 
 Base.:+(a::One, b::One) = extern(a) + extern(b)
 Base.:*(::One, ::One) = One()
-for T in (:AbstractThunk, :Any)
+for T in (:AbstractThunk, :Composite, :Any)
     @eval Base.:+(a::One, b::$T) = extern(a) + b
     @eval Base.:+(a::$T, b::One) = a + extern(b)
 
@@ -64,22 +64,13 @@ end
 
 Base.:+(a::AbstractThunk, b::AbstractThunk) = unthunk(a) + unthunk(b)
 Base.:*(a::AbstractThunk, b::AbstractThunk) = unthunk(a) * unthunk(b)
-for T in (:Any,)
+for T in (:Composite, :Any)
     @eval Base.:+(a::AbstractThunk, b::$T) = unthunk(a) + b
     @eval Base.:+(a::$T, b::AbstractThunk) = a + unthunk(b)
 
     @eval Base.:*(a::AbstractThunk, b::$T) = unthunk(a) * b
     @eval Base.:*(a::$T, b::AbstractThunk) = a * unthunk(b)
 end
-
-################## Composite ##############################################################
-
-# We intentionally do not define, `Base.*(::Composite, ::Composite)` as that is not meaningful
-# In general one doesn't have to represent multiplications of 2 differentials
-# Only of a differential and a scaling factor (generally `Real`)
-Base.:*(s::Any, comp::Composite) = map(x->s*x, comp)
-Base.:*(comp::Composite, s::Any) = map(x->x*s, comp)
-
 
 function Base.:+(a::Composite{P}, b::Composite{P}) where P
     data = elementwise_add(backing(a), backing(b))
@@ -98,3 +89,10 @@ function Base.:+(a::P, d::Composite{P}) where P
     end
 end
 Base.:+(a::Composite{P}, b::P) where P = b + a
+# We intentionally do not define, `Base.*(::Composite, ::Composite)` as that is not meaningful
+# In general one doesn't have to represent multiplications of 2 differentials
+# Only of a differential and a scaling factor (generally `Real`)
+for T in (:Any,)
+    @eval Base.:*(s::$T, comp::Composite) = map(x->s*x, comp)
+    @eval Base.:*(comp::Composite, s::$T) = map(x->x*s, comp)
+end
