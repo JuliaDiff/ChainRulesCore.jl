@@ -16,7 +16,7 @@ Notice:
 
 Base.:+(::DoesNotExist, ::DoesNotExist) = DoesNotExist()
 Base.:*(::DoesNotExist, ::DoesNotExist) = DoesNotExist()
-for T in (:One, :AbstractThunk, :Composite, :Any)
+for T in (:One, :AbstractThunk, :Composite, :OneForm, :Any)
     @eval Base.:+(::DoesNotExist, b::$T) = b
     @eval Base.:+(a::$T, ::DoesNotExist) = a
 
@@ -43,7 +43,7 @@ Base.muladd(::Zero, ::Zero, ::Zero) = Zero()
 
 Base.:+(::Zero, ::Zero) = Zero()
 Base.:*(::Zero, ::Zero) = Zero()
-for T in (:One, :AbstractThunk, :Composite, :Any)
+for T in (:One, :AbstractThunk, :Composite, :OneForm, :Any)
     @eval Base.:+(::Zero, b::$T) = b
     @eval Base.:+(a::$T, ::Zero) = a
 
@@ -53,7 +53,7 @@ end
 
 Base.:+(a::One, b::One) = extern(a) + extern(b)
 Base.:*(::One, ::One) = One()
-for T in (:AbstractThunk, :Composite, :Any)
+for T in (:AbstractThunk, :Composite, :OneForm, :Any)
     @eval Base.:+(a::One, b::$T) = extern(a) + b
     @eval Base.:+(a::$T, b::One) = a + extern(b)
 
@@ -61,10 +61,9 @@ for T in (:AbstractThunk, :Composite, :Any)
     @eval Base.:*(a::$T, ::One) = a
 end
 
-
 Base.:+(a::AbstractThunk, b::AbstractThunk) = unthunk(a) + unthunk(b)
 Base.:*(a::AbstractThunk, b::AbstractThunk) = unthunk(a) * unthunk(b)
-for T in (:Composite, :Any)
+for T in (:Composite, :OneForm, :Any)
     @eval Base.:+(a::AbstractThunk, b::$T) = unthunk(a) + b
     @eval Base.:+(a::$T, b::AbstractThunk) = a + unthunk(b)
 
@@ -96,3 +95,13 @@ for T in (:Any,)
     @eval Base.:*(s::$T, comp::Composite) = map(x->s*x, comp)
     @eval Base.:*(comp::Composite, s::$T) = map(x->x*s, comp)
 end
+
+Base.:+(a::OneForm, b::OneForm) = one_form(a.parent + b.parent)
+Base.:*(a::OneForm, b::OneForm) = one_form(a.parent * b.parent)
+#for T in (:Any,)
+#    @eval Base.:+(a::OneForm, b::$T) = unthunk(a) + b
+#    @eval Base.:+(a::$T, b::OneForm) = a + unthunk(b)
+#
+#    @eval Base.:*(a::OneForm, b::$T) = unthunk(a) * b
+#    @eval Base.:*(a::$T, b::OneForm) = a * unthunk(b)
+#end

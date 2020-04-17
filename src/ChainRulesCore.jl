@@ -3,8 +3,9 @@ using Base.Broadcast: broadcasted, Broadcasted, broadcastable, materialize, mate
 
 export frule, rrule
 export @scalar_rule, @thunk
-export canonicalize, extern, unthunk
-export Composite, DoesNotExist, InplaceableThunk, One, Thunk, Zero, AbstractZero, AbstractThunk
+export canonicalize, extern, unthunk, one_form
+export Composite, DoesNotExist, InplaceableThunk, One, Thunk, Zero, AbstractZero,
+    AbstractThunk, OneForm
 export NO_FIELDS
 
 include("compat.jl")
@@ -15,6 +16,7 @@ include("differentials/abstract_zero.jl")
 include("differentials/one.jl")
 include("differentials/thunks.jl")
 include("differentials/composite.jl")
+include("differentials/one_form.jl")
 
 include("differential_arithmetic.jl")
 
