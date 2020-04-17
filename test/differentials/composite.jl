@@ -154,7 +154,24 @@ end
         @test diff + value == StructWithInvariant(12.5)
     end
 
-    @testset "Scaling" begin
+    @testset "differential arithmetic" begin
+        c = Composite{Foo}(y=1.5, x=2.5)
+
+        @test DoesNotExist() * c == DoesNotExist()
+        @test c * DoesNotExist() == DoesNotExist()
+
+        @test Zero() * c == Zero()
+        @test c * Zero() == Zero()
+
+        @test One() * c === c
+        @test c * One() === c
+
+        t = @thunk 2
+        @test t * c == 2 * c
+        @test c * t == c * 2
+    end
+
+    @testset "scaling" begin
         @test (
             2 *  Composite{Foo}(y=1.5, x=2.5)
             == Composite{Foo}(y=3.0, x=5.0)
