@@ -128,7 +128,7 @@ This document will explain this point of view in some detail.
 Let ``p`` be an element of type M, which is defined by some assignment of numbers ``x_1,...,x_m``,
 say ``(x_1,...,x_m) = (a_1,...,1_m)`` 
 
-A _function_ ``f:M -> K`` on ``M`` is (for simplicity) a polynomial ``K[x_1, ... x_m]``
+A _function_ ``f:M \to K`` on ``M`` is (for simplicity) a polynomial ``K[x_1, ... x_m]``
 
 The tangent space ``T_pM`` of ``T`` at point ``p`` is the ``K``-vector space spanned by derivations ``d/dx``. 
 The tangent space acts linearly on the space of functions. They act as usual on functions. Our starting point is 
@@ -145,10 +145,10 @@ The collection of cotangent spaces ``{T^*_pM}`` for ``p\in M`` is called the _co
 
 ##### Push-forwards and pullbacks
 
-Let ``N`` be another type, defined by numbers ``y_1,...,y_n``, and let ``g:M -> N`` be a _map_, that is, 
+Let ``N`` be another type, defined by numbers ``y_1,...,y_n``, and let ``g:M \to N`` be a _map_, that is, 
 an ``n``-dimensional vector ``(g_1, ..., g_m)`` of functions on ``M``.
 
-We define the _push-forward_ ``g_*:TM -> TN`` between tangent bundles by ``g_*(X)(h) = X(g\circ h)`` for any tangent vector ``X`` and function ``f``.
+We define the _push-forward_ ``g_*:TM \to TN`` between tangent bundles by ``g_*(X)(h) = X(g\circ h)`` for any tangent vector ``X`` and function ``f``.
 We have ``g_*(d/dx_i)(y_j) = dg_j/dx_i``, so the push-forward corresponds to the Jacobian, given a chosen basis.
 
 Similarly, the pullback of the differential ``df`` is defined by
@@ -168,7 +168,7 @@ _Gradients_ recall are vectors, yet they should contain the same information of 
 Assuming we use the standard euclidean metric, we can identify ``df`` and ``\nabla f`` as vectors.
 But pulling back gradients still should not be a thing.
 
-If the goal is to evaluate the gradient of a function ``f=g\circ h:M -> N -> K``, where ``g`` is a map and ``h`` is a function,
+If the goal is to evaluate the gradient of a function ``f=g\circ h:M \to N \to K``, where ``g`` is a map and ``h`` is a function,
 we have two obvious options:
 First, we may push-forward a basis of ``M`` to ``TK`` which we identify with K itself. 
 This results in ``m`` scalars, representing components of the gradient.
