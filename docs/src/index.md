@@ -138,7 +138,7 @@ The collection of tangent spaces ``{T_pM}`` for ``p\in M`` is called the _tangen
 
 Let ``df`` denote the first order information of ``f`` at each point. This is called the differential of ``f``. 
 If the derivatives of ``f`` and ``g`` agree at ``p``, we say that ``df`` and ``dg`` represent the same cotangent at ``p``.
-The covectors ``dx_1, ..., dx_m`` form the basis of the cotangent space T^*_pM at ``p``. Notice that this vector space is 
+The covectors ``dx_1, ..., dx_m`` form the basis of the cotangent space ``T^*_pM`` at ``p``. Notice that this vector space is 
 dual to ``T_p``
 
 The collection of cotangent spaces ``{T^*_pM}`` for ``p\in M`` is called the _cotangent bundle_ of ``M``.
@@ -149,10 +149,10 @@ Let ``N`` be another type, defined by numbers ``y_1,...,y_n``, and let ``g:M -> 
 an ``n``-dimensional vector ``(g_1, ..., g_m)`` of functions on ``M``.
 
 We define the _push-forward_ ``g_*:TM -> TN`` between tangent bundles by ``g_*(X)(h) = X(g\circ h)`` for any tangent vector ``X`` and function ``f``.
-We have ``g_*(d/dx_i)(y_j) = dg_j/dx_i, so the push-forward corresponds to the Jacobian, given a chosen basis.
+We have ``g_*(d/dx_i)(y_j) = dg_j/dx_i``, so the push-forward corresponds to the Jacobian, given a chosen basis.
 
 Similarly, the pullback of the differential ``df`` is defined by
-``g^*(df) = d(g\circ f)``. So for a coordinate differential ``dy_j``, we have
+``g^*(df) = d(f\circ g)``. So for a coordinate differential ``dy_j``, we have
 ``g^*(dy_j) = d(g_j)``. Notice that this is a covector, and we could have defined the pullback by its action on vectors by
 ``g^*(dh)(X) = g_*(X)(dh) = X(g\circ h)`` for any function ``f`` on ``N`` and ``X\in TM``. In particular, 
 ``g^*(dy_j)(d/dx_i) = d(g_j)/dx_i``. If you work out the action in a basis of the cotangent space, you see that it acts
