@@ -118,12 +118,12 @@ applies the chain rule to go from `∂c/∂b` to `∂c/∂a`.
 The pushforward of `g`,  which also incorporates the knowledge of `∂b/∂a`,
 applies the chain rule to go from `∂a/∂x` to `∂b/∂x`.
 
-##### Geometric interpretation of reverse and forwards mode AD
+#### Geometric interpretation of reverse and forwards mode AD
 
 Let us think of our types geometrically. In other words, elements of a type form a _manifold_.
 This document will explain this point of view in some detail.
 
-###### Some terminology/conventions.
+##### Some terminology/conventions.
 
 Let ``p`` be an element of type M, which is defined by some assignment of numbers ``x_1,...,x_m``,
 say ``(x_1,...,x_m) = (a_1,...,1_m)`` 
@@ -143,7 +143,7 @@ dual to ``T_p``
 
 The collection of cotangent spaces ``{T^*_pM}`` for ``p\in M`` is called the _cotangent bundle_ of ``M``.
 
-###### Push-forwards and pullbacks
+##### Push-forwards and pullbacks
 
 Let ``N`` be another type, defined by numbers ``y_1,...,y_n``, and let ``g:M -> N`` be a _map_, that is, 
 an ``n``-dimensional vector ``(g_1, ..., g_m)`` of functions on ``M``.
@@ -174,7 +174,7 @@ First, we may push-forward a basis of ``M`` to ``TK`` which we identify with K i
 This results in ``m`` scalars, representing components of the gradient.
 Step-by-step in coordinates:
 1. Compute the push-forward of the basis of ``T_pM``, i.e. just the columns of the Jacobian ``dg_i/dx_j``.
-2. Compute the push-forward of the function ``h`` (consider it as a map, K is also a manifold!) to get ``h_*(g_*T_pM) = \sum_j dh/dy_i (dg_i/dx_j)
+2. Compute the push-forward of the function ``h`` (consider it as a map, K is also a manifold!) to get ``h_*(g_*T_pM) = \sum_j dh/dy_i (dg_i/dx_j)``
 
 Second, we pull back the differential ``dh``: 
 1. compute ``dh = dh/dy_1,...,dh/dy_n`` in coordinates.
