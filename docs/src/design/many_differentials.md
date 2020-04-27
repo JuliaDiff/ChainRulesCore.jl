@@ -14,7 +14,7 @@ Beyond being a vector space, differentials need to be able to be added to a prim
 Or roughly equivalently a differential is a difference between two primal values.
 
 One thing to note in this example is that the primal does not have to be a vector.
-As an example, consider `DateTime`. A `DateTime` is not a vector space: there is no `zero(::DateTime)`, and `DateTime`s cannot be added to each other. The corresponding differential type is any subtype of `Period`, such as `Millisecond`, `Hour`, `Day` etc.
+As an example, consider `DateTime`. A `DateTime` is not a vector space: there is no origin point, and `DateTime`s cannot be added to each other. The corresponding differential type is any subtype of `Period`, such as `Millisecond`, `Hour`, `Day` etc.
     
 ## Natural differential
 
