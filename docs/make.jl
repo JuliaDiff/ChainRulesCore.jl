@@ -31,6 +31,7 @@ makedocs(
         "Debug Mode" => "debug_mode.md",
         "Design" => [
             "Many Differential Types" => "design/many_differentials.md",
+            "Zeros and Not Defined" => "design/zeros.md",
         ],
         "API" => "api.md",
     ],
