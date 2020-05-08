@@ -56,7 +56,7 @@ As small perturbation to this is an error, e.g. `f(5.1)` is not defined.
 Related to that is where the notion of perterbing is not defined.
 This is the case is for inputs that are `String`s or `Symbol`s.
 
-There is the cases of a structural Zero is a sparse data structure.
+There is the cases of a structural Zero in a sparse data structure.
 Like the off-diagonal on a `DiagonalMatrix`.
 Also the structual zero of a `SparseCSC` that varies at run time, particularly relevent in as it can be the result from the derivative of `getindex`.
 As well as the zero that could be within the differential representing a tuple
