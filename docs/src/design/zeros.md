@@ -7,9 +7,9 @@ Not all of them are supported by ChainRules.
 
 Here is list of some of the examples:
 
-Differentials are roughtly a vector-field they support scaling.
-So there is at least 1 scalar zero that much be supported.
-But one might want an extra one that can resolve at compile time based on type, and avoid `unthunk`ing `Thunks`, to save on computation.
+Differentials are roughly a vector-space -- they support scaling.
+So there is at least 1 scalar zero that must be supported.
+But one might want an extra zero that can resolved at compile time based on type to completely avoid certain computations e.g. `unthunk`ing `Thunks`.
 (Or one might want to bake that into the notion of `*::(x, t::AbstractThunk) = iszero(x) ? ...`).
 
 Which brings us to a second zero:
