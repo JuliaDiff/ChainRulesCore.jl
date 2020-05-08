@@ -48,7 +48,7 @@ For example in `max(a,b)` or in ``ifelse(cond, a, b)``.
 Have has a few talks with [James Bradbury](https://github.com/jekbradbury) about this, apparently it is important this this is a strong-zero, like julia's `false` where `false*NaN=false` not `NaN`.
 This is the subject of TensorFlow's _double where trick_, (`where` is what `ifelse` is called in TensorFlow) as they do not have a strong-zero.
 If a gradient being propagated backwards from a branch that was not taken is `NaN`, and thus the `ifelse` has this disconnected zero,  then when the chainrule is applied it is required that this zero remains zero (not `NaN`).
-I have not seen a good writeup on this, apprently one exists somewhere in the TensorFlow issue tracker.
+I have not seen a good writeup on this, apparently one exists somewhere in the TensorFlow issue tracker.
 
 There is the zero/not-definedness for something where perturbing its value is an error.
 So this is the gradient of `f'(5)` for ``f(x) = [1,2,3,4][x]``.
@@ -58,17 +58,17 @@ This is the case is for inputs that are `String`s or `Symbol`s.
 
 There is the cases of a structural Zero in a sparse data structure.
 Like the off-diagonal on a `DiagonalMatrix`.
-Also the structual zero of a `SparseCSC` that varies at run time, particularly relevent in as it can be the result from the derivative of `getindex`.
+Also the structural zero of a `SparseCSC` that varies at run time, particularly relevant in that it can be the result from the derivative of `getindex`.
 As well as the zero that could be within the differential representing a tuple
 if it is ``f(x::Tuple{Float64,Float64,Float64,}) = x[1] + x[3]``
 then derivative is `Composite{Tuple}(1, Zero(), 1)` and that is a structual zero.
 
 Derivative with repect to empty things.
-They have no value so can not be perturbated.
+They have no value so can not be perturbed.
 For example the gradient with respect to a empty array or tuple.
 Also with respect to an struct that has no fields.
-The struct case is interesting as a struct without fields is a singlton
-(technically a `mutable struct` isn't but it migth as well be).
+The struct case is interesting as a struct without fields is a singleton
+(technically a `mutable struct` isn't but it might as well be).
 It is the only the only element of its type.
 A very common case of this is functions.
 Every function in julia is a singlton struct, with call overloading.
