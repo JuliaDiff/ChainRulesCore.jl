@@ -25,7 +25,7 @@ methods for `frule` and `rrule`:
     function ChainRulesCore.rrule(::typeof(f), x₁::Number, x₂::Number, ...)
         Ω = f(x₁, x₂, ...)
         \$(statement₁, statement₂, ...)
-        return Ω, (ΔΩ₁, ΔΩ₂, ...) -> (
+        return Ω, ((ΔΩ₁, ΔΩ₂, ...)) -> (
                 NO_FIELDS,
                 ∂f₁_∂x₁ * ΔΩ₁ + ∂f₂_∂x₁ * ΔΩ₂ + ...),
                 ∂f₁_∂x₂ * ΔΩ₁ + ∂f₂_∂x₂ * ΔΩ₂ + ...),

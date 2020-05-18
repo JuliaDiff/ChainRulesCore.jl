@@ -126,26 +126,26 @@ This document will explain this point of view in some detail.
 ##### Some terminology/conventions.
 
 Let ``p`` be an element of type M, which is defined by some assignment of numbers ``x_1,...,x_m``,
-say ``(x_1,...,x_m) = (a_1,...,1_m)`` 
+say ``(x_1,...,x_m) = (a_1,...,1_m)``
 
 A _function_ ``f:M \to K`` on ``M`` is (for simplicity) a polynomial ``K[x_1, ... x_m]``
 
-The tangent space ``T_pM`` of ``T`` at point ``p`` is the ``K``-vector space spanned by derivations ``d/dx``. 
-The tangent space acts linearly on the space of functions. They act as usual on functions. Our starting point is 
+The tangent space ``T_pM`` of ``T`` at point ``p`` is the ``K``-vector space spanned by derivations ``d/dx``.
+The tangent space acts linearly on the space of functions. They act as usual on functions. Our starting point is
 that we know how to write down ``d/dx(f) = df/dx``.
 
 The collection of tangent spaces ``{T_pM}`` for ``p\in M`` is called the _tangent bundle_ of ``M``.
 
-Let ``df`` denote the first order information of ``f`` at each point. This is called the differential of ``f``. 
+Let ``df`` denote the first order information of ``f`` at each point. This is called the differential of ``f``.
 If the derivatives of ``f`` and ``g`` agree at ``p``, we say that ``df`` and ``dg`` represent the same cotangent at ``p``.
-The covectors ``dx_1, ..., dx_m`` form the basis of the cotangent space ``T^*_pM`` at ``p``. Notice that this vector space is 
+The covectors ``dx_1, ..., dx_m`` form the basis of the cotangent space ``T^*_pM`` at ``p``. Notice that this vector space is
 dual to ``T_p``
 
 The collection of cotangent spaces ``{T^*_pM}`` for ``p\in M`` is called the _cotangent bundle_ of ``M``.
 
 ##### Push-forwards and pullbacks
 
-Let ``N`` be another type, defined by numbers ``y_1,...,y_n``, and let ``g:M \to N`` be a _map_, that is, 
+Let ``N`` be another type, defined by numbers ``y_1,...,y_n``, and let ``g:M \to N`` be a _map_, that is,
 an ``n``-dimensional vector ``(g_1, ..., g_m)`` of functions on ``M``.
 
 We define the _push-forward_ ``g_*:TM \to TN`` between tangent bundles by ``g_*(X)(h) = X(g\circ h)`` for any tangent vector ``X`` and function ``f``.
@@ -154,7 +154,7 @@ We have ``g_*(d/dx_i)(y_j) = dg_j/dx_i``, so the push-forward corresponds to the
 Similarly, the pullback of the differential ``df`` is defined by
 ``g^*(df) = d(f\circ g)``. So for a coordinate differential ``dy_j``, we have
 ``g^*(dy_j) = d(g_j)``. Notice that this is a covector, and we could have defined the pullback by its action on vectors by
-``g^*(dh)(X) = g_*(X)(dh) = X(g\circ h)`` for any function ``f`` on ``N`` and ``X\in TM``. In particular, 
+``g^*(dh)(X) = g_*(X)(dh) = X(g\circ h)`` for any function ``f`` on ``N`` and ``X\in TM``. In particular,
 ``g^*(dy_j)(d/dx_i) = d(g_j)/dx_i``. If you work out the action in a basis of the cotangent space, you see that it acts
 by the adjoint of the Jacobian.
 
@@ -170,13 +170,13 @@ But pulling back gradients still should not be a thing.
 
 If the goal is to evaluate the gradient of a function ``f=g\circ h:M \to N \to K``, where ``g`` is a map and ``h`` is a function,
 we have two obvious options:
-First, we may push-forward a basis of ``M`` to ``TK`` which we identify with K itself. 
+First, we may push-forward a basis of ``M`` to ``TK`` which we identify with K itself.
 This results in ``m`` scalars, representing components of the gradient.
 Step-by-step in coordinates:
 1. Compute the push-forward of the basis of ``T_pM``, i.e. just the columns of the Jacobian ``dg_i/dx_j``.
 2. Compute the push-forward of the function ``h`` (consider it as a map, K is also a manifold!) to get ``h_*(g_*T_pM) = \sum_j dh/dy_i (dg_i/dx_j)``
 
-Second, we pull back the differential ``dh``: 
+Second, we pull back the differential ``dh``:
 1. compute ``dh = dh/dy_1,...,dh/dy_n`` in coordinates.
 2. pull back by (in coordinates) multiplying with the adjoint of the Jacobian, resulting in ``g_*(dh) = \sum_i(dg_i/dx_j)(dh/dy_i)``.
 
@@ -263,12 +263,14 @@ Similarly every `pullback` returns an extra `∂self`, which for things without 
 - **Pullback**
    - returned by `rrule`
    - takes output space wobbles, gives input space wiggles
-   - 1 argument per original function return
+   - Argument structure matches structure of primal function output
+   - If primal function returns a tuple, then pullback takes in a tuple of differentials.
    - 1 return per original function argument + 1 for the function itself
 
 - **Pushforward:**
     - part of `frule`
     - takes input space wiggles, gives output space wobbles
+    - Argument structure matches primal function argument structure, but passed as a tuple at start of `frule`
     - 1 argument per original function argument + 1 for the function itself
     - 1 return per original function return
 
