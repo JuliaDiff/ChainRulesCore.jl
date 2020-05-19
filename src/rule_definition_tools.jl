@@ -25,7 +25,7 @@ methods for `frule` and `rrule`:
     function ChainRulesCore.rrule(::typeof(f), x₁::Number, x₂::Number, ...)
         Ω = f(x₁, x₂, ...)
         \$(statement₁, statement₂, ...)
-        return Ω, (ΔΩ₁, ΔΩ₂, ...) -> (
+        return Ω, ((ΔΩ₁, ΔΩ₂, ...)) -> (
                 NO_FIELDS,
                 ∂f₁_∂x₁ * ΔΩ₁ + ∂f₂_∂x₁ * ΔΩ₂ + ...),
                 ∂f₁_∂x₂ * ΔΩ₁ + ∂f₂_∂x₂ * ΔΩ₂ + ...),
@@ -185,8 +185,10 @@ function scalar_rrule_expr(f, call, setup_stmts, inputs, partials)
         propagation_expr(Δs, ∂s)
     end
 
+    # Multi-output functions have pullbacks with a tuple input that will be destructured
+    pullback_input = n_outputs == 1 ? first(Δs) : Expr(:tuple, Δs...)
     pullback = quote
-        function $(propagator_name(f, :pullback))($(Δs...))
+        function $(propagator_name(f, :pullback))($pullback_input)
             return (NO_FIELDS, $(pullback_returns...))
         end
     end
