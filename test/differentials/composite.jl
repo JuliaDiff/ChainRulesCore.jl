@@ -143,7 +143,6 @@ end
         end
 
 
-
         # Now we define constuction for ChainRulesCore.jl's purposes:
         # It is going to determine the root quanity of the invarient
         function ChainRulesCore.construct(::Type{StructWithInvariant}, nt::NamedTuple)
@@ -196,7 +195,11 @@ end
 
         @testset "Internals don't allocate a ton" begin
             bk = (; x=1.0, y=2.0)
-            @test_broken (@ballocated(ChainRulesCore.construct($Foo, $bk))) <= 32
+            if VERSION >= v"1.5"
+                @test (@ballocated(ChainRulesCore.construct($Foo, $bk))) <= 32
+            else
+                @test_broken (@ballocated(ChainRulesCore.construct($Foo, $bk))) <= 32
+            end
             # weaker version of the above (which should pass, but make sure not failing too bad)
             @test (@ballocated(ChainRulesCore.construct($Foo, $bk))) <= 48
             @test (@ballocated ChainRulesCore.elementwise_add($bk, $bk)) <= 48
