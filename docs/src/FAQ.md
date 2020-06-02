@@ -76,3 +76,17 @@ ChainRulesTestUtils.jl has some dependencies, so it is a separate package from C
 This means your package can depend on the light-weight ChainRulesCore.jl, and make ChainRulesTestUtils.jl a test-only dependency.
 
 Remember to read the section on [On writing good `rrule` / `frule` methods](@ref).
+
+## Chain rules for complex functions
+
+`ChainRules.jl` follows the convention that `frule` applied to a function `f(x + im*y) = u(x,y) + im*v(x,y)` with perturbation `Δx + im*Δy` returns
+```
+∂u/∂x * Δx + ∂u/∂y * Δy + im * ( ∂v/∂x * Δx    ∂v/∂y * Δy )
+```
+and similarly `rrule` applied to the same function with adjoint `ū + im*v̄` returns
+```
+ū * ∂u/∂x + v̄ * ∂v/∂x + im * ( ū * ∂u/∂y + v̄ * ∂v/∂y )
+```
+Note that these rules can be interpreted as multiplication with the Jacobian and transposed Jacobian, respectively of `(x,y)->[u(x,y), v(x,y])`. 
+
+If `f(z)` is holomorphic, then `frule` can be implemented as `f'(z) * Δz` and `rrule` can be implemented as `f̄ * conj(f'(z))`. 
