@@ -77,7 +77,7 @@ This means your package can depend on the light-weight ChainRulesCore.jl, and ma
 
 Remember to read the section on [On writing good `rrule` / `frule` methods](@ref).
 
-## Chain rules for complex functions
+## How do chain rules work for complex functions?
 
 `ChainRules.jl` follows the convention that `frule` applied to a function `f(x + im*y) = u(x,y) + im*v(x,y)` with perturbation `ẋ + im*ẏ` returns
 ```
