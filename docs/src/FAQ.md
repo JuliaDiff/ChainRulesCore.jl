@@ -83,7 +83,7 @@ Remember to read the section on [On writing good `rrule` / `frule` methods](@ref
 ```
 ∂u/∂x * ẋ + ∂u/∂y * ẏ + im * ( ∂v/∂x * ẋ    ∂v/∂y * ẏ )
 ```
-and similarly `rrule` applied to the same function with adjoint `ū + im*v̄` returns
+and similarly `rrule` applied to the same function evaluates the function and return a pullback which, when applied to adjoint `ū + im*v̄`, returns
 ```
 ū * ∂u/∂x + v̄ * ∂v/∂x + im * ( ū * ∂u/∂y + v̄ * ∂v/∂y )
 ```
