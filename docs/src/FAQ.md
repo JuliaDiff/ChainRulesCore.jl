@@ -79,14 +79,49 @@ Remember to read the section on [On writing good `rrule` / `frule` methods](@ref
 
 ## How do chain rules work for complex functions?
 
-`ChainRules.jl` follows the convention that `frule` applied to a function `f(x + im*y) = u(x,y) + im*v(x,y)` with perturbation `ẋ + im*ẏ` returns
+`ChainRules.jl` follows the convention that `frule` applied to a function ``f(x + i y) = u(x,y) + i \, v(x,y)`` with perturbation ``\dot x + i \dot y`` returns
+```math
+\tfrac{\partial u}{\partial x} \, \dot x + \tfrac{\partial u}{\partial y} \, \dot y + i \, \Bigl( \tfrac{\partial v}{\partial x} \, \dot x + \tfrac{\partial v}{\partial y} \, \dot y \Bigr)
+,
 ```
-∂u/∂x * ẋ + ∂u/∂y * ẏ + im * ( ∂v/∂x * ẋ    ∂v/∂y * ẏ )
+and similarly `rrule` applied to the same function evaluates the function and returns a pullback which, when applied to adjoint ``\bar u + i \bar v``, returns
+```math
+\bar u \, \tfrac{\partial u}{\partial x} + \bar v \, \tfrac{\partial v}{\partial x} + i \, \Bigl(\bar u \, \tfrac{\partial u }{\partial y} + \bar v \, \tfrac{\partial v}{\partial y} \Bigr)
+.
 ```
-and similarly `rrule` applied to the same function evaluates the function and return a pullback which, when applied to adjoint `ū + im*v̄`, returns
-```
-ū * ∂u/∂x + v̄ * ∂v/∂x + im * ( ū * ∂u/∂y + v̄ * ∂v/∂y )
-```
-Note that these rules can be interpreted as multiplication with the Jacobian and transposed Jacobian, respectively of `(x,y)->[u(x,y), v(x,y])`. 
+Note that if we interpret complex numbers as vectors in ``\mathbb{R}^2``, then these rules correspond to left- and right-multiplication with the Jacobian of ``f(z)``, i.e. `frule` corresponds to 
+```math
+\begin{pmatrix}
+\tfrac{\partial u}{\partial x} \, \dot x + \tfrac{\partial u}{\partial y} \, \dot y 
+\\ 
+\tfrac{\partial v}{\partial x} \, \dot x + \tfrac{\partial v}{\partial y} \, \dot y 
+\end{pmatrix}
+=
+\begin{pmatrix}
+\tfrac{\partial u}{\partial x} & \tfrac{\partial u}{\partial y} \\
+\tfrac{\partial v}{\partial x} & \tfrac{\partial v}{\partial y} \\
+\end{pmatrix}
+\begin{pmatrix}
+\dot x \\ \dot y
+\end{pmatrix}
 
-If `f(z)` is holomorphic, then `frule` can be implemented as `f'(z) * ż` and `rrule` can be implemented as `f̄ * conj(f'(z))`. 
+```
+and `rrule` corresponds to 
+```math
+\begin{pmatrix}
+\bar u \, \tfrac{\partial u}{\partial x} + \bar v \, \tfrac{\partial v}{\partial x} 
+& 
+\bar u \, \tfrac{\partial u}{\partial y} + \bar v \, \tfrac{\partial v}{\partial y} 
+\end{pmatrix}
+=
+\begin{pmatrix}
+\bar u & \bar v
+\end{pmatrix}
+\begin{pmatrix}
+\tfrac{\partial u}{\partial x} & \tfrac{\partial u}{\partial y} \\
+\tfrac{\partial v}{\partial x} & \tfrac{\partial v}{\partial y} \\
+\end{pmatrix}
+.
+```
+
+If ``f(z)`` is holomorphic, then `frule` can be implemented as ``f'(z) \, \dot z`` and `rrule` can be implemented as ``\bar f \,  \overline{f'(z))}``. 
