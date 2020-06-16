@@ -79,7 +79,7 @@ Remember to read the section on [On writing good `rrule` / `frule` methods](@ref
 
 ## How do chain rules work for complex functions?
 
-`ChainRules.jl` follows the convention that `frule` applied to a function ``f(x + i y) = u(x,y) + i \, v(x,y)`` with perturbation ``\dot x + i \dot y`` returns
+`ChainRules.jl` follows the convention that `frule` applied to a function ``f(x + i y) = u(x,y) + i \, v(x,y)`` with perturbation ``\dot x + i \dot y`` returns the value and 
 ```math
 \tfrac{\partial u}{\partial x} \, \dot x + \tfrac{\partial u}{\partial y} \, \dot y + i \, \Bigl( \tfrac{\partial v}{\partial x} \, \dot x + \tfrac{\partial v}{\partial y} \, \dot y \Bigr)
 ,
