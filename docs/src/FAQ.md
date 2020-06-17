@@ -123,5 +123,39 @@ and `rrule` corresponds to
 \end{pmatrix}
 .
 ```
+The Jacobian of ``f:\mathbb{C} \to \mathbb{C}`` interpreted as a function ``\mathbb{R}^2 \to \mathbb{R}^2`` can hence be evaluated using
+```
+function jacobian_via_frule(f,x)
+    fx,df_dx = frule((nothing, 1),f,x)
+    fx,df_dy = frule((nothing,im),f,x)
+    return [
+        real(df_dx)  real(df_dy)
+        imag(df_dx)  imag(df_dy)
+    ]
+end
 
-If ``f(z)`` is holomorphic, then `frule` can be implemented as ``f'(z) \, \Delta z`` and `rrule` can be implemented as ``\Delta f \,  \overline{f'(z)}``.
+function jacobian_via_rrule(f,x)
+    fx, pullback = rrule(f,x)[2]
+    _,du_dz = pullback( 1)
+    _,dv_dz = pullback(im)
+    return [
+        real(du_dz)  imag(du_dz)
+        real(dv_dz)  imag(dv_dz)
+    ]
+end
+```
+
+If ``f(z)`` is holomorphic, then the derivative part of `frule` can be implemented as ``f'(z) \, \Delta z`` and the derivative part of `rrule` can be implemented as ``\Delta f \,  \overline{f'(z)}``.
+Consequently, holomorphic derivatives can be evaluated using
+```
+function holomorphic_derivative_via_frule(f,x)
+    fx,df_dz = frule((nothing,1),f,x)
+    return df_dz
+end
+
+function holomorphic_derivative_via_rrule(f,x)
+    fx, pullback = rrule(f,x)[2]
+    dself, conj_df_dz = pullback(1)
+    return conj(conj_df_dz)
+end
+```
