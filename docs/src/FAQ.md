@@ -133,7 +133,8 @@ function jacobian_via_frule(f,x)
         imag(df_dx)  imag(df_dy)
     ]
 end
-
+```
+```
 function jacobian_via_rrule(f,x)
     fx, pullback = rrule(f,x)[2]
     _,du_dz = pullback( 1)
@@ -152,7 +153,8 @@ function holomorphic_derivative_via_frule(f,x)
     fx,df_dz = frule((nothing,1),f,x)
     return df_dz
 end
-
+```
+```
 function holomorphic_derivative_via_rrule(f,x)
     fx, pullback = rrule(f,x)[2]
     dself, conj_df_dz = pullback(1)
