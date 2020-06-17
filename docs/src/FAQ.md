@@ -124,4 +124,4 @@ and `rrule` corresponds to
 .
 ```
 
-If ``f(z)`` is holomorphic, then `frule` can be implemented as ``f'(z) \, \Delta z`` and `rrule` can be implemented as ``\Delta f \,  \overline{f'(z))}``.
+If ``f(z)`` is holomorphic, then `frule` can be implemented as ``f'(z) \, \Delta z`` and `rrule` can be implemented as ``\Delta f \,  \overline{f'(z)}``.
