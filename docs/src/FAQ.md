@@ -84,7 +84,7 @@ Remember to read the section on [On writing good `rrule` / `frule` methods](@ref
 \tfrac{\partial u}{\partial x} \, \dot x + \tfrac{\partial u}{\partial y} \, \dot y + i \, \Bigl( \tfrac{\partial v}{\partial x} \, \dot x + \tfrac{\partial v}{\partial y} \, \dot y \Bigr)
 ,
 ```
-and similarly `rrule` applied to the same function evaluates the function and returns a pullback which, when applied to adjoint ``\bar u + i \bar v``, returns
+and similarly `rrule` applied to the same function evaluates the function and returns a pullback which, when applied to the adjoint ``\bar u + i \bar v``, returns
 ```math
 \bar u \, \tfrac{\partial u}{\partial x} + \bar v \, \tfrac{\partial v}{\partial x} + i \, \Bigl(\bar u \, \tfrac{\partial u }{\partial y} + \bar v \, \tfrac{\partial v}{\partial y} \Bigr)
 .
