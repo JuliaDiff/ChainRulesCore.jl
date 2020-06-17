@@ -79,22 +79,22 @@ Remember to read the section on [On writing good `rrule` / `frule` methods](@ref
 
 ## How do chain rules work for complex functions?
 
-`ChainRules.jl` follows the convention that `frule` applied to a function ``f(x + i y) = u(x,y) + i \, v(x,y)`` with perturbation ``\dot x + i \dot y`` returns the value and
+`ChainRules.jl` follows the convention that `frule` applied to a function ``f(x + i y) = u(x,y) + i \, v(x,y)`` with perturbation ``\Delta x + i \Delta y`` returns the value and
 ```math
-\tfrac{\partial u}{\partial x} \, \dot x + \tfrac{\partial u}{\partial y} \, \dot y + i \, \Bigl( \tfrac{\partial v}{\partial x} \, \dot x + \tfrac{\partial v}{\partial y} \, \dot y \Bigr)
+\tfrac{\partial u}{\partial x} \, \Delta x + \tfrac{\partial u}{\partial y} \, \Delta y + i \, \Bigl( \tfrac{\partial v}{\partial x} \, \Delta x + \tfrac{\partial v}{\partial y} \, \Delta y \Bigr)
 ,
 ```
-and similarly `rrule` applied to the same function evaluates the function and returns a pullback which, when applied to the adjoint ``\bar u + i \bar v``, returns
+and similarly `rrule` applied to the same function evaluates the function and returns a pullback which, when applied to the adjoint ``\Delta u + i \Delta v``, returns
 ```math
-\bar u \, \tfrac{\partial u}{\partial x} + \bar v \, \tfrac{\partial v}{\partial x} + i \, \Bigl(\bar u \, \tfrac{\partial u }{\partial y} + \bar v \, \tfrac{\partial v}{\partial y} \Bigr)
+\Delta u \, \tfrac{\partial u}{\partial x} + \Delta v \, \tfrac{\partial v}{\partial x} + i \, \Bigl(\Delta u \, \tfrac{\partial u }{\partial y} + \Delta v \, \tfrac{\partial v}{\partial y} \Bigr)
 .
 ```
 Note that if we interpret complex numbers as vectors in ``\mathbb{R}^2``, then these rules correspond to left- and right-multiplication with the Jacobian of ``f(z)``, i.e. `frule` corresponds to
 ```math
 \begin{pmatrix}
-\tfrac{\partial u}{\partial x} \, \dot x + \tfrac{\partial u}{\partial y} \, \dot y
+\tfrac{\partial u}{\partial x} \, \Delta x + \tfrac{\partial u}{\partial y} \, \Delta y
 \\
-\tfrac{\partial v}{\partial x} \, \dot x + \tfrac{\partial v}{\partial y} \, \dot y
+\tfrac{\partial v}{\partial x} \, \Delta x + \tfrac{\partial v}{\partial y} \, \Delta y
 \end{pmatrix}
 =
 \begin{pmatrix}
@@ -102,20 +102,20 @@ Note that if we interpret complex numbers as vectors in ``\mathbb{R}^2``, then t
 \tfrac{\partial v}{\partial x} & \tfrac{\partial v}{\partial y} \\
 \end{pmatrix}
 \begin{pmatrix}
-\dot x \\ \dot y
+\Delta x \\ \Delta y
 \end{pmatrix}
 
 ```
 and `rrule` corresponds to
 ```math
 \begin{pmatrix}
-\bar u \, \tfrac{\partial u}{\partial x} + \bar v \, \tfrac{\partial v}{\partial x}
+\Delta u \, \tfrac{\partial u}{\partial x} + \Delta v \, \tfrac{\partial v}{\partial x}
 &
-\bar u \, \tfrac{\partial u}{\partial y} + \bar v \, \tfrac{\partial v}{\partial y}
+\Delta u \, \tfrac{\partial u}{\partial y} + \Delta v \, \tfrac{\partial v}{\partial y}
 \end{pmatrix}
 =
 \begin{pmatrix}
-\bar u & \bar v
+\Delta u & \Delta v
 \end{pmatrix}
 \begin{pmatrix}
 \tfrac{\partial u}{\partial x} & \tfrac{\partial u}{\partial y} \\
@@ -124,4 +124,4 @@ and `rrule` corresponds to
 .
 ```
 
-If ``f(z)`` is holomorphic, then `frule` can be implemented as ``f'(z) \, \dot z`` and `rrule` can be implemented as ``\bar f \,  \overline{f'(z))}``.
+If ``f(z)`` is holomorphic, then `frule` can be implemented as ``f'(z) \, \Delta z`` and `rrule` can be implemented as ``\Delta f \,  \overline{f'(z))}``.
