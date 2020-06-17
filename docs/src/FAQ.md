@@ -82,14 +82,14 @@ Remember to read the section on [On writing good `rrule` / `frule` methods](@ref
 `ChainRules.jl` follows the convention that `frule` applied to a function ``f(x + i y) = u(x,y) + i \, v(x,y)`` with perturbation ``\Delta x + i \Delta y`` returns the value and
 ```math
 \tfrac{\partial u}{\partial x} \, \Delta x + \tfrac{\partial u}{\partial y} \, \Delta y + i \, \Bigl( \tfrac{\partial v}{\partial x} \, \Delta x + \tfrac{\partial v}{\partial y} \, \Delta y \Bigr)
-,
+.
 ```
-and similarly `rrule` applied to the same function evaluates the function and returns a pullback which, when applied to the adjoint ``\Delta u + i \Delta v``, returns
+Similarly, `rrule` applied to the same function evaluates the function and returns a pullback which, when applied to the adjoint ``\Delta u + i \Delta v``, returns
 ```math
 \Delta u \, \tfrac{\partial u}{\partial x} + \Delta v \, \tfrac{\partial v}{\partial x} + i \, \Bigl(\Delta u \, \tfrac{\partial u }{\partial y} + \Delta v \, \tfrac{\partial v}{\partial y} \Bigr)
 .
 ```
-Note that if we interpret complex numbers as vectors in ``\mathbb{R}^2``, then these rules correspond to left- and right-multiplication with the Jacobian of ``f(z)``, i.e. `frule` corresponds to
+If we interpret complex numbers as vectors in ``\mathbb{R}^2``, then these rules correspond to left- and right-multiplication with the Jacobian of ``f(z)``, i.e. `frule` corresponds to
 ```math
 \begin{pmatrix}
 \tfrac{\partial u}{\partial x} \, \Delta x + \tfrac{\partial u}{\partial y} \, \Delta y
