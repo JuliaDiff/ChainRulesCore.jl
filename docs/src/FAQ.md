@@ -161,3 +161,8 @@ function holomorphic_derivative_via_rrule(f,z)
     return conj(conj_df_dz)
 end
 ```
+
+!!! note
+    There are various notions of complex derivatives (holomorphic and Wirtinger derivatives, Jacobians, gradients, etc.) which often differ in subtle but important ways.
+    The goal of ChainRules is to provide the basic differentiation rules upon which these derivatives can be implemented, but it does not implement these derivatives itself.
+    It is recommended that you carefully check how the above definitions of `frule` and `rrule` translate into your specific notion of complex derivative since getting this wrong leads to bugs which are hard to track down.
