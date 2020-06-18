@@ -136,7 +136,7 @@ end
 ```
 ```
 function jacobian_via_rrule(f,x)
-    fx, pullback = rrule(f,x)[2]
+    fx, pullback = rrule(f,x)
     _,du_dz = pullback( 1)
     _,dv_dz = pullback(im)
     return [
