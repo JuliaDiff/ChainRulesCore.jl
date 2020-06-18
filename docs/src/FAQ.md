@@ -123,7 +123,7 @@ and `rrule` corresponds to
 \end{pmatrix}
 .
 ```
-The Jacobian of ``f:\mathbb{C} \to \mathbb{C}`` interpreted as a function ``\mathbb{R}^2 \to \mathbb{R}^2`` can hence be evaluated using
+The Jacobian of ``f:\mathbb{C} \to \mathbb{C}`` interpreted as a function ``\mathbb{R}^2 \to \mathbb{R}^2`` can hence be evaluated using either of the following functions.
 ```
 function jacobian_via_frule(f,z)
     fz,df_dx = frule((Zero(), 1),f,z)
@@ -147,7 +147,7 @@ end
 ```
 
 If ``f(z)`` is holomorphic, then the derivative part of `frule` can be implemented as ``f'(z) \, \Delta z`` and the derivative part of `rrule` can be implemented as ``\Delta f \,  \overline{f'(z)}``.
-Consequently, holomorphic derivatives can be evaluated using
+Consequently, holomorphic derivatives can be evaluated using either of the following functions.
 ```
 function holomorphic_derivative_via_frule(f,z)
     fz,df_dz = frule((Zero(),1),f,z)
