@@ -156,7 +156,7 @@ end
 ```
 ```
 function holomorphic_derivative_via_rrule(f,x)
-    fx, pullback = rrule(f,x)[2]
+    fx, pullback = rrule(f,x)
     dself, conj_df_dz = pullback(1)
     return conj(conj_df_dz)
 end
