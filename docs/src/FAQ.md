@@ -126,8 +126,8 @@ and `rrule` corresponds to
 The Jacobian of ``f:\mathbb{C} \to \mathbb{C}`` interpreted as a function ``\mathbb{R}^2 \to \mathbb{R}^2`` can hence be evaluated using
 ```
 function jacobian_via_frule(f,z)
-    fz,df_dx = frule((nothing, 1),f,z)
-    fz,df_dy = frule((nothing,im),f,z)
+    fz,df_dx = frule((Zero(), 1),f,z)
+    fz,df_dy = frule((Zero(),im),f,z)
     return [
         real(df_dx)  real(df_dy)
         imag(df_dx)  imag(df_dy)
@@ -150,7 +150,7 @@ If ``f(z)`` is holomorphic, then the derivative part of `frule` can be implement
 Consequently, holomorphic derivatives can be evaluated using
 ```
 function holomorphic_derivative_via_frule(f,z)
-    fz,df_dz = frule((nothing,1),f,z)
+    fz,df_dz = frule((Zero(),1),f,z)
     return df_dz
 end
 ```
