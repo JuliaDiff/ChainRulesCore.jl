@@ -15,6 +15,8 @@ nice(x) = 1
 very_nice(x, y) = x + y
 @scalar_rule(very_nice(x, y), (One(), One()))
 
+complex_times(x) = (1 + 2im) * x
+@scalar_rule(complex_times(x), 1 + 2im)
 
 # Tests that aim to ensure that the API for frules doesn't regress and make these things
 # hard to implement.
@@ -121,6 +123,21 @@ _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
 
         # Test that @scalar_rule and `One()` play nice together, w.r.t broadcasting
         @inferred frule((Zero(), sx, sy), very_nice, 1, 2)
+    end
+
+    @testset "complex inputs" begin
+        @test frule((nothing, 1), complex_times, 1) == (1 + 2im, 1 + 2im)
+        @test frule((nothing, im), complex_times, im) == (-2 + im, -2 + im)
+        ctx, back = rrule(complex_times, 1)
+        @test ctx == 1 + 2im
+        ∂self, ∂x = back(1)
+        @test ∂self == NO_FIELDS
+        @test ∂x == 1 - 2im
+        ctx, back = rrule(complex_times, im)
+        @test ctx == -2 + im
+        ∂self, ∂x = back(im)
+        @test ∂self == NO_FIELDS
+        @test ∂x == 2 + im
     end
 end
 
