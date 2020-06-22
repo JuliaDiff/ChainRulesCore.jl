@@ -146,7 +146,7 @@ function jacobian_via_rrule(f,z)
 end
 ```
 
-If ``f(z)`` is holomorphic, then the derivative part of `frule` can be implemented as ``f'(z) \, \Delta z`` and the derivative part of `rrule` can be implemented as ``\Delta f \,  \overline{f'(z)}``.
+If ``f(z)`` is holomorphic, then the derivative part of `frule` can be implemented as ``f'(z) \, \Delta z`` and the derivative part of `rrule` can be implemented as ``\operatorname{conj}\bigl(f'(z)\bigr) \, \Delta f``.
 Consequently, holomorphic derivatives can be evaluated using either of the following functions.
 ```
 function holomorphic_derivative_via_frule(f,z)
@@ -172,7 +172,7 @@ and the derivative part of `rrule` is given by
 \sum_{k = 1}^n \Delta u_k \, \tfrac{\partial u_k}{\partial x_\ell} + \Delta v_k \, \tfrac{\partial v_k}{\partial x_\ell} + i \, \Bigl(\Delta u_k \, \tfrac{\partial u_k }{\partial y_\ell} + \Delta v_k \, \tfrac{\partial v_k}{\partial y_\ell} \Bigr)
 \qquad\text{for } \ell = 1, \ldots, m
 ```
-In particular, if ``f(z)`` is holomorphic (i.e. every component function ``f_k(z)`` is holomorphic in every component ``z_\ell`` of the argument), then the derivative part of `frule` can be implemented as ``\nabla f(z) \, \Delta z`` and the derivative part of `rrule` can be implemented as ``\overline{\nabla f(z)}^H \, \Delta f``, where ``\nabla f(z)`` denotes the matrix of holomorphic derivatives ``(\nabla f)_{k\ell} = \frac{\partial f_k}{\partial z_\ell}`` and ``A^H = \overline{A}^T`` denotes the Hermitian transpose.
+In particular, if ``f(z)`` is holomorphic (i.e. every component function ``f_k(z)`` is holomorphic in every component ``z_\ell`` of the argument), then the derivative part of `frule` can be implemented as ``\nabla f(z) \, \Delta z`` and the derivative part of `rrule` can be implemented as ``\nabla f(z)^H \, \Delta f``, where ``\nabla f(z)`` denotes the matrix of holomorphic derivatives ``(\nabla f)_{k\ell} = \frac{\partial f_k}{\partial z_\ell}`` and ``A^H = \operatorname{conj}(A)^T`` denotes the Hermitian transpose.
 
 !!! note
     There are various notions of complex derivatives (holomorphic and Wirtinger derivatives, Jacobians, gradients, etc.) which often differ in subtle but important ways.
