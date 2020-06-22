@@ -162,18 +162,6 @@ function holomorphic_derivative_via_rrule(f,z)
 end
 ```
 
-In the multi-dimensional case ``f : \mathbb{C}^m \to \mathbb{C}^n``, the derivative part of `frule` is given by
-```math
-\sum_{\ell = 1}^m \tfrac{\partial u_k}{\partial x_\ell} \, \Delta x_\ell + \tfrac{\partial u_k}{\partial y_\ell} \, \Delta y_\ell + i \, \Bigl( \tfrac{\partial v_k}{\partial x_\ell} \, \Delta x_\ell + \tfrac{\partial v_k}{\partial y_\ell} \, \Delta y_\ell \Bigr)
-\qquad\text{for } k = 1, \ldots, n
-```
-and the derivative part of `rrule` is given by
-```math
-\sum_{k = 1}^n \Delta u_k \, \tfrac{\partial u_k}{\partial x_\ell} + \Delta v_k \, \tfrac{\partial v_k}{\partial x_\ell} + i \, \Bigl(\Delta u_k \, \tfrac{\partial u_k }{\partial y_\ell} + \Delta v_k \, \tfrac{\partial v_k}{\partial y_\ell} \Bigr)
-\qquad\text{for } \ell = 1, \ldots, m
-```
-In particular, if ``f(z)`` is holomorphic (i.e. every component function ``f_k(z)`` is holomorphic in every component ``z_\ell`` of the argument), then the derivative part of `frule` can be implemented as ``\nabla f(z) \, \Delta z`` and the derivative part of `rrule` can be implemented as ``\nabla f(z)^H \, \Delta f``, where ``\nabla f(z)`` denotes the matrix of holomorphic derivatives ``(\nabla f)_{k\ell} = \frac{\partial f_k}{\partial z_\ell}`` and ``A^H = \operatorname{conj}(A)^T`` denotes the Hermitian transpose.
-
 !!! note
     There are various notions of complex derivatives (holomorphic and Wirtinger derivatives, Jacobians, gradients, etc.) which often differ in subtle but important ways.
     The goal of ChainRules is to provide the basic differentiation rules upon which these derivatives can be implemented, but it does not implement these derivatives itself.
