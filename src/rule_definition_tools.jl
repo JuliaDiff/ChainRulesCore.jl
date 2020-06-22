@@ -49,6 +49,9 @@ The result of `f(x₁, x₂, ...)` is automatically bound to `Ω`. This
 allows the primal result to be conveniently referenced (as `Ω`) within the
 derivative/setup expressions.
 
+This macro assumes complex functions are holomorphic. In general, for non-holomorphic
+functions, the `frule` and `rrule` must be defined manually.
+
 The `@setup` argument can be elided if no setup code is need. In other
 words:
 
