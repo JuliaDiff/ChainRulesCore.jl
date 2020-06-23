@@ -135,7 +135,7 @@ _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
         @test Ω_rev == Ω
         ∂self, ∂x = back(Ω̄)
         @test ∂self == NO_FIELDS
-        @test ∂x ≈ only(j′vp(central_fdm(5, 1), complex_times, Ω̄, x))
+        @test ∂x ≈ j′vp(central_fdm(5, 1), complex_times, Ω̄, x)[1]
     end
 end
 
