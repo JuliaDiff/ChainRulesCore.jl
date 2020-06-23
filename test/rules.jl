@@ -126,18 +126,16 @@ _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
     end
 
     @testset "complex inputs" begin
-        @test frule((nothing, 1), complex_times, 1) == (1 + 2im, 1 + 2im)
-        @test frule((nothing, im), complex_times, im) == (-2 + im, -2 + im)
-        ctx, back = rrule(complex_times, 1)
-        @test ctx == 1 + 2im
-        ∂self, ∂x = back(1)
+        x, ẋ, Ω̄ = randn(ComplexF64, 3)
+        Ω = complex_times(x)
+        Ω_fwd, Ω̇ = frule((nothing, ẋ), complex_times, x)
+        @test Ω_fwd == Ω
+        @test Ω̇ ≈ jvp(central_fdm(5, 1), complex_times, (x, ẋ))
+        Ω_rev, back = rrule(complex_times, x)
+        @test Ω_rev == Ω
+        ∂self, ∂x = back(Ω̄)
         @test ∂self == NO_FIELDS
-        @test ∂x == 1 - 2im
-        ctx, back = rrule(complex_times, im)
-        @test ctx == -2 + im
-        ∂self, ∂x = back(im)
-        @test ∂self == NO_FIELDS
-        @test ∂x == 2 + im
+        @test ∂x ≈ only(j′vp(central_fdm(5, 1), complex_times, Ω̄, x))
     end
 end
 
