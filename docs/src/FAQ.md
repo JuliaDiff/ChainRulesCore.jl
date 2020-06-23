@@ -115,9 +115,9 @@ and `rrule` corresponds to
 \end{pmatrix}
 =
 \begin{pmatrix}
-\tfrac{\partial u}{\partial x} & \tfrac{\partial v}{\partial x} \\
-\tfrac{\partial u}{\partial y} & \tfrac{\partial v}{\partial y} \\
-\end{pmatrix}
+\tfrac{\partial u}{\partial x} & \tfrac{\partial u}{\partial y} \\
+\tfrac{\partial v}{\partial x} & \tfrac{\partial v}{\partial y} \\
+\end{pmatrix}^T
 \begin{pmatrix}
 \Delta u \\ \Delta v
 \end{pmatrix}
