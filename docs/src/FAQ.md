@@ -89,7 +89,7 @@ Similarly, `rrule` applied to the same function returns the value and a pullback
 \Delta u \, \tfrac{\partial u}{\partial x} + \Delta v \, \tfrac{\partial v}{\partial x} + i \, \Bigl(\Delta u \, \tfrac{\partial u }{\partial y} + \Delta v \, \tfrac{\partial v}{\partial y} \Bigr)
 .
 ```
-If we interpret complex numbers as vectors in ``\mathbb{R}^2``, then these rules correspond to multiplication with the (transposed) Jacobian of ``f(z)``, i.e. `frule` corresponds to
+If we interpret complex numbers as vectors in ``\mathbb{R}^2``, then `frule` (`rrule`) corresponds to multiplication with the (transposed) Jacobian of ``f(z)``, i.e. `frule` corresponds to
 ```math
 \begin{pmatrix}
 \tfrac{\partial u}{\partial x} \, \Delta x + \tfrac{\partial u}{\partial y} \, \Delta y
