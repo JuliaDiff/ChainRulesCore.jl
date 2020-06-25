@@ -51,6 +51,12 @@ for T in (:One, :AbstractThunk, :Composite, :Any)
     @eval Base.:*(::$T, ::Zero) = Zero()
 end
 
+Base.real(::Zero) = Zero()
+Base.imag(::Zero) = Zero()
+
+Base.real(::One) = One()
+Base.imag(::One) = Zero()
+
 Base.:+(a::One, b::One) = extern(a) + extern(b)
 Base.:*(::One, ::One) = One()
 for T in (:AbstractThunk, :Composite, :Any)
