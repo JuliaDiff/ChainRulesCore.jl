@@ -136,12 +136,12 @@ end
 ```
 ```
 function jacobian_via_rrule(f,z)
-    fz, pullback = rrule(f,z)
-    _,du_dz = pullback( 1)
-    _,dv_dz = pullback(im)
+    _, pullback = rrule(f,z)
+    du_dx, du_dy = reim(pullback( 1)[2])
+    dv_dx, dv_dy = reim(pullback(im)[2])
     return [
-        real(du_dz)  imag(du_dz)
-        real(dv_dz)  imag(dv_dz)
+        du_dx  du_dy
+        dv_dx  dv_dy
     ]
 end
 ```
