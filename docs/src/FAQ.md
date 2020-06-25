@@ -126,11 +126,11 @@ and `rrule` corresponds to
 The Jacobian of ``f:\mathbb{C} \to \mathbb{C}`` interpreted as a function ``\mathbb{R}^2 \to \mathbb{R}^2`` can hence be evaluated using either of the following functions.
 ```
 function jacobian_via_frule(f,z)
-    fz,df_dx = frule((Zero(), 1),f,z)
-    fz,df_dy = frule((Zero(),im),f,z)
+    du_dx, dv_dx = reim(frule((Zero(), 1),f,z)[2])
+    du_dy, dv_dy = reim(frule((Zero(),im),f,z)[2])
     return [
-        real(df_dx)  real(df_dy)
-        imag(df_dx)  imag(df_dy)
+        du_dx  du_dy
+        dv_dx  dv_dy
     ]
 end
 ```
