@@ -190,12 +190,11 @@ function elementwise_add(a::NamedTuple{an}, b::NamedTuple{bn}) where {an, bn}
     # https://github.com/JuliaLang/julia/blob/592748adb25301a45bd6edef3ac0a93eed069852/base/namedtuple.jl#L220-L231
     if @generated
         names = Base.merge_names(an, bn)
-        types = Base.merge_types(names, a, b)
-
+        
         vals = map(names) do field
             a_field = :(getproperty(a, $(QuoteNode(field))))
             b_field = :(getproperty(b, $(QuoteNode(field))))
-            val_expr = if Base.sym_in(field, an)
+            value_expr = if Base.sym_in(field, an)
                 if Base.sym_in(field, bn)
                     # in both
                     :($a_field + $b_field)
@@ -206,13 +205,13 @@ function elementwise_add(a::NamedTuple{an}, b::NamedTuple{bn}) where {an, bn}
             else # must be in `b` only
                 b_field
             end
+            Expr(:kw, field, value_expr)
         end
-        return :(NamedTuple{$names, $types}(($(vals...),)))
+        return Expr(:tuple, Expr(:parameters, vals...))
     else
         names = Base.merge_names(an, bn)
-        types = Base.merge_types(names, typeof(a), typeof(b))
         vals = map(names) do field
-            if Base.sym_in(field, an)
+            value = if Base.sym_in(field, an)
                 a_field = getproperty(a, field)
                 if Base.sym_in(field, bn)
                     # in both
@@ -225,8 +224,9 @@ function elementwise_add(a::NamedTuple{an}, b::NamedTuple{bn}) where {an, bn}
             else # must be in `b` only
                 getproperty(b, field)
             end
+            field => value
         end
-        return NamedTuple{names,types}(vals)
+        return (;vals...)
     end
 end
 
