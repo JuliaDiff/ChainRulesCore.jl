@@ -35,6 +35,10 @@
         @test muladd(x, Zero(), Zero()) === Zero()
         @test muladd(Zero(), x, Zero()) === Zero()
         @test muladd(Zero(), Zero(), Zero()) === Zero()
+        
+        @test reim(z) === (Zero(), Zero())
+        @test real(z) === Zero()
+        @test imag(z) === Zero()
     end
 
     @testset "DoesNotExist" begin
