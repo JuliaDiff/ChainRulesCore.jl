@@ -206,6 +206,12 @@ end
         end
     end
 
+    @testset "non-same-typed differential arithmetic" begin
+        nt = (; a=1, b=2.0)
+        c = Composite{typeof(nt)}(; a=DoesNotExist(), b=0.1)
+        @test nt + c == (; a=1, b=2.1);
+    end
+
     @testset "NO_FIELDS" begin
         @test NO_FIELDS === Zero()
     end
