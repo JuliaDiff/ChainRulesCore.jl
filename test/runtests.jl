@@ -2,6 +2,7 @@ using Base.Broadcast: broadcastable
 using BenchmarkTools
 using ChainRulesCore
 using LinearAlgebra: Diagonal
+using FiniteDifferences
 using Test
 
 @testset "ChainRulesCore" begin

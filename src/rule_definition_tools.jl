@@ -49,6 +49,9 @@ The result of `f(x₁, x₂, ...)` is automatically bound to `Ω`. This
 allows the primal result to be conveniently referenced (as `Ω`) within the
 derivative/setup expressions.
 
+This macro assumes complex functions are holomorphic. In general, for non-holomorphic
+functions, the `frule` and `rrule` must be defined manually.
+
 The `@setup` argument can be elided if no setup code is need. In other
 words:
 
@@ -182,7 +185,7 @@ function scalar_rrule_expr(f, call, setup_stmts, inputs, partials)
     # 1 partial derivative per input
     pullback_returns = map(1:n_inputs) do input_i
         ∂s = [partial.args[input_i] for partial in partials]
-        propagation_expr(Δs, ∂s)
+        propagation_expr(Δs, ∂s, true)
     end
 
     # Multi-output functions have pullbacks with a tuple input that will be destructured
@@ -203,19 +206,24 @@ function scalar_rrule_expr(f, call, setup_stmts, inputs, partials)
 end
 
 """
-    propagation_expr(Δs, ∂s)
+    propagation_expr(Δs, ∂s, _conj = false)
 
     Returns the expression for the propagation of
     the input gradient `Δs` though the partials `∂s`.
+    Specify `_conj = true` to conjugate the partials.
 """
-function propagation_expr(Δs, ∂s)
+function propagation_expr(Δs, ∂s, _conj = false)
     # This is basically Δs ⋅ ∂s
     ∂s = map(esc, ∂s)
     n∂s = length(∂s)
 
     # Due to bugs in Julia 1.0, we can't use `.+`  or `.*` inside expression
     # literals.
-    ∂_mul_Δs = ntuple(i->:($(∂s[i]) * $(Δs[i])), n∂s)
+    ∂_mul_Δs = if _conj
+        ntuple(i->:(conj($(∂s[i])) * $(Δs[i])), n∂s)
+    else
+        ntuple(i->:($(∂s[i]) * $(Δs[i])), n∂s)
+    end
 
     # Avoiding the extra `+` operation, it is potentially expensive for vector
     # mode AD.
