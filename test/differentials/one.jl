@@ -12,4 +12,8 @@
     end
     @test broadcastable(o) isa Ref{One}
     @test conj(o) == o
+    
+    @test reim(o) === (One(), Zero())
+    @test real(o) === One()
+    @test imag(o) === Zero()
 end
