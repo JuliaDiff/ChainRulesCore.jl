@@ -77,3 +77,20 @@ This means your package can depend on the light-weight ChainRulesCore.jl, and ma
 
 Remember to read the section on [On writing good `rrule` / `frule` methods](@ref).
 
+## Where can I learn more about AD ?
+There are not so many truely excellent learning resources for autodiff out there in the world, which is a bit sad.
+The list here is incomplete, but is vetted for quality.
+
+ - [Automatic Differentiation for Dummies keynote video](https://www.youtube.com/watch?v=FtnkqIsfNQc) by [Simon Peyton Jones](https://github.com/simonpj): particularly good if you like pure math type thinking.
+
+ - MIT 18337 lecture notes 8-10 (by [Christopher Rackauckas](https://github.com/ChrisRackauckas) and [David P. Sanders](https://github.com/dpsanders)  : moves fast from basic to advanced, particularly good if you like applicable mathematics
+   - [Automatic Differentiation and Application](https://mitmath.github.io/18337/lecture8/automatic_differentiation): Good introduction
+   - [Forward-Mode AD via High Dimensional Algebras](https://mitmath.github.io/18337/lecture9/autodiff_dimensions): actually part 2 of the introduction
+   - [Solving Stiff Ordinary Differential Equations](https://mitmath.github.io/18337/lecture9/stiff_odes): ignore the ODE stuff, most of this is about Sparse AutoDiff, can skip/skim this one
+   - [Basic Parameter Estimation, Reverse-Mode AD, and Inverse Problems](https://mitmath.github.io/18337/lecture10/estimation_identification): use in optimization, and details connections of other math.
+
+ - [Diff-Zoo Jupyter Notebook Book](https://github.com/MikeInnes/diff-zoo)  (by [Mike Innes](https://github.com/MikeInnes/diff-zoo), has implementations and explainations.
+
+ - ["Evaluating Derivatives"](https://dl.acm.org/doi/book/10.5555/1455489) (by Griewant and Walter) is the best book at least for reverse-mode.
+It also covers forward-mode though (by its own admission) not as well, it never mentioned dual numbers which is an unfortunate lack.
+
