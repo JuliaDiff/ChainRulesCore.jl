@@ -91,5 +91,5 @@ The list here is incomplete, but is vetted for quality.
 
  - [Diff-Zoo Jupyter Notebook Book](https://github.com/MikeInnes/diff-zoo)  (by [Mike Innes](https://github.com/MikeInnes/diff-zoo), has implementations and explainations.
 
- - ["Evaluating Derivatives"](https://dl.acm.org/doi/book/10.5555/1455489) (by Griewant and Walter) is the best book at least for reverse-mode.
+ - ["Evaluating Derivatives"](https://dl.acm.org/doi/book/10.5555/1455489) (by Griewank and Walther) is the best book at least for reverse-mode.
 It also covers forward-mode though (by its own admission) not as well, it never mentioned dual numbers which is an unfortunate lack.
