@@ -89,7 +89,7 @@ The list here is incomplete, but is vetted for quality.
    - [Solving Stiff Ordinary Differential Equations](https://mitmath.github.io/18337/lecture9/stiff_odes): ignore the ODE stuff, most of this is about Sparse AutoDiff, can skip/skim this one
    - [Basic Parameter Estimation, Reverse-Mode AD, and Inverse Problems](https://mitmath.github.io/18337/lecture10/estimation_identification): use in optimization, and details connections of other math.
 
- - [Diff-Zoo Jupyter Notebook Book](https://github.com/MikeInnes/diff-zoo)  (by [Mike Innes](https://github.com/MikeInnes/diff-zoo), has implementations and explainations.
+ - [Diff-Zoo Jupyter Notebook Book](https://github.com/MikeInnes/diff-zoo)  (by [Mike Innes](https://github.com/MikeInnes/diff-zoo), has implementations and explanations.
 
  - ["Evaluating Derivatives"](https://dl.acm.org/doi/book/10.5555/1455489) (by Griewank and Walther) is the best book at least for reverse-mode.
 It also covers forward-mode though (by its own admission) not as well, it never mentioned dual numbers which is an unfortunate lack.
