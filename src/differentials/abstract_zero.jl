@@ -38,6 +38,7 @@ Base.eltype(::Zero) = Zero
 Base.eltype(::Type{Zero}) = Zero
 
 Base.zero(::AbstractDifferential) = Zero()
+Base.zero(::Type{<:AbstractDifferential}) = Zero()
 
 """
     DoesNotExist() <: AbstractZero

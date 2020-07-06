@@ -24,6 +24,9 @@
         @test zero(@thunk(3)) === z
         @test zero(One()) === z
         @test zero(DoesNotExist()) === z
+        @test zero(One) === z
+        @test zero(Zero) === z
+        @test zero(DoesNotExist) === z
         @test zero(Composite{Tuple{Int,Int}}((1, 2))) === z
         for f in (transpose, adjoint, conj)
             @test f(z) === z
