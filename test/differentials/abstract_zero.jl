@@ -10,6 +10,10 @@
         @test z + z === z
         @test z + 1 === 1
         @test 1 + z === 1
+        @test z - z === z
+        @test z - 1 === -1
+        @test 1 - z === 1
+        @test -z === z
         @test z * z === z
         @test z * 1 === Zero()
         @test 1 * z === Zero()
@@ -47,12 +51,18 @@
         @test dne + dne == dne
         @test dne + 1 == 1
         @test 1 + dne == 1
+        @test dne - dne == dne
+        @test dne - 1 == -1
+        @test 1 - dne == 1
+        @test -dne == dne
         @test dne * dne == dne
         @test dne * 1 == dne
         @test 1 * dne == dne
 
         @test Zero() + dne == dne
         @test dne + Zero() == dne
+        @test Zero() - dne == dne
+        @test dne - Zero() == dne
 
         @test Zero() * dne == Zero()
         @test dne * Zero() == Zero()
