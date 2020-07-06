@@ -30,6 +30,9 @@
         end
         @test z / 2 === z / [1, 3] === z
 
+        @test eltype(z) === Zero
+        @test eltype(Zero) === Zero
+
         # use mutable objects to test the strong `===` condition
         x = ones(2)
         @test muladd(Zero(), 2, x) === x
