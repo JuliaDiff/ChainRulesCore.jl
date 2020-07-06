@@ -10,6 +10,10 @@
         @test z + z === z
         @test z + 1 === 1
         @test 1 + z === 1
+        @test z - z === z
+        @test z - 1 === -1
+        @test 1 - z === 1
+        @test -z === z
         @test z * z === z
         @test z * 1 === Zero()
         @test 1 * z === Zero()
@@ -20,11 +24,17 @@
         @test zero(@thunk(3)) === z
         @test zero(One()) === z
         @test zero(DoesNotExist()) === z
+        @test zero(One) === z
+        @test zero(Zero) === z
+        @test zero(DoesNotExist) === z
         @test zero(Composite{Tuple{Int,Int}}((1, 2))) === z
         for f in (transpose, adjoint, conj)
             @test f(z) === z
         end
         @test z / 2 === z / [1, 3] === z
+
+        @test eltype(z) === Zero
+        @test eltype(Zero) === Zero
 
         # use mutable objects to test the strong `===` condition
         x = ones(2)
@@ -47,12 +57,18 @@
         @test dne + dne == dne
         @test dne + 1 == 1
         @test 1 + dne == 1
+        @test dne - dne == dne
+        @test dne - 1 == -1
+        @test 1 - dne == 1
+        @test -dne == dne
         @test dne * dne == dne
         @test dne * 1 == dne
         @test 1 * dne == dne
 
         @test Zero() + dne == dne
         @test dne + Zero() == dne
+        @test Zero() - dne == dne
+        @test dne - Zero() == dne
 
         @test Zero() * dne == Zero()
         @test dne * Zero() == Zero()

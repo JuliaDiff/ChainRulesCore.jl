@@ -15,10 +15,14 @@ Notice:
 ==#
 
 Base.:+(::DoesNotExist, ::DoesNotExist) = DoesNotExist()
+Base.:-(::DoesNotExist, ::DoesNotExist) = DoesNotExist()
+Base.:-(::DoesNotExist) = DoesNotExist()
 Base.:*(::DoesNotExist, ::DoesNotExist) = DoesNotExist()
 for T in (:One, :AbstractThunk, :Composite, :Any)
     @eval Base.:+(::DoesNotExist, b::$T) = b
     @eval Base.:+(a::$T, ::DoesNotExist) = a
+    @eval Base.:-(::DoesNotExist, b::$T) = -b
+    @eval Base.:-(a::$T, ::DoesNotExist) = a
 
     @eval Base.:*(::DoesNotExist, ::$T) = DoesNotExist()
     @eval Base.:*(::$T, ::DoesNotExist) = DoesNotExist()
@@ -28,6 +32,8 @@ end
 # selecting things.
 Base.:+(::DoesNotExist, ::Zero) = DoesNotExist()
 Base.:+(::Zero, ::DoesNotExist) = DoesNotExist()
+Base.:-(::DoesNotExist, ::Zero) = DoesNotExist()
+Base.:-(::Zero, ::DoesNotExist) = DoesNotExist()
 Base.:*(::DoesNotExist, ::Zero) = Zero()
 Base.:*(::Zero, ::DoesNotExist) = Zero()
 
@@ -42,10 +48,14 @@ Base.muladd(::Zero, x, ::Zero) = Zero()
 Base.muladd(::Zero, ::Zero, ::Zero) = Zero()
 
 Base.:+(::Zero, ::Zero) = Zero()
+Base.:-(::Zero, ::Zero) = Zero()
+Base.:-(::Zero) = Zero()
 Base.:*(::Zero, ::Zero) = Zero()
 for T in (:One, :AbstractThunk, :Composite, :Any)
     @eval Base.:+(::Zero, b::$T) = b
     @eval Base.:+(a::$T, ::Zero) = a
+    @eval Base.:-(::Zero, b::$T) = -b
+    @eval Base.:-(a::$T, ::Zero) = a
 
     @eval Base.:*(::Zero, ::$T) = Zero()
     @eval Base.:*(::$T, ::Zero) = Zero()

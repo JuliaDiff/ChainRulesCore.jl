@@ -34,7 +34,10 @@ struct Zero <: AbstractZero end
 
 extern(x::Zero) = false  # false is a strong 0. E.g. `false * NaN = 0.0`
 
+Base.eltype(::Type{Zero}) = Zero
+
 Base.zero(::AbstractDifferential) = Zero()
+Base.zero(::Type{<:AbstractDifferential}) = Zero()
 
 """
     DoesNotExist() <: AbstractZero
