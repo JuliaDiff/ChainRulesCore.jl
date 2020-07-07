@@ -48,7 +48,7 @@ Use named local functions for the `pushforward`/`pullback`:
 
 ```julia
 # good:
-function frule(::typeof(foo), x)
+@frule function frule(::typeof(foo), x)
     Y = foo(x)
     function foo_pushforward(_, ẋ)
         return bar(ẋ)
@@ -61,7 +61,7 @@ julia> frule(foo, 2)
 ==#
 
 # bad:
-function frule(::typeof(foo), x)
+@frule function frule(::typeof(foo), x)
     return foo(x), (_, ẋ) -> bar(ẋ)
 end
 #== output:

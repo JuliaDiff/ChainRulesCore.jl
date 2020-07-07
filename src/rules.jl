@@ -45,6 +45,8 @@ julia> Δsincosx == (cos(x), -sin(x))
 true
 ```
 
+When defining overloads they should be wrapped with the [`@frule`](@ref) macro.
+
 See also: [`rrule`](@ref), [`@scalar_rule`](@ref)
 """
 frule(::Any, ::Vararg{Any}; kwargs...) = nothing
@@ -93,6 +95,42 @@ julia> hypot_pullback(1) == (NO_FIELDS, (x / hypot(x, y)), (y / hypot(x, y)))
 true
 ```
 
+When defining overloads they should be wrapped with the [`@rrule`](@ref) macro.
+
 See also: [`frule`](@ref), [`@scalar_rule`](@ref)
 """
 rrule(::Any, ::Vararg{Any}; kwargs...) = nothing
+
+"""
+    @frule(function ...)
+
+[`frule`](@ref) defining functions should be decorated with this macro.
+
+Example:
+```julia
+@frule function frule((Δself, Δargs...), ::typeof(foo), args...; kwargs...)
+    ...
+    return y, ∂Y
+end
+```
+"""
+macro frule(expr)
+    return esc(expr)
+end
+
+"""
+    @rrule(function ...)
+
+[`rrule`](@ref) defining functions should be decorated with this macro.
+
+Example:
+```julia
+@rrule function rrule(::typeof(foo), args...; kwargs...)
+    ...
+    return y, pullback
+end
+```
+"""
+macro rrule(expr)
+    return esc(expr)
+end
