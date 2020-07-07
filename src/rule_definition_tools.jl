@@ -1,6 +1,4 @@
 # These are some macros (and supporting functions) to make it easier to define rules.
-using MuladdMacro: @muladd
-
 """
     @scalar_rule(f(x₁, x₂, ...),
                  @setup(statement₁, statement₂, ...),
