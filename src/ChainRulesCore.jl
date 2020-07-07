@@ -1,5 +1,6 @@
 module ChainRulesCore
 using Base.Broadcast: broadcasted, Broadcasted, broadcastable, materialize, materialize!
+using MuladdMacro: @muladd
 
 export frule, rrule
 export @scalar_rule, @thunk
