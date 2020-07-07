@@ -34,7 +34,7 @@ end
 @scalar_rule(sin(x), cos(x))
 @scalar_rule(+(x, y), (One(), One()))
 @scalar_rule(asin(x), inv(sqrt(1 - x^2)))</code></pre><pre><code class="language-julia">#### Find dfoo/dx via rrules
-#### First the forward pass, accumulating rules
+#### First the forward pass, gathering up the pullbacks
 x = 3;
 a, a_pullback = rrule(sin, x);
 b, b_pullback = rrule(+, 0.2, a);
