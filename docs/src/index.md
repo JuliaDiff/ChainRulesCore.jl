@@ -352,7 +352,7 @@ end
 ```
 ```jldoctest index
 #### Find dfoo/dx via rrules
-#### First the forward pass, accumulating rules
+#### First the forward pass, gathering up the pullbacks
 x = 3;
 a, a_pullback = rrule(sin, x);
 b, b_pullback = rrule(+, 0.2, a);
