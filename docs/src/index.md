@@ -40,7 +40,7 @@ The rules are encoded as `frule`s and `rrule`s, for use in forward-mode and reve
 The `rrule` for some function `foo`, which takes the positional arguments `args` and keyword arguments `kwargs`, is written:
 
 ```julia
-function rrule(::typeof(foo), args...; kwargs...)
+@rrule function rrule(::typeof(foo), args...; kwargs...)
     ...
     return y, pullback
 end
@@ -55,7 +55,7 @@ Almost always the _pullback_ will be declared locally within the `rrule`, and wi
 
 The `frule` is written:
 ```julia
-function frule((Δself, Δargs...), ::typeof(foo), args...; kwargs...)
+@frule function frule((Δself, Δargs...), ::typeof(foo), args...; kwargs...)
     ...
     return y, ∂Y
 end
@@ -218,7 +218,7 @@ end
 ```
 But because it is fused into frule we see it as part of:
 ```julia
-function frule((Δself, Δargs...), ::typeof(foo), args...; kwargs...)
+@frule function frule((Δself, Δargs...), ::typeof(foo), args...; kwargs...)
     ...
     return y, ∂y
 end

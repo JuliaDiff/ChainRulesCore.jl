@@ -10,7 +10,7 @@ A convenience macro that generates simple scalar forward or reverse rules using
 the provided partial derivatives. Specifically, generates the corresponding
 methods for `frule` and `rrule`:
 
-    function ChainRulesCore.frule((NO_FIELDS, Δx₁, Δx₂, ...), ::typeof(f), x₁::Number, x₂::Number, ...)
+    @frule function ChainRulesCore.frule((NO_FIELDS, Δx₁, Δx₂, ...), ::typeof(f), x₁::Number, x₂::Number, ...)
         Ω = f(x₁, x₂, ...)
         \$(statement₁, statement₂, ...)
         return Ω, (
@@ -20,7 +20,7 @@ methods for `frule` and `rrule`:
             )
     end
 
-    function ChainRulesCore.rrule(::typeof(f), x₁::Number, x₂::Number, ...)
+    @rrule function ChainRulesCore.rrule(::typeof(f), x₁::Number, x₂::Number, ...)
         Ω = f(x₁, x₂, ...)
         \$(statement₁, statement₂, ...)
         return Ω, ((ΔΩ₁, ΔΩ₂, ...)) -> (
@@ -98,7 +98,7 @@ end
     _normalize_scalarrules_macro_input(call, maybe_setup, partials)
 
 returns (in order) the correctly escaped:
-    - `call` with out any type constraints
+    - `call` without any type constraints
     - `setup_stmts`: the content of `@setup` or `nothing` if that is not provided,
     -  `inputs`: with all args having the constraints removed from call, or
         defaulting to `Number`
@@ -164,7 +164,7 @@ function scalar_frule_expr(f, call, setup_stmts, inputs, partials)
     return quote
         # _ is the input derivative w.r.t. function internals. since we do not
         # allow closures/functors with @scalar_rule, it is always ignored
-        function ChainRulesCore.frule((_, $(Δs...)), ::typeof($f), $(inputs...))
+        @frule function ChainRulesCore.frule((_, $(Δs...)), ::typeof($f), $(inputs...))
             $(esc(:Ω)) = $call
             $(setup_stmts...)
             return $(esc(:Ω)), $pushforward_returns
@@ -195,7 +195,7 @@ function scalar_rrule_expr(f, call, setup_stmts, inputs, partials)
     end
 
     return quote
-        function ChainRulesCore.rrule(::typeof($f), $(inputs...))
+        @rrule function ChainRulesCore.rrule(::typeof($f), $(inputs...))
             $(esc(:Ω)) = $call
             $(setup_stmts...)
             return $(esc(:Ω)), $pullback

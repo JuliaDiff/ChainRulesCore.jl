@@ -62,7 +62,7 @@ An optimization package making use of this might want to check for such a case.
 This mostly shows up as the derivative with respect to dimension, index, or size
 arguments.
 ```
-    function rrule(fill, x, len::Int)
+    @rrule function rrule(fill, x, len::Int)
         y = fill(x, len)
         fill_pullback(ȳ) = (NO_FIELDS, @thunk(sum(Ȳ)), DoesNotExist())
         return y, fill_pullback

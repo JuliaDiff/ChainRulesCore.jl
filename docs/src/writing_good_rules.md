@@ -42,7 +42,7 @@ Use named local functions for the `pullback` in an `rrule`.
 
 ```julia
 # good:
-function rrule(::typeof(foo), x)
+@rrule function rrule(::typeof(foo), x)
     Y = foo(x)
     function foo_pullback(x̄)
         return NO_FIELDS, bar(x̄)
@@ -55,7 +55,7 @@ julia> rrule(foo, 2)
 ==#
 
 # bad:
-function rrule(::typeof(foo), x)
+@rrule function rrule(::typeof(foo), x)
     return foo(x), x̄ -> (NO_FIELDS, bar(x̄))
 end
 #== output:

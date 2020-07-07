@@ -3,7 +3,7 @@ using Base.Broadcast: broadcasted, Broadcasted, broadcastable, materialize, mate
 using MuladdMacro: @muladd
 
 export frule, rrule
-export @scalar_rule, @thunk
+export @frule, @rrule, @scalar_rule, @thunk
 export canonicalize, extern, unthunk
 export Composite, DoesNotExist, InplaceableThunk, One, Thunk, Zero, AbstractZero, AbstractThunk
 export NO_FIELDS

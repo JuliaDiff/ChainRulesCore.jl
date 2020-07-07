@@ -22,13 +22,13 @@ complex_times(x) = (1 + 2im) * x
 # hard to implement.
 
 varargs_function(x...) = sum(x)
-function ChainRulesCore.frule(dargs, ::typeof(varargs_function), x...)
+@frule function ChainRulesCore.frule(dargs, ::typeof(varargs_function), x...)
     Δx = Base.tail(dargs)
     return sum(x), sum(Δx)
 end
 
 mixed_vararg(x, y, z...) = x + y + sum(z)
-function ChainRulesCore.frule(
+@frule function ChainRulesCore.frule(
     dargs::Tuple{Any, Any, Any, Vararg},
     ::typeof(mixed_vararg), x, y, z...,
 )
@@ -39,7 +39,7 @@ function ChainRulesCore.frule(
 end
 
 type_constraints(x::Int, y::Float64) = x + y
-function ChainRulesCore.frule(
+@frule function ChainRulesCore.frule(
     (_, Δx, Δy)::Tuple{Any, Int, Float64},
     ::typeof(type_constraints), x::Int, y::Float64,
 )
@@ -47,7 +47,7 @@ function ChainRulesCore.frule(
 end
 
 mixed_vararg_type_constaint(x::Float64, y::Real, z::Vararg{Float64}) = x + y + sum(z)
-function ChainRulesCore.frule(
+@frule function ChainRulesCore.frule(
     dargs::Tuple{Any, Float64, Real, Vararg{Float64}},
     ::typeof(mixed_vararg_type_constaint), x::Float64, y::Real, z::Vararg{Float64},
 )
@@ -57,7 +57,9 @@ function ChainRulesCore.frule(
     return x + y + sum(z), Δx + Δy + sum(Δz)
 end
 
-ChainRulesCore.frule(dargs, ::typeof(Core._apply), f, x...) = frule(dargs[2:end], f, x...)
+@frule function ChainRulesCore.frule(dargs, ::typeof(Core._apply), f, x...)
+    return frule(dargs[2:end], f, x...)
+end
 
 #######
 
