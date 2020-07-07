@@ -23,6 +23,7 @@ end
     @testset "convert" begin
         @test convert(NamedTuple, Composite{Foo}(x=2.5)) == (; x=2.5)
         @test convert(Tuple, Composite{Tuple{Float64,}}(2.0)) == (2.0,)
+        @test convert(Dict, Composite{Dict}(Dict(4 => 3))) == Dict(4 => 3)
     end
 
     @testset "indexing, iterating, and properties" begin
@@ -55,15 +56,21 @@ end
             conj(Composite{Tuple{Float64,}}(2.0+3.0im)),
             Composite{Tuple{Float64,}}(2.0-3.0im)
         )
+        @test ==(
+            conj(Composite{Dict}(Dict(4 => 2.0 + 3.0im))),
+            Composite{Dict}(Dict(4 => 2.0 + -3.0im)),
+        )
     end
 
     @testset "extern" begin
         @test extern(Composite{Foo}(x=2.0)) == (;x=2.0)
         @test extern(Composite{Tuple{Float64,}}(2.0)) == (2.0,)
+        @test extern(Composite{Dict}(Dict(4 => 3))) == Dict(4 => 3)
 
         # with differentials on the inside
         @test extern(Composite{Foo}(x=@thunk(0+2.0))) == (;x=2.0)
         @test extern(Composite{Tuple{Float64,}}(@thunk(0+2.0))) == (2.0,)
+        @test extern(Composite{Dict}(Dict(4 => @thunk(3)))) == Dict(4 => 3)
     end
 
     @testset "canonicalize" begin
@@ -103,6 +110,13 @@ end
                 Composite{typeof(nt2)}(; nt2...)
             ) == Composite{typeof(nt_sum)}(; nt_sum...)
         end
+
+        @testset "Dicts" begin
+            d1 = Composite{Dict}(Dict(4 => 3.0, 3 => 2.0))
+            d2 = Composite{Dict}(Dict(4 => 3.0, 2 => 2.0))
+            d_sum = Composite{Dict}(Dict(4 => 3.0 + 3.0, 3 => 2.0, 2 => 2.0))
+            @test d1 + d2 == d_sum
+        end
     end
 
     @testset "+ with Primals" begin
@@ -125,6 +139,11 @@ end
             @test Composite{typeof(nty)}(; nty...) + nty == (; a=3.0, b=1.0)
         end
 
+        @testset "Dicts" begin
+            d_primal = Dict(4 => 3.0, 3 => 2.0)
+            d_tangent = Composite{typeof(d_primal)}(Dict(4 =>5.0))
+            @test d_primal + d_tangent == Dict(4 => 3.0 + 5.0, 3 => 2.0)
+        end
     end
 
     @testset "+ with Primals, with inner constructor" begin
@@ -181,6 +200,9 @@ end
             == Composite{Tuple{Float64, Float64}}(4.0, 8.0)
             == Composite{Tuple{Float64, Float64}}(2.0, 4.0) * 2
         )
+        d = Composite{Dict}(Dict(4 => 3.0))
+        two_d = Composite{Dict}(Dict(4 => 2 * 3.0))
+        @test 2 * d == two_d == d * 2
     end
 
     @testset "show" begin

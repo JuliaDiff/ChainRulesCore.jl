@@ -36,6 +36,12 @@ function Composite{P}(args...) where P
     return Composite{P, typeof(args)}(args)
 end
 
+function Composite{P}(d::Dict) where {P<:Dict}
+    return Composite{P, typeof(d)}(d)
+end
+
+Base.:(==)(a::Composite, b::Composite) = backing(a) == backing(b)
+
 function Base.show(io::IO, comp::Composite{P}) where P
     print(io, "Composite{")
     show(io, P)
@@ -46,6 +52,7 @@ end
 
 Base.convert(::Type{<:NamedTuple}, comp::Composite{<:Any, <:NamedTuple}) = backing(comp)
 Base.convert(::Type{<:Tuple}, comp::Composite{<:Any, <:Tuple}) = backing(comp)
+Base.convert(::Type{<:Dict}, comp::Composite{<:Dict, <:Dict}) = backing(comp)
 
 Base.getindex(comp::Composite, idx) = getindex(backing(comp), idx)
 Base.getproperty(comp::Composite, idx::Int) = getproperty(backing(comp), idx)  # for Tuple
@@ -74,6 +81,9 @@ function Base.map(f, comp::Composite{P, <:NamedTuple{L}}) where{P, L}
     named_vals = NamedTuple{L, typeof(vals)}(vals)
     return Composite{P, typeof(named_vals)}(named_vals)
 end
+function Base.map(f, comp::Composite{P, <:Dict}) where {P<:Dict}
+    return Composite{P}(Dict(k => f(v) for (k, v) in backing(comp)))
+end
 
 Base.conj(comp::Composite) = map(conj, comp)
 
@@ -92,6 +102,7 @@ primal types.
 """
 backing(x::Tuple) = x
 backing(x::NamedTuple) = x
+backing(x::Dict) = x
 backing(x::Composite) = getfield(x, :backing)
 
 function backing(x::T)::NamedTuple where T
@@ -230,6 +241,7 @@ function elementwise_add(a::NamedTuple{an}, b::NamedTuple{bn}) where {an, bn}
     end
 end
 
+elementwise_add(a::Dict, b::Dict) = merge(+, a, b)
 
 struct PrimalAdditionFailedException{P} <: Exception
     primal::P
