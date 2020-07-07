@@ -22,7 +22,7 @@ To make a `Composite` have all the fields of the primal the [`canonicalize`](@re
 function is provided.
 """
 struct Composite{P, T} <: AbstractDifferential
-    # Note: If T is a Tuple, then P is also a Tuple
+    # Note: If T is a Tuple/Dict, then P is also a Tuple/Dict
     # (but potentially a different one, as it doesn't contain differentials)
     backing::T
 end
