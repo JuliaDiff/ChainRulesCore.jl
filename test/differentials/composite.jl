@@ -88,6 +88,11 @@ end
         end
 
         @testset "Tuples" begin
+            @test typeof(Composite{Tuple{}}()) == Composite{Tuple{}, Tuple{}}
+            @test ==(
+                typeof(Composite{Tuple{}}() + Composite{Tuple{}}()), 
+                Composite{Tuple{}, Tuple{}}
+            )
             @test (
                 Composite{Tuple{Float64, Float64}}(1.0, 2.0) +
                 Composite{Tuple{Float64, Float64}}(1.0, 1.0)
@@ -113,6 +118,7 @@ end
         end
 
         @testset "Tuples" begin
+            @test Composite{Tuple{}}() + () == ()
             @test ((1.0, 2.0) + Composite{Tuple{Float64, Float64}}(1.0, 1.0)) == (2.0, 3.0)
             @test (Composite{Tuple{Float64, Float64}}(1.0, 1.0)) + (1.0, 2.0) == (2.0, 3.0)
         end
