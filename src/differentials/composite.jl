@@ -36,6 +36,11 @@ function Composite{P}(args...) where P
     return Composite{P, typeof(args)}(args)
 end
 
+function Composite{P}() where P<:Tuple
+    backing = ()
+    return Composite{P, typeof(backing)}(backing)
+end
+
 function Base.show(io::IO, comp::Composite{P}) where P
     print(io, "Composite{")
     show(io, P)
