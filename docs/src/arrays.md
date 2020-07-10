@@ -100,8 +100,8 @@ $$\operatorname{tr}(A^H) = \operatorname{tr}(A)^*$$
 $$\operatorname{tr}(AB) = \operatorname{tr}(BA)$$
 
 
-!!! Note that our method is identical to Giles' approach, except we    have replace the transpose with the conjugate transpose,
-    and we have added the constraint that the inner product be real.
+!!! note
+    Our method is identical to Giles' approach, except we have replace the transpose with the conjugate transpose, and we have added the constraint that the inner product be real.
     This produces the correct pullbacks for arrays with complex entries.
 
 Here are a few examples.
