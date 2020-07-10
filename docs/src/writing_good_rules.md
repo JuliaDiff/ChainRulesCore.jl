@@ -44,39 +44,39 @@ Instead you probably want `transpose(a)`, unless you've already restricted `a` t
 
 ## Code Style
 
-Use named local functions for the `pushforward`/`pullback`:
+Use named local functions for the `pullback` in an `rrule`.
 
 ```julia
 # good:
-function frule(::typeof(foo), x)
+function rrule(::typeof(foo), x)
     Y = foo(x)
-    function foo_pushforward(_, ẋ)
-        return bar(ẋ)
+    function foo_pullback(x̄)
+        return NO_FIELDS, bar(x̄)
     end
-    return Y, foo_pushforward
+    return Y, foo_pullback
 end
 #== output
-julia> frule(foo, 2)
-(4, var"#foo_pushforward#11"())
+julia> rrule(foo, 2)
+(4, var"#foo_pullback#11"())
 ==#
 
 # bad:
-function frule(::typeof(foo), x)
-    return foo(x), (_, ẋ) -> bar(ẋ)
+function rrule(::typeof(foo), x)
+    return foo(x), x̄ -> (NO_FIELDS, bar(x̄))
 end
 #== output:
-julia> frule(foo, 2)
+julia> rrule(foo, 2)
 (4, var"##9#10"())
 ==#
 ```
 
-While this is more verbose, it ensures that if an error is thrown during the `pullback`/`pushforward` the [`gensym`](https://docs.julialang.org/en/v1/base/base/#Base.gensym) name of the local function will include the name you gave it.
+While this is more verbose, it ensures that if an error is thrown during the `pullback` the [`gensym`](https://docs.julialang.org/en/v1/base/base/#Base.gensym) name of the local function will include the name you gave it.
 This makes it a lot simpler to debug from the stacktrace.
 
 ## Write tests
 
-There are fairly decent tools for writing tests based on [FiniteDifferences.jl](https://github.com/JuliaDiff/FiniteDifferences.jl).
-They are in [ChainRulesTestUtils.jl](https://github.com/JuliaDiff/ChainRulesTestUtils.jl).
+In [ChainRulesTestUtils.jl](https://github.com/JuliaDiff/ChainRulesTestUtils.jl)
+there are fairly decent tools for writing tests based on [FiniteDifferences.jl](https://github.com/JuliaDiff/FiniteDifferences.jl).
 Take a look at existing [ChainRules.jl](https://github.com/JuliaDiff/ChainRules.jl) tests and you should see how to do stuff.
 
 !!! warning
