@@ -17,6 +17,7 @@ $$dC = \frac{\partial f}{\partial A} dA + \frac{\partial f}{\partial B} dB.$$
 
 The pushforward is obtained by dividing by the differential wrt a single scalar input $t$.
 Writing $\dot{C} = \frac{dC}{dt}$, we replace the differentials with the forward mode sensitivities:
+
 $$\dot{C} = \frac{\partial f}{\partial A} \dot{A} + \frac{\partial f}{\partial B} \dot{B}.$$
 
 The terms $\frac{\partial f}{\partial A}$ are array-array derivatives, i.e. a type of Jacobian.
@@ -65,7 +66,9 @@ Two useful identities are $d(A^H) = dA^H$ and $d(A^T) = dA^T$, where $\cdot^H$ i
 
 Reverse-mode rules are a little more involved.
 For a real scalar function $s = g(C)$, the differential of $s$ is the real part of the inner product of the adjoint of $C$, $\overline{C}$, and the differential of $C$:
+
 $$ds = \Re\langle \overline{C}, dC \rangle = \Re\left(\sum_{i,\dots,j} \overline{C}_{i,\dots,j}^* dC_{i,\dots,j}\right),$$
+
 where $\cdot^*$ is the complex conjugate, and $\Re(x)$ is the real part of $x$ (i.e. `real(x)`).
 
 For matrices and vectors, we can write this as
@@ -90,6 +93,7 @@ $$\overline{B} = \left(\frac{\partial f}{\partial B}\right)^H \overline{C}$$
 Giles' method for deriving pullback functions is to first derive the differential identity (i.e. pushforward) using the above approach, then pre-multiply by $\overline{C}^H$, and take the trace.
 Subsequently, manipulate into this form and solve for the adjoint derivatives of the inputs.
 Several properties of `trace` make this easier:
+
 $$\operatorname{tr}(A+B) = \operatorname{tr}(A) + \operatorname{tr}(B)$$
 $$\operatorname{tr}(A^T) = \operatorname{tr}(A)$$
 $$\operatorname{tr}(A^H) = \operatorname{tr}(A)^*$$
@@ -105,6 +109,7 @@ Here are a few examples.
 ### Matrix multiplication
 
 We above derived
+
 $$dC = dA\ B + A\ dB$$
 
 We now multiply by $\overline{C}^H$ and take the real trace:
@@ -176,6 +181,7 @@ For more instructive examples of matrix and vector rules, see [Giles' paper](htt
 For both forward- and reverse-mode rules, the first step was to write down the differential identities, which followed directly from the scalar differential identities.
 This approach follows for arrays, but it's easier to work in component form.
 Consider the function `f(A) = sum(abs2, A::Array{T,3}; dims=2)`, which we write as
+
 $$C_{i1k} = \sum_{j} |A_{ijk}|^2 = \sum_{j}\Re(A_{ijk}^* A_{ijk})$$
 
 The differential identity is
