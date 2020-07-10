@@ -110,7 +110,7 @@ Example:
 ```julia
 @frule function frule((Δself, Δargs...), ::typeof(foo), args...; kwargs...)
     ...
-    return y, ∂Y
+    return y, ∂y
 end
 ```
 """
