@@ -189,14 +189,11 @@ where in the last step we have used the identity that the sum of its number and 
 We can then derive the reverse-mode rule.
 The array form of the desired identity will be
 
-$$ds = \Re \left(\sum_{ik} \overline{C}_{i1k}^* dC_{i1k}\right) = \Re \left(\sum_{ijk} \overline{A}_{ijk}^* dA_{ijk} \right)
-$$
+$$ds = \Re \left(\sum_{ik} \overline{C}_{i1k}^* dC_{i1k}\right) = \Re \left(\sum_{ijk} \overline{A}_{ijk}^* dA_{ijk} \right)$$
 
 We can plug in the differential identity into the middle expression to get
 
-$$
-ds = \Re \left(\sum_{ijk} 2 \overline{C}_{i1k}^* \Re(A_{ijk}^* dA_{ijk})\right) = \Re \left(\sum_{ijk} 2 \Re(\overline{C}_{i1k}) A_{ijk}^* dA_{ijk}\right).
-$$
+$$ds = \Re \left(\sum_{ijk} 2 \overline{C}_{i1k}^* \Re(A_{ijk}^* dA_{ijk})\right) = \Re \left(\sum_{ijk} 2 \Re(\overline{C}_{i1k}) A_{ijk}^* dA_{ijk}\right).$$
 
 We can now solve for $\overline{A}$:
 
