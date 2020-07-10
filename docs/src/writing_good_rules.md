@@ -36,12 +36,6 @@ Examples being:
 - There is only one derivative being returned, so from the fact that the user called
   `frule`/`rrule` they clearly will want to use that one.
 
-
-## Be careful with using `adjoint` when you mean `transpose`
-
-Remember for complex numbers `a'` (i.e. `adjoint(a)`) takes the complex conjugate.
-Instead you probably want `transpose(a)`, unless you've already restricted `a` to be a `AbstractMatrix{<:Real}`.
-
 ## Code Style
 
 Use named local functions for the `pullback` in an `rrule`.
