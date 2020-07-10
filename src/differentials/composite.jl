@@ -36,6 +36,11 @@ function Composite{P}(args...) where P
     return Composite{P, typeof(args)}(args)
 end
 
+function Composite{P}() where P<:Tuple
+    backing = ()
+    return Composite{P, typeof(backing)}(backing)
+end
+
 function Composite{P}(d::Dict) where {P<:Dict}
     return Composite{P, typeof(d)}(d)
 end

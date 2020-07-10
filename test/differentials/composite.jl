@@ -20,6 +20,9 @@ end
 
 
 @testset "Composite" begin
+    @testset "empty types" begin
+        @test typeof(Composite{Tuple{}}()) == Composite{Tuple{}, Tuple{}}
+    end
     @testset "convert" begin
         @test convert(NamedTuple, Composite{Foo}(x=2.5)) == (; x=2.5)
         @test convert(Tuple, Composite{Tuple{Float64,}}(2.0)) == (2.0,)
@@ -95,6 +98,10 @@ end
         end
 
         @testset "Tuples" begin
+            @test ==(
+                typeof(Composite{Tuple{}}() + Composite{Tuple{}}()), 
+                Composite{Tuple{}, Tuple{}}
+            )
             @test (
                 Composite{Tuple{Float64, Float64}}(1.0, 2.0) +
                 Composite{Tuple{Float64, Float64}}(1.0, 1.0)
@@ -127,6 +134,7 @@ end
         end
 
         @testset "Tuples" begin
+            @test Composite{Tuple{}}() + () == ()
             @test ((1.0, 2.0) + Composite{Tuple{Float64, Float64}}(1.0, 1.0)) == (2.0, 3.0)
             @test (Composite{Tuple{Float64, Float64}}(1.0, 1.0)) + (1.0, 2.0) == (2.0, 3.0)
         end
