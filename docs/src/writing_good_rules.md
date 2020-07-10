@@ -75,7 +75,7 @@ This makes it a lot simpler to debug from the stacktrace.
 
 ## Write tests
 
-In [ChainRulesTestUtils.jl](https://github.com/JuliaDiff/ChainRulesTestUtils.jl)m
+In [ChainRulesTestUtils.jl](https://github.com/JuliaDiff/ChainRulesTestUtils.jl)
 there are fairly decent tools for writing tests based on [FiniteDifferences.jl](https://github.com/JuliaDiff/FiniteDifferences.jl).
 Take a look at existing [ChainRules.jl](https://github.com/JuliaDiff/ChainRules.jl) tests and you should see how to do stuff.
 
