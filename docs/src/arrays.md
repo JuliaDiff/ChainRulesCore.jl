@@ -39,17 +39,17 @@ $$dC = dA + dB$$
 
 $$C = A B$$
 
-First we write in component form.
+First we write in component form:
 
 $$C_{ij} = \sum_k A_{ik} B_{kj}$$
 
-Then we apply the product rule to get the scalar differential identity.
+Then we apply the product rule to get the scalar differential identity:
 
 $$dC_{ij} = \sum_k dA_{ik}~ B_{kj} + A_{ik} ~dB_{kj}$$
 
-But this is just a sum matrix products:
+But this is just a sum of matrix products:
 
-$$C = dA~ B + A ~dB$$
+$$dC = dA~ B + A ~dB$$
 
 So we now have the matrix product rule.
 
