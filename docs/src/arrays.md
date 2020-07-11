@@ -42,7 +42,7 @@ $$C = A + B$$
 
 $$dC = dA + dB$$
 
-We can implement the `frule` as
+We can implement the `frule` in ChainRules` notation:
 
 ```julia
 function frule(
@@ -65,9 +65,14 @@ First we write in component form:
 
 $$C_{ij} = \sum_k A_{ik} B_{kj}$$
 
-Then we apply the product rule to get the scalar differential identity:
+Then we apply the scalar product rule ($d(x y) = dx y + x dy$) to get the scalar differential identity:
 
-$$dC_{ij} = \sum_k dA_{ik}~ B_{kj} + A_{ik} ~dB_{kj}$$
+```math
+\begin{align*}
+dC_{ij} = \sum_k \left( dA_{ik}~ B_{kj} + A_{ik} ~dB_{kj} \right)\\
+        = \sum_k dA_{ik}~ B_{kj} + \sum_k A_{ik} ~dB_{kj}
+\end{align*}
+```
 
 But this is just a sum of matrix products:
 
@@ -237,7 +242,7 @@ The expression is in the desired form to solve for the adjoints:
 \end{align*}
 ```
 
-Using our notation conventions, we would implement the `rrule` as
+Using ChainRules' notation, we would implement the `rrule` as
 
 ```julia
 function rrule(::typeof(*), A::Matrix{<:RealOrComplex}, B::Matrix{<:RealOrComplex})
