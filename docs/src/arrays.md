@@ -45,11 +45,11 @@ $$C_{ij} = \sum_k A_{ik} B_{kj}$$
 
 Then we apply the product rule to get the scalar differential identity.
 
-$$dC_{ij} = \sum_k dA_{ik}\ B_{kj} + A_{ik}\ dB_{kj}$$
+$$dC_{ij} = \sum_k dA_{ik}~ B_{kj} + A_{ik} ~dB_{kj}$$
 
 But this is just a sum matrix products:
 
-$$C = dA\ B + A\ dB$$
+$$C = dA~ B + A ~dB$$
 
 So we now have the matrix product rule.
 
@@ -59,9 +59,9 @@ $$C A = A C = I$$
 
 Here we differentiate the constraint, applying the matrix product rule, and solve for $dC$.
 
-$$dC\ A + C\ dA = 0$$
-$$dC\ A\ C + C\ dA\ C = 0$$
-$$dC = -C\ dA\ C$$
+$$dC~ A + C ~dA = 0$$
+$$dC~ A C + C ~dA~ C = 0$$
+$$dC = -C ~dA~ C$$
 
 ### Other useful identities
 
@@ -72,13 +72,13 @@ Two useful identities are $d(A^H) = dA^H$ and $d(A^T) = dA^T$, where $\cdot^H$ i
 Reverse-mode rules are a little more involved.
 For a real scalar function $s = g(C)$, the differential of $s$ is the real part of the inner product of the adjoint of $C$, $\overline{C}$, and the differential of $C$:
 
-$$ds = \Re\langle \overline{C}, dC \rangle = \Re\left(\sum_{i,\dots,j} \overline{C}_{i,\dots,j}^* dC_{i,\dots,j}\right),$$
+$$ds = \Re\langle \overline{C}, dC \rangle = \Re\left(\sum_{i,\dots,j} \overline{C}_{i,\dots,j}^* ~dC_{i,\dots,j}\right),$$
 
 where $\cdot^*$ is the complex conjugate, and $\Re(x)$ is the real part of $x$ (i.e. `real(x)`).
 
 For matrices and vectors, we can write this as
 
-$$ds = \Re(\operatorname{tr}(\overline{C}^H\ dC)),$$
+$$ds = \Re(\operatorname{tr}(\overline{C}^H dC)),$$
 
 where $\operatorname{tr}$ is the `trace`.
 
@@ -88,7 +88,7 @@ $$ds = \Re\left(\operatorname{tr}\left(\overline{C}^H \frac{\partial f}{\partial
 
 By applying the same definition of $ds$ to the intermediates $A$ and $B$, we get
 
-$$ds = \Re\left(\operatorname{tr}(\overline{A}^H\ dA)\right) + \Re\left(\operatorname{tr}(\overline{B}^H\ dB)\right)$$
+$$ds = \Re\left(\operatorname{tr}(\overline{A}^H dA)\right) + \Re\left(\operatorname{tr}(\overline{B}^H ~dB)\right)$$
 
 Combining these two identities and solving for $\overline{A}$ and $\overline{B}$ gives us
 
@@ -115,15 +115,15 @@ Here are a few examples.
 
 We above derived
 
-$$dC = dA\ B + A\ dB$$
+$$dC = dA~ B + A ~dB$$
 
 We now multiply by $\overline{C}^H$ and take the real trace:
 
-$$ds = \Re\left(\operatorname{tr}(\overline{C}^H dC)\right) = \Re\left(\operatorname{tr}(\overline{C}^H dA\ B)\right) + \Re\left(\operatorname{tr}(\overline{C}^H A\ dB)\right)$$
+$$ds = \Re\left(\operatorname{tr}(\overline{C}^H ~dC)\right) = \Re\left(\operatorname{tr}(\overline{C}^H ~dA~ B)\right) + \Re\left(\operatorname{tr}(\overline{C}^H A ~dB)\right)$$
 
 We use the `trace` identities to manipulate the $dA$ expression:
 
-$$ds = \Re\left(\operatorname{tr}(B \overline{C}^H dA)\right) + \Re\left(\operatorname{tr}(\overline{C}^H A\ dB)\right)$$
+$$ds = \Re\left(\operatorname{tr}(B \overline{C}^H ~dA)\right) + \Re\left(\operatorname{tr}(\overline{C}^H A ~dB)\right)$$
 
 That's it!
 The expression is in the desired form to solve for the adjoints:
@@ -150,15 +150,15 @@ $$C A = A C = I$$
 
 Again, we derived the differential identity as
 
-$$dC = -C dA C$$
+$$dC = -C ~dA~ C$$
 
 Multiplying by $\overline{C}^H$ and taking the trace,
 
-$$ds = \Re\left(\operatorname{tr}(\overline{C}^H dC)\right) = \Re\left(\operatorname{tr}(-\overline{C}^H C dA C)\right)$$
+$$ds = \Re\left(\operatorname{tr}(\overline{C}^H ~dC)\right) = \Re\left(\operatorname{tr}(-\overline{C}^H C ~dA~ C)\right)$$
 
 Applying the trace identities to manipulate into the desired form,
 
-$$ds = \Re\left(\operatorname{tr}(-C \overline{C}^H C dA)\right),$$
+$$ds = \Re\left(\operatorname{tr}(-C \overline{C}^H C ~dA)\right),$$
 
 we can now solve for $\overline{A}$:
 
@@ -191,20 +191,20 @@ $$C_{i1k} = \sum_{j} |A_{ijk}|^2 = \sum_{j}\Re(A_{ijk}^* A_{ijk})$$
 
 The differential identity is
 
-$$dC_{i1k} = \sum_j \Re(dA_{ijk}^* A_{ijk} + A_{ijk}^* dA_{ijk}) \\
-= \sum_j \Re((A_{ijk}^* dA_{ijk})^* + A_{ijk}^* dA_{ijk})\\
-= \sum_j 2 \Re(A_{ijk}^* dA_{ijk}),$$
+$$dC_{i1k} = \sum_j \Re(dA_{ijk}^*~ A_{ijk} + A_{ijk}^* ~dA_{ijk}) \\
+= \sum_j \Re((A_{ijk}^* dA_{ijk})^*~ + A_{ijk}^* ~dA_{ijk})\\
+= \sum_j 2 \Re(A_{ijk}^* ~dA_{ijk}),$$
 
 where in the last step we have used the identity that the sum of its number and its conjugate is twice the real part of the number.
 
 We can then derive the reverse-mode rule.
 The array form of the desired identity will be
 
-$$ds = \Re \left(\sum_{ik} \overline{C}_{i1k}^* dC_{i1k}\right) = \Re \left(\sum_{ijk} \overline{A}_{ijk}^* dA_{ijk} \right)$$
+$$ds = \Re \left(\sum_{ik} \overline{C}_{i1k}^* ~dC_{i1k}\right) = \Re \left(\sum_{ijk} \overline{A}_{ijk}^* ~dA_{ijk} \right)$$
 
 We can plug in the differential identity into the middle expression to get
 
-$$ds = \Re \left(\sum_{ijk} 2 \overline{C}_{i1k}^* \Re(A_{ijk}^* dA_{ijk})\right) = \Re \left(\sum_{ijk} 2 \Re(\overline{C}_{i1k}) A_{ijk}^* dA_{ijk}\right).$$
+$$ds = \Re \left(\sum_{ijk} 2 \overline{C}_{i1k}^* \Re(A_{ijk}^* ~dA_{ijk})\right) = \Re \left(\sum_{ijk} 2 \Re(\overline{C}_{i1k}) A_{ijk}^* ~dA_{ijk}\right).$$
 
 We can now solve for $\overline{A}$:
 
