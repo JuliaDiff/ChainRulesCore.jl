@@ -77,7 +77,7 @@ $$ds = \Re(\operatorname{tr}(\overline{C}^H\ dC)),$$
 
 where $\operatorname{tr}$ is the `trace`.
 
-Plugging in the identity for $dC$, we get
+Plugging in the expression for $dC$, we get
 
 $$ds = \Re\left(\operatorname{tr}\left(\overline{C}^H \frac{\partial f}{\partial A} dA + \overline{C}^H\frac{\partial f}{\partial B} dB\right)\right) = \Re\left(\operatorname{tr}\left(\overline{C}^H \frac{\partial f}{\partial A} dA\right)\right) + \Re\left(\operatorname{tr}\left(\overline{C}^H\frac{\partial f}{\partial B} dB\right)\right)$$
 
