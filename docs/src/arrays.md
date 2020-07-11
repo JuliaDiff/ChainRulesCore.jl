@@ -318,7 +318,7 @@ Because none of this derivation really depended on the index (or indices), we ca
 function rrule(::typeof(sum), ::typeof(abs2), A::Array{<:RealOrComplex}; dims = :)
     function sum_abs2_pullback(ΔC)
         ∂abs2 = DoesNotExist()
-        ∂A = @thunk(A .* 2 .* real.(ΔC))
+        ∂A = @thunk(2 .* real.(ΔC) .* A)
         return (NO_FIELDS, ∂abs2, ∂A)
     end
     return sum(abs2, A; dims = dims), sum_abs2_pullback
