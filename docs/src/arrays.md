@@ -96,11 +96,11 @@ Reverse-mode rules are a little more involved.
 For a real scalar function $s = g(C)$, the differential of $s$ is the real part of the Frobenius inner product (`LinearAlgebra.dot`) of the adjoint of $C$, $\overline{C}$, and the differential of $C$:
 
 ```math
-ds = \Re\langle \overline{C}, dC \rangle
-   = \Re\left( \sum_{i,\dots,j} \overline{C}_{i,\dots,j}^* ~dC_{i,\dots,j} \right),
+ds = \Re\left( \langle \overline{C}, dC \rangle \right)
+   = \Re\left( \sum_{i,\dots,j} \operatorname{conj}(\overline{C}_{i,\dots,j}) ~dC_{i,\dots,j} \right),
 ```
 
-where $\cdot^*$ is the complex conjugate, and $\Re(x)$ is the real part of $x$ (i.e. `real(x)`).
+where $\operatorname{conj}(\cdot)$ is the complex conjugate (`conj`), and $\Re(x)$ is the real part of $x$ (i.e. `real(x)`).
 
 For matrices and vectors, we can write this as
 
@@ -151,7 +151,7 @@ Several properties of the trace function make this easier:
 \begin{align*}
     \operatorname{tr}(A+B) &= \operatorname{tr}(A) + \operatorname{tr}(B)\\
     \operatorname{tr}(A^T) &= \operatorname{tr}(A)\\
-    \operatorname{tr}(A^H) &= \operatorname{tr}(A)^*\\
+    \operatorname{tr}(A^H) &= \operatorname{conj}(\operatorname{tr}(A))\\
     \operatorname{tr}(AB) &= \operatorname{tr}(BA)
 \end{align*}
 ```
@@ -268,40 +268,49 @@ C = sum(abs2, A::Array{<:RealOrComplex,3}; dims=2)::Array{<:Real,3}
 
 which we write as
 
-$$C_{i1k} = \sum_{j} |A_{ijk}|^2 = \sum_{j} \Re(A_{ijk}^* A_{ijk})$$
+$$C_{i1k} = \sum_{j} |A_{ijk}|^2 = \sum_{j} \Re(\operatorname{conj}(A_{ijk}) A_{ijk})$$
 
 The differential identity is
 
 ```math
 \begin{align*}
-    dC_{i1k} &= \sum_j \Re( dA_{ijk}^*~ A_{ijk} + A_{ijk}^* ~dA_{ijk} ) \\
-             &= \sum_j \Re( (A_{ijk}^* ~dA_{ijk})^*~ + A_{ijk}^* ~dA_{ijk} )\\
-             &= \sum_j 2 \Re( A_{ijk}^* ~dA_{ijk} ),
+    dC_{i1k} &= \sum_j \Re( \operatorname{conj}(dA_{ijk})~ A_{ijk} +
+                            \operatorname{conj}(A_{ijk}) ~dA_{ijk} ) \\
+             &= \sum_j \Re( \operatorname{conj}\left( \operatorname{conj}(A_{ijk}) ~dA_{ijk} \right) +
+                                                      \operatorname{conj}(A_{ijk}) ~dA_{ijk} )\\
+             &= \sum_j 2 \Re( \operatorname{conj}(A_{ijk}) ~dA_{ijk} )\\
+             &= 2 \Re\left( \sum_j \operatorname{conj}(A_{ijk}) ~dA_{ijk} \right)\\
+             &= 2 \Re \left( \langle A, dA \rangle \right),
 \end{align*}
 ```
 
-where in the last step we have used the identity that the sum of its number and its conjugate is twice the real part of the number.
+where we have used $(a + i b) + \operatorname{conj}(a + i b) = (a + i b) + (a - i b) = 2 a = 2 \Re (a + i b)$
 
 We can then derive the reverse-mode rule.
 The array form of the desired identity will be
 
 ```math
-ds = \Re \left( \sum_{ik}  \overline{C}_{i1k}^* ~dC_{i1k} \right)
-   = \Re \left( \sum_{ijk} \overline{A}_{ijk}^* ~dA_{ijk} \right)
+ds = \Re \left( \sum_{ik}  \operatorname{conj}(\overline{C}_{i1k}) ~dC_{i1k} \right)
+   = \Re \left( \sum_{ijk} \operatorname{conj}(\overline{A}_{ijk}) ~dA_{ijk} \right)
 ```
 
-We can plug in the differential identity into the middle expression to get
+We plug the differential identity into the middle expression to get
 
 ```math
 \begin{align*}
-    ds &= \Re \left( \sum_{ijk} 2 \overline{C}_{i1k}^* \Re(A_{ijk}^* ~dA_{ijk}) \right) \\
-       &= \Re \left( \sum_{ijk} 2 \Re(\overline{C}_{i1k}) A_{ijk}^* ~dA_{ijk} \right).
+    ds &= \Re \left(\sum_{ijk}
+                  \operatorname{conj}(\overline{C}_{i1k}) 2 \Re(\operatorname{conj}(A_{ijk}) ~dA_{ijk})
+              \right) \\
+       &= \Re \left( \sum_{ijk} 2 \Re(\overline{C}_{i1k}) \operatorname{conj}(A_{ijk}) ~dA_{ijk} \right).
 \end{align*}
 ```
 
 We can now solve for $\overline{A}$:
 
-$$\overline{A}_{ijk} = (2 \Re( \overline{C}_{i1k} ) A_{ijk}^*)^* = A_{ijk} \cdot 2\Re( \overline{C}_{i1k} )$$
+```math
+\overline{A}_{ijk} = \operatorname{conj}(2 \Re( \overline{C}_{i1k} ) \operatorname{conj}(A_{ijk}))
+                   = 2\Re( \overline{C}_{i1k} ) A_{ijk}
+```
 
 Because none of this derivation really depended on the index (or indices), we can easily implement the `rrule` more generically using broadcasting:
 
