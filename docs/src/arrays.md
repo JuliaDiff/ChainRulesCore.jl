@@ -70,7 +70,7 @@ Two useful identities are $d(A^H) = dA^H$ and $d(A^T) = dA^T$, where $\cdot^H$ i
 ## Deriving reverse-mode rules
 
 Reverse-mode rules are a little more involved.
-For a real scalar function $s = g(C)$, the differential of $s$ is the real part of the inner product of the adjoint of $C$, $\overline{C}$, and the differential of $C$:
+For a real scalar function $s = g(C)$, the differential of $s$ is the real part of the Frobenius inner product (`dot`) of the adjoint of $C$, $\overline{C}$, and the differential of $C$:
 
 $$ds = \Re\langle \overline{C}, dC \rangle = \Re\left(\sum_{i,\dots,j} \overline{C}_{i,\dots,j}^* ~dC_{i,\dots,j}\right),$$
 
