@@ -3,12 +3,18 @@
 When the inputs and outputs of the functions are arrays (potentially with scalars), a modified version of Giles' method is a quick way of deriving `frule`s and `rrule`s.
 Giles' method is succinctly explained in [this paper](https://people.maths.ox.ac.uk/gilesm/files/NA-08-01.pdf), but we will generalize it to handle arrays with both real and complex entries and arrays of arbitrary dimensions.
 
+Throughout this tutorial, we will ust the following type alias
+
+```julia
+const RealOrComplex = Union{Real,Complex}
+```
+
 ## Forward mode rules
 
 Given a function
 
 ```julia
-C = f(A::Array, B::Array)::Array
+C = f(A::Array{<:RealOrComplex}, B::Array{<:RealOrComplex})::Array{<:RealOrComplex}
 ```
 
 we write the differential of the output in terms of differentials of the inputs as
@@ -129,7 +135,7 @@ $$\overline{B} = (\overline{C}^H A)^H = A^H \overline{C}$$
 Using our notation conventions, we would implement the `rrule` as
 
 ```julia
-function rrule(::typeof(*), A::Matrix, B::Matrix)
+function rrule(::typeof(*), A::Matrix{<:RealOrComplex}, B::Matrix{<:RealOrComplex})
     function times_pullback(ΔC)
         ∂A = @thunk(ΔC * B')
         ∂B = @thunk(A' * ΔC)
@@ -162,7 +168,7 @@ $$\overline{A} = (-C \overline{C}^H C)^H = -C^H \overline{C} C^H$$
 We can implement the resulting `rrule` as:
 
 ```julia
-function rrule(::typeof(inv), A::Matrix)
+function rrule(::typeof(inv), A::Matrix{<:RealOrComplex})
     C = inv(A)
     function inv_pullback(ΔC)
         ∂A = -C' * ΔC * C'
@@ -208,7 +214,7 @@ $$\overline{A}_{ijk} = (2 \Re(\overline{C}_{i1k}) A_{ijk}^*)^* = A_{ijk} \cdot 2
 Because none of this derivation really depended on the index (or indices), we can easily implement the `rrule` more generically using broadcasting:
 
 ```julia
-function rrule(::typeof(sum), ::typeof(abs2), A::Array; dims = :)
+function rrule(::typeof(sum), ::typeof(abs2), A::Array{<:RealOrComplex}; dims = :)
     function sum_abs2_pullback(ΔC)
         ∂abs2 = DoesNotExist()
         ∂A = @thunk(A .* 2 .* real.(ΔC))
