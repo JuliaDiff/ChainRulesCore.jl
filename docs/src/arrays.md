@@ -28,6 +28,7 @@ $$\dot{C} = \frac{\partial f}{\partial A} \dot{A} + \frac{\partial f}{\partial B
 The terms $\frac{\partial f}{\partial A}$ are array-array derivatives (i.e. a type of Jacobian).
 We do not write these down explicitly, but we instead use differential identities to derive the terms $\frac{\partial f}{\partial A} dA$, which as we've seen behave like the Jacobian-vector-products $\frac{\partial f}{\partial A} \dot{A}$.
 The differential identities follow directly from the usual scalar identities.
+We will look at a few examples.
 
 ### Matrix addition
 
@@ -40,6 +41,14 @@ This one is easy:
 $$C = A + B$$
 
 $$dC = dA + dB$$
+
+We can implement the `frule` as
+
+```julia
+function frule((_, ΔA, ΔB), ::typeof(+), A::Array{<:RealOrComplex}, B::Array{<:RealOrComplex})
+    return (A + B, ΔA + ΔB)
+end
+```
 
 ### Matrix multiplication
 
@@ -61,7 +70,13 @@ But this is just a sum of matrix products:
 
 $$dC = dA~ B + A ~dB$$
 
-So we now have the matrix product rule.
+So we now have the matrix product rule, whose `frule` is
+
+```julia
+function frule((_, ΔA, ΔB), ::typeof(*), A::Matrix{<:RealOrComplex}, B::Matrix{<:RealOrComplex})
+    return (A * B, ΔA * B + A * ΔB)
+end
+```
 
 ### Matrix inversion
 
@@ -85,6 +100,16 @@ We right-multiply both sides by $C = A^{-1}$ to isolate $dC$:
 
 $$dC~ A C + C ~dA~ C = dC + C ~dA~ C = 0$$
 $$dC = -C ~dA~ C$$
+
+We write the `frule` as
+
+```julia
+function frule((_, ΔA), ::typeof(inv), A::Matrix{<:RealOrComplex})
+    C = inv(A)
+    ∂C = -C * ΔA * C
+    return (C, ∂C)
+end
+```
 
 ### Other useful identities
 
@@ -278,15 +303,29 @@ The differential identity is
                             \operatorname{conj}(A_{ijk}) ~dA_{ijk} ) \\
              &= \sum_j \Re( \operatorname{conj}\left( \operatorname{conj}(A_{ijk}) ~dA_{ijk} \right) +
                                                       \operatorname{conj}(A_{ijk}) ~dA_{ijk} )\\
-             &= \sum_j 2 \Re( \operatorname{conj}(A_{ijk}) ~dA_{ijk} )\\
-             &= 2 \Re\left( \sum_j \operatorname{conj}(A_{ijk}) ~dA_{ijk} \right)\\
-             &= 2 \Re \left( \langle A, dA \rangle \right),
+             &= \sum_j 2 \Re( \operatorname{conj}(A_{ijk}) ~dA_{ijk} )
 \end{align*}
 ```
 
-where we have used $(a + i b) + \operatorname{conj}(a + i b) = (a + i b) + (a - i b) = 2 a = 2 \Re (a + i b)$
+where in the last step we have used the fact that for all real $a$ and $b$,
 
-We can then derive the reverse-mode rule.
+$$(a + i b) + \operatorname{conj}(a + i b) = (a + i b) + (a - i b) = 2 a = 2 \Re (a + i b).$$
+
+The `frule` can be implemented as
+
+```julia
+function frule(
+    (_, _, ΔA),
+    ::typeof(sum), ::typeof(abs2), A::Array{<:RealOrComplex};
+    dims = :,
+)
+    C = sum(abs2, A; dims = dims)
+    ∂C = sum(2 .* real.(conj.(A) .* ΔA); dims = dims)
+    return (C, ∂C)
+end
+```
+
+We can now derive the reverse-mode rule.
 The array form of the desired identity will be
 
 ```math
@@ -305,7 +344,7 @@ We plug the differential identity into the middle expression to get
 \end{align*}
 ```
 
-We can now solve for $\overline{A}$:
+We now solve for $\overline{A}$:
 
 ```math
 \overline{A}_{ijk} = \operatorname{conj}(2 \Re( \overline{C}_{i1k} ) \operatorname{conj}(A_{ijk}))
