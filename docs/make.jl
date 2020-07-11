@@ -29,7 +29,7 @@ makedocs(
         "FAQ" => "FAQ.md",
         "Writing Good Rules" => "writing_good_rules.md",
         "Complex Numbers" => "complex.md",
-        "Arrays" => "arrays.md",
+        "Deriving Array Rules" => "arrays.md",
         "Debug Mode" => "debug_mode.md",
         "Design" => [
             "Many Differential Types" => "design/many_differentials.md",

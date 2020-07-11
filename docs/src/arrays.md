@@ -1,4 +1,4 @@
-# Arrays
+# Deriving Array Rules
 
 When the inputs and outputs of the functions are arrays (potentially with scalars), a modified version of Giles' method is a quick way of deriving `frule`s and `rrule`s.
 Giles' method is succinctly explained in [this paper](https://people.maths.ox.ac.uk/gilesm/files/NA-08-01.pdf), but we will generalize it to handle arrays with both real and complex entries and arrays of arbitrary dimensions.
