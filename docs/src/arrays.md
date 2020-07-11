@@ -31,11 +31,21 @@ The differential identities follow directly from the usual scalar identities.
 
 ### Matrix addition
 
+```julia
+C = A + B
+```
+
+This one is easy:
+
 $$C = A + B$$
 
 $$dC = dA + dB$$
 
 ### Matrix multiplication
+
+```julia
+C = A * B
+```
 
 $$C = A B$$
 
@@ -55,12 +65,25 @@ So we now have the matrix product rule.
 
 ### Matrix inversion
 
-$$C A = A C = I$$
+```julia
+C = inv(A)
+```
 
-Here we differentiate the constraint, applying the matrix product rule, and solve for $dC$.
+$$C = A^{-1}$$
+
+It's easiest to derive this rule by writing the constraint:
+
+$$C A = A C = I,$$
+
+where $I$ is the identity matrix, and $C = A^{-1}$.
+
+Now we use the matrix product rule to differentiate the constraint:
 
 $$dC~ A + C ~dA = 0$$
-$$dC~ A C + C ~dA~ C = 0$$
+
+We right-multiply both sides by $C = A^{-1}$ to isolate $dC$:
+
+$$dC~ A C + C ~dA~ C = dC + C ~dA~ C = 0$$
 $$dC = -C ~dA~ C$$
 
 ### Other useful identities
@@ -138,6 +161,10 @@ Here are a few examples.
 
 ### Matrix multiplication
 
+```julia
+C = A * B
+```
+
 We above derived
 
 $$dC = dA~ B + A ~dB$$
@@ -184,6 +211,10 @@ end
 
 ### Matrix inversion
 
+```julia
+C = inv(A)
+```
+
 $$C A = A C = I$$
 
 Again, we derived the differential identity as
@@ -226,7 +257,13 @@ For more instructive examples of matrix and vector rules, see [Giles' paper](htt
 
 For both forward- and reverse-mode rules, the first step was to write down the differential identities, which followed directly from the scalar differential identities.
 This approach follows for arrays, but it's easier to work in component form.
-Consider the function `f(A) = sum(abs2, A::Array{T,3}; dims=2)`, which we write as
+Consider the following function
+
+```julia
+C = sum(abs2, A::Array{<:RealOrComplex,3}; dims=2)::Array{<:Real,3}
+```
+
+which we write as
 
 $$C_{i1k} = \sum_{j} |A_{ijk}|^2 = \sum_{j} \Re(A_{ijk}^* A_{ijk})$$
 
@@ -247,7 +284,7 @@ The array form of the desired identity will be
 
 ```math
 ds = \Re \left( \sum_{ik}  \overline{C}_{i1k}^* ~dC_{i1k} \right)
-    = \Re \left( \sum_{ijk} \overline{A}_{ijk}^* ~dA_{ijk} \right)
+   = \Re \left( \sum_{ijk} \overline{A}_{ijk}^* ~dA_{ijk} \right)
 ```
 
 We can plug in the differential identity into the middle expression to get
