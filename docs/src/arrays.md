@@ -65,12 +65,12 @@ $$dC = -C ~dA~ C$$
 
 ### Other useful identities
 
-Two useful identities are $d(A^H) = dA^H$ and $d(A^T) = dA^T$, where $\cdot^H$ is the conjugate transpose.
+Two useful identities are $d(A^H) = dA^H$ and $d(A^T) = dA^T$, where $\cdot^H$ is the conjugate transpose (i.e. the `adjoint` function).
 
 ## Deriving reverse-mode rules
 
 Reverse-mode rules are a little more involved.
-For a real scalar function $s = g(C)$, the differential of $s$ is the real part of the Frobenius inner product (`dot`) of the adjoint of $C$, $\overline{C}$, and the differential of $C$:
+For a real scalar function $s = g(C)$, the differential of $s$ is the real part of the Frobenius inner product (`LinearAlgebra.dot`) of the adjoint of $C$, $\overline{C}$, and the differential of $C$:
 
 $$ds = \Re\langle \overline{C}, dC \rangle = \Re\left( \sum_{i,\dots,j} \overline{C}_{i,\dots,j}^* ~dC_{i,\dots,j} \right),$$
 
@@ -80,7 +80,7 @@ For matrices and vectors, we can write this as
 
 $$ds = \Re(\operatorname{tr}(\overline{C}^H dC)),$$
 
-where $\operatorname{tr}$ is the `trace`.
+where $\operatorname{tr}$ is the matrix trace (`LinearAlgebra.tr`) function.
 
 Plugging in the expression for $dC$, we get
 
@@ -115,7 +115,7 @@ Combining these two identities and solving for $\overline{A}$ and $\overline{B}$
 
 Giles' method for deriving pullback functions is to first derive the differential identity (i.e. pushforward) using the above approach, then pre-multiply by $\overline{C}^H$, and take the trace.
 Subsequently, manipulate into this form and solve for the adjoint derivatives of the inputs.
-Several properties of `trace` make this easier:
+Several properties of the trace function make this easier:
 
 ```math
 \begin{align*}
@@ -148,7 +148,7 @@ ds &= \Re\left( \operatorname{tr}(\overline{C}^H ~dC) \right) \\
 \end{align*}
 ```
 
-We use the `trace` identities to manipulate the $dA$ expression:
+We use the trace identities to manipulate the $dA$ expression:
 
 ```math
 ds = \Re\left( \operatorname{tr}(B \overline{C}^H ~dA) \right) +
