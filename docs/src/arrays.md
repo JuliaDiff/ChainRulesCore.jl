@@ -45,7 +45,10 @@ $$dC = dA + dB$$
 We can implement the `frule` as
 
 ```julia
-function frule((_, ΔA, ΔB), ::typeof(+), A::Array{<:RealOrComplex}, B::Array{<:RealOrComplex})
+function frule(
+    (_, ΔA, ΔB),
+    ::typeof(+), A::Array{<:RealOrComplex}, B::Array{<:RealOrComplex},
+)
     return (A + B, ΔA + ΔB)
 end
 ```
@@ -73,7 +76,10 @@ $$dC = dA~ B + A ~dB$$
 So we now have the matrix product rule, whose `frule` is
 
 ```julia
-function frule((_, ΔA, ΔB), ::typeof(*), A::Matrix{<:RealOrComplex}, B::Matrix{<:RealOrComplex})
+function frule(
+    (_, ΔA, ΔB),
+    ::typeof(*), A::Matrix{<:RealOrComplex}, B::Matrix{<:RealOrComplex},
+)
     return (A * B, ΔA * B + A * ΔB)
 end
 ```
@@ -311,7 +317,7 @@ where in the last step we have used the fact that for all real $a$ and $b$,
 
 $$(a + i b) + \operatorname{conj}(a + i b) = (a + i b) + (a - i b) = 2 a = 2 \operatorname{real} (a + i b).$$
 
-The `frule` can be implemented as
+The `frule` can be implemented generally as
 
 ```julia
 function frule(
