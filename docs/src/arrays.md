@@ -72,7 +72,7 @@ Two useful identities are $d(A^H) = dA^H$ and $d(A^T) = dA^T$, where $\cdot^H$ i
 Reverse-mode rules are a little more involved.
 For a real scalar function $s = g(C)$, the differential of $s$ is the real part of the Frobenius inner product (`dot`) of the adjoint of $C$, $\overline{C}$, and the differential of $C$:
 
-$$ds = \Re\langle \overline{C}, dC \rangle = \Re\left(\sum_{i,\dots,j} \overline{C}_{i,\dots,j}^* ~dC_{i,\dots,j}\right),$$
+$$ds = \Re\langle \overline{C}, dC \rangle = \Re\left( \sum_{i,\dots,j} \overline{C}_{i,\dots,j}^* ~dC_{i,\dots,j} \right),$$
 
 where $\cdot^*$ is the complex conjugate, and $\Re(x)$ is the real part of $x$ (i.e. `real(x)`).
 
@@ -84,26 +84,47 @@ where $\operatorname{tr}$ is the `trace`.
 
 Plugging in the expression for $dC$, we get
 
-$$ds = \Re\left(\operatorname{tr}\left(\overline{C}^H \frac{\partial f}{\partial A} dA + \overline{C}^H\frac{\partial f}{\partial B} dB\right)\right) = \Re\left(\operatorname{tr}\left(\overline{C}^H \frac{\partial f}{\partial A} dA\right)\right) + \Re\left(\operatorname{tr}\left(\overline{C}^H\frac{\partial f}{\partial B} dB\right)\right)$$
+```math
+\begin{align*}
+ds &= \Re\left( \operatorname{tr}\left(
+          \overline{C}^H \frac{\partial f}{\partial A} dA +
+          \overline{C}^H \frac{\partial f}{\partial B} dB
+      \right) \right)\\
+   &= \Re\left( \operatorname{tr}\left(
+          \overline{C}^H \frac{\partial f}{\partial A} dA
+      \right) \right) +
+      \Re\left( \operatorname{tr}\left(
+          \overline{C}^H \frac{\partial f}{\partial B} dB
+      \right) \right)
+\end{align*}
+```
 
 By applying the same definition of $ds$ to the intermediates $A$ and $B$, we get
 
-$$ds = \Re\left(\operatorname{tr}(\overline{A}^H dA)\right) + \Re\left(\operatorname{tr}(\overline{B}^H ~dB)\right)$$
+$$ds = \Re\left( \operatorname{tr}(\overline{A}^H dA) \right) + \Re\left( \operatorname{tr}(\overline{B}^H ~dB) \right)$$
 
 Combining these two identities and solving for $\overline{A}$ and $\overline{B}$ gives us
 
-$$\overline{A} = (\overline{A}^H)^H = \left(\overline{C}^H \frac{\partial f}{\partial A}\right)^H = \left(\frac{\partial f}{\partial A}\right)^H \overline{C}$$
-$$\overline{B} = \left(\frac{\partial f}{\partial B}\right)^H \overline{C}$$
+```math
+\begin{align*}
+    \overline{A} &= (\overline{A}^H)^H = \left( \overline{C}^H \frac{\partial f}{\partial A} \right)^H
+                                       = \left( \frac{\partial f}{\partial A} \right)^H \overline{C}\\
+    \overline{B} &= \left( \frac{\partial f}{\partial B} \right)^H \overline{C}
+\end{align*}
+```
 
 Giles' method for deriving pullback functions is to first derive the differential identity (i.e. pushforward) using the above approach, then pre-multiply by $\overline{C}^H$, and take the trace.
 Subsequently, manipulate into this form and solve for the adjoint derivatives of the inputs.
 Several properties of `trace` make this easier:
 
-$$\operatorname{tr}(A+B) = \operatorname{tr}(A) + \operatorname{tr}(B)$$
-$$\operatorname{tr}(A^T) = \operatorname{tr}(A)$$
-$$\operatorname{tr}(A^H) = \operatorname{tr}(A)^*$$
-$$\operatorname{tr}(AB) = \operatorname{tr}(BA)$$
-
+```math
+\begin{align*}
+    \operatorname{tr}(A+B) &= \operatorname{tr}(A) + \operatorname{tr}(B)\\
+    \operatorname{tr}(A^T) &= \operatorname{tr}(A)\\
+    \operatorname{tr}(A^H) &= \operatorname{tr}(A)^*\\
+    \operatorname{tr}(AB) &= \operatorname{tr}(BA)
+\end{align*}
+```
 
 !!! note
     Our method is identical to Giles' approach, except we have replace the transpose with the conjugate transpose, and we have added the constraint that the inner product be real.
@@ -119,17 +140,30 @@ $$dC = dA~ B + A ~dB$$
 
 We now multiply by $\overline{C}^H$ and take the real trace:
 
-$$ds = \Re\left(\operatorname{tr}(\overline{C}^H ~dC)\right) = \Re\left(\operatorname{tr}(\overline{C}^H ~dA~ B)\right) + \Re\left(\operatorname{tr}(\overline{C}^H A ~dB)\right)$$
+```math
+\begin{align*}
+ds &= \Re\left( \operatorname{tr}(\overline{C}^H ~dC) \right) \\
+   &= \Re\left( \operatorname{tr}(\overline{C}^H ~dA~ B) \right) +
+      \Re\left( \operatorname{tr}(\overline{C}^H  A ~dB) \right)
+\end{align*}
+```
 
 We use the `trace` identities to manipulate the $dA$ expression:
 
-$$ds = \Re\left(\operatorname{tr}(B \overline{C}^H ~dA)\right) + \Re\left(\operatorname{tr}(\overline{C}^H A ~dB)\right)$$
+```math
+ds = \Re\left( \operatorname{tr}(B \overline{C}^H ~dA) \right) +
+        \Re\left( \operatorname{tr}(\overline{C}^H A ~dB) \right)
+```
 
 That's it!
 The expression is in the desired form to solve for the adjoints:
 
-$$\overline{A} = (B \overline{C}^H)^H = \overline{C} B^H$$
-$$\overline{B} = (\overline{C}^H A)^H = A^H \overline{C}$$
+```math
+\begin{align*}
+    \overline{A} &= (B \overline{C}^H)^H = \overline{C} B^H\\
+    \overline{B} &= (\overline{C}^H A)^H = A^H \overline{C}
+\end{align*}
+```
 
 Using our notation conventions, we would implement the `rrule` as
 
@@ -154,11 +188,14 @@ $$dC = -C ~dA~ C$$
 
 Multiplying by $\overline{C}^H$ and taking the trace,
 
-$$ds = \Re\left(\operatorname{tr}(\overline{C}^H ~dC)\right) = \Re\left(\operatorname{tr}(-\overline{C}^H C ~dA~ C)\right)$$
+```math
+    ds = \Re\left( \operatorname{tr}(\overline{C}^H ~dC) \right)
+       = \Re\left( \operatorname{tr}(-\overline{C}^H C ~dA~ C) \right)
+```
 
 Applying the trace identities to manipulate into the desired form,
 
-$$ds = \Re\left(\operatorname{tr}(-C \overline{C}^H C ~dA)\right),$$
+$$ds = \Re(\operatorname{tr}(-C \overline{C}^H C ~dA) ),$$
 
 we can now solve for $\overline{A}$:
 
@@ -187,28 +224,40 @@ For both forward- and reverse-mode rules, the first step was to write down the d
 This approach follows for arrays, but it's easier to work in component form.
 Consider the function `f(A) = sum(abs2, A::Array{T,3}; dims=2)`, which we write as
 
-$$C_{i1k} = \sum_{j} |A_{ijk}|^2 = \sum_{j}\Re(A_{ijk}^* A_{ijk})$$
+$$C_{i1k} = \sum_{j} |A_{ijk}|^2 = \sum_{j} \Re(A_{ijk}^* A_{ijk})$$
 
 The differential identity is
 
-$$dC_{i1k} = \sum_j \Re(dA_{ijk}^*~ A_{ijk} + A_{ijk}^* ~dA_{ijk}) \\
-= \sum_j \Re((A_{ijk}^* dA_{ijk})^*~ + A_{ijk}^* ~dA_{ijk})\\
-= \sum_j 2 \Re(A_{ijk}^* ~dA_{ijk}),$$
+```math
+\begin{align*}
+    dC_{i1k} &= \sum_j \Re( dA_{ijk}^*~ A_{ijk} + A_{ijk}^* ~dA_{ijk} ) \\
+             &= \sum_j \Re( (A_{ijk}^* ~dA_{ijk})^*~ + A_{ijk}^* ~dA_{ijk} )\\
+             &= \sum_j 2 \Re( A_{ijk}^* ~dA_{ijk} ),
+\end{align*}
+```
 
 where in the last step we have used the identity that the sum of its number and its conjugate is twice the real part of the number.
 
 We can then derive the reverse-mode rule.
 The array form of the desired identity will be
 
-$$ds = \Re \left(\sum_{ik} \overline{C}_{i1k}^* ~dC_{i1k}\right) = \Re \left(\sum_{ijk} \overline{A}_{ijk}^* ~dA_{ijk} \right)$$
+```math
+ds = \Re \left( \sum_{ik}  \overline{C}_{i1k}^* ~dC_{i1k} \right)
+    = \Re \left( \sum_{ijk} \overline{A}_{ijk}^* ~dA_{ijk} \right)
+```
 
 We can plug in the differential identity into the middle expression to get
 
-$$ds = \Re \left(\sum_{ijk} 2 \overline{C}_{i1k}^* \Re(A_{ijk}^* ~dA_{ijk})\right) = \Re \left(\sum_{ijk} 2 \Re(\overline{C}_{i1k}) A_{ijk}^* ~dA_{ijk}\right).$$
+```math
+\begin{align*}
+    ds &= \Re \left( \sum_{ijk} 2 \overline{C}_{i1k}^* \Re(A_{ijk}^* ~dA_{ijk}) \right) \\
+       &= \Re \left( \sum_{ijk} 2 \Re(\overline{C}_{i1k}) A_{ijk}^* ~dA_{ijk} \right).
+\end{align*}
+```
 
 We can now solve for $\overline{A}$:
 
-$$\overline{A}_{ijk} = (2 \Re(\overline{C}_{i1k}) A_{ijk}^*)^* = A_{ijk} \cdot 2\Re(\overline{C}_{i1k})$$
+$$\overline{A}_{ijk} = (2 \Re( \overline{C}_{i1k} ) A_{ijk}^*)^* = A_{ijk} \cdot 2\Re( \overline{C}_{i1k} )$$
 
 Because none of this derivation really depended on the index (or indices), we can easily implement the `rrule` more generically using broadcasting:
 
