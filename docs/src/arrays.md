@@ -9,7 +9,7 @@ Throughout this tutorial, we will ust the following type alias
 const RealOrComplex = Union{Real,Complex}
 ```
 
-## Forward mode rules
+## Deriving forward-mode rules
 
 Given a function
 
@@ -67,7 +67,7 @@ $$dC = -C\ dA\ C$$
 
 Two useful identities are $d(A^H) = dA^H$ and $d(A^T) = dA^T$, where $\cdot^H$ is the conjugate transpose.
 
-## Writing reverse-mode rules
+## Deriving reverse-mode rules
 
 Reverse-mode rules are a little more involved.
 For a real scalar function $s = g(C)$, the differential of $s$ is the real part of the inner product of the adjoint of $C$, $\overline{C}$, and the differential of $C$:
