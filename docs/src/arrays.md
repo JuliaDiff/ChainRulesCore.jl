@@ -101,14 +101,18 @@ ds &= \Re\left( \operatorname{tr}\left(
 
 By applying the same definition of $ds$ to the intermediates $A$ and $B$, we get
 
-$$ds = \Re\left( \operatorname{tr}(\overline{A}^H dA) \right) + \Re\left( \operatorname{tr}(\overline{B}^H ~dB) \right)$$
+```math
+ds = \Re\left( \operatorname{tr}(\overline{A}^H  dA) \right) +
+     \Re\left( \operatorname{tr}(\overline{B}^H ~dB) \right)
+```
 
 Combining these two identities and solving for $\overline{A}$ and $\overline{B}$ gives us
 
 ```math
 \begin{align*}
-    \overline{A} &= (\overline{A}^H)^H = \left( \overline{C}^H \frac{\partial f}{\partial A} \right)^H
-                                       = \left( \frac{\partial f}{\partial A} \right)^H \overline{C}\\
+    \overline{A} &= (\overline{A}^H)^H
+                  = \left( \overline{C}^H \frac{\partial f}{\partial A} \right)^H
+                  = \left( \frac{\partial f}{\partial A} \right)^H \overline{C}\\
     \overline{B} &= \left( \frac{\partial f}{\partial B} \right)^H \overline{C}
 \end{align*}
 ```
