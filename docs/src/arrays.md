@@ -19,7 +19,11 @@ C = f(A::Array{<:RealOrComplex}, B::Array{<:RealOrComplex})::Array{<:RealOrCompl
 
 we write the differential of the output in terms of differentials of the inputs as
 
-$$dC = \frac{\partial f}{\partial A} dA + \frac{\partial f}{\partial B} dB.$$
+```math
+\begin{equation}\label{cdiff}
+dC = \frac{\partial f}{\partial A} dA + \frac{\partial f}{\partial B} dB.
+\end{equation}
+```
 
 Notationally, we write the pushforward by replacing the differentials with the corresponding forward-mode sensitivities (e.g. replace $dC$ with $\dot{C}$):
 
@@ -65,18 +69,24 @@ First we write in component form:
 
 $$C_{ij} = \sum_k A_{ik} B_{kj}$$
 
-Then we apply the scalar product rule ($d(x y) = dx y + x dy$) to get the scalar differential identity:
+Then we use the product rule to get the scalar differential identity:
 
 ```math
 \begin{align*}
-dC_{ij} = \sum_k \left( dA_{ik}~ B_{kj} + A_{ik} ~dB_{kj} \right)\\
-        = \sum_k dA_{ik}~ B_{kj} + \sum_k A_{ik} ~dB_{kj}
+dC_{ij} &= \sum_k \left( dA_{ik}~ B_{kj} + A_{ik} ~dB_{kj} \right)
+            && \text{apply scalar product rule } d(x y) = dx~ y + x ~dy \\
+        &= \sum_k dA_{ik}~ B_{kj} + \sum_k A_{ik} ~dB_{kj}
+            && \text{expand sum}
 \end{align*}
 ```
 
-But this is just a sum of matrix products:
+But the last expression is just a sum of matrix products:
 
-$$dC = dA~ B + A ~dB$$
+```math
+\begin{equation}\label{diffprod}
+dC = dA~ B + A ~dB
+\end{equation}
+```
 
 So we now have the matrix product rule, whose `frule` is
 
@@ -97,9 +107,14 @@ C = inv(A)
 
 $$C = A^{-1}$$
 
-It's easiest to derive this rule by writing the constraint:
+It's easiest to derive this rule by writing either constraint:
 
-$$C A = A^{-1} A = I = A A^{-1} = A C,$$
+```math
+\begin{align*}
+C A &= A^{-1} A = I\\
+A C &= A A^{-1} = I,
+\end{align*}
+```
 
 where $I$ is the identity matrix.
 
@@ -110,14 +125,13 @@ $$dC~ A + C ~dA = 0$$
 We right-multiply both sides by $A^{-1}$ to isolate $dC$:
 
 ```math
-\begin{align*}
-0 &= dC~ A A^{-1} + C ~dA~ A^{-1} \\
-  &= dC I + C ~dA~ A^{-1} \\
-  &= dC + C ~dA~ C
-\end{align*}
+\begin{align}
+0  &= dC~ A A^{-1} + C ~dA~ A^{-1} && \nonumber\\
+   &= dC~ I + C ~dA~ A^{-1} && \text{apply } A A^{-1} = I \nonumber\\
+   &= dC + C ~dA~ C && \text{substitute } A^{-1} = C \nonumber\\
+dC &= -C ~dA~ C && \text{solve for } dC \label{invdiff}
+\end{align}
 ```
-
-$$dC = -C ~dA~ C$$
 
 We write the `frule` as
 
@@ -151,20 +165,21 @@ $$ds = \operatorname{real}(\operatorname{tr}(\overline{C}^H dC)),$$
 
 where $\operatorname{tr}$ is the matrix trace (`LinearAlgebra.tr`) function.
 
-Plugging in the expression for $dC$, we get
+We can write the corresponding expression for $dA$ and $dB$ as
 
 ```math
 \begin{align*}
-ds &= \operatorname{real}\left( \operatorname{tr}\left(
+ds &= \operatorname{real}(\operatorname{tr}(\overline{C}^H dC)) &&\\
+   &= \operatorname{real}\left( \operatorname{tr}\left(
           \overline{C}^H \frac{\partial f}{\partial A} dA +
           \overline{C}^H \frac{\partial f}{\partial B} dB
-      \right) \right)\\
+      \right) \right) && \text{substitute } dC \text{ from } \eqref{cdiff}\\
    &= \operatorname{real}\left( \operatorname{tr}\left(
           \overline{C}^H \frac{\partial f}{\partial A} dA
       \right) \right) +
       \operatorname{real}\left( \operatorname{tr}\left(
           \overline{C}^H \frac{\partial f}{\partial B} dB
-      \right) \right)
+      \right) \right) && \text{expand using } \eqref{trexpand}
 \end{align*}
 ```
 
@@ -191,12 +206,12 @@ Subsequently, manipulate into this form and solve for the adjoint derivatives of
 Several properties of the trace function make this easier:
 
 ```math
-\begin{align*}
-    \operatorname{tr}(A+B) &= \operatorname{tr}(A) + \operatorname{tr}(B)\\
-    \operatorname{tr}(A^T) &= \operatorname{tr}(A)\\
-    \operatorname{tr}(A^H) &= \operatorname{conj}(\operatorname{tr}(A))\\
-    \operatorname{tr}(AB) &= \operatorname{tr}(BA)
-\end{align*}
+\begin{align}
+    \operatorname{tr}(A+B) &= \operatorname{tr}(A) + \operatorname{tr}(B) \label{trexpand}\\
+    \operatorname{tr}(A^T) &= \operatorname{tr}(A) \nonumber\\
+    \operatorname{tr}(A^H) &= \operatorname{conj}(\operatorname{tr}(A)) \nonumber\\
+    \operatorname{tr}(AB) &= \operatorname{tr}(BA) \label{trperm}
+\end{align}
 ```
 
 !!! note
@@ -211,7 +226,7 @@ Here are a few examples.
 C = A * B
 ```
 
-We above derived
+We above derived in \eqref{diffprod} the differential identity
 
 $$dC = dA~ B + A ~dB$$
 
@@ -219,17 +234,20 @@ We now multiply by $\overline{C}^H$ and take the real trace:
 
 ```math
 \begin{align*}
-ds &= \operatorname{real}\left( \operatorname{tr}(\overline{C}^H ~dC) \right) \\
+ds &= \operatorname{real}\left( \operatorname{tr}(\overline{C}^H ~dC) \right) &&\\
+   &= \operatorname{real}\left( \operatorname{tr}(\overline{C}^H ~\left(
+          dA~ B + A ~dB
+      \right)) \right) &&
+        \text{substitute } dC \text{ from } \eqref{diffprod}\\
    &= \operatorname{real}\left( \operatorname{tr}(\overline{C}^H ~dA~ B) \right) +
-      \operatorname{real}\left( \operatorname{tr}(\overline{C}^H  A ~dB) \right)
+      \operatorname{real}\left( \operatorname{tr}(\overline{C}^H  A ~dB) \right) &&
+        \text{expand using } \eqref{trexpand} \\
+   &= \operatorname{real}\left( \operatorname{tr}(B \overline{C}^H ~dA) \right) +
+      \operatorname{real}\left( \operatorname{tr}(\overline{C}^H A ~dB) \right) &&
+        \text{rearrange the left side using } \eqref{trperm}\\
+   &= \operatorname{real}\left( \operatorname{tr}(\overline{A}^H  dA) \right) +
+      \operatorname{real}\left( \operatorname{tr}(\overline{B}^H ~dB) \right) && \\
 \end{align*}
-```
-
-We use the trace identities to manipulate the $dA$ expression:
-
-```math
-ds = \operatorname{real}\left( \operatorname{tr}(B \overline{C}^H ~dA) \right) +
-        \operatorname{real}\left( \operatorname{tr}(\overline{C}^H A ~dB) \right)
 ```
 
 That's it!
@@ -237,8 +255,8 @@ The expression is in the desired form to solve for the adjoints:
 
 ```math
 \begin{align*}
-    \overline{A} &= (B \overline{C}^H)^H = \overline{C} B^H\\
-    \overline{B} &= (\overline{C}^H A)^H = A^H \overline{C}
+    \overline{A} &= \left( \overline{A}^H \right)^H = \left( B \overline{C}^H \right)^H = \overline{C} B^H\\
+    \overline{B} &= \left( \overline{B}^H \right)^H = \left( \overline{C}^H A \right)^H = A^H \overline{C}
 \end{align*}
 ```
 
@@ -261,7 +279,7 @@ end
 C = inv(A)
 ```
 
-Above, we derived the differential identity as
+In \eqref{invdiff}, we derived the differential identity as
 
 $$dC = -C ~dA~ C$$
 
@@ -272,7 +290,7 @@ Multiplying by $\overline{C}^H$ and taking the real trace,
        = \operatorname{real}\left( \operatorname{tr}(-\overline{C}^H C ~dA~ C) \right)
 ```
 
-Applying the trace identities to manipulate into the desired form,
+Applying the trace identity \eqref{trperm} to manipulate into the desired form,
 
 $$ds = \operatorname{real}(\operatorname{tr}(-C \overline{C}^H C ~dA) ),$$
 
