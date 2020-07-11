@@ -94,17 +94,24 @@ $$C = A^{-1}$$
 
 It's easiest to derive this rule by writing the constraint:
 
-$$C A = A C = I,$$
+$$C A = A^{-1} A = I = A A^{-1} = A C,$$
 
-where $I$ is the identity matrix, and $C = A^{-1}$.
+where $I$ is the identity matrix.
 
 Now we use the matrix product rule to differentiate the constraint:
 
 $$dC~ A + C ~dA = 0$$
 
-We right-multiply both sides by $C = A^{-1}$ to isolate $dC$:
+We right-multiply both sides by $A^{-1}$ to isolate $dC$:
 
-$$dC~ A C + C ~dA~ C = dC + C ~dA~ C = 0$$
+```math
+\begin{align*}
+0 &= dC~ A A^{-1} + C ~dA~ A^{-1} \\
+  &= dC I + C ~dA~ A^{-1} \\
+  &= dC + C ~dA~ C
+\end{align*}
+```
+
 $$dC = -C ~dA~ C$$
 
 We write the `frule` as
@@ -249,9 +256,7 @@ end
 C = inv(A)
 ```
 
-$$C A = A C = I$$
-
-Again, we derived the differential identity as
+Above, we derived the differential identity as
 
 $$dC = -C ~dA~ C$$
 
