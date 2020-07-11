@@ -21,13 +21,12 @@ we write the differential of the output in terms of differentials of the inputs 
 
 $$dC = \frac{\partial f}{\partial A} dA + \frac{\partial f}{\partial B} dB.$$
 
-The pushforward is obtained by dividing by the differential wrt a single scalar input $t$.
-Writing $\dot{C} = \frac{dC}{dt}$, we replace the differentials with the forward mode sensitivities:
+Notationally, we write the pushforward by replacing the differentials with the corresponding forward-mode sensitivities (e.g. replace $dC$ with $\dot{C}$):
 
 $$\dot{C} = \frac{\partial f}{\partial A} \dot{A} + \frac{\partial f}{\partial B} \dot{B}.$$
 
-The terms $\frac{\partial f}{\partial A}$ are array-array derivatives, i.e. a type of Jacobian.
-We do not write these down explicitly, but we instead use differential identities to write down the terms $\frac{\partial f}{\partial A} dA$, which as we've seen behave like the Jacobian-vector-products $\frac{\partial f}{\partial A} \dot{A}$.
+The terms $\frac{\partial f}{\partial A}$ are array-array derivatives (i.e. a type of Jacobian).
+We do not write these down explicitly, but we instead use differential identities to derive the terms $\frac{\partial f}{\partial A} dA$, which as we've seen behave like the Jacobian-vector-products $\frac{\partial f}{\partial A} \dot{A}$.
 The differential identities follow directly from the usual scalar identities.
 
 ### Matrix addition
