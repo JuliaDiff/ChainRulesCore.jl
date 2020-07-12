@@ -88,7 +88,7 @@ dC = dA~ B + A ~dB
 \end{equation}
 ```
 
-So we now have the matrix product rule, whose `frule` is
+This is the matrix product rule, whose `frule` is
 
 ```julia
 function frule(
@@ -107,18 +107,18 @@ C = inv(A)
 
 $$C = A^{-1}$$
 
-It's easiest to derive this rule by writing either constraint:
+It's easiest to derive this rule from either constraint:
 
 ```math
 \begin{align*}
-C A &= A^{-1} A = I\\
-A C &= A A^{-1} = I,
+C A &= A^{-1} ~A = I\\
+A C &= A~ A^{-1} = I,
 \end{align*}
 ```
 
 where $I$ is the identity matrix.
 
-Now we use the matrix product rule to differentiate the constraint:
+We use the matrix product rule to differentiate the first constraint:
 
 $$dC~ A + C ~dA = 0$$
 
@@ -126,8 +126,8 @@ We right-multiply both sides by $A^{-1}$ to isolate $dC$:
 
 ```math
 \begin{align}
-0  &= dC~ A A^{-1} + C ~dA~ A^{-1} && \nonumber\\
-   &= dC~ I + C ~dA~ A^{-1} && \text{apply } A A^{-1} = I \nonumber\\
+0  &= dC~ A~ A^{-1} + C ~dA~ A^{-1} && \nonumber\\
+   &= dC~ I + C ~dA~ A^{-1} && \text{apply } A~ A^{-1} = I \nonumber\\
    &= dC + C ~dA~ C && \text{substitute } A^{-1} = C \nonumber\\
 dC &= -C ~dA~ C && \text{solve for } dC \label{invdiff}
 \end{align}
@@ -334,7 +334,7 @@ For more instructive examples of matrix and vector rules, see [^Giles2008ext] an
 
 ## Generalizing to multidimensional arrays
 
-For both forward- and reverse-mode rules, the first step was to write down the differential identities, which followed directly from the scalar differential identities.
+For both forward- and reverse-mode rules for matrices, the first step was to write down the differential identities, which followed directly from the scalar differential identities.
 This approach follows for arrays, but it's easier to work in component form.
 Consider the following function
 
