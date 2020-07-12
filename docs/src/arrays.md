@@ -1,7 +1,7 @@
 # Deriving Array Rules
 
 When the inputs and outputs of the functions are arrays (potentially with scalars), a modified version of Giles' method is a quick way of deriving [`frule`](@ref)s and [`rrule`](@ref)s.
-Giles' method is succinctly explained in [this paper](https://people.maths.ox.ac.uk/gilesm/files/NA-08-01.pdf), but we will generalize it to handle arrays with both real and complex entries and arrays of arbitrary dimensions.
+Giles' method is succinctly explained in [^Giles2008] and its extended work [^Giles2008ext], but we will generalize it to handle arrays with both real and complex entries and arrays of arbitrary dimensions.
 
 Throughout this tutorial, we will ust the following type alias
 
@@ -317,7 +317,7 @@ end
 
 ## More examples
 
-For more instructive examples of matrix and vector rules, see [Giles' paper](https://people.maths.ox.ac.uk/gilesm/files/NA-08-01.pdf) and the [LinearAlgebra rules in ChainRules](https://github.com/JuliaDiff/ChainRules.jl/tree/master/src/rulesets/LinearAlgebra).
+For more instructive examples of matrix and vector rules, see [^Giles2008ext] and the [LinearAlgebra rules in ChainRules](https://github.com/JuliaDiff/ChainRules.jl/tree/master/src/rulesets/LinearAlgebra).
 
 ## Generalizing to multidimensional arrays
 
@@ -412,3 +412,16 @@ function rrule(::typeof(sum), ::typeof(abs2), A::Array{<:RealOrComplex}; dims = 
     return sum(abs2, A; dims = dims), sum_abs2_pullback
 end
 ```
+
+## References
+
+[^Giles2008]:
+    > Giles M. B. Collected Matrix Derivative Results for Forward and Reverse Mode Algorithmic Differentiation.
+    > In: Advances in Automatic Differentiation.
+    > _Lecture Notes in Computational Science and Engineering_, vol 64: pp 35-44. Springer, Berlin (2008).
+    > doi: [10.1007/978-3-540-68942-3_4](https://doi.org/10.1007/978-3-540-68942-3_4).
+    > [pdf](https://people.maths.ox.ac.uk/gilesm/files/AD2008.pdf)
+
+[^Giles2008ext]:
+    > Giles M. B. An Extended Collection of Matrix Derivative Results for Forward and Reverse Mode Algorithmic Differentiation. (unpublished).
+    > [pdf](https://people.maths.ox.ac.uk/gilesm/files/NA-08-01.pdf)
