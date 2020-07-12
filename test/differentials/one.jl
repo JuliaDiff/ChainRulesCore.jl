@@ -16,4 +16,8 @@
     @test reim(o) === (One(), Zero())
     @test real(o) === One()
     @test imag(o) === Zero()
+
+    @test complex(o) === o
+    @test complex(o, Zero()) === o
+    @test complex(Zero(), o) === im
 end
