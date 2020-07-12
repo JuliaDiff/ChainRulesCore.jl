@@ -145,7 +145,20 @@ end
 
 ### Other useful identities
 
-Two useful identities are $d(A^H) = dA^H$ and $d(A^T) = dA^T$, where $\cdot^H$ is the conjugate transpose (i.e. the `adjoint` function).
+These identities are particularly useful:
+
+```math
+\begin{align*}
+d\left( \operatorname{real}(A) \right) &= \operatorname{real}(dA)\\
+d\left( \operatorname{conj}(A) \right) &= \operatorname{conj}(dA)\\
+d\left( A^T \right) &= dA^T\\
+d\left( A^H \right) &= dA^H\\
+d\left( \sum_{j}  A_{i \ldots j \ldots k} \right) &=
+        \sum_{j} dA_{i \ldots j \ldots k},
+\end{align*}
+```
+
+where $\cdot^H$ is the conjugate transpose (the `adjoint` function).
 
 ## Deriving reverse-mode rules
 
