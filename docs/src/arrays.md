@@ -154,7 +154,9 @@ For a real scalar function $s = g(C)$, the differential of $s$ is the real part 
 
 ```math
 ds = \operatorname{real}\left( \langle \overline{C}, dC \rangle \right)
-   = \operatorname{real}\left( \sum_{i,\dots,j} \operatorname{conj}(\overline{C}_{i,\dots,j}) ~dC_{i,\dots,j} \right),
+   = \operatorname{real}\left(
+         \sum_{i,\dots,j} \operatorname{conj}(\overline{C}_{i,\dots,j}) ~dC_{i,\dots,j}
+     \right),
 ```
 
 where $\operatorname{conj}(\cdot)$ is the complex conjugate (`conj`), and $\operatorname{real}(\cdot)$ is the real part of its argument (`real`).
@@ -255,8 +257,10 @@ The expression is in the desired form to solve for the adjoints:
 
 ```math
 \begin{align*}
-    \overline{A} &= \left( \overline{A}^H \right)^H = \left( B \overline{C}^H \right)^H = \overline{C} B^H\\
-    \overline{B} &= \left( \overline{B}^H \right)^H = \left( \overline{C}^H A \right)^H = A^H \overline{C}
+    \overline{A} &= \left( \overline{A}^H \right)^H
+                  = \left( B \overline{C}^H \right)^H = \overline{C} B^H\\
+    \overline{B} &= \left( \overline{B}^H \right)^H
+                  = \left( \overline{C}^H A \right)^H = A^H \overline{C}
 \end{align*}
 ```
 
@@ -335,8 +339,12 @@ The differential identity is
 \begin{align*}
     dC_{i1k} &= \sum_j \operatorname{real}( \operatorname{conj}(dA_{ijk})~ A_{ijk} +
                             \operatorname{conj}(A_{ijk}) ~dA_{ijk} ) \\
-             &= \sum_j \operatorname{real}( \operatorname{conj}\left( \operatorname{conj}(A_{ijk}) ~dA_{ijk} \right) +
-                                                      \operatorname{conj}(A_{ijk}) ~dA_{ijk} )\\
+             &= \sum_j \operatorname{real}(
+                    \operatorname{conj}\left(
+                        \operatorname{conj}(A_{ijk}) ~dA_{ijk}
+                    \right) +
+                        \operatorname{conj}(A_{ijk}) ~dA_{ijk}
+                )\\
              &= \sum_j 2 \operatorname{real}( \operatorname{conj}(A_{ijk}) ~dA_{ijk} )
 \end{align*}
 ```
@@ -372,16 +380,23 @@ We plug the differential identity into the middle expression to get
 ```math
 \begin{align*}
     ds &= \operatorname{real} \left(\sum_{ijk}
-                  \operatorname{conj}(\overline{C}_{i1k}) 2 \operatorname{real}(\operatorname{conj}(A_{ijk}) ~dA_{ijk})
+                  \operatorname{conj}(\overline{C}_{i1k})
+                  2 \operatorname{real}(\operatorname{conj}(A_{ijk}) ~dA_{ijk})
               \right) \\
-       &= \operatorname{real} \left( \sum_{ijk} 2 \operatorname{real}(\overline{C}_{i1k}) \operatorname{conj}(A_{ijk}) ~dA_{ijk} \right).
+       &= \operatorname{real} \left( \sum_{ijk}
+              2 \operatorname{real}(\overline{C}_{i1k})
+              \operatorname{conj}(A_{ijk}) ~dA_{ijk}
+          \right).
 \end{align*}
 ```
 
 We now solve for $\overline{A}$:
 
 ```math
-\overline{A}_{ijk} = \operatorname{conj}(2 \operatorname{real}( \overline{C}_{i1k} ) \operatorname{conj}(A_{ijk}))
+\overline{A}_{ijk} = \operatorname{conj}(
+                         2 \operatorname{real}( \overline{C}_{i1k} )
+                         \operatorname{conj}(A_{ijk})
+                     )
                    = 2\operatorname{real}( \overline{C}_{i1k} ) A_{ijk}
 ```
 
