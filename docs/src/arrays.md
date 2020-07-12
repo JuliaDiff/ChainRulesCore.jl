@@ -163,7 +163,7 @@ where $\cdot^H$ is the conjugate transpose (the `adjoint` function).
 ## Deriving reverse-mode rules
 
 Reverse-mode rules are a little more involved.
-For a real scalar function $s = g(C)$, the differential of $s$ is the real part of the Frobenius inner product (`LinearAlgebra.dot`) of the adjoint of $C$, $\overline{C}$, and the differential of $C$:
+For a real scalar function $s = g(C)$, the differential of $s$ is the real part of the inner product (`LinearAlgebra.dot`) of the adjoint of $C$ (i.e. $\overline{C}$), and the differential of $C$:
 
 ```math
 ds = \operatorname{real}\left( \langle \overline{C}, dC \rangle \right)
