@@ -1,7 +1,7 @@
 # Deriving Array Rules
 
-When the inputs and outputs of the functions are arrays (potentially with scalars), a modified version of Giles' method is a quick way of deriving [`frule`](@ref)s and [`rrule`](@ref)s.
-Giles' method is succinctly explained in [^Giles2008] and its extended work [^Giles2008ext], but we will generalize it to handle arrays with both real and complex entries and arrays of arbitrary dimensions.
+When the inputs and outputs of the functions are arrays (potentially with scalars), a modified version of Giles's method is a quick way of deriving [`frule`](@ref)s and [`rrule`](@ref)s.
+Giles's method is succinctly explained in [^Giles2008] and its extended work [^Giles2008ext], but we will generalize it to handle arrays with both real and complex entries and arrays of arbitrary dimensions.
 
 Throughout this tutorial, we will ust the following type alias
 
@@ -95,7 +95,9 @@ function frule(
     (_, ΔA, ΔB),
     ::typeof(*), A::Matrix{<:RealOrComplex}, B::Matrix{<:RealOrComplex},
 )
-    return (A * B, ΔA * B + A * ΔB)
+    C = A * B
+    ∂C = ΔA * B + A * ΔB
+    return (C, ∂C)
 end
 ```
 
@@ -184,7 +186,7 @@ We can write the corresponding expression for $dA$ and $dB$ as
 
 ```math
 \begin{align*}
-ds &= \operatorname{real}(\operatorname{tr}(\overline{C}^H dC)) &&\\
+ds &= \operatorname{real}\left( \operatorname{tr}\left( \overline{C}^H dC \right) \right) &&\\
    &= \operatorname{real}\left( \operatorname{tr}\left(
           \overline{C}^H \frac{\partial f}{\partial A} dA +
           \overline{C}^H \frac{\partial f}{\partial B} dB
@@ -209,14 +211,14 @@ Combining these two identities and solving for $\overline{A}$ and $\overline{B}$
 
 ```math
 \begin{align*}
-    \overline{A} &= (\overline{A}^H)^H
+    \overline{A} &= \left( \overline{A}^H \right)^H
                   = \left( \overline{C}^H \frac{\partial f}{\partial A} \right)^H
                   = \left( \frac{\partial f}{\partial A} \right)^H \overline{C}\\
     \overline{B} &= \left( \frac{\partial f}{\partial B} \right)^H \overline{C}
 \end{align*}
 ```
 
-Giles' method for deriving pullback functions is to first derive the differential identity (i.e. pushforward) using the above approach, then pre-multiply by $\overline{C}^H$, and take the real trace.
+Giles's method for deriving pullback functions is to first derive the differential identity (i.e. pushforward) using the above approach, then pre-multiply by $\overline{C}^H$, and take the real trace.
 Subsequently, manipulate into this form and solve for the adjoint derivatives of the inputs.
 Several properties of the trace function make this easier:
 
@@ -230,7 +232,7 @@ Several properties of the trace function make this easier:
 ```
 
 !!! note
-    Our method is identical to Giles' approach, except we have replace the transpose with the conjugate transpose, and we have added the constraint that the inner product be real.
+    Our method is identical to Giles's method, except we have replace the transpose with the conjugate transpose, and we have added the constraint that the inner product be real.
     This produces the correct pullbacks for arrays with complex entries.
 
 Here are a few examples.
@@ -350,15 +352,15 @@ The differential identity is
 
 ```math
 \begin{align*}
-    dC_{i1k} &= \sum_j \operatorname{real}( \operatorname{conj}(dA_{ijk})~ A_{ijk} +
-                            \operatorname{conj}(A_{ijk}) ~dA_{ijk} ) \\
-             &= \sum_j \operatorname{real}(
+    dC_{i1k} &= \sum_j \operatorname{real}\left( \operatorname{conj}(dA_{ijk})~ A_{ijk} +
+                            \operatorname{conj}(A_{ijk}) ~dA_{ijk} \right) \\
+             &= \sum_j \operatorname{real}\left(
                     \operatorname{conj}\left(
                         \operatorname{conj}(A_{ijk}) ~dA_{ijk}
                     \right) +
                         \operatorname{conj}(A_{ijk}) ~dA_{ijk}
-                )\\
-             &= \sum_j 2 \operatorname{real}( \operatorname{conj}(A_{ijk}) ~dA_{ijk} )
+                \right\\
+             &= \sum_j 2 \operatorname{real}\left( \operatorname{conj}(A_{ijk}) ~dA_{ijk} \right)
 \end{align*}
 ```
 
@@ -394,7 +396,7 @@ We plug the differential identity into the middle expression to get
 \begin{align*}
     ds &= \operatorname{real} \left(\sum_{ijk}
                   \operatorname{conj}(\overline{C}_{i1k})
-                  2 \operatorname{real}(\operatorname{conj}(A_{ijk}) ~dA_{ijk})
+                  2 \operatorname{real}\left( \operatorname{conj}(A_{ijk}) ~dA_{ijk} \right)
               \right) \\
        &= \operatorname{real} \left( \sum_{ijk}
               2 \operatorname{real}(\overline{C}_{i1k})
@@ -406,10 +408,10 @@ We plug the differential identity into the middle expression to get
 We now solve for $\overline{A}$:
 
 ```math
-\overline{A}_{ijk} = \operatorname{conj}(
+\overline{A}_{ijk} = \operatorname{conj}\left(
                          2 \operatorname{real}( \overline{C}_{i1k} )
                          \operatorname{conj}(A_{ijk})
-                     )
+                     \right)
                    = 2\operatorname{real}( \overline{C}_{i1k} ) A_{ijk}
 ```
 
