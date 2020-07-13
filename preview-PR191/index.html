@@ -41,22 +41,21 @@ b, b_pullback = rrule(+, 0.2, a);
 c, c_pullback = rrule(asin, b)
 
 #### Then the backward pass calculating gradients
-c̄ = 1;  # ∂c/∂c
-_, b̄ = c_pullback(unthunk(c̄));     # ∂c/∂b
-_, _, ā = b_pullback(unthunk(b̄));  # ∂c/∂a
-_, x̄ = a_pullback(unthunk(ā));     # ∂c/∂x = ∂f/∂x
-unthunk(x̄)
+c̄ = 1;                    # ∂c/∂c
+_, b̄ = c_pullback(c̄);     # ∂c/∂b = ∂c/∂b ⋅ ∂c/∂c
+_, _, ā = b_pullback(b̄);  # ∂c/∂a = ∂c/∂b ⋅ ∂b/∂a
+_, x̄ = a_pullback(ā);     # ∂c/∂x = ∂c/∂a ⋅ ∂a/∂x
+x̄                         # ∂c/∂x = ∂foo/∂x
 # output
 -1.0531613736418153</code></pre><pre><code class="language-julia">#### Find dfoo/dx via frules
 x = 3;
-ẋ = 1;  # ∂x/∂x
+ẋ = 1;              # ∂x/∂x
 nofields = Zero();  # ∂self/∂self
 
-a, ȧ = frule((nofields, ẋ), sin, x); # ∂a/∂x
-b, ḃ = frule((nofields, Zero(), unthunk(ȧ)), +, 0.2, a); # ∂b/∂x = ∂b/∂a⋅∂a/∂x
-
-c, ċ = frule((nofields, unthunk(ḃ)), asin, b); # ∂c/∂x = ∂c/∂b⋅∂b/∂x = ∂f/∂x
-unthunk(ċ)
+a, ȧ = frule((nofields, ẋ), sin, x);             # ∂a/∂x = ∂a/∂x ⋅ ∂x/∂x 
+b, ḃ = frule((nofields, Zero(), ȧ), +, 0.2, a);  # ∂b/∂x = ∂b/∂a ⋅ ∂a/∂x
+c, ċ = frule((nofields, ḃ), asin, b);            # ∂c/∂x = ∂c/∂b ⋅ ∂b/∂x
+ċ                                                # ∂c/∂x = ∂foo/∂x
 # output
 -1.0531613736418153</code></pre><pre><code class="language-julia">#### Find dfoo/dx via FiniteDifferences.jl
 using FiniteDifferences
