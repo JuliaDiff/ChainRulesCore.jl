@@ -14,40 +14,42 @@ const RealOrComplex = Union{Real,Complex}
 
 ## Forward-mode rules
 
-Given a function
+### Approach
+
+Consider a function
 
 ```julia
-C = f(A::Array{<:RealOrComplex}, B::Array{<:RealOrComplex})::Array{<:RealOrComplex}
+Ω = f(X::Array{<:RealOrComplex}...)::Array{<:RealOrComplex}
 ```
 
-we write the differential of the output in terms of differentials of the inputs as
+or in math notation
 
-```math
-\begin{equation}\label{cdiff}
-dC = \frac{\partial f}{\partial A} dA + \frac{\partial f}{\partial B} dB.
-\end{equation}
-```
+$$f: (\ldots, X_m, \ldots) \mapsto \Omega,$$
 
-Notationally, we write the pushforward by replacing the differentials with the corresponding forward-mode sensitivities (e.g. replace $dC$ with $\dot{C}$):
+where the components of the arrays are written as $(X_m)_{i,\ldots,j}$ and $\Omega_{k,\ldots,l}$.
+These variables are intermediates in a larger program (function) that, by considering only a single real input $t$ and real output $s$ can always be written as
 
-$$\dot{C} = \frac{\partial f}{\partial A} \dot{A} + \frac{\partial f}{\partial B} \dot{B}.$$
+$$t \mapsto (\ldots, X_m, \ldots) \mapsto \Omega \mapsto s,$$
 
-The terms $\frac{\partial f}{\partial A}$ are array-array derivatives (i.e. a type of Jacobian).
-We do not write these down explicitly, but we instead use differential identities to derive the terms $\frac{\partial f}{\partial A} dA$, which as we've seen behave like the Jacobian-vector-products $\frac{\partial f}{\partial A} \dot{A}$.
-The differential identities follow directly from the usual scalar identities.
-We will look at a few examples.
+where $t$ and $s$ are real numbers.
+If we know the partial derivatives of $X_m$ with respect to $t$, $\frac{\partial X_m}{\partial t} = \dot{X}_m$, the chain rules gives the pushforward of $f$ as:
+
+$$\dot{\Omega} = f_*(\ldots, \dot{X}_m, \ldots) =  \sum_m \sum_{i, \ldots, j} \frac{\partial \Omega}{\partial (X_m)_{i,\ldots,j}} (\dot{X}_m)_{i,\ldots,j}$$
+
+That's ugly, but in practice we can often write it more simply by using forward mode rules for simpler functions, as we'll see below.
+The main realization is that the forward-mode rules for arrays follow directly from the usual scalar chain rules.
 
 ### Matrix addition
 
 ```julia
-C = A + B
+Ω = A + B
 ```
 
 This one is easy:
 
-$$C = A + B$$
+$$\Omega = A + B$$
 
-$$dC = dA + dB$$
+$$\dot{\Omega} = \dot{A} + \dot{B}$$
 
 We can implement the `frule` in ChainRules` notation:
 
@@ -56,30 +58,32 @@ function frule(
     (_, ΔA, ΔB),
     ::typeof(+), A::Array{<:RealOrComplex}, B::Array{<:RealOrComplex},
 )
-    return (A + B, ΔA + ΔB)
+    Ω = A + B
+    ∂Ω = ΔA + ΔB
+    return (Ω, ∂Ω)
 end
 ```
 
 ### Matrix multiplication
 
 ```julia
-C = A * B
+Ω = A * B
 ```
 
-$$C = A B$$
+$$\Omega = A B$$
 
 First we write in component form:
 
-$$C_{ij} = \sum_k A_{ik} B_{kj}$$
+$$\Omega_{ij} = \sum_k A_{ik} B_{kj}$$
 
 Then we use the product rule to get the scalar differential identity:
 
 ```math
 \begin{align*}
-dC_{ij} &= \sum_k \left( dA_{ik}~ B_{kj} + A_{ik} ~dB_{kj} \right)
-            && \text{apply scalar product rule } d(x y) = dx~ y + x ~dy \\
-        &= \sum_k dA_{ik}~ B_{kj} + \sum_k A_{ik} ~dB_{kj}
-            && \text{expand sum}
+\dot{\Omega}_{ij} &= \sum_k \left( \dot{A}_{ik} B_{kj} + A_{ik} \dot{B}_{kj} \right)
+            && \text{apply scalar product rule } \frac{d}{dt}(x y) = \frac{dx}{dt} y + x \frac{dy}{dt} \\
+        &= \sum_k \dot{A}_{ik} B_{kj} + \sum_k A_{ik} \dot{B}_{kj}
+            && \text{split sum}
 \end{align*}
 ```
 
@@ -87,7 +91,7 @@ But the last expression is just a sum of matrix products:
 
 ```math
 \begin{equation}\label{diffprod}
-dC = dA~ B + A ~dB
+\dot{\Omega} = \dot{A} B + A \dot{B}
 \end{equation}
 ```
 
@@ -98,26 +102,26 @@ function frule(
     (_, ΔA, ΔB),
     ::typeof(*), A::Matrix{<:RealOrComplex}, B::Matrix{<:RealOrComplex},
 )
-    C = A * B
-    ∂C = ΔA * B + A * ΔB
-    return (C, ∂C)
+    Ω = A * B
+    ∂Ω = ΔA * B + A * ΔB
+    return (Ω, ∂Ω)
 end
 ```
 
 ### Matrix inversion
 
 ```julia
-C = inv(A)
+Ω = inv(A)
 ```
 
-$$C = A^{-1}$$
+$$\Omega = A^{-1}$$
 
 It's easiest to derive this rule from either constraint:
 
 ```math
 \begin{align*}
-C A &= A^{-1} ~A = I\\
-A C &= A~ A^{-1} = I,
+\Omega A &= A^{-1} ~A = I\\
+A \Omega &= A~ A^{-1} = I,
 \end{align*}
 ```
 
@@ -125,16 +129,16 @@ where $I$ is the identity matrix.
 
 We use the matrix product rule to differentiate the first constraint:
 
-$$dC~ A + C ~dA = 0$$
+$$\dot{\Omega} A + \Omega \dot{A} = 0$$
 
-We right-multiply both sides by $A^{-1}$ to isolate $dC$:
+We right-multiply both sides by $A^{-1}$ to isolate $\dot{\Omega}$:
 
 ```math
 \begin{align}
-0  &= dC~ A~ A^{-1} + C ~dA~ A^{-1} && \nonumber\\
-   &= dC~ I + C ~dA~ A^{-1} && \text{apply } A~ A^{-1} = I \nonumber\\
-   &= dC + C ~dA~ C && \text{substitute } A^{-1} = C \nonumber\\
-dC &= -C ~dA~ C && \text{solve for } dC \label{invdiff}
+0  &= \dot{\Omega}~ A~ A^{-1} + \Omega ~\dot{A}~ A^{-1} && \nonumber\\
+   &= \dot{\Omega}~ I + \Omega ~\dot{A}~ A^{-1} && \text{apply } A~ A^{-1} = I \nonumber\\
+   &= \dot{\Omega} + \Omega ~\dot{A}~ \Omega && \text{substitute } A^{-1} = \Omega \nonumber\\
+\dot{\Omega} &= -\Omega ~\dot{A}~ \Omega && \text{solve for } \dot{\Omega} \label{invdiff}
 \end{align}
 ```
 
@@ -142,9 +146,9 @@ We write the `frule` as
 
 ```julia
 function frule((_, ΔA), ::typeof(inv), A::Matrix{<:RealOrComplex})
-    C = inv(A)
-    ∂C = -C * ΔA * C
-    return (C, ∂C)
+    Ω = inv(A)
+    ∂Ω = -Ω * ΔA * Ω
+    return (Ω, ∂Ω)
 end
 ```
 
@@ -154,12 +158,12 @@ These identities are particularly useful:
 
 ```math
 \begin{align*}
-d\left( \operatorname{real}(A) \right) &= \operatorname{real}(dA)\\
-d\left( \operatorname{conj}(A) \right) &= \operatorname{conj}(dA)\\
-d\left( A^T \right) &= dA^T\\
-d\left( A^H \right) &= dA^H\\
-d\left( \sum_{j}  A_{i \ldots j \ldots k} \right) &=
-        \sum_{j} dA_{i \ldots j \ldots k},
+\frac{\partial}{\partial t} \left( \operatorname{real}(A) \right) &= \operatorname{real}(\dot{A})\\
+\frac{\partial}{\partial t} \left( \operatorname{conj}(A) \right) &= \operatorname{conj}(\dot{A})\\
+\frac{\partial}{\partial t} \left( A^T \right) &= \dot{A}^T\\
+\frac{\partial}{\partial t} \left( A^H \right) &= \dot{A}^H\\
+\frac{\partial}{\partial t} \left( \sum_{j}  A_{i \ldots j \ldots k} \right) &=
+        \sum_{j} \dot{A}_{i \ldots j \ldots k},
 \end{align*}
 ```
 
