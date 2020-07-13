@@ -9,7 +9,7 @@ Throughout this tutorial, we will ust the following type alias
 const RealOrComplex = Union{Real,Complex}
 ```
 
-## Deriving forward-mode rules
+## Forward-mode rules
 
 Given a function
 
@@ -162,7 +162,7 @@ d\left( \sum_{j}  A_{i \ldots j \ldots k} \right) &=
 
 where $\cdot^H$ is the conjugate transpose (the `adjoint` function).
 
-## Deriving reverse-mode rules
+## Reverse-mode rules
 
 Reverse-mode rules are a little more involved.
 For a real scalar function $s = g(C)$, the differential of $s$ is the real part of the inner product (`LinearAlgebra.dot`) of the adjoint of $C$ (i.e. $\overline{C}$), and the differential of $C$:
