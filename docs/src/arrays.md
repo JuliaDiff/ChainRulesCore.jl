@@ -2,8 +2,9 @@
 
 One of the goals of the ChainRules interface is to make it easy to define your own rules for a function.
 This tutorial attempts to demystify deriving and implementing custom rules for arrays with real and complex entries, with examples.
-The approach we use is similar to the one Giles's approach, which is succinctly explained and demonstrated in [^Giles2008] and its extended work [^Giles2008ext], but we generalize it to support functions of multidimensional arrays with both real and complex entries.
-Throughout this tutorial, we will ust the following type alias
+The approach we use is similar to the one succinctly explained and demonstrated in [^Giles2008] and its extended work [^Giles2008ext], but we generalize it to support functions of multidimensional arrays with both real and complex entries.
+
+Throughout this tutorial, we will use the following type alias:
 
 ```julia
 const RealOrComplex = Union{Real,Complex}
@@ -24,12 +25,12 @@ or in math notation
 $$f: (\ldots, X_m, \ldots) \mapsto \Omega,$$
 
 where the components of $X_m$ are written as $(X_m)_{i,\ldots,j}$.
-These variables are intermediates in a larger program (function) that, by considering only a single real input $t$ and real output $s$ can always be written as
+The variables $X_m$ and $\Omega$ are intermediates in a larger program (function) that, by considering only a single real input $t$ and real output $s$ can always be written as
 
 $$t \mapsto (\ldots, X_m, \ldots) \mapsto \Omega \mapsto s,$$
 
 where $t$ and $s$ are real numbers.
-If we know the partial derivatives of $X_m$ with respect to $t$, $\frac{dX_m}{dt} = \dot{X}_m$, the chain rules gives the pushforward of $f$ as:
+If we know the partial derivatives of $X_m$ with respect to $t$, $\frac{dX_m}{dt} = \dot{X}_m$, the chain rule gives the pushforward of $f$ as:
 
 ```math
 \begin{equation} \label{pf}
@@ -41,7 +42,7 @@ If we know the partial derivatives of $X_m$ with respect to $t$, $\frac{dX_m}{dt
 ```
 
 That's ugly, but in practice we can often write it more simply by using forward mode rules for simpler functions, as we'll see below.
-The main realization is that the forward-mode rules for arrays follow directly from the usual scalar chain rules.
+The forward-mode rules for arrays follow directly from the usual scalar chain rules.
 
 ### Matrix addition
 
@@ -55,7 +56,7 @@ $$\Omega = A + B$$
 
 $$\dot{\Omega} = \dot{A} + \dot{B}$$
 
-We can implement the `frule` in ChainRules` notation:
+We can implement the `frule` in ChainRules's notation:
 
 ```julia
 function frule(
@@ -122,7 +123,7 @@ end
 
 $$\Omega = A^{-1}$$
 
-It's easiest to derive this rule from either constraint:
+It's easiest to derive this rule from either of the two constraints:
 
 ```math
 \begin{align*}
@@ -143,7 +144,7 @@ Then, right-multiply both sides by $A^{-1}$ to isolate $\dot{\Omega}$:
 \begin{align}
 0  &= \dot{\Omega}~ A~ A^{-1} + \Omega ~\dot{A}~ A^{-1} \nonumber\\
    &= \dot{\Omega}~ I + \Omega ~\dot{A}~ A^{-1}
-       && \text{apply } A~ A^{-1} = I \nonumber\\
+       && \text{use } A~ A^{-1} = I \nonumber\\
    &= \dot{\Omega} + \Omega \dot{A} \Omega
        && \text{substitute } A^{-1} = \Omega \nonumber\\
 \dot{\Omega}
@@ -177,7 +178,7 @@ These identities are particularly useful:
 \end{align*}
 ```
 
-where $\cdot^H$ is the conjugate transpose (the `adjoint` function).
+where $\cdot^H = \operatorname{conj}(\cdot^T)$ is the conjugate transpose (the `adjoint` function).
 
 ## Reverse-mode rules
 
@@ -353,7 +354,7 @@ The expression is in the desired form to solve for the adjoints:
 \end{align*}
 ```
 
-Using ChainRules' notation, we would implement the `rrule` as
+Using ChainRules's notation, we would implement the `rrule` as
 
 ```julia
 function rrule(::typeof(*), A::Matrix{<:RealOrComplex}, B::Matrix{<:RealOrComplex})
@@ -405,7 +406,7 @@ we can now solve for $\overline{A}$:
              = -\Omega^H \overline{\Omega} \Omega^H
 ```
 
-We can implement the resulting `rrule` as:
+We can implement the resulting `rrule` as
 
 ```julia
 function rrule(::typeof(inv), A::Matrix{<:RealOrComplex})
@@ -420,9 +421,9 @@ end
 
 ## A multidimensional array example
 
-We wrote the approach for deriving pushforwards and pullbacks in terms of arrays of arbitrary dimensions, so let's cover an example.
-For arrays, it's often easier to work in component form.
-Consider the following function
+We presented the approach for deriving pushforwards and pullbacks in terms of arrays of arbitrary dimensions, so let's cover an example.
+For multidimensional arrays, it's often easier to work in component form.
+Consider the following function:
 
 ```julia
 Ω = sum(abs2, X::Array{<:RealOrComplex,3}; dims=2)::Array{<:Real,3}
@@ -453,7 +454,7 @@ The pushforward from \eqref{pf} is
        \right) \nonumber\\
     &= \sum_j 2 \operatorname{real}\left(
            \operatorname{conj} \left( X_{ijk} \right) \dot{X}_{ijk}
-       \right) \label{sumabspf}
+       \right), \label{sumabspf}
 \end{align}
 ```
 
@@ -466,7 +467,7 @@ where in the last step we have used the fact that for all real $a$ and $b$,
     = 2 \operatorname{real} (a + i b).
 ```
 
-Because none of this derivation really depended on the index (or indices), we implement `frule` generically as
+Because none of this derivation depended on the index (or indices), we implement `frule` generically as
 
 ```julia
 function frule(
@@ -541,7 +542,7 @@ end
 
 ## More examples
 
-For more instructive examples of matrix and vector rules, see [^Giles2008ext] (real vector and matrix rules) and the [LinearAlgebra rules in ChainRules](https://github.com/JuliaDiff/ChainRules.jl/tree/master/src/rulesets/LinearAlgebra).
+For more instructive examples of array rules, see [^Giles2008ext] (real vector and matrix rules) and the [LinearAlgebra rules in ChainRules](https://github.com/JuliaDiff/ChainRules.jl/tree/master/src/rulesets/LinearAlgebra).
 
 ## References
 
