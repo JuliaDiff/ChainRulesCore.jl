@@ -256,7 +256,7 @@ Note that the final expressions for the adjoints will not contain any $\dot{X}_m
 
 !!! info
     Why do we conjugate, and why do we only use the real part of the dot product in \eqref{pbident}?
-    Recall from [How do chain rules work for complex functions?](@ref) that we treat a complex number as a pair of real numbers.
+    Recall from [Complex Numbers](complex.md) that we treat a complex number as a pair of real numbers.
     These identities are a direct consequence of this convention.
     Consider $\frac{ds}{dt}$ for a scalar function $f: (x + i y) \mapsto (u + i v)$:
     ```math
