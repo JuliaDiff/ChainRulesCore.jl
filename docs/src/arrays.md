@@ -23,15 +23,22 @@ or in math notation
 
 $$f: (\ldots, X_m, \ldots) \mapsto \Omega,$$
 
-where the components of the arrays are written as $(X_m)_{i,\ldots,j}$ and $\Omega_{k,\ldots,l}$.
+where the components of $X_m$ are written as $(X_m)_{i,\ldots,j}$.
 These variables are intermediates in a larger program (function) that, by considering only a single real input $t$ and real output $s$ can always be written as
 
 $$t \mapsto (\ldots, X_m, \ldots) \mapsto \Omega \mapsto s,$$
 
 where $t$ and $s$ are real numbers.
-If we know the partial derivatives of $X_m$ with respect to $t$, $\frac{\partial X_m}{\partial t} = \dot{X}_m$, the chain rules gives the pushforward of $f$ as:
+If we know the partial derivatives of $X_m$ with respect to $t$, $\frac{dX_m}{dt} = \dot{X}_m$, the chain rules gives the pushforward of $f$ as:
 
-$$\dot{\Omega} = f_*(\ldots, \dot{X}_m, \ldots) =  \sum_m \sum_{i, \ldots, j} \frac{\partial \Omega}{\partial (X_m)_{i,\ldots,j}} (\dot{X}_m)_{i,\ldots,j}$$
+```math
+\begin{equation} \label{pf}
+\dot{\Omega}
+    = f_*(\ldots, \dot{X}_m, \ldots)
+    = \sum_m \sum_{i, \ldots, j}
+        \frac{\partial \Omega}{ \partial (X_m)_{i,\ldots,j} } (\dot{X}_m)_{i,\ldots,j}
+\end{equation}
+```
 
 That's ugly, but in practice we can often write it more simply by using forward mode rules for simpler functions, as we'll see below.
 The main realization is that the forward-mode rules for arrays follow directly from the usual scalar chain rules.
@@ -73,18 +80,20 @@ First we write in component form:
 
 $$\Omega_{ij} = \sum_k A_{ik} B_{kj}$$
 
-Then we use the product rule to get the scalar differential identity:
+Then we use the product rule to get the pushforward for each scalar entry:
 
 ```math
 \begin{align*}
-\dot{\Omega}_{ij} &= \sum_k \left( \dot{A}_{ik} B_{kj} + A_{ik} \dot{B}_{kj} \right)
-            && \text{apply scalar product rule } \frac{d}{dt}(x y) = \frac{dx}{dt} y + x \frac{dy}{dt} \\
-        &= \sum_k \dot{A}_{ik} B_{kj} + \sum_k A_{ik} \dot{B}_{kj}
-            && \text{split sum}
+\dot{\Omega}_{ij}
+    &= \sum_k \left( \dot{A}_{ik} B_{kj} + A_{ik} \dot{B}_{kj} \right)
+        && \text{apply scalar product rule }
+            \frac{d}{dt}(x y) = \frac{dx}{dt} y + x \frac{dy}{dt} \\
+    &= \sum_k \dot{A}_{ik} B_{kj} + \sum_k A_{ik} \dot{B}_{kj}
+        && \text{split sum}
 \end{align*}
 ```
 
-But the last expression is just a sum of matrix products:
+But the last expression is just the component form of a sum of matrix products:
 
 ```math
 \begin{equation}\label{diffprod}
@@ -92,7 +101,7 @@ But the last expression is just a sum of matrix products:
 \end{equation}
 ```
 
-This is the matrix product rule, whose `frule` is
+This is the matrix product rule, and we write its `frule` as
 
 ```julia
 function frule(
@@ -128,14 +137,18 @@ We use the matrix product rule to differentiate the first constraint:
 
 $$\dot{\Omega} A + \Omega \dot{A} = 0$$
 
-We right-multiply both sides by $A^{-1}$ to isolate $\dot{\Omega}$:
+Then, right-multiply both sides by $A^{-1}$ to isolate $\dot{\Omega}$:
 
 ```math
 \begin{align}
-0  &= \dot{\Omega}~ A~ A^{-1} + \Omega ~\dot{A}~ A^{-1} && \nonumber\\
-   &= \dot{\Omega}~ I + \Omega ~\dot{A}~ A^{-1} && \text{apply } A~ A^{-1} = I \nonumber\\
-   &= \dot{\Omega} + \Omega ~\dot{A}~ \Omega && \text{substitute } A^{-1} = \Omega \nonumber\\
-\dot{\Omega} &= -\Omega ~\dot{A}~ \Omega && \text{solve for } \dot{\Omega} \label{invdiff}
+0  &= \dot{\Omega}~ A~ A^{-1} + \Omega ~\dot{A}~ A^{-1} \nonumber\\
+   &= \dot{\Omega}~ I + \Omega ~\dot{A}~ A^{-1}
+       && \text{apply } A~ A^{-1} = I \nonumber\\
+   &= \dot{\Omega} + \Omega \dot{A} \Omega
+       && \text{substitute } A^{-1} = \Omega \nonumber\\
+\dot{\Omega}
+   &= -\Omega \dot{A} \Omega
+       && \text{solve for } \dot{\Omega} \label{invdiff}
 \end{align}
 ```
 
@@ -155,12 +168,12 @@ These identities are particularly useful:
 
 ```math
 \begin{align*}
-\frac{\partial}{\partial t} \left( \operatorname{real}(A) \right) &= \operatorname{real}(\dot{A})\\
-\frac{\partial}{\partial t} \left( \operatorname{conj}(A) \right) &= \operatorname{conj}(\dot{A})\\
-\frac{\partial}{\partial t} \left( A^T \right) &= \dot{A}^T\\
-\frac{\partial}{\partial t} \left( A^H \right) &= \dot{A}^H\\
-\frac{\partial}{\partial t} \left( \sum_{j}  A_{i \ldots j \ldots k} \right) &=
-        \sum_{j} \dot{A}_{i \ldots j \ldots k},
+\frac{d}{dt} \left( \operatorname{real}(A) \right) &= \operatorname{real}(\dot{A})\\
+\frac{d}{dt} \left( \operatorname{conj}(A) \right) &= \operatorname{conj}(\dot{A})\\
+\frac{d}{dt} \left( A^T \right) &= \dot{A}^T\\
+\frac{d}{dt} \left( A^H \right) &= \dot{A}^H\\
+\frac{d}{dt} \left( \sum_{j}  A_{i \ldots j \ldots k} \right) &=
+    \sum_{j} \dot{A}_{i \ldots j \ldots k},
 \end{align*}
 ```
 
