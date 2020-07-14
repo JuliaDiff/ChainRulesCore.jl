@@ -1,11 +1,8 @@
 # Deriving Array Rules
 
 One of the goals of the ChainRules interface is to make it easy to define your own rules for a function.
-This tutorial attempts to demystify deriving and implementing custom rules for a large class of functions, with examples.
-
-When the inputs and outputs are arrays and/or scalars, a modified version of Giles's method is a quick way of deriving [`frule`](@ref)s and [`rrule`](@ref)s.
-Giles's method is succinctly explained in [^Giles2008] and its extended work [^Giles2008ext], but we will generalize it to handle arrays of arbitrary size with both real and complex entries.
-
+This tutorial attempts to demystify deriving and implementing custom rules for arrays with real and complex entries, with examples.
+The approach we use is similar to the one Giles's approach, which is succinctly explained and demonstrated in [^Giles2008] and its extended work [^Giles2008ext], but we generalize it to support functions of multidimensional arrays with both real and complex entries.
 Throughout this tutorial, we will ust the following type alias
 
 ```julia
