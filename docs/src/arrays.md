@@ -44,7 +44,7 @@ If we know the partial derivatives of $X_m$ with respect to $t$, $\frac{dX_m}{dt
 That's ugly, but in practice we can often write it more simply by using forward mode rules for simpler functions, as we'll see below.
 The forward-mode rules for arrays follow directly from the usual scalar chain rules.
 
-### Matrix addition
+### Array addition
 
 ```julia
 Ω = A + B
