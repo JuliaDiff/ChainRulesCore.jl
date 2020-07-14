@@ -181,106 +181,161 @@ where $\cdot^H$ is the conjugate transpose (the `adjoint` function).
 
 ## Reverse-mode rules
 
-Reverse-mode rules are a little more involved.
-For a real scalar function $s = g(C)$, the differential of $s$ is the real part of the inner product (`LinearAlgebra.dot`) of the adjoint of $C$ (i.e. $\overline{C}$), and the differential of $C$:
+### Approach
 
-```math
-ds = \operatorname{real}\left( \langle \overline{C}, dC \rangle \right)
-   = \operatorname{real}\left(
-         \sum_{i,\dots,j} \operatorname{conj}(\overline{C}_{i,\dots,j}) ~dC_{i,\dots,j}
-     \right),
-```
+Reverse-mode rules are a little less intuitive, but we can re-use our pushforwards to simplify their derivation.
+Recall our program:
 
-where $\operatorname{conj}(\cdot)$ is the complex conjugate (`conj`), and $\operatorname{real}(\cdot)$ is the real part of its argument (`real`).
+$$t \mapsto (\ldots, X_m, \ldots) \mapsto \Omega \mapsto s,$$
 
-For matrices and vectors, we can write this as
-
-$$ds = \operatorname{real}(\operatorname{tr}(\overline{C}^H dC)),$$
-
-where $\operatorname{tr}$ is the matrix trace (`LinearAlgebra.tr`) function.
-
-We can write the corresponding expression for $dA$ and $dB$ as
+At any step in the program, if we have intermediates $X_m$, we can write down the derivative $\frac{ds}{dt}$ in terms of the tangents $\dot{X}_m = \frac{dX_m}{dt}$ and adjoints $\overline{X}_m = \frac{\partial s}{\partial X_m}$
 
 ```math
 \begin{align*}
-ds &= \operatorname{real}\left( \operatorname{tr}\left( \overline{C}^H dC \right) \right) &&\\
-   &= \operatorname{real}\left( \operatorname{tr}\left(
-          \overline{C}^H \frac{\partial f}{\partial A} dA +
-          \overline{C}^H \frac{\partial f}{\partial B} dB
-      \right) \right) && \text{substitute } dC \text{ from } \eqref{cdiff}\\
-   &= \operatorname{real}\left( \operatorname{tr}\left(
-          \overline{C}^H \frac{\partial f}{\partial A} dA
-      \right) \right) +
-      \operatorname{real}\left( \operatorname{tr}\left(
-          \overline{C}^H \frac{\partial f}{\partial B} dB
-      \right) \right) && \text{expand using } \eqref{trexpand}
+\frac{ds}{dt}
+    &= \sum_m \operatorname{real}\left( \sum_{i,\ldots,j}
+           \operatorname{conj}\left( \frac{\partial s}{\partial (X_m)_{i,\ldots,j}} \right)
+           \frac{d (X_m)_{i,\ldots,j}}{dt}
+       \right)\\
+    &= \sum_m \operatorname{real}\left( \sum_{i,\ldots,j}
+           \operatorname{conj} \left( (\overline{X}_m)_{i,\ldots,j} \right)
+           (\dot{X}_m)_{i,\ldots,j}
+       \right)\\
+    &= \sum_m \operatorname{real}\left( \operatorname{dot}\left(
+           \overline{X}_m, \dot{X}_m
+       \right) \right),
 \end{align*}
 ```
 
-By applying the same definition of $ds$ to the intermediates $A$ and $B$, we get
+where $\operatorname{conj}(\cdot)$ is the complex conjugate (`conj`), $\operatorname{real}(\cdot)$ is the real part of its argument (`real`), and $\operatorname{dot}(\cdot, \cdot)$ is the inner product (`LinearAlgebra.dot`).
+Because this equation follows at any step of the program, we can equivalently write 
 
 ```math
-ds = \operatorname{real}\left( \operatorname{tr}(\overline{A}^H  dA) \right) +
-     \operatorname{real}\left( \operatorname{tr}(\overline{B}^H ~dB) \right)
+\frac{ds}{dt} = \operatorname{real}\left( \operatorname{dot}\left(
+                    \overline{\Omega}, \dot{\Omega}
+                \right) \right),
 ```
 
-Combining these two identities and solving for $\overline{A}$ and $\overline{B}$ gives us
+which gives the identity
 
 ```math
-\begin{align*}
-    \overline{A} &= \left( \overline{A}^H \right)^H
-                  = \left( \overline{C}^H \frac{\partial f}{\partial A} \right)^H
-                  = \left( \frac{\partial f}{\partial A} \right)^H \overline{C}\\
-    \overline{B} &= \left( \frac{\partial f}{\partial B} \right)^H \overline{C}
-\end{align*}
+\begin{equation} \label{pbident}
+\operatorname{real}\left( \operatorname{dot}\left(
+    \overline{\Omega}, \dot{\Omega}
+\right) \right) = 
+\sum_m \operatorname{real}\left( \operatorname{dot}\left(
+    \overline{X}_m, \dot{X}_m
+\right) \right).
+\end{equation}
 ```
 
-Giles's method for deriving pullback functions is to first derive the differential identity (i.e. pushforward) using the above approach, then pre-multiply by $\overline{C}^H$, and take the real trace.
-Subsequently, manipulate into this form and solve for the adjoint derivatives of the inputs.
-Several properties of the trace function make this easier:
+For matrices and vectors, $\operatorname{dot}(A, B) = \operatorname{tr}(A^H B)$, and the identity simplifies to:
+
+```math
+\begin{equation} \label{pbidentmat}
+\operatorname{real}\left( \operatorname{tr}\left(
+    \overline{\Omega}^H \dot{\Omega}
+\right) \right) =
+\sum_m \operatorname{real} \left( \operatorname{tr} \left(
+    \overline{X}_m^H \dot{X}_m
+\right) \right),
+\end{equation}
+```
+
+where $\operatorname{tr}(\cdot)$ is the matrix trace (`LinearAlgebra.tr`) function.
+
+Our approach for deriving the adjoints $\overline{X}_m$ is then:
+
+1. Derive the pushforward using \eqref{pf}.
+2. Substitute this expression into the left-hand side of \eqref{pbident}.
+3. Manipulate until it looks like the right-hand side of \eqref{pbident}.
+4. Solve for each $\overline{X}_m$.
+
+Note that the final expressions for the adjoints will not contain any $\dot{X}_m$ terms.
+
+!!! info
+    Why do we conjugate, and why do we only use the real part of the dot product in \eqref{pbident}?
+    Recall from [How do chain rules work for complex functions?](@ref) that we treat a complex number as a pair of real numbers.
+    These identities are a direct consequence of this convention.
+    Consider $\frac{ds}{dt}$ for a scalar function $f: (x + i y) \mapsto (u + i v)$:
+    ```math
+    \begin{align*}
+    \frac{ds}{dt}
+        &= \operatorname{real}\left( \operatorname{dot}\left(
+               \overline{x} + i \overline{y}, \dot{x} + i \dot{y}
+           \right) \right) \\
+        &= \operatorname{real}\left(
+               \operatorname{conj} \left( \overline{x} + i \overline{y} \right)
+               \left( \dot{x} + i \dot{y} \right)
+           \right) \\
+        &= \operatorname{real}\left(
+               \left( \overline{x} - i \overline{y} \right)
+               \left( \dot{x} + i \dot{y} \right)
+           \right) \\
+        &= \operatorname{real}\left(
+               \left( \overline{x} \dot{x} + \overline{y} \dot{y} \right) +
+               i \left( \overline{x} \dot{y} - \overline{y} \dot{x} \right)
+           \right)\\
+        &= \overline{x} \dot{x} + \overline{y} \dot{y}\\
+    \end{align*}
+    ```
+    which is exactly what the identity would produce if we had written the function as $f: (x, y) \mapsto (u, v)$.
+
+For matrices and vectors, several properties of the trace function come in handy:
 
 ```math
 \begin{align}
-    \operatorname{tr}(A+B) &= \operatorname{tr}(A) + \operatorname{tr}(B) \label{trexpand}\\
-    \operatorname{tr}(A^T) &= \operatorname{tr}(A) \nonumber\\
-    \operatorname{tr}(A^H) &= \operatorname{conj}(\operatorname{tr}(A)) \nonumber\\
-    \operatorname{tr}(AB) &= \operatorname{tr}(BA) \label{trperm}
+\operatorname{tr}(A+B) &= \operatorname{tr}(A) + \operatorname{tr}(B) \label{trexpand}\\
+\operatorname{tr}(A^T) &= \operatorname{tr}(A) \nonumber\\
+\operatorname{tr}(A^H) &= \operatorname{conj}(\operatorname{tr}(A)) \nonumber\\
+\operatorname{tr}(AB) &= \operatorname{tr}(BA) \label{trperm}
 \end{align}
 ```
 
-!!! note
-    Our method is identical to Giles's method, except we have replace the transpose with the conjugate transpose, and we have added the constraint that the inner product be real.
-    This produces the correct pullbacks for arrays with complex entries.
-
-Here are a few examples.
+Now let's derive a few pullbacks using this approach.
 
 ### Matrix multiplication
 
 ```julia
-C = A * B
+Ω = A * B
 ```
 
-We above derived in \eqref{diffprod} the differential identity
+We above derived in \eqref{diffprod} the pushforward
 
-$$dC = dA~ B + A ~dB$$
+$$\dot{\Omega} = \dot{A} B + A \dot{B}$$
 
-We now multiply by $\overline{C}^H$ and take the real trace:
+Using \eqref{pbidentmat}, we now multiply by $\overline{\Omega}^H$ and take the real trace:
 
 ```math
 \begin{align*}
-ds &= \operatorname{real}\left( \operatorname{tr}(\overline{C}^H ~dC) \right) &&\\
-   &= \operatorname{real}\left( \operatorname{tr}(\overline{C}^H ~\left(
-          dA~ B + A ~dB
-      \right)) \right) &&
-        \text{substitute } dC \text{ from } \eqref{diffprod}\\
-   &= \operatorname{real}\left( \operatorname{tr}(\overline{C}^H ~dA~ B) \right) +
-      \operatorname{real}\left( \operatorname{tr}(\overline{C}^H  A ~dB) \right) &&
-        \text{expand using } \eqref{trexpand} \\
-   &= \operatorname{real}\left( \operatorname{tr}(B \overline{C}^H ~dA) \right) +
-      \operatorname{real}\left( \operatorname{tr}(\overline{C}^H A ~dB) \right) &&
-        \text{rearrange the left side using } \eqref{trperm}\\
-   &= \operatorname{real}\left( \operatorname{tr}(\overline{A}^H  dA) \right) +
-      \operatorname{real}\left( \operatorname{tr}(\overline{B}^H ~dB) \right) && \\
+\operatorname{real}\left( \operatorname{tr} \left(
+        \overline{\Omega}^H \dot{\Omega}
+\right) \right)
+    &= \operatorname{real}\left( \operatorname{tr} \left( \overline{\Omega}^H ~\left(
+           \dot{A} B + A \dot{B}
+       \right) \right) \right)
+           && \text{substitute } \dot{\Omega} \text{ from } \eqref{diffprod}\\
+    &= \operatorname{real}\left( \operatorname{tr} \left(
+           \overline{\Omega}^H \dot{A} B
+       \right) \right) +
+       \operatorname{real}\left( \operatorname{tr} \left(
+           \overline{\Omega}^H  A \dot{B}
+       \right) \right)
+           && \text{expand using } \eqref{trexpand} \\
+    &= \operatorname{real}\left( \operatorname{tr} \left(
+           B \overline{C}^H \dot{A}
+       \right) \right) +
+       \operatorname{real}\left( \operatorname{tr} \left(
+           \overline{\Omega}^H A \dot{B}
+       \right) \right)
+           && \text{rearrange the left term using } \eqref{trperm}\\
+    &= \operatorname{real}\left( \operatorname{tr} \left(
+           \overline{A}^H  \dot{A}
+       \right) \right) +
+       \operatorname{real}\left( \operatorname{tr} \left(
+           \overline{B}^H \dot{B}
+       \right) \right)
+           && \text{right-hand side of } \eqref{pbidentmat}
 \end{align*}
 ```
 
@@ -289,10 +344,12 @@ The expression is in the desired form to solve for the adjoints:
 
 ```math
 \begin{align*}
-    \overline{A} &= \left( \overline{A}^H \right)^H
-                  = \left( B \overline{C}^H \right)^H = \overline{C} B^H\\
-    \overline{B} &= \left( \overline{B}^H \right)^H
-                  = \left( \overline{C}^H A \right)^H = A^H \overline{C}
+\overline{A} &= \left( \overline{A}^H \right)^H
+                  = \left( B \overline{\Omega}^H \right)^H
+                  = \overline{\Omega} B^H\\
+\overline{B} &= \left( \overline{B}^H \right)^H
+                  = \left( \overline{\Omega}^H A \right)^H
+                  = A^H \overline{\Omega}
 \end{align*}
 ```
 
@@ -300,9 +357,9 @@ Using ChainRules' notation, we would implement the `rrule` as
 
 ```julia
 function rrule(::typeof(*), A::Matrix{<:RealOrComplex}, B::Matrix{<:RealOrComplex})
-    function times_pullback(ΔC)
-        ∂A = @thunk(ΔC * B')
-        ∂B = @thunk(A' * ΔC)
+    function times_pullback(ΔΩ)
+        ∂A = @thunk(ΔΩ * B')
+        ∂B = @thunk(A' * ΔΩ)
         return (NO_FIELDS, ∂A, ∂B)
     end
     return A * B, times_pullback
@@ -312,138 +369,179 @@ end
 ### Matrix inversion
 
 ```julia
-C = inv(A)
+Ω = inv(A)
 ```
 
-In \eqref{invdiff}, we derived the differential identity as
+In \eqref{invdiff}, we derived the pushforward as
 
-$$dC = -C ~dA~ C$$
+$$\dot{\Omega} = -\Omega \dot{A} \Omega$$
 
-Multiplying by $\overline{C}^H$ and taking the real trace,
+Using \eqref{pbidentmat},
 
 ```math
-    ds = \operatorname{real}\left( \operatorname{tr}(\overline{C}^H ~dC) \right)
-       = \operatorname{real}\left( \operatorname{tr}(-\overline{C}^H C ~dA~ C) \right)
+\begin{align*}
+\operatorname{real}\left( \operatorname{tr} \left(
+    \overline{\Omega}^H \dot{\Omega}
+\right) \right)
+    &= \operatorname{real}\left( \operatorname{tr} \left(
+           -\overline{\Omega}^H \Omega \dot{A} \Omega
+       \right) \right)
+           && \text{substitute } \eqref{invdiff}\\
+    &= \operatorname{real}\left( \operatorname{tr} \left(
+           -\Omega \overline{\Omega}^H \Omega \dot{A}
+       \right) \right)
+           && \text{rearrange using } \eqref{trperm}\\
+    &= \operatorname{real}\left( \operatorname{tr} \left(
+           \overline{A}^H  \dot{A}
+       \right) \right)
+           && \text{right-hand side of } \eqref{pbidentmat}
+\end{align*}
 ```
-
-Applying the trace identity \eqref{trperm} to manipulate into the desired form,
-
-$$ds = \operatorname{real}(\operatorname{tr}(-C \overline{C}^H C ~dA) ),$$
 
 we can now solve for $\overline{A}$:
 
-$$\overline{A} = (-C \overline{C}^H C)^H = -C^H \overline{C} C^H$$
+```math
+\overline{A} = \left( -\Omega \overline{\Omega}^H \Omega \right)^H
+             = -\Omega^H \overline{\Omega} \Omega^H
+```
 
 We can implement the resulting `rrule` as:
 
 ```julia
 function rrule(::typeof(inv), A::Matrix{<:RealOrComplex})
-    C = inv(A)
-    function inv_pullback(ΔC)
-        ∂A = -C' * ΔC * C'
+    Ω = inv(A)
+    function inv_pullback(ΔΩ)
+        ∂A = -Ω' * ΔΩ * Ω'
         return (NO_FIELDS, ∂A)
     end
-    return C, inv_pullback
+    return Ω, inv_pullback
+end
+```
+
+## A multidimensional array example
+
+We wrote the approach for deriving pushforwards and pullbacks in terms of arrays of arbitrary dimensions, so let's cover an example.
+For arrays, it's often easier to work in component form.
+Consider the following function
+
+```julia
+Ω = sum(abs2, X::Array{<:RealOrComplex,3}; dims=2)::Array{<:Real,3}
+```
+
+which we write as
+
+```math
+\Omega_{i1k} = \sum_{j} |X_{ijk}|^2
+             = \sum_{j} \operatorname{real} \left(
+                  \operatorname{conj} \left( X_{ijk} \right) X_{ijk}
+               \right)
+```
+
+The pushforward from \eqref{pf} is
+
+```math
+\begin{align}
+\dot{\Omega}_{i1k}
+    &= \sum_j \operatorname{real}\left(
+           \operatorname{conj} \left( \dot{X}_{ijk} \right) X_{ijk} +
+           \operatorname{conj} \left( X_{ijk} \right) \dot{X}_{ijk} \right) \nonumber\\
+    &= \sum_j \operatorname{real}\left(
+            \operatorname{conj}\left(
+                \operatorname{conj} \left( X_{ijk} \right) \dot{X}_{ijk}
+            \right) +
+            \operatorname{conj}(X_{ijk}) \dot{X}_{ijk}
+       \right) \nonumber\\
+    &= \sum_j 2 \operatorname{real}\left(
+           \operatorname{conj} \left( X_{ijk} \right) \dot{X}_{ijk}
+       \right) \label{sumabspf}
+\end{align}
+```
+
+where in the last step we have used the fact that for all real $a$ and $b$,
+
+```math
+(a + i b) + \operatorname{conj}(a + i b)
+    = (a + i b) + (a - i b)
+    = 2 a
+    = 2 \operatorname{real} (a + i b).
+```
+
+Because none of this derivation really depended on the index (or indices), we implement `frule` generically as
+
+```julia
+function frule(
+    (_, _, ΔX),
+    ::typeof(sum), ::typeof(abs2), X::Array{<:RealOrComplex};
+    dims = :,
+)
+    Ω = sum(abs2, X; dims = dims)
+    ∂Ω = sum(2 .* real.(conj.(X) .* ΔX); dims = dims)
+    return (Ω, ∂Ω)
+end
+```
+
+We can now derive the reverse-mode rule.
+The array form of \eqref{pbident} is
+
+```math
+\begin{align*}
+\operatorname{real}\left( \operatorname{dot}\left(
+    \overline{\Omega}, \dot{\Omega}
+\right) \right)
+    &= \operatorname{real} \left( \sum_{ik}
+           \operatorname{conj} \left( \overline{\Omega}_{i1k} \right) \dot{\Omega}_{i1k}
+       \right)
+           && \text{expand left-hand side of} \eqref{pbident}\\
+    &= \operatorname{real} \left(\sum_{ijk}
+           \operatorname{conj} \left( \overline{\Omega}_{i1k} \right)
+           2 \operatorname{real}\left(
+               \operatorname{conj} \left( X_{ijk} \right) \dot{X}_{ijk}
+           \right)
+       \right)
+           && \text{substitute } \eqref{sumabspf}\\
+    &= \operatorname{real} \left( \sum_{ijk}
+           \left(
+               2 \operatorname{real} \left( \overline{\Omega}_{i1k} \right)
+               \operatorname{conj} \left( X_{ijk} \right)
+           \right) \dot{X}_{ijk}
+       \right)
+           && \text{bring } \dot{X}_{ijk} \text{ outside of } \operatorname{real}\\
+    &= \operatorname{real} \left( \sum_{ijk}
+           \operatorname{conj} \left( \overline{X}_{ijk} \right) \dot{X}_{i1k}
+       \right)
+           && \text{expand right-hand side of} \eqref{pbident}
+\end{align*}
+```
+
+We now solve for $\overline{X}$:
+
+```math
+\begin{align*}
+\overline{X}_{ijk}
+    &= \operatorname{conj}\left(
+            2 \operatorname{real} \left( \overline{\Omega}_{i1k} \right)
+            \operatorname{conj} \left( X_{ijk} \right)
+        \right)\\
+    &= 2\operatorname{real} \left( \overline{\Omega}_{i1k} \right) X_{ijk}
+\end{align*}
+```
+
+Like the `frule`, this `rrule` can be implemented generically:
+
+```julia
+function rrule(::typeof(sum), ::typeof(abs2), X::Array{<:RealOrComplex}; dims = :)
+    function sum_abs2_pullback(ΔΩ)
+        ∂abs2 = DoesNotExist()
+        ∂X = @thunk(2 .* real.(ΔΩ) .* X)
+        return (NO_FIELDS, ∂abs2, ∂X)
+    end
+    return sum(abs2, X; dims = dims), sum_abs2_pullback
 end
 ```
 
 ## More examples
 
-For more instructive examples of matrix and vector rules, see [^Giles2008ext] and the [LinearAlgebra rules in ChainRules](https://github.com/JuliaDiff/ChainRules.jl/tree/master/src/rulesets/LinearAlgebra).
-
-## Generalizing to multidimensional arrays
-
-For both forward- and reverse-mode rules for matrices, the first step was to write down the differential identities, which followed directly from the scalar differential identities.
-This approach follows for arrays, but it's easier to work in component form.
-Consider the following function
-
-```julia
-C = sum(abs2, A::Array{<:RealOrComplex,3}; dims=2)::Array{<:Real,3}
-```
-
-which we write as
-
-$$C_{i1k} = \sum_{j} |A_{ijk}|^2 = \sum_{j} \operatorname{real}(\operatorname{conj}(A_{ijk}) A_{ijk})$$
-
-The differential identity is
-
-```math
-\begin{align*}
-    dC_{i1k} &= \sum_j \operatorname{real}\left( \operatorname{conj}(dA_{ijk})~ A_{ijk} +
-                            \operatorname{conj}(A_{ijk}) ~dA_{ijk} \right) \\
-             &= \sum_j \operatorname{real}\left(
-                    \operatorname{conj}\left(
-                        \operatorname{conj}(A_{ijk}) ~dA_{ijk}
-                    \right) +
-                        \operatorname{conj}(A_{ijk}) ~dA_{ijk}
-                \right\\
-             &= \sum_j 2 \operatorname{real}\left( \operatorname{conj}(A_{ijk}) ~dA_{ijk} \right)
-\end{align*}
-```
-
-where in the last step we have used the fact that for all real $a$ and $b$,
-
-$$(a + i b) + \operatorname{conj}(a + i b) = (a + i b) + (a - i b) = 2 a = 2 \operatorname{real} (a + i b).$$
-
-The `frule` can be implemented generally as
-
-```julia
-function frule(
-    (_, _, ΔA),
-    ::typeof(sum), ::typeof(abs2), A::Array{<:RealOrComplex};
-    dims = :,
-)
-    C = sum(abs2, A; dims = dims)
-    ∂C = sum(2 .* real.(conj.(A) .* ΔA); dims = dims)
-    return (C, ∂C)
-end
-```
-
-We can now derive the reverse-mode rule.
-The array form of the desired identity will be
-
-```math
-ds = \operatorname{real} \left( \sum_{ik}  \operatorname{conj}(\overline{C}_{i1k}) ~dC_{i1k} \right)
-   = \operatorname{real} \left( \sum_{ijk} \operatorname{conj}(\overline{A}_{ijk}) ~dA_{ijk} \right)
-```
-
-We plug the differential identity into the middle expression to get
-
-```math
-\begin{align*}
-    ds &= \operatorname{real} \left(\sum_{ijk}
-                  \operatorname{conj}(\overline{C}_{i1k})
-                  2 \operatorname{real}\left( \operatorname{conj}(A_{ijk}) ~dA_{ijk} \right)
-              \right) \\
-       &= \operatorname{real} \left( \sum_{ijk}
-              2 \operatorname{real}(\overline{C}_{i1k})
-              \operatorname{conj}(A_{ijk}) ~dA_{ijk}
-          \right).
-\end{align*}
-```
-
-We now solve for $\overline{A}$:
-
-```math
-\overline{A}_{ijk} = \operatorname{conj}\left(
-                         2 \operatorname{real}( \overline{C}_{i1k} )
-                         \operatorname{conj}(A_{ijk})
-                     \right)
-                   = 2\operatorname{real}( \overline{C}_{i1k} ) A_{ijk}
-```
-
-Because none of this derivation really depended on the index (or indices), we can easily implement the `rrule` more generically using broadcasting:
-
-```julia
-function rrule(::typeof(sum), ::typeof(abs2), A::Array{<:RealOrComplex}; dims = :)
-    function sum_abs2_pullback(ΔC)
-        ∂abs2 = DoesNotExist()
-        ∂A = @thunk(2 .* real.(ΔC) .* A)
-        return (NO_FIELDS, ∂abs2, ∂A)
-    end
-    return sum(abs2, A; dims = dims), sum_abs2_pullback
-end
-```
+For more instructive examples of matrix and vector rules, see [^Giles2008ext] (real vector and matrix rules) and the [LinearAlgebra rules in ChainRules](https://github.com/JuliaDiff/ChainRules.jl/tree/master/src/rulesets/LinearAlgebra).
 
 ## References
 
