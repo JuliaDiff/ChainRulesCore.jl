@@ -247,8 +247,8 @@ where $\operatorname{tr}(\cdot)$ is the matrix trace (`LinearAlgebra.tr`) functi
 
 Our approach for deriving the adjoints $\overline{X}_m$ is then:
 
-1. Derive the pushforward using \eqref{pf}.
-2. Substitute this expression into the left-hand side of \eqref{pbident}.
+1. Derive the pushforward ($\dot{\Omega}$ in terms of $\dot{X}_m$) using \eqref{pf}.
+2. Substitute this expression for $\dot{\Omega}$ into the left-hand side of \eqref{pbident}.
 3. Manipulate until it looks like the right-hand side of \eqref{pbident}.
 4. Solve for each $\overline{X}_m$.
 
@@ -341,16 +341,14 @@ Using \eqref{pbidentmat}, we now multiply by $\overline{\Omega}^H$ and take the 
 ```
 
 That's it!
-The expression is in the desired form to solve for the adjoints:
+The expression is in the desired form to solve for the adjoints by comparing the last two lines:
 
 ```math
 \begin{align*}
-\overline{A} &= \left( \overline{A}^H \right)^H
-                  = \left( B \overline{\Omega}^H \right)^H
-                  = \overline{\Omega} B^H\\
-\overline{B} &= \left( \overline{B}^H \right)^H
-                  = \left( \overline{\Omega}^H A \right)^H
-                  = A^H \overline{\Omega}
+B \overline{\Omega}^H \dot{A} &= \overline{A}^H  \dot{A}, \quad
+    && \overline{A} = \overline{\Omega} B^H\\
+\overline{\Omega}^H A \dot{B} &= \overline{B}^H \dot{B}, \quad
+    && \overline{B} = A^H \overline{\Omega}
 \end{align*}
 ```
 
@@ -421,7 +419,7 @@ end
 
 ## A multidimensional array example
 
-We presented the approach for deriving pushforwards and pullbacks in terms of arrays of arbitrary dimensions, so let's cover an example.
+We presented the approach for deriving pushforwards and pullbacks for arrays of arbitrary dimensions, so let's cover an example.
 For multidimensional arrays, it's often easier to work in component form.
 Consider the following function:
 
