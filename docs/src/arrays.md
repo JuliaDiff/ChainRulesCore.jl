@@ -490,7 +490,7 @@ The array form of \eqref{pbident} is
     &= \operatorname{real} \left( \sum_{ik}
            \operatorname{conj} \left( \overline{\Omega}_{i1k} \right) \dot{\Omega}_{i1k}
        \right)
-           && \text{expand left-hand side of} \eqref{pbident}\\
+           && \text{expand left-hand side of } \eqref{pbident}\\
     &= \operatorname{real} \left(\sum_{ijk}
            \operatorname{conj} \left( \overline{\Omega}_{i1k} \right)
            2 \operatorname{real}\left(
@@ -508,7 +508,7 @@ The array form of \eqref{pbident} is
     &= \operatorname{real} \left( \sum_{ijk}
            \operatorname{conj} \left( \overline{X}_{ijk} \right) \dot{X}_{i1k}
        \right)
-           && \text{expand right-hand side of} \eqref{pbident}
+           && \text{expand right-hand side of } \eqref{pbident}
 \end{align*}
 ```
 
