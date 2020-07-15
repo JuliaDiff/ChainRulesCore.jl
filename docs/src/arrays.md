@@ -61,7 +61,9 @@ We can implement the `frule` in ChainRules's notation:
 ```julia
 function frule(
     (_, ΔA, ΔB),
-    ::typeof(+), A::Array{<:RealOrComplex}, B::Array{<:RealOrComplex},
+    ::typeof(+),
+    A::Array{<:RealOrComplex},
+    B::Array{<:RealOrComplex},
 )
     Ω = A + B
     ∂Ω = ΔA + ΔB
@@ -107,7 +109,9 @@ This is the matrix product rule, and we write its `frule` as
 ```julia
 function frule(
     (_, ΔA, ΔB),
-    ::typeof(*), A::Matrix{<:RealOrComplex}, B::Matrix{<:RealOrComplex},
+    ::typeof(*),
+    A::Matrix{<:RealOrComplex},
+    B::Matrix{<:RealOrComplex},
 )
     Ω = A * B
     ∂Ω = ΔA * B + A * ΔB
@@ -470,7 +474,9 @@ Because none of this derivation depended on the index (or indices), we implement
 ```julia
 function frule(
     (_, _, ΔX),
-    ::typeof(sum), ::typeof(abs2), X::Array{<:RealOrComplex};
+    ::typeof(sum),
+    ::typeof(abs2),
+    X::Array{<:RealOrComplex};
     dims = :,
 )
     Ω = sum(abs2, X; dims = dims)
