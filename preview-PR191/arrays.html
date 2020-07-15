@@ -6,7 +6,9 @@
         \frac{\partial \Omega}{ \partial (X_m)_{i,\ldots,j} } (\dot{X}_m)_{i,\ldots,j}
 \end{equation}\]</div><p>That&#39;s ugly, but in practice we can often write it more simply by using forward mode rules for simpler functions, as we&#39;ll see below. The forward-mode rules for arrays follow directly from the usual scalar chain rules.</p><h3><a class="nav-anchor" id="Array-addition-1" href="#Array-addition-1">Array addition</a></h3><pre><code class="language-julia">Ω = A + B</code></pre><p>This one is easy:</p><div>\[\Omega = A + B\]</div><div>\[\dot{\Omega} = \dot{A} + \dot{B}\]</div><p>We can implement the <code>frule</code> in ChainRules&#39;s notation:</p><pre><code class="language-julia">function frule(
     (_, ΔA, ΔB),
-    ::typeof(+), A::Array{&lt;:RealOrComplex}, B::Array{&lt;:RealOrComplex},
+    ::typeof(+),
+    A::Array{&lt;:RealOrComplex},
+    B::Array{&lt;:RealOrComplex},
 )
     Ω = A + B
     ∂Ω = ΔA + ΔB
@@ -22,7 +24,9 @@ end</code></pre><h3><a class="nav-anchor" id="Matrix-multiplication-1" href="#Ma
 \dot{\Omega} = \dot{A} B + A \dot{B}
 \end{equation}\]</div><p>This is the matrix product rule, and we write its <code>frule</code> as</p><pre><code class="language-julia">function frule(
     (_, ΔA, ΔB),
-    ::typeof(*), A::Matrix{&lt;:RealOrComplex}, B::Matrix{&lt;:RealOrComplex},
+    ::typeof(*),
+    A::Matrix{&lt;:RealOrComplex},
+    B::Matrix{&lt;:RealOrComplex},
 )
     Ω = A * B
     ∂Ω = ΔA * B + A * ΔB
@@ -189,7 +193,9 @@ end</code></pre><h2><a class="nav-anchor" id="A-multidimensional-array-example-1
     = 2 a
     = 2 \operatorname{real} (a + i b).\]</div><p>Because none of this derivation depended on the index (or indices), we implement <code>frule</code> generically as</p><pre><code class="language-julia">function frule(
     (_, _, ΔX),
-    ::typeof(sum), ::typeof(abs2), X::Array{&lt;:RealOrComplex};
+    ::typeof(sum),
+    ::typeof(abs2),
+    X::Array{&lt;:RealOrComplex};
     dims = :,
 )
     Ω = sum(abs2, X; dims = dims)
