@@ -324,7 +324,7 @@ Using \eqref{pbidentmat}, we now multiply by $\overline{\Omega}^H$ and take the 
        \right) \right)
            && \text{expand using } \eqref{trexpand} \\
     &= \operatorname{real}\left( \operatorname{tr} \left(
-           B \overline{C}^H \dot{A}
+           B \overline{\Omega}^H \dot{A}
        \right) \right) +
        \operatorname{real}\left( \operatorname{tr} \left(
            \overline{\Omega}^H A \dot{B}
