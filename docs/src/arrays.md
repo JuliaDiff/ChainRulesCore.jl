@@ -544,6 +544,228 @@ function rrule(::typeof(sum), ::typeof(abs2), X::Array{<:RealOrComplex}; dims = 
 end
 ```
 
+## Functions that return a tuple
+
+Every Julia function returns a single output.
+For example, let's look at `LinearAlgebra.logabsdet`, the logarithm of the absolute value of the determinant of a matrix, which returns $\log |\det(A)|$ and $\operatorname{sign}(\det A) = \frac{\det A}{| \det A |}$:
+
+```julia
+(l, s) = logabsdet(A)
+```
+
+The return type is actually a single output, a tuple of scalars, but when deriving, we treat them as multiple outputs.
+The left-hand side of \eqref{pbident} then becomes a sum over terms, just like the right-hand side.
+
+Let's derive the forward- and reverse-mode rules for `logabsdet`.
+
+```math
+\begin{align*}
+l &= \log |\det(A)|\\
+s &= \operatorname{sign}(\det(A)),
+\end{align*}
+```
+
+where $\operatorname{sign}(x) = \frac{x}{|x|}$.
+
+### Forward-mode rule
+
+To make this easier, let's break the computation into more manageable steps:
+
+```math
+\begin{align*}
+d &= \det(A)\\
+a &= |d| = \sqrt{\operatorname{real} \left( \operatorname{conj}(d) d \right)}\\
+l &= \log a\\
+s &= \frac{d}{a}
+\end{align*}
+```
+
+We'll make frequent use of the identities:
+
+$$d = a s$$
+$$\operatorname{conj}(s) s = \frac{\operatorname{conj}(d) d}{a^2} = \frac{a^2}{a^2} = 1$$
+
+It will also be useful to define $b = \operatorname{tr}\left( A^{-1} \dot{A} \right)$.
+
+For $\dot{d}$, we use the pushforward for the determinant given in section 2.2.4 of [^Giles2008ext]:
+
+$$\dot{d} = d b$$
+
+Now we'll compute the pushforwards for the remaining steps.
+
+```math
+\begin{align*}
+\dot{a} &= \frac{1}{2 a} \frac{d}{dt}
+                         \operatorname{real}\left( \operatorname{conj}(d) d \right)\\
+        &= \frac{2}{2 a} \operatorname{real} \left( \operatorname{conj}(d) \dot{d} \right)\\
+        &= \operatorname{real} \left( \operatorname{conj}(s) \dot{d} \right)
+            && \text{use } d = a s \\
+        &= \operatorname{real} \left( \operatorname{conj}(s) d b \right)
+            && \text{substitute } \dot{d} \\
+\dot{l} &= a^{-1} \dot{a}\\
+        &= a^{-1} \operatorname{real} \left( \operatorname{conj}(s) d b \right)
+            && \text{substitute } \dot{a}\\
+        &= \operatorname{real} \left( \operatorname{conj}(s) s b \right)
+            && \text{use } d = a s \\
+        &= \operatorname{real} \left(b \right)
+            && \text{use } \operatorname{conj}(s) s = 1\\
+\dot{s} &= a^{-1} \dot{d} - a^{-2} d \dot{a}\\
+        &= a^{-1} \left( \dot{d} - \dot{a} s \right)
+            && \text{use } d = a s \\
+        &= a^{-1} \left(
+               \dot{d} - \operatorname{real} \left( \operatorname{conj}(s) \dot{d} \right) s
+           \right)
+            && \text{substitute } \dot{a}\\
+        &= a^{-1} \left(
+               \dot{d} - \left(
+                   \operatorname{conj}(s) \dot{d} -
+                   i \operatorname{imag} \left( \operatorname{conj}(s) \dot{d} \right)
+               \right) s
+           \right)
+            && \text{use } \operatorname{real}(x) = x - i \operatorname{imag}(x)\\
+        &= a^{-1} \left(
+               \dot{d} - \left( \operatorname{conj}(s) s \right) \dot{d} +
+               i \operatorname{imag} \left( \operatorname{conj}(s) \dot{d} \right) s 
+               \right)\\
+        &= i a^{-1} \operatorname{imag} \left( \operatorname{conj}(s) \dot{d} \right) s
+            && \text{use } \operatorname{conj}(s) s = 1\\
+        &= i a^{-1} \operatorname{imag} \left( \operatorname{conj}(s) d b \right) s
+            && \text{substitute } \dot{d}\\
+        &= i \operatorname{imag} \left( \operatorname{conj}(s) s b \right) s
+            && \text{use } d = a s \\
+        &= i \operatorname{imag}(b) s
+            && \text{use } \operatorname{conj}(s) s = 1
+\end{align*}
+```
+
+Note that the term $b$ is reused.
+In summary, after all of that work, the final pushforward is quite simple:
+
+```math
+\begin{align}
+b &= \operatorname{tr} \left( A^{-1} \dot{A} \right) \label{logabsdet_b} \\
+\dot{l} &= \operatorname{real}(b) \label{logabsdet_ldot}\\
+\dot{s} &= i \operatorname{imag}(b) s \label{logabsdet_sdot}\\
+\end{align}
+```
+
+We can define the `frule` as:
+
+```julia
+function frule((_, ΔA), ::typeof(logabsdet), A::Matrix{<:RealOrComplex})
+    # The primal function uses the lu decomposition to compute logabsdet
+    # we reuse this decomposition to compute inv(A) * ΔA
+    F = lu(A, check = false)
+    Ω = logabsdet(F)
+    b = tr(F \ ΔA) # tr(inv(A) * ΔA)
+    s = last(Ω)
+    ∂l = real(b)
+    # for real A, ∂s will always be zero (because imag(b) = 0)
+    # this is type-stable because the eltype is known
+    ∂s = eltype(A) <: Real ? Zero() : im * imag(b) * s
+    # tangents of tuples are of type Composite{<:Tuple}
+    ∂Ω = Composite{typeof(Ω)}(∂l, ∂s)
+    return (Ω, ∂Ω)
+end
+```
+
+### Reverse-mode rule
+
+```math
+\begin{align*}
+&\operatorname{real}\left( \operatorname{tr}\left(
+    \overline{l}^H \dot{l}
+\right) \right) +
+\operatorname{real}\left( \operatorname{tr}\left(
+    \overline{s}^H \dot{s}
+\right) \right)
+    && \text{left-hand side of } \eqref{pbidentmat}\\
+&= \operatorname{real}\left( 
+       \operatorname{conj} \left( \overline{l} \right) \dot{l} +
+       \operatorname{conj} \left( \overline{s} \right) \dot{s}
+   \right) \\
+&= \operatorname{real}\left( 
+       \operatorname{conj} \left( \overline{l} \right) \operatorname{real}(b) +
+       i \operatorname{conj} \left( \overline{s} \right) s \operatorname{imag}(b)
+   \right)
+       && \text{substitute } \eqref{logabsdet_ldot} \text{ and } \eqref{logabsdet_sdot} \\
+&= \operatorname{real}\left( 
+       \operatorname{real}\left( \overline{l} \right) \operatorname{real}(b) -
+       \operatorname{imag} \left(
+           \operatorname{conj} \left( \overline{s} \right) s
+       \right) \operatorname{imag}(b)
+   \right)
+       && \text{discard imaginary parts} \\
+&= \operatorname{real}\left(
+       \left(
+           \operatorname{real} \left( \overline{l} \right) +
+           i \operatorname{imag} \left(
+               \operatorname{conj} \left( \overline{s} \right) s
+           \right)
+       \right) b
+   \right)
+       && \text{gather parts of } b \\
+&= \operatorname{real}\left(
+       \left(
+           \operatorname{real} \left( \overline{l} \right) +
+           i \operatorname{imag} \left(
+               \operatorname{conj} \left( \overline{s} \right) s
+           \right)
+       \right)
+       \operatorname{tr}(A^{-1} \dot{A})
+   \right)
+       && \text{substitute } b \text{ from } \eqref{logabsdet_b} \\
+&= \operatorname{real}\left( \operatorname{tr} \left(
+       \left(
+           \operatorname{real} \left( \overline{l} \right) +
+           i \operatorname{imag} \left(
+               \operatorname{conj} \left( \overline{s} \right) s
+           \right)
+       \right)
+       A^{-1} \dot{A}
+   \right) \right)
+       && \text{bring scalar within } \operatorname{tr} \\
+&= \operatorname{real}\left( \operatorname{tr} \left( \overline{A}^H \dot{A} \right) \right)
+       && \text{right-hand side of } \eqref{pbidentmat}\\
+\end{align*}
+```
+
+Now we solve for $\overline{A}$:
+
+```math
+\begin{align*}
+\overline{A} &= \left( \left(
+    \operatorname{real} \left( \overline{l} \right) +
+    i \operatorname{imag} \left( \operatorname{conj} \left( \overline{s} \right) s \right)
+\right) A^{-1} \right)^H\\
+&= \left(
+    \operatorname{real} \left( \overline{l} \right) +
+    i \operatorname{imag} \left( \operatorname{conj} \left( s \right) \overline{s} \right)
+\right) A^{-H}
+\end{align*}
+```
+
+The `rrule` can be implemented as
+
+```julia
+function rrule(::typeof(logabsdet), A::Matrix{<:RealOrComplex})
+    # The primal function uses the lu decomposition to compute logabsdet
+    # we reuse this decomposition to compute inv(A)
+    F = lu(A, check = false)
+    Ω = logabsdet(F)
+    s = last(Ω)
+    function logabsdet_pullback(ΔΩ)
+        (Δl, Δs) = ΔΩ
+        f = conj(s) * Δs
+        imagf = f - real(f) # 0 for real A and Δs, im * imag(f) for complex A and/or Δs
+        g = real(Δl) + imagf
+        ∂A = g * inv(F)' # g * inv(A)'
+        return (NO_FIELDS, ∂A)
+    end
+    return (Ω, logabsdet_pullback)
+end
+```
+
 ## More examples
 
 For more instructive examples of array rules, see [^Giles2008ext] (real vector and matrix rules) and the [LinearAlgebra rules in ChainRules](https://github.com/JuliaDiff/ChainRules.jl/tree/master/src/rulesets/LinearAlgebra).
