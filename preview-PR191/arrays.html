@@ -4,7 +4,7 @@
     = f_*(\ldots, \dot{X}_m, \ldots)
     = \sum_m \sum_{i, \ldots, j}
         \frac{\partial \Omega}{ \partial (X_m)_{i,\ldots,j} } (\dot{X}_m)_{i,\ldots,j}
-\end{equation}\]</div><p>That&#39;s ugly, but in practice we can often write it more simply by using forward mode rules for simpler functions, as we&#39;ll see below. The forward-mode rules for arrays follow directly from the usual scalar chain rules.</p><h3><a class="nav-anchor" id="Matrix-addition-1" href="#Matrix-addition-1">Matrix addition</a></h3><pre><code class="language-julia">Ω = A + B</code></pre><p>This one is easy:</p><div>\[\Omega = A + B\]</div><div>\[\dot{\Omega} = \dot{A} + \dot{B}\]</div><p>We can implement the <code>frule</code> in ChainRules&#39;s notation:</p><pre><code class="language-julia">function frule(
+\end{equation}\]</div><p>That&#39;s ugly, but in practice we can often write it more simply by using forward mode rules for simpler functions, as we&#39;ll see below. The forward-mode rules for arrays follow directly from the usual scalar chain rules.</p><h3><a class="nav-anchor" id="Array-addition-1" href="#Array-addition-1">Array addition</a></h3><pre><code class="language-julia">Ω = A + B</code></pre><p>This one is easy:</p><div>\[\Omega = A + B\]</div><div>\[\dot{\Omega} = \dot{A} + \dot{B}\]</div><p>We can implement the <code>frule</code> in ChainRules&#39;s notation:</p><pre><code class="language-julia">function frule(
     (_, ΔA, ΔB),
     ::typeof(+), A::Array{&lt;:RealOrComplex}, B::Array{&lt;:RealOrComplex},
 )
@@ -79,7 +79,7 @@ end</code></pre><h3><a class="nav-anchor" id="Other-useful-identities-1" href="#
 \sum_m \operatorname{real} \left( \operatorname{tr} \left(
     \overline{X}_m^H \dot{X}_m
 \right) \right),
-\end{equation}\]</div><p>where <span>$\operatorname{tr}(\cdot)$</span> is the matrix trace (<code>LinearAlgebra.tr</code>) function.</p><p>Our approach for deriving the adjoints <span>$\overline{X}_m$</span> is then:</p><ol><li>Derive the pushforward using \eqref{pf}.</li><li>Substitute this expression into the left-hand side of \eqref{pbident}.</li><li>Manipulate until it looks like the right-hand side of \eqref{pbident}.</li><li>Solve for each <span>$\overline{X}_m$</span>.</li></ol><p>Note that the final expressions for the adjoints will not contain any <span>$\dot{X}_m$</span> terms.</p><div class="admonition info"><div class="admonition-title">Info</div><div class="admonition-text"><p>Why do we conjugate, and why do we only use the real part of the dot product in \eqref{pbident}? Recall from <a href="complex.html">Complex Numbers</a> that we treat a complex number as a pair of real numbers. These identities are a direct consequence of this convention. Consider <span>$\frac{ds}{dt}$</span> for a scalar function <span>$f: (x + i y) \mapsto (u + i v)$</span>:</p><div>\[\begin{align*}
+\end{equation}\]</div><p>where <span>$\operatorname{tr}(\cdot)$</span> is the matrix trace (<code>LinearAlgebra.tr</code>) function.</p><p>Our approach for deriving the adjoints <span>$\overline{X}_m$</span> is then:</p><ol><li>Derive the pushforward (<span>$\dot{\Omega}$</span> in terms of <span>$\dot{X}_m$</span>) using \eqref{pf}.</li><li>Substitute this expression for <span>$\dot{\Omega}$</span> into the left-hand side of \eqref{pbident}.</li><li>Manipulate until it looks like the right-hand side of \eqref{pbident}.</li><li>Solve for each <span>$\overline{X}_m$</span>.</li></ol><p>Note that the final expressions for the adjoints will not contain any <span>$\dot{X}_m$</span> terms.</p><div class="admonition info"><div class="admonition-title">Info</div><div class="admonition-text"><p>Why do we conjugate, and why do we only use the real part of the dot product in \eqref{pbident}? Recall from <a href="complex.html">Complex Numbers</a> that we treat a complex number as a pair of real numbers. These identities are a direct consequence of this convention. Consider <span>$\frac{ds}{dt}$</span> for a scalar function <span>$f: (x + i y) \mapsto (u + i v)$</span>:</p><div>\[\begin{align*}
 \frac{ds}{dt}
     &amp;= \operatorname{real}\left( \operatorname{dot}\left(
            \overline{x} + i \overline{y}, \dot{x} + i \dot{y}
@@ -118,7 +118,7 @@ end</code></pre><h3><a class="nav-anchor" id="Other-useful-identities-1" href="#
        \right) \right)
            &amp;&amp; \text{expand using } \eqref{trexpand} \\
     &amp;= \operatorname{real}\left( \operatorname{tr} \left(
-           B \overline{C}^H \dot{A}
+           B \overline{\Omega}^H \dot{A}
        \right) \right) +
        \operatorname{real}\left( \operatorname{tr} \left(
            \overline{\Omega}^H A \dot{B}
@@ -131,13 +131,11 @@ end</code></pre><h3><a class="nav-anchor" id="Other-useful-identities-1" href="#
            \overline{B}^H \dot{B}
        \right) \right)
            &amp;&amp; \text{right-hand side of } \eqref{pbidentmat}
-\end{align*}\]</div><p>That&#39;s it! The expression is in the desired form to solve for the adjoints:</p><div>\[\begin{align*}
-\overline{A} &amp;= \left( \overline{A}^H \right)^H
-                  = \left( B \overline{\Omega}^H \right)^H
-                  = \overline{\Omega} B^H\\
-\overline{B} &amp;= \left( \overline{B}^H \right)^H
-                  = \left( \overline{\Omega}^H A \right)^H
-                  = A^H \overline{\Omega}
+\end{align*}\]</div><p>That&#39;s it! The expression is in the desired form to solve for the adjoints by comparing the last two lines:</p><div>\[\begin{align*}
+B \overline{\Omega}^H \dot{A} &amp;= \overline{A}^H  \dot{A}, \quad
+    &amp;&amp; \overline{A} = \overline{\Omega} B^H\\
+\overline{\Omega}^H A \dot{B} &amp;= \overline{B}^H \dot{B}, \quad
+    &amp;&amp; \overline{B} = A^H \overline{\Omega}
 \end{align*}\]</div><p>Using ChainRules&#39;s notation, we would implement the <code>rrule</code> as</p><pre><code class="language-julia">function rrule(::typeof(*), A::Matrix{&lt;:RealOrComplex}, B::Matrix{&lt;:RealOrComplex})
     function times_pullback(ΔΩ)
         ∂A = @thunk(ΔΩ * B&#39;)
@@ -169,7 +167,7 @@ end</code></pre><h3><a class="nav-anchor" id="Matrix-inversion-2" href="#Matrix-
         return (NO_FIELDS, ∂A)
     end
     return Ω, inv_pullback
-end</code></pre><h2><a class="nav-anchor" id="A-multidimensional-array-example-1" href="#A-multidimensional-array-example-1">A multidimensional array example</a></h2><p>We presented the approach for deriving pushforwards and pullbacks in terms of arrays of arbitrary dimensions, so let&#39;s cover an example. For multidimensional arrays, it&#39;s often easier to work in component form. Consider the following function:</p><pre><code class="language-julia">Ω = sum(abs2, X::Array{&lt;:RealOrComplex,3}; dims=2)::Array{&lt;:Real,3}</code></pre><p>which we write as</p><div>\[\Omega_{i1k} = \sum_{j} |X_{ijk}|^2
+end</code></pre><h2><a class="nav-anchor" id="A-multidimensional-array-example-1" href="#A-multidimensional-array-example-1">A multidimensional array example</a></h2><p>We presented the approach for deriving pushforwards and pullbacks for arrays of arbitrary dimensions, so let&#39;s cover an example. For multidimensional arrays, it&#39;s often easier to work in component form. Consider the following function:</p><pre><code class="language-julia">Ω = sum(abs2, X::Array{&lt;:RealOrComplex,3}; dims=2)::Array{&lt;:Real,3}</code></pre><p>which we write as</p><div>\[\Omega_{i1k} = \sum_{j} |X_{ijk}|^2
              = \sum_{j} \operatorname{real} \left(
                   \operatorname{conj} \left( X_{ijk} \right) X_{ijk}
                \right)\]</div><p>The pushforward from \eqref{pf} is</p><div>\[\begin{align}
@@ -204,7 +202,7 @@ end</code></pre><p>We can now derive the reverse-mode rule. The array form of \e
     &amp;= \operatorname{real} \left( \sum_{ik}
            \operatorname{conj} \left( \overline{\Omega}_{i1k} \right) \dot{\Omega}_{i1k}
        \right)
-           &amp;&amp; \text{expand left-hand side of} \eqref{pbident}\\
+           &amp;&amp; \text{expand left-hand side of } \eqref{pbident}\\
     &amp;= \operatorname{real} \left(\sum_{ijk}
            \operatorname{conj} \left( \overline{\Omega}_{i1k} \right)
            2 \operatorname{real}\left(
@@ -222,7 +220,7 @@ end</code></pre><p>We can now derive the reverse-mode rule. The array form of \e
     &amp;= \operatorname{real} \left( \sum_{ijk}
            \operatorname{conj} \left( \overline{X}_{ijk} \right) \dot{X}_{i1k}
        \right)
-           &amp;&amp; \text{expand right-hand side of} \eqref{pbident}
+           &amp;&amp; \text{expand right-hand side of } \eqref{pbident}
 \end{align*}\]</div><p>We now solve for <span>$\overline{X}$</span>:</p><div>\[\begin{align*}
 \overline{X}_{ijk}
     &amp;= \operatorname{conj}\left(
