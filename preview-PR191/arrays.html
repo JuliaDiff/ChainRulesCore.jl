@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Deriving Array Rules · ChainRules</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="assets/documenter.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script><link href="assets/documenter.css" rel="stylesheet" type="text/css"/><link href="assets/chainrules.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><a href="index.html"><img class="logo" src="assets/logo.svg" alt="ChainRules logo"/></a><h1>ChainRules</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="search.html"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="index.html">Introduction</a></li><li><a class="toctext" href="FAQ.html">FAQ</a></li><li><a class="toctext" href="writing_good_rules.html">Writing Good Rules</a></li><li><a class="toctext" href="complex.html">Complex Numbers</a></li><li class="current"><a class="toctext" href="arrays.html">Deriving Array Rules</a><ul class="internal"><li><a class="toctext" href="#Forward-mode-rules-1">Forward-mode rules</a></li><li><a class="toctext" href="#Reverse-mode-rules-1">Reverse-mode rules</a></li><li><a class="toctext" href="#A-multidimensional-array-example-1">A multidimensional array example</a></li><li><a class="toctext" href="#More-examples-1">More examples</a></li><li><a class="toctext" href="#References-1">References</a></li></ul></li><li><a class="toctext" href="debug_mode.html">Debug Mode</a></li><li><span class="toctext">Design</span><ul><li><a class="toctext" href="design/many_differentials.html">Many Differential Types</a></li></ul></li><li><a class="toctext" href="api.html">API</a></li></ul></nav><article id="docs"><header><nav><ul><li><a href="arrays.html">Deriving Array Rules</a></li></ul><a class="edit-page" href="https://github.com/JuliaDiff/ChainRulesCore.jl/blob/master/docs/src/arrays.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Deriving Array Rules</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Deriving-Array-Rules-1" href="#Deriving-Array-Rules-1">Deriving Array Rules</a></h1><p>One of the goals of the ChainRules interface is to make it easy to define your own rules for a function. This tutorial attempts to demystify deriving and implementing custom rules for arrays with real and complex entries, with examples. The approach we use is similar to the one succinctly explained and demonstrated in <a href="#footnote-Giles2008">[Giles2008]</a> and its extended work <a href="#footnote-Giles2008ext">[Giles2008ext]</a>, but we generalize it to support functions of multidimensional arrays with both real and complex entries.</p><p>Throughout this tutorial, we will use the following type alias:</p><pre><code class="language-julia">const RealOrComplex = Union{Real,Complex}</code></pre><h2><a class="nav-anchor" id="Forward-mode-rules-1" href="#Forward-mode-rules-1">Forward-mode rules</a></h2><h3><a class="nav-anchor" id="Approach-1" href="#Approach-1">Approach</a></h3><p>Consider a function</p><pre><code class="language-julia">Ω = f(X::Array{&lt;:RealOrComplex}...)::Array{&lt;:RealOrComplex}</code></pre><p>or in math notation</p><div>\[f: (\ldots, X_m, \ldots) \mapsto \Omega,\]</div><p>where the components of <span>$X_m$</span> are written as <span>$(X_m)_{i,\ldots,j}$</span>. The variables <span>$X_m$</span> and <span>$\Omega$</span> are intermediates in a larger program (function) that, by considering only a single real input <span>$t$</span> and real output <span>$s$</span> can always be written as</p><div>\[t \mapsto (\ldots, X_m, \ldots) \mapsto \Omega \mapsto s,\]</div><p>where <span>$t$</span> and <span>$s$</span> are real numbers. If we know the partial derivatives of <span>$X_m$</span> with respect to <span>$t$</span>, <span>$\frac{dX_m}{dt} = \dot{X}_m$</span>, the chain rule gives the pushforward of <span>$f$</span> as:</p><div>\[\begin{equation} \label{pf}
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Deriving Array Rules · ChainRules</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="assets/documenter.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script><link href="assets/documenter.css" rel="stylesheet" type="text/css"/><link href="assets/chainrules.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><a href="index.html"><img class="logo" src="assets/logo.svg" alt="ChainRules logo"/></a><h1>ChainRules</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="search.html"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="index.html">Introduction</a></li><li><a class="toctext" href="FAQ.html">FAQ</a></li><li><a class="toctext" href="writing_good_rules.html">Writing Good Rules</a></li><li><a class="toctext" href="complex.html">Complex Numbers</a></li><li class="current"><a class="toctext" href="arrays.html">Deriving Array Rules</a><ul class="internal"><li><a class="toctext" href="#Forward-mode-rules-1">Forward-mode rules</a></li><li><a class="toctext" href="#Reverse-mode-rules-1">Reverse-mode rules</a></li><li><a class="toctext" href="#A-multidimensional-array-example-1">A multidimensional array example</a></li><li><a class="toctext" href="#Functions-that-return-a-tuple-1">Functions that return a tuple</a></li><li><a class="toctext" href="#More-examples-1">More examples</a></li><li><a class="toctext" href="#References-1">References</a></li></ul></li><li><a class="toctext" href="debug_mode.html">Debug Mode</a></li><li><span class="toctext">Design</span><ul><li><a class="toctext" href="design/many_differentials.html">Many Differential Types</a></li></ul></li><li><a class="toctext" href="api.html">API</a></li></ul></nav><article id="docs"><header><nav><ul><li><a href="arrays.html">Deriving Array Rules</a></li></ul><a class="edit-page" href="https://github.com/JuliaDiff/ChainRulesCore.jl/blob/master/docs/src/arrays.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Deriving Array Rules</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Deriving-Array-Rules-1" href="#Deriving-Array-Rules-1">Deriving Array Rules</a></h1><p>One of the goals of the ChainRules interface is to make it easy to define your own rules for a function. This tutorial attempts to demystify deriving and implementing custom rules for arrays with real and complex entries, with examples. The approach we use is similar to the one succinctly explained and demonstrated in <a href="#footnote-Giles2008">[Giles2008]</a> and its extended work <a href="#footnote-Giles2008ext">[Giles2008ext]</a>, but we generalize it to support functions of multidimensional arrays with both real and complex entries.</p><p>Throughout this tutorial, we will use the following type alias:</p><pre><code class="language-julia">const RealOrComplex = Union{Real,Complex}</code></pre><h2><a class="nav-anchor" id="Forward-mode-rules-1" href="#Forward-mode-rules-1">Forward-mode rules</a></h2><h3><a class="nav-anchor" id="Approach-1" href="#Approach-1">Approach</a></h3><p>Consider a function</p><pre><code class="language-julia">Ω = f(X::Array{&lt;:RealOrComplex}...)::Array{&lt;:RealOrComplex}</code></pre><p>or in math notation</p><div>\[f: (\ldots, X_m, \ldots) \mapsto \Omega,\]</div><p>where the components of <span>$X_m$</span> are written as <span>$(X_m)_{i,\ldots,j}$</span>. The variables <span>$X_m$</span> and <span>$\Omega$</span> are intermediates in a larger program (function) that, by considering only a single real input <span>$t$</span> and real output <span>$s$</span> can always be written as</p><div>\[t \mapsto (\ldots, X_m, \ldots) \mapsto \Omega \mapsto s,\]</div><p>where <span>$t$</span> and <span>$s$</span> are real numbers. If we know the partial derivatives of <span>$X_m$</span> with respect to <span>$t$</span>, <span>$\frac{dX_m}{dt} = \dot{X}_m$</span>, the chain rule gives the pushforward of <span>$f$</span> as:</p><div>\[\begin{equation} \label{pf}
 \dot{\Omega}
     = f_*(\ldots, \dot{X}_m, \ldots)
     = \sum_m \sum_{i, \ldots, j}
@@ -241,4 +241,150 @@ end</code></pre><p>We can now derive the reverse-mode rule. The array form of \e
         return (NO_FIELDS, ∂abs2, ∂X)
     end
     return sum(abs2, X; dims = dims), sum_abs2_pullback
+end</code></pre><h2><a class="nav-anchor" id="Functions-that-return-a-tuple-1" href="#Functions-that-return-a-tuple-1">Functions that return a tuple</a></h2><p>Every Julia function returns a single output. For example, let&#39;s look at <code>LinearAlgebra.logabsdet</code>, the logarithm of the absolute value of the determinant of a matrix, which returns <span>$\log |\det(A)|$</span> and <span>$\operatorname{sign}(\det A) = \frac{\det A}{| \det A |}$</span>:</p><pre><code class="language-julia">(l, s) = logabsdet(A)</code></pre><p>The return type is actually a single output, a tuple of scalars, but when deriving, we treat them as multiple outputs. The left-hand side of \eqref{pbident} then becomes a sum over terms, just like the right-hand side.</p><p>Let&#39;s derive the forward- and reverse-mode rules for <code>logabsdet</code>.</p><div>\[\begin{align*}
+l &amp;= \log |\det(A)|\\
+s &amp;= \operatorname{sign}(\det(A)),
+\end{align*}\]</div><p>where <span>$\operatorname{sign}(x) = \frac{x}{|x|}$</span>.</p><h3><a class="nav-anchor" id="Forward-mode-rule-1" href="#Forward-mode-rule-1">Forward-mode rule</a></h3><p>To make this easier, let&#39;s break the computation into more manageable steps:</p><div>\[\begin{align*}
+d &amp;= \det(A)\\
+a &amp;= |d| = \sqrt{\operatorname{real} \left( \operatorname{conj}(d) d \right)}\\
+l &amp;= \log a\\
+s &amp;= \frac{d}{a}
+\end{align*}\]</div><p>We&#39;ll make frequent use of the identities:</p><div>\[d = a s\]</div><div>\[\operatorname{conj}(s) s = \frac{\operatorname{conj}(d) d}{a^2} = \frac{a^2}{a^2} = 1\]</div><p>It will also be useful to define <span>$b = \operatorname{tr}\left( A^{-1} \dot{A} \right)$</span>.</p><p>For <span>$\dot{d}$</span>, we use the pushforward for the determinant given in section 2.2.4 of <a href="#footnote-Giles2008ext">[Giles2008ext]</a>:</p><div>\[\dot{d} = d b\]</div><p>Now we&#39;ll compute the pushforwards for the remaining steps.</p><div>\[\begin{align*}
+\dot{a} &amp;= \frac{1}{2 a} \frac{d}{dt}
+                         \operatorname{real}\left( \operatorname{conj}(d) d \right)\\
+        &amp;= \frac{2}{2 a} \operatorname{real} \left( \operatorname{conj}(d) \dot{d} \right)\\
+        &amp;= \operatorname{real} \left( \operatorname{conj}(s) \dot{d} \right)
+            &amp;&amp; \text{use } d = a s \\
+        &amp;= \operatorname{real} \left( \operatorname{conj}(s) d b \right)
+            &amp;&amp; \text{substitute } \dot{d} \\
+\dot{l} &amp;= a^{-1} \dot{a}\\
+        &amp;= a^{-1} \operatorname{real} \left( \operatorname{conj}(s) d b \right)
+            &amp;&amp; \text{substitute } \dot{a}\\
+        &amp;= \operatorname{real} \left( \operatorname{conj}(s) s b \right)
+            &amp;&amp; \text{use } d = a s \\
+        &amp;= \operatorname{real} \left(b \right)
+            &amp;&amp; \text{use } \operatorname{conj}(s) s = 1\\
+\dot{s} &amp;= a^{-1} \dot{d} - a^{-2} d \dot{a}\\
+        &amp;= a^{-1} \left( \dot{d} - \dot{a} s \right)
+            &amp;&amp; \text{use } d = a s \\
+        &amp;= a^{-1} \left(
+               \dot{d} - \operatorname{real} \left( \operatorname{conj}(s) \dot{d} \right) s
+           \right)
+            &amp;&amp; \text{substitute } \dot{a}\\
+        &amp;= a^{-1} \left(
+               \dot{d} - \left(
+                   \operatorname{conj}(s) \dot{d} -
+                   i \operatorname{imag} \left( \operatorname{conj}(s) \dot{d} \right)
+               \right) s
+           \right)
+            &amp;&amp; \text{use } \operatorname{real}(x) = x - i \operatorname{imag}(x)\\
+        &amp;= a^{-1} \left(
+               \dot{d} - \left( \operatorname{conj}(s) s \right) \dot{d} +
+               i \operatorname{imag} \left( \operatorname{conj}(s) \dot{d} \right) s 
+               \right)\\
+        &amp;= i a^{-1} \operatorname{imag} \left( \operatorname{conj}(s) \dot{d} \right) s
+            &amp;&amp; \text{use } \operatorname{conj}(s) s = 1\\
+        &amp;= i a^{-1} \operatorname{imag} \left( \operatorname{conj}(s) d b \right) s
+            &amp;&amp; \text{substitute } \dot{d}\\
+        &amp;= i \operatorname{imag} \left( \operatorname{conj}(s) s b \right) s
+            &amp;&amp; \text{use } d = a s \\
+        &amp;= i \operatorname{imag}(b) s
+            &amp;&amp; \text{use } \operatorname{conj}(s) s = 1
+\end{align*}\]</div><p>Note that the term <span>$b$</span> is reused. In summary, after all of that work, the final pushforward is quite simple:</p><div>\[\begin{align}
+b &amp;= \operatorname{tr} \left( A^{-1} \dot{A} \right) \label{logabsdet_b} \\
+\dot{l} &amp;= \operatorname{real}(b) \label{logabsdet_ldot}\\
+\dot{s} &amp;= i \operatorname{imag}(b) s \label{logabsdet_sdot}\\
+\end{align}\]</div><p>We can define the <code>frule</code> as:</p><pre><code class="language-julia">function frule((_, ΔA), ::typeof(logabsdet), A::Matrix{&lt;:RealOrComplex})
+    # The primal function uses the lu decomposition to compute logabsdet
+    # we reuse this decomposition to compute inv(A) * ΔA
+    F = lu(A, check = false)
+    Ω = logabsdet(F)
+    b = tr(F \ ΔA) # tr(inv(A) * ΔA)
+    s = last(Ω)
+    ∂l = real(b)
+    # for real A, ∂s will always be zero (because imag(b) = 0)
+    # this is type-stable because the eltype is known
+    ∂s = eltype(A) &lt;: Real ? Zero() : im * imag(b) * s
+    # tangents of tuples are of type Composite{&lt;:Tuple}
+    ∂Ω = Composite{typeof(Ω)}(∂l, ∂s)
+    return (Ω, ∂Ω)
+end</code></pre><h3><a class="nav-anchor" id="Reverse-mode-rule-1" href="#Reverse-mode-rule-1">Reverse-mode rule</a></h3><div>\[\begin{align*}
+&amp;\operatorname{real}\left( \operatorname{tr}\left(
+    \overline{l}^H \dot{l}
+\right) \right) +
+\operatorname{real}\left( \operatorname{tr}\left(
+    \overline{s}^H \dot{s}
+\right) \right)
+    &amp;&amp; \text{left-hand side of } \eqref{pbidentmat}\\
+&amp;= \operatorname{real}\left( 
+       \operatorname{conj} \left( \overline{l} \right) \dot{l} +
+       \operatorname{conj} \left( \overline{s} \right) \dot{s}
+   \right) \\
+&amp;= \operatorname{real}\left( 
+       \operatorname{conj} \left( \overline{l} \right) \operatorname{real}(b) +
+       i \operatorname{conj} \left( \overline{s} \right) s \operatorname{imag}(b)
+   \right)
+       &amp;&amp; \text{substitute } \eqref{logabsdet_ldot} \text{ and } \eqref{logabsdet_sdot} \\
+&amp;= \operatorname{real}\left( 
+       \operatorname{real}\left( \overline{l} \right) \operatorname{real}(b) -
+       \operatorname{imag} \left(
+           \operatorname{conj} \left( \overline{s} \right) s
+       \right) \operatorname{imag}(b)
+   \right)
+       &amp;&amp; \text{discard imaginary parts} \\
+&amp;= \operatorname{real}\left(
+       \left(
+           \operatorname{real} \left( \overline{l} \right) +
+           i \operatorname{imag} \left(
+               \operatorname{conj} \left( \overline{s} \right) s
+           \right)
+       \right) b
+   \right)
+       &amp;&amp; \text{gather parts of } b \\
+&amp;= \operatorname{real}\left(
+       \left(
+           \operatorname{real} \left( \overline{l} \right) +
+           i \operatorname{imag} \left(
+               \operatorname{conj} \left( \overline{s} \right) s
+           \right)
+       \right)
+       \operatorname{tr}(A^{-1} \dot{A})
+   \right)
+       &amp;&amp; \text{substitute } b \text{ from } \eqref{logabsdet_b} \\
+&amp;= \operatorname{real}\left( \operatorname{tr} \left(
+       \left(
+           \operatorname{real} \left( \overline{l} \right) +
+           i \operatorname{imag} \left(
+               \operatorname{conj} \left( \overline{s} \right) s
+           \right)
+       \right)
+       A^{-1} \dot{A}
+   \right) \right)
+       &amp;&amp; \text{bring scalar within } \operatorname{tr} \\
+&amp;= \operatorname{real}\left( \operatorname{tr} \left( \overline{A}^H \dot{A} \right) \right)
+       &amp;&amp; \text{right-hand side of } \eqref{pbidentmat}\\
+\end{align*}\]</div><p>Now we solve for <span>$\overline{A}$</span>:</p><div>\[\begin{align*}
+\overline{A} &amp;= \left( \left(
+    \operatorname{real} \left( \overline{l} \right) +
+    i \operatorname{imag} \left( \operatorname{conj} \left( \overline{s} \right) s \right)
+\right) A^{-1} \right)^H\\
+&amp;= \left(
+    \operatorname{real} \left( \overline{l} \right) +
+    i \operatorname{imag} \left( \operatorname{conj} \left( s \right) \overline{s} \right)
+\right) A^{-H}
+\end{align*}\]</div><p>The <code>rrule</code> can be implemented as</p><pre><code class="language-julia">function rrule(::typeof(logabsdet), A::Matrix{&lt;:RealOrComplex})
+    # The primal function uses the lu decomposition to compute logabsdet
+    # we reuse this decomposition to compute inv(A)
+    F = lu(A, check = false)
+    Ω = logabsdet(F)
+    s = last(Ω)
+    function logabsdet_pullback(ΔΩ)
+        (Δl, Δs) = ΔΩ
+        f = conj(s) * Δs
+        imagf = f - real(f) # 0 for real A and Δs, im * imag(f) for complex A and/or Δs
+        g = real(Δl) + imagf
+        ∂A = g * inv(F)&#39; # g * inv(A)&#39;
+        return (NO_FIELDS, ∂A)
+    end
+    return (Ω, logabsdet_pullback)
 end</code></pre><h2><a class="nav-anchor" id="More-examples-1" href="#More-examples-1">More examples</a></h2><p>For more instructive examples of array rules, see <a href="#footnote-Giles2008ext">[Giles2008ext]</a> (real vector and matrix rules) and the <a href="https://github.com/JuliaDiff/ChainRules.jl/tree/master/src/rulesets/LinearAlgebra">LinearAlgebra rules in ChainRules</a>.</p><h2><a class="nav-anchor" id="References-1" href="#References-1">References</a></h2><div class="footnote" id="footnote-Giles2008"><a href="#footnote-Giles2008"><strong>[Giles2008]</strong></a><blockquote><p>Giles M. B. Collected Matrix Derivative Results for Forward and Reverse Mode Algorithmic Differentiation. In: Advances in Automatic Differentiation. <em>Lecture Notes in Computational Science and Engineering</em>, vol 64: pp 35-44. Springer, Berlin (2008). doi: <a href="https://doi.org/10.1007/978-3-540-68942-3_4">10.1007/978-3-540-68942-3_4</a>. <a href="https://people.maths.ox.ac.uk/gilesm/files/AD2008.pdf">pdf</a></p></blockquote></div><div class="footnote" id="footnote-Giles2008ext"><a href="#footnote-Giles2008ext"><strong>[Giles2008ext]</strong></a><blockquote><p>Giles M. B. An Extended Collection of Matrix Derivative Results for Forward and Reverse Mode Algorithmic Differentiation. (unpublished). <a href="https://people.maths.ox.ac.uk/gilesm/files/NA-08-01.pdf">pdf</a></p></blockquote></div><footer><hr/><a class="previous" href="complex.html"><span class="direction">Previous</span><span class="title">Complex Numbers</span></a><a class="next" href="debug_mode.html"><span class="direction">Next</span><span class="title">Debug Mode</span></a></footer></article></body></html>
