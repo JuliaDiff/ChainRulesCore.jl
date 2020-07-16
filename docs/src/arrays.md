@@ -780,7 +780,7 @@ end
     ``\operatorname{conj}(s)`` rotates a number parallel to $s$ to the real line.
     So $\operatorname{conj}(s) \overline{s}$ rotates $\overline{s}$ so that its imaginary part is the part that was tangent to the complex circle at $s$, while the real part is the part that was not tangent.
     Then the pullback isolates the imaginary part, which effectively is a projection.
-    That is, any part of the pullback $\overline{s}$ that is not tangent to the complex circle at $s$ will not contribute to $\overline{A}$.
+    That is, any part of the adjoint $\overline{s}$ that is not tangent to the complex circle at $s$ will not contribute to $\overline{A}$.
 
 ## More examples
 
