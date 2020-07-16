@@ -745,6 +745,22 @@ Now we solve for $\overline{A}$:
 \end{align*}
 ```
 
+!!! note
+    It's a good idea when deriving pushforwards and pullbacks to verify that they make sense.
+    For the pushforward, since $l$ is real, it follows that $\dot{l}$ is too.
+
+    What about $\dot{s}$?
+    Well, $s = \frac{d}{|d|}$ is point on the unit circle in the complex plane.
+    Multiplying a complex number by $i$ rotates it counter-clockwise by 90°.
+    So the expression for $\dot{s}$ takes a real number, $\operatorname{imag}(b)$, multiplies by $s$ to make it parallel to $s$, then multiplies by $i$ to make it perpendicular to $s$, that is, perfectly tangent to the unit complex circle at $s$.
+
+    For the pullback, it again follows that only the real part of $\overline{l}$ is pulled back.
+
+    ``\operatorname{conj}(s)`` rotates a number parallel to $s$ to the real line.
+    So $\operatorname{conj}(s) \overline{s}$ rotates $\overline{s}$ so that its imaginary part is the part that was tangent to the complex circle at $s$, while the real part is the part that was not tangent.
+    Then the pullback isolates the imaginary part, which effectively is a projection.
+    That is, any part of the pullback $\overline{s}$ that is not tangent to the complex circle at $s$ will not contribute to $\overline{A}$.
+
 The `rrule` can be implemented as
 
 ```julia
