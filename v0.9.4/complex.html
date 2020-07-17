@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Complex Numbers · ChainRules</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="assets/documenter.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script><link href="assets/documenter.css" rel="stylesheet" type="text/css"/><link href="assets/chainrules.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><a href="index.html"><img class="logo" src="assets/logo.svg" alt="ChainRules logo"/></a><h1>ChainRules</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="search.html"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="index.html">Introduction</a></li><li><a class="toctext" href="FAQ.html">FAQ</a></li><li><a class="toctext" href="writing_good_rules.html">Writing Good Rules</a></li><li class="current"><a class="toctext" href="complex.html">Complex Numbers</a><ul class="internal"></ul></li><li><a class="toctext" href="arrays.html">Deriving Array Rules</a></li><li><a class="toctext" href="debug_mode.html">Debug Mode</a></li><li><span class="toctext">Design</span><ul><li><a class="toctext" href="design/many_differentials.html">Many Differential Types</a></li></ul></li><li><a class="toctext" href="api.html">API</a></li></ul></nav><article id="docs"><header><nav><ul><li><a href="complex.html">Complex Numbers</a></li></ul><a class="edit-page" href="https://github.com/JuliaDiff/ChainRulesCore.jl/blob/master/docs/src/complex.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Complex Numbers</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="How-do-chain-rules-work-for-complex-functions?-1" href="#How-do-chain-rules-work-for-complex-functions?-1">How do chain rules work for complex functions?</a></h1><p>ChainRules follows the convention that <code>frule</code> applied to a function <span>$f(x + i y) = u(x,y) + i v(x,y)$</span> with perturbation <span>$\Delta x + i \Delta y$</span> returns the value and</p><div>\[\tfrac{\partial u}{\partial x} \, \Delta x + \tfrac{\partial u}{\partial y} \, \Delta y + i \, \Bigl( \tfrac{\partial v}{\partial x} \, \Delta x + \tfrac{\partial v}{\partial y} \, \Delta y \Bigr)
+.\]</div><p>Similarly, <code>rrule</code> applied to the same function returns the value and a pullback function which, when applied to the adjoint <span>$\Delta u + i \Delta v$</span>, returns</p><div>\[\Delta u \, \tfrac{\partial u}{\partial x} + \Delta v \, \tfrac{\partial v}{\partial x} + i \, \Bigl(\Delta u \, \tfrac{\partial u }{\partial y} + \Delta v \, \tfrac{\partial v}{\partial y} \Bigr)
+.\]</div><p>If we interpret complex numbers as vectors in <span>$\mathbb{R}^2$</span>, then <code>frule</code> (<code>rrule</code>) corresponds to multiplication with the (transposed) Jacobian of <span>$f(z)$</span>, i.e. <code>frule</code> corresponds to</p><div>\[\begin{pmatrix}
+\tfrac{\partial u}{\partial x} \, \Delta x + \tfrac{\partial u}{\partial y} \, \Delta y
+\\
+\tfrac{\partial v}{\partial x} \, \Delta x + \tfrac{\partial v}{\partial y} \, \Delta y
+\end{pmatrix}
+=
+\begin{pmatrix}
+\tfrac{\partial u}{\partial x} &amp; \tfrac{\partial u}{\partial y} \\
+\tfrac{\partial v}{\partial x} &amp; \tfrac{\partial v}{\partial y} \\
+\end{pmatrix}
+\begin{pmatrix}
+\Delta x \\ \Delta y
+\end{pmatrix}
+\]</div><p>and <code>rrule</code> corresponds to</p><div>\[\begin{pmatrix}
+\tfrac{\partial u}{\partial x} \, \Delta u + \tfrac{\partial v}{\partial x} \, \Delta v
+\\
+\tfrac{\partial u}{\partial y} \, \Delta u + \tfrac{\partial v}{\partial y} \, \Delta v
+\end{pmatrix}
+=
+\begin{pmatrix}
+\tfrac{\partial u}{\partial x} &amp; \tfrac{\partial u}{\partial y} \\
+\tfrac{\partial v}{\partial x} &amp; \tfrac{\partial v}{\partial y} \\
+\end{pmatrix}^T
+\begin{pmatrix}
+\Delta u \\ \Delta v
+\end{pmatrix}
+.\]</div><p>The Jacobian of <span>$f:\mathbb{C} \to \mathbb{C}$</span> interpreted as a function <span>$\mathbb{R}^2 \to \mathbb{R}^2$</span> can hence be evaluated using either of the following functions.</p><pre><code class="language-julia">function jacobian_via_frule(f,z)
+    du_dx, dv_dx = reim(frule((Zero(), 1),f,z)[2])
+    du_dy, dv_dy = reim(frule((Zero(),im),f,z)[2])
+    return [
+        du_dx  du_dy
+        dv_dx  dv_dy
+    ]
+end</code></pre><pre><code class="language-julia">function jacobian_via_rrule(f,z)
+    _, pullback = rrule(f,z)
+    du_dx, du_dy = reim(pullback( 1)[2])
+    dv_dx, dv_dy = reim(pullback(im)[2])
+    return [
+        du_dx  du_dy
+        dv_dx  dv_dy
+    ]
+end</code></pre><p>If <span>$f(z)$</span> is holomorphic, then the derivative part of <code>frule</code> can be implemented as <span>$f&#39;(z) \, \Delta z$</span> and the derivative part of <code>rrule</code> can be implemented as <span>$\operatorname{conj}\bigl(f&#39;(z)\bigr) \, \Delta f$</span>. Consequently, holomorphic derivatives can be evaluated using either of the following functions.</p><pre><code class="language-julia">function holomorphic_derivative_via_frule(f,z)
+    fz,df_dz = frule((Zero(),1),f,z)
+    return df_dz
+end</code></pre><pre><code class="language-julia">function holomorphic_derivative_via_rrule(f,z)
+    fz, pullback = rrule(f,z)
+    dself, conj_df_dz = pullback(1)
+    return conj(conj_df_dz)
+end</code></pre><div class="admonition note"><div class="admonition-title">Note</div><div class="admonition-text"><p>There are various notions of complex derivatives (holomorphic and Wirtinger derivatives, Jacobians, gradients, etc.) which differ in subtle but important ways. The goal of ChainRules is to provide the basic differentiation rules upon which these derivatives can be implemented, but it does not implement these derivatives itself. It is recommended that you carefully check how the above definitions of <code>frule</code> and <code>rrule</code> translate into your specific notion of complex derivative, since getting this wrong will quietly give you wrong results.</p></div></div><footer><hr/><a class="previous" href="writing_good_rules.html"><span class="direction">Previous</span><span class="title">Writing Good Rules</span></a><a class="next" href="arrays.html"><span class="direction">Next</span><span class="title">Deriving Array Rules</span></a></footer></article></body></html>
