@@ -73,10 +73,15 @@ end
 
 # Actually draw it
 
-Random.seed!(16)
-Drawing(450,450, "logo.svg")
-origin()
-translate(50, -130);
-chain(0.5)
-finish()
-preview()
+function save_logo(filename)
+    Random.seed!(16)
+    Drawing(450,450, filename)
+    origin()
+    translate(50, -130);
+    chain(0.5)
+    finish()
+    preview()
+end
+
+save_logo("logo.svg")
+save_logo("logo.png")
