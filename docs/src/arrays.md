@@ -258,7 +258,7 @@ Our approach for deriving the adjoints $\overline{X}_m$ is then:
 
 Note that the final expressions for the adjoints will not contain any $\dot{X}_m$ terms.
 
-!!! info
+!!! note
     Why do we conjugate, and why do we only use the real part of the dot product in \eqref{pbident}?
     Recall from [Complex Numbers](complex.md) that we treat a complex number as a pair of real numbers.
     These identities are a direct consequence of this convention.
@@ -656,8 +656,8 @@ function frule((_, ΔA), ::typeof(logabsdet), A::Matrix{<:RealOrComplex})
     # The primal function uses the lu decomposition to compute logabsdet
     # we reuse this decomposition to compute inv(A) * ΔA
     F = lu(A, check = false)
-    Ω = logabsdet(F)
-    b = tr(F \ ΔA) # tr(inv(A) * ΔA)
+    Ω = logabsdet(F)  # == logabsdet(A)
+    b = tr(F \ ΔA)  # == tr(inv(A) * ΔA)
     s = last(Ω)
     ∂l = real(b)
     # for real A, ∂s will always be zero (because imag(b) = 0)
@@ -752,14 +752,14 @@ function rrule(::typeof(logabsdet), A::Matrix{<:RealOrComplex})
     # The primal function uses the lu decomposition to compute logabsdet
     # we reuse this decomposition to compute inv(A)
     F = lu(A, check = false)
-    Ω = logabsdet(F)
+    Ω = logabsdet(F)  # == logabsdet(A)
     s = last(Ω)
     function logabsdet_pullback(ΔΩ)
         (Δl, Δs) = ΔΩ
         f = conj(s) * Δs
-        imagf = f - real(f) # 0 for real A and Δs, im * imag(f) for complex A and/or Δs
+        imagf = f - real(f)  # 0 for real A and Δs, im * imag(f) for complex A and/or Δs
         g = real(Δl) + imagf
-        ∂A = g * inv(F)' # g * inv(A)'
+        ∂A = g * inv(F)'  # == g * inv(A)'
         return (NO_FIELDS, ∂A)
     end
     return (Ω, logabsdet_pullback)
