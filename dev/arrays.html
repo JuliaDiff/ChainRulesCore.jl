@@ -83,7 +83,7 @@ end</code></pre><h3><a class="nav-anchor" id="Other-useful-identities-1" href="#
 \sum_m \operatorname{real} \left( \operatorname{tr} \left(
     \overline{X}_m^H \dot{X}_m
 \right) \right),
-\end{equation}\]</div><p>where <span>$\operatorname{tr}(\cdot)$</span> is the matrix trace (<code>LinearAlgebra.tr</code>) function.</p><p>Our approach for deriving the adjoints <span>$\overline{X}_m$</span> is then:</p><ol><li>Derive the pushforward (<span>$\dot{\Omega}$</span> in terms of <span>$\dot{X}_m$</span>) using \eqref{pf}.</li><li>Substitute this expression for <span>$\dot{\Omega}$</span> into the left-hand side of \eqref{pbident}.</li><li>Manipulate until it looks like the right-hand side of \eqref{pbident}.</li><li>Solve for each <span>$\overline{X}_m$</span>.</li></ol><p>Note that the final expressions for the adjoints will not contain any <span>$\dot{X}_m$</span> terms.</p><div class="admonition info"><div class="admonition-title">Info</div><div class="admonition-text"><p>Why do we conjugate, and why do we only use the real part of the dot product in \eqref{pbident}? Recall from <a href="complex.html">Complex Numbers</a> that we treat a complex number as a pair of real numbers. These identities are a direct consequence of this convention. Consider <span>$\frac{ds}{dt}$</span> for a scalar function <span>$f: (x + i y) \mapsto (u + i v)$</span>:</p><div>\[\begin{align*}
+\end{equation}\]</div><p>where <span>$\operatorname{tr}(\cdot)$</span> is the matrix trace (<code>LinearAlgebra.tr</code>) function.</p><p>Our approach for deriving the adjoints <span>$\overline{X}_m$</span> is then:</p><ol><li>Derive the pushforward (<span>$\dot{\Omega}$</span> in terms of <span>$\dot{X}_m$</span>) using \eqref{pf}.</li><li>Substitute this expression for <span>$\dot{\Omega}$</span> into the left-hand side of \eqref{pbident}.</li><li>Manipulate until it looks like the right-hand side of \eqref{pbident}.</li><li>Solve for each <span>$\overline{X}_m$</span>.</li></ol><p>Note that the final expressions for the adjoints will not contain any <span>$\dot{X}_m$</span> terms.</p><div class="admonition note"><div class="admonition-title">Note</div><div class="admonition-text"><p>Why do we conjugate, and why do we only use the real part of the dot product in \eqref{pbident}? Recall from <a href="complex.html">Complex Numbers</a> that we treat a complex number as a pair of real numbers. These identities are a direct consequence of this convention. Consider <span>$\frac{ds}{dt}$</span> for a scalar function <span>$f: (x + i y) \mapsto (u + i v)$</span>:</p><div>\[\begin{align*}
 \frac{ds}{dt}
     &amp;= \operatorname{real}\left( \operatorname{dot}\left(
            \overline{x} + i \overline{y}, \dot{x} + i \dot{y}
@@ -298,8 +298,8 @@ b &amp;= \operatorname{tr} \left( A^{-1} \dot{A} \right) \label{logabsdet_b} \\
     # The primal function uses the lu decomposition to compute logabsdet
     # we reuse this decomposition to compute inv(A) * ΔA
     F = lu(A, check = false)
-    Ω = logabsdet(F)
-    b = tr(F \ ΔA) # tr(inv(A) * ΔA)
+    Ω = logabsdet(F)  # == logabsdet(A)
+    b = tr(F \ ΔA)  # == tr(inv(A) * ΔA)
     s = last(Ω)
     ∂l = real(b)
     # for real A, ∂s will always be zero (because imag(b) = 0)
@@ -376,14 +376,14 @@ end</code></pre><h3><a class="nav-anchor" id="Reverse-mode-rule-1" href="#Revers
     # The primal function uses the lu decomposition to compute logabsdet
     # we reuse this decomposition to compute inv(A)
     F = lu(A, check = false)
-    Ω = logabsdet(F)
+    Ω = logabsdet(F)  # == logabsdet(A)
     s = last(Ω)
     function logabsdet_pullback(ΔΩ)
         (Δl, Δs) = ΔΩ
         f = conj(s) * Δs
-        imagf = f - real(f) # 0 for real A and Δs, im * imag(f) for complex A and/or Δs
+        imagf = f - real(f)  # 0 for real A and Δs, im * imag(f) for complex A and/or Δs
         g = real(Δl) + imagf
-        ∂A = g * inv(F)&#39; # g * inv(A)&#39;
+        ∂A = g * inv(F)&#39;  # == g * inv(A)&#39;
         return (NO_FIELDS, ∂A)
     end
     return (Ω, logabsdet_pullback)
