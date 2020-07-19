@@ -1,13 +1,13 @@
 """
     AbstractZero <: AbstractDifferential
 
-This is zero-like differential types.
-If a AD system encounter a propagator taking as input only subtypes of `AbstractZero` then
-it can stop performing any AD operations, as all propagator are linear functions, and thus
+This abstract type encompasses zero-like differential types.
+If an AD system encounters a propagator that takes as input only subtypes of `AbstractZero`,
+then it can stop performing AD operations. All propagators are linear functions, and thus
 the final result will be zero.
 
 All `AbstractZero` subtypes are singleton types.
-There are two of them [`Zero()`](@ref) and [`DoesNotExist()`](@ref).
+There are two of them: [`Zero()`](@ref) and [`DoesNotExist()`](@ref).
 """
 abstract type AbstractZero <: AbstractDifferential end
 Base.iszero(::AbstractZero) = true
@@ -28,7 +28,7 @@ Base.:/(z::AbstractZero, ::Any) = z
 
 The additive identity for differentials.
 This is basically the same as `0`.
-A derivative of `Zero()`. does not propagate through the primal function.
+A derivative of `Zero()` does not propagate through the primal function.
 """
 struct Zero <: AbstractZero end
 
@@ -43,21 +43,21 @@ Base.zero(::Type{<:AbstractDifferential}) = Zero()
     DoesNotExist() <: AbstractZero
 
 This differential indicates that the derivative does not exist.
-It is the differential for a Primal type that is not differentiable.
-Such an Integer, or Boolean (when not being used as a represention of a value that normally
-would be a floating point.)
-The only valid way to pertube such a values is to not change it at all.
-As such, `DoesNotExist` is functionally identical to `Zero()`,
-but provides additional semantic information.
+It is the differential for primal types that are not differentiable,
+such as integers or booleans (when they are not being used to represent
+floating-point values).
+The only valid way to perturb such values is to not change them at all.
+As a consequence, `DoesNotExist` is functionally identical to `Zero()`,
+but it provides additional semantic information.
 
-If you are adding this differential to a primal then something is wrong.
-A optimization package making use of this might like to check for such a case.
+If you are adding this differential to a primal, then something is wrong.
+An optimization package making use of this might want to check for such a case.
 
 !!! note:
-    This does not indicate that the derivative it is not implemented,
+    This does not indicate that the derivative is not implemented,
     but rather that mathematically it is not defined.
 
-This mostly shows up as the deriviative with respect to dimension, index, or size
+This mostly shows up as the derivative with respect to dimension, index, or size
 arguments.
 ```
     function rrule(fill, x, len::Int)
