@@ -51,7 +51,7 @@ The only valid way to perturb such values is to not change them at all.
 As a consequence, `DoesNotExist` is functionally identical to `Zero()`,
 but it provides additional semantic information.
 
-Adding this differential to a primal is intrinsically wrong: gradient-based
+Adding this differential to a primal is generally wrong: gradient-based
 methods cannot be used to optimize over discrete variables.
 An optimization package making use of this might want to check for such a case.
 
