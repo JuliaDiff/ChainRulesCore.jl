@@ -1,7 +1,7 @@
 """
     AbstractZero <: AbstractDifferential
 
-Supertype of zero-like differentials—i.e., differentials that act like zero when
+Supertype for zero-like differentials—i.e., differentials that act like zero when
 added or multiplied to other values.
 If an AD system encounters a propagator that takes as input only subtypes of `AbstractZero`,
 then it can stop performing AD operations.
