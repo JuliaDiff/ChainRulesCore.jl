@@ -1,7 +1,8 @@
 """
     AbstractZero <: AbstractDifferential
 
-This abstract type encompasses zero-like differential types.
+Supertype of zero-like differentials—i.e., differentials that act like zero when
+added or multiplied to other values.
 If an AD system encounters a propagator that takes as input only subtypes of `AbstractZero`,
 then it can stop performing AD operations. All propagators are linear functions, and thus
 the final result will be zero.
@@ -50,7 +51,8 @@ The only valid way to perturb such values is to not change them at all.
 As a consequence, `DoesNotExist` is functionally identical to `Zero()`,
 but it provides additional semantic information.
 
-If you are adding this differential to a primal, then something is wrong.
+Adding this differential to a primal is intrinsically wrong: gradient-based
+methods cannot be used to optimize over discrete variables.
 An optimization package making use of this might want to check for such a case.
 
 !!! note:
