@@ -14,4 +14,8 @@ using Test
     end
 
     include("rules.jl")
+
+    @testset "demos" begin
+        include("demos/forwarddiffzero.jl")
+    end
 end
