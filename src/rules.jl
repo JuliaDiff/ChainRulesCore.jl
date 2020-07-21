@@ -117,7 +117,7 @@ end
 macro frule(ast)
     return quote
         $(esc(ast))
-        $register_new_rule(frule, $(QuoteNode(ast)))
+        $_register_new_rule(frule, $(QuoteNode(ast)))
     end
 end
 
@@ -134,25 +134,46 @@ Example:
 end
 ```
 """
-macro rrule(expr)
+macro rrule(ast)
     return quote
         $(esc(ast))
-        $register_new_rule(rrule, $(QuoteNode(ast)))
+        $_register_new_rule(rrule, $(QuoteNode(ast)))
     end
 end
 
-const FRULES = Vector{Pair{Method, Expr}}[]
-const RRULES = Vector{Pair{Method, Expr}}[]
-rule_list(::typeof(rrule)) = RRULES
-rule_list(::typeof(frule)) = FRULES
+"""
+    _rule_list(frule | rrule)
 
-function register_new_rule(rule_kind, ast)
+Returns a list of all rules currently defined rules of the given kind.
+"""
+_rule_list
+_rule_list(::typeof(rrule)) = RRULES
+_rule_list(::typeof(frule)) = FRULES
+const SIGT = Type
+const FRULES = Vector{Pair{SIGT, Expr}}()
+const RRULES = Vector{Pair{SIGT, Expr}}()
+
+
+function _register_new_rule(rule_kind, ast)
     method = _just_defined_method(rule_kind)
-    push!(rule_list(rule_kind), method=>ast)
-    trigger_new_rule_hooks(rule_kind, method, ast)
+    rule_sig::SIGT = method.sig 
+    sig = _primal_sig(rule_kind, rule_sig)
+    push!(_rule_list(rule_kind), sig=>ast)
+    _trigger_new_rule_hooks(rule_kind, sig, ast)
     return nothing
 end
 
+function _primal_sig(::typeof(frule), rule_sig)
+    @assert rule_sig.parameters[1] == typeof(frule)
+    # need to skip frule and the deriviative info, so starting from the 3rd
+    return Tuple{rule_sig.parameters[3:end]...}
+end
+
+function _primal_sig(::typeof(rrule), rule_sig)
+    @assert rule_sig.parameters[1] == typeof(rrule)
+    # need to skip rrule so starting from the 2rd
+    return Tuple{rule_sig.parameters[2:end]...}
+end
 
 """
     _just_defined_method(f)
@@ -178,19 +199,29 @@ end
 
 NEW_RRULE_HOOKS = Function[]
 NEW_FRULE_HOOKS = Function[]
-hook_list(::typeof(rrule)) = NEW_RRULE_HOOKS
-hook_list(::typeof(frule)) = NEW_FRULE_HOOKS
+_hook_list(::typeof(rrule)) = NEW_RRULE_HOOKS
+_hook_list(::typeof(frule)) = NEW_FRULE_HOOKS
 
-function trigger_new_rule_hooks(rule_kind, method, ast)
-    for hook_fun in hook_list(rule_kind)
+function _trigger_new_rule_hooks(rule_kind, sig, ast)
+    for hook_fun in _hook_list(rule_kind)
         try
-            hook_fun(method, ast)
+            hook_fun(sig, ast)
         catch err
-            @warn "Error triggering hooks" hook_fun method ast exception=err
+            @warn "Error triggering hooks" hook_fun sig ast exception=err
         end
     end
 end
 
-on_new_rule(hook_fun, rule_kind) = push!(hook_list(rule_kind), hook_fun)
-on_new_rrule(hook_fun) = on_new_rule(hook_fun, rrule)
-on_new_frule(hook_fun) = on_new_rule(hook_fun, frule)
+"""
+    on_new_rule(((sig, ast)->eval...), frule | rrule)
+"""
+function on_new_rule(hook_fun, rule_kind)
+    # get all the existing rules
+    ret = map(_rule_list(rule_kind)) do (sig, ast)
+        hook_fun(sig, ast)
+    end
+
+    # register hook for new rules
+    push!(_hook_list(rule_kind), hook_fun)
+    return ret
+end

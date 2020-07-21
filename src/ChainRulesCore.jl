@@ -2,9 +2,11 @@ module ChainRulesCore
 using Base.Broadcast: broadcasted, Broadcasted, broadcastable, materialize, materialize!
 using MuladdMacro: @muladd
 
-export frule, rrule
-export @frule, @rrule, @scalar_rule, @thunk
-export canonicalize, extern, unthunk
+export on_new_rule  # generation tools
+export frule, rrule  # core function
+export @frule, @rrule, @scalar_rule, @thunk  # defination helper macros
+export canonicalize, extern, unthunk  # differnetial operations
+# differentials
 export Composite, DoesNotExist, InplaceableThunk, One, Thunk, Zero, AbstractZero, AbstractThunk
 export NO_FIELDS
 
