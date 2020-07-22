@@ -67,6 +67,15 @@ Base.imag(::Zero) = Zero()
 Base.real(::One) = One()
 Base.imag(::One) = Zero()
 
+Base.complex(::Zero) = Zero()
+Base.complex(::Zero, ::Zero) = Zero()
+Base.complex(::Zero, i::Real) = complex(oftype(i, 0), i)
+Base.complex(r::Real, ::Zero) = complex(r)
+
+Base.complex(::One) = One()
+Base.complex(::Zero, ::One) = im
+Base.complex(::One, ::Zero) = One()
+
 Base.:+(a::One, b::One) = extern(a) + extern(b)
 Base.:*(::One, ::One) = One()
 for T in (:AbstractThunk, :Composite, :Any)
