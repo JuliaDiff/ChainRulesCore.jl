@@ -115,6 +115,7 @@ function Base.:+(a::P, d::Composite{P}) where P
         return construct(P, net_backing)
     end
 end
+Base.:+(a::Dict, d::Composite{P}) where {P} = merge(+, a, backing(d))
 Base.:+(a::Composite{P}, b::P) where P = b + a
 
 # We intentionally do not define, `Base.*(::Composite, ::Composite)` as that is not meaningful
