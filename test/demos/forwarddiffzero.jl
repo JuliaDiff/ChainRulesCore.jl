@@ -23,11 +23,12 @@ function define_dual_overload(sig)
     opT, argTs = Iterators.peel(sig.parameters)
     fieldcount(opT) == 0 || return  # not handling functors 
     all(Float64 <: argT for argT in argTs) || return  # only handling purely Float64 ops.
-    op = opT.instance
-    opname = :($(parentmodule(op)).$(nameof(op)))
+
     N = length(sig.parameters) - 1  # skip the op
     fdef = quote
-        function $opname(dual_args::Vararg{Union{Dual, Float64},$N}; kwargs...)
+        # we use the function call overloading form as it lets us avoid namespacing issues
+        # as we can directly interpolate the function type into to the AST.
+        function (::$opT)(dual_args::Vararg{Union{Dual, Float64}, $N}; kwargs...)
             ȧrgs = (NO_FIELDS,  diff.(dual_args)...)
             args = ($opname, primal.(dual_args)...)
             res = frule(ȧrgs, args...; kwargs...)
