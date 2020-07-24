@@ -19,7 +19,7 @@ diff(d::Real) = 0.0
 Base.to_power_type(x::Dual) = x
 
 
-function define_dual_overload(sig, ast)
+function define_dual_overload(sig)
     opT, argTs = Iterators.peel(sig.parameters)
     fieldcount(opT) == 0 || return  # not handling functors 
     all(Float64 <: argT for argT in argTs) || return  # only handling purely Float64 ops.
@@ -36,8 +36,8 @@ function define_dual_overload(sig, ast)
             return Dual(y, ẏ)  # if y, ẏ are not `Float64` this will error.
         end
     end
-    # @show fdef
-    @eval $fdef
+    #@show fdef
+    eval(fdef)
 end
 
 #########################################
@@ -45,14 +45,15 @@ end
 @scalar_rule x + y (One(), One())
 @scalar_rule x - y (One(), -1)
 
-on_new_rule(frule) do sig, ast
-    return define_dual_overload(sig, ast)
-end
+on_new_rule(define_dual_overload, frule)
 
 # add a rule later also
-@frule function ChainRulesCore.frule((_, Δx, Δy), ::typeof(*), x::Number, y::Number)
+function ChainRulesCore.frule((_, Δx, Δy), ::typeof(*), x::Number, y::Number)
     return (x * y, (Δx * y + x * Δy))
 end
+
+# Manual refresh needed as new rule added in same file as AD after the `on_new_rule` call
+refresh_rules(); 
 
 function derv(f, args...)
     duals = Dual.(args, one.(args))
