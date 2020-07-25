@@ -28,9 +28,9 @@ function define_dual_overload(sig)
     fdef = quote
         # we use the function call overloading form as it lets us avoid namespacing issues
         # as we can directly interpolate the function type into to the AST.
-        function (::$opT)(dual_args::Vararg{Union{Dual, Float64}, $N}; kwargs...)
+        function (op::$opT)(dual_args::Vararg{Union{Dual, Float64}, $N}; kwargs...)
             ȧrgs = (NO_FIELDS,  diff.(dual_args)...)
-            args = ($opname, primal.(dual_args)...)
+            args = (op, primal.(dual_args)...)
             res = frule(ȧrgs, args...; kwargs...)
             res === nothing && error("Apparently no rule for $($sig)), but we really thought there was, args=($args)")
             y, ẏ = res
