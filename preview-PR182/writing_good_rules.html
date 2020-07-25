@@ -6,7 +6,7 @@ return ∂A
 # bad:
 ∂A = foo(x)
 return @thunk(∂A)</code></pre><p>In the bad example <code>foo(x)</code> gets computed eagerly, and all that the thunk is doing is wrapping the already calculated result in a function that returns it.</p><p>Do not use <code>@thunk</code> if this would be equal or more work than actually evaluating the expression itself. Examples being:</p><ul><li>The expression being a constant</li><li>The expression is merely wrapping something in a <code>struct</code>, such as <code>Adjoint(x)</code> or <code>Diagonal(x)</code></li><li>The expression being itself a <code>thunk</code></li><li>The expression being from another <code>rrule</code> or <code>frule</code>; it would be <code>@thunk</code>ed if required by the defining rule already.</li><li>There is only one derivative being returned, so from the fact that the user called <code>frule</code>/<code>rrule</code> they clearly will want to use that one.</li></ul><h2><a class="nav-anchor" id="Code-Style-1" href="#Code-Style-1">Code Style</a></h2><p>Use named local functions for the <code>pullback</code> in an <code>rrule</code>.</p><pre><code class="language-julia"># good:
-@rrule function rrule(::typeof(foo), x)
+function rrule(::typeof(foo), x)
     Y = foo(x)
     function foo_pullback(x̄)
         return NO_FIELDS, bar(x̄)
@@ -19,7 +19,7 @@ julia&gt; rrule(foo, 2)
 ==#
 
 # bad:
-@rrule function rrule(::typeof(foo), x)
+function rrule(::typeof(foo), x)
     return foo(x), x̄ -&gt; (NO_FIELDS, bar(x̄))
 end
 #== output:
