@@ -38,6 +38,7 @@ makedocs(
     ],
     strict=true,
     checkdocs=:exports,
+    mathengine=MathJax(),
 )
 
 deploydocs(
