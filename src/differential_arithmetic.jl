@@ -51,6 +51,7 @@ Base.:+(::Zero, ::Zero) = Zero()
 Base.:-(::Zero, ::Zero) = Zero()
 Base.:-(::Zero) = Zero()
 Base.:*(::Zero, ::Zero) = Zero()
+LinearAlgebra.dot(::Zero, ::Zero) = Zero()
 for T in (:One, :AbstractThunk, :Composite, :Any)
     @eval Base.:+(::Zero, b::$T) = b
     @eval Base.:+(a::$T, ::Zero) = a
@@ -59,6 +60,9 @@ for T in (:One, :AbstractThunk, :Composite, :Any)
 
     @eval Base.:*(::Zero, ::$T) = Zero()
     @eval Base.:*(::$T, ::Zero) = Zero()
+
+    @eval LinearAlgebra.dot(::Zero, ::$T) = Zero()
+    @eval LinearAlgebra.dot(::$T, ::Zero) = Zero()
 end
 
 Base.real(::Zero) = Zero()
@@ -88,6 +92,8 @@ for T in (:AbstractThunk, :Composite, :Any)
     @eval Base.:*(a::$T, ::One) = a
 end
 
+LinearAlgebra.dot(::One, x::Number) = x
+LinearAlgebra.dot(x::Number, ::One) = conj(x)
 
 Base.:+(a::AbstractThunk, b::AbstractThunk) = unthunk(a) + unthunk(b)
 Base.:*(a::AbstractThunk, b::AbstractThunk) = unthunk(a) * unthunk(b)
