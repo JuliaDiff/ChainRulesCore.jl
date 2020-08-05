@@ -1,7 +1,7 @@
 using Base.Broadcast: broadcastable
 using BenchmarkTools
 using ChainRulesCore
-using LinearAlgebra: Diagonal
+using LinearAlgebra: Diagonal, dot
 using FiniteDifferences
 using Test
 

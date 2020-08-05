@@ -17,6 +17,11 @@
         @test z * z === z
         @test z * 1 === Zero()
         @test 1 * z === Zero()
+        @test dot(z, z) === z
+        @test dot(z, 1) === z
+        @test dot(1, z) === z
+        @test dot([1, 2], z) === z
+        @test dot(z, [1, 2]) === z
         for x in z
             @test x === z
         end
