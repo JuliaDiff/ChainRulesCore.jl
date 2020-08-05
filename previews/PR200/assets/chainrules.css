@@ -10,57 +10,78 @@ a:hover, a:focus {
 
 /* Navigation */
 
-nav.toc ul a:hover,
-nav.toc ul.internal a:hover {
+#documenter .docs-sidebar ul.docs-menu a.tocitem:hover,
+#documenter .docs-sidebar ul.docs-menu li.is-active ul.internal .tocitem:hover {
   color: #FFFFFF;
   background-color: #4595D1;
 }
 
-nav.toc ul .toctext {
-  color: #FFFFFF;
+#documenter .docs-sidebar ul.docs-menu {
+  border-top: none;
 }
 
-nav.toc {
+#documenter .docs-sidebar ul.docs-menu .tocitem {
+  color: #FFFFFF;
+  background: none;
+}
+
+#documenter .docs-sidebar {
   box-shadow: none;
   color: #FFFFFF;
   background-color: #194E82;
 }
 
-nav.toc li.current > .toctext {
-  color: #FFFFFF;
-  background-color: #4595D1;
-  border-top-width: 0px;
-  border-bottom-width: 0px;
+#documenter .docs-sidebar ul.docs-menu li.is-active {
+  border-top: none;
+  border-bottom: none;
 }
 
-nav.toc ul.internal a {
+#documenter .docs-sidebar ul.docs-menu li.is-active .tocitem,
+#documenter .docs-sidebar ul.docs-menu li.is-active .tocitem:hover {
+  color: #FFFFFF;
+  background-color: #4595D1;
+}
+
+#documenter .docs-sidebar ul.docs-menu li.is-active ul.internal {
+  margin: 0;
+  border-top: none;
+}
+
+#documenter .docs-sidebar ul.docs-menu li.is-active ul.internal li {
+  margin-top: 0;
+}
+
+#documenter .docs-sidebar ul.docs-menu li.is-active ul.internal .tocitem {
   color: #194E82;
   background-color: #FFFFFF;
+  padding: 0.5em;
+  padding-left: 1em;
+}
+#documenter .docs-sidebar ul.docs-menu li.is-active ul.internal .tocitem code {
+  color: inherit;
 }
 
 /* Text */
 
-article#docs a.nav-anchor {
+article#documenter-page a.docs-heading-anchor {
   color: #194E82;
-}
-
-article#docs blockquote {
-  font-style: italic;
 }
 
 /* Terminology Block */
 
-div.admonition.terminology div.admonition-title:before {
+.admonition.is-category-terminology {
+  background-color: #FFFEDD;
+  border-color: #FFEC8B;
+}
+
+.admonition.is-category-terminology > .admonition-header:before {
   content: "Terminology: ";
   font-family: inherit;
   font-weight: bold;
 }
-div.admonition.terminology div.admonition-title {
+.admonition.is-category-terminology > .admonition-header {
   background-color: #FFEC8B;
-}
-
-div.admonition.terminology div.admonition-text {
-  background-color: #FFFEDD;
+  color: black;
 }
 
 /* Code */
