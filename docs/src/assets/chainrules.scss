@@ -103,3 +103,7 @@ html:not(.theme--documenter-dark) body #documenter {
     }
   }
 }
+
+html.theme--documenter-dark .admonition.is-category-terminology {
+  border-color: #FFEC8B;
+}
