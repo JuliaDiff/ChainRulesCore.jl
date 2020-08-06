@@ -3,6 +3,12 @@
 [[Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
 
+[[BinaryProvider]]
+deps = ["Libdl", "Logging", "SHA"]
+git-tree-sha1 = "ecdec412a9abc8db54c0efc5548c64dfce072058"
+uuid = "b99e7846-7c00-51b0-8f62-c81ae34c0232"
+version = "0.5.10"
+
 [[ChainRulesCore]]
 deps = ["MuladdMacro"]
 path = ".."
@@ -28,6 +34,15 @@ deps = ["Base64", "Dates", "DocStringExtensions", "InteractiveUtils", "JSON", "L
 git-tree-sha1 = "1c593d1efa27437ed9dd365d1143c594b563e138"
 uuid = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 version = "0.25.1"
+
+[[DocumenterTools]]
+deps = ["Base64", "DocStringExtensions", "Documenter", "FileWatching", "LibGit2", "Sass"]
+git-tree-sha1 = "6fa30234228d9020cbe31e393e9d183e944845bb"
+uuid = "35a29f4d-8980-5a13-9543-d66fff28ecb8"
+version = "0.1.7"
+
+[[FileWatching]]
+uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
 
 [[InteractiveUtils]]
 deps = ["Markdown"]
@@ -85,6 +100,12 @@ uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
 [[SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
+
+[[Sass]]
+deps = ["BinaryProvider", "Libdl", "Test"]
+git-tree-sha1 = "de11179555c6363c5a61c4c94376db3498983734"
+uuid = "322a6be2-4ae8-5d68-aaf1-3e960788d1d9"
+version = "0.1.0"
 
 [[Serialization]]
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"

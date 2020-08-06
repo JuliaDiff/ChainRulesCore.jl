@@ -18,7 +18,7 @@ DocMeta.setdocmeta!(
     end
 )
 
-Themes.compile("src/assets/chainrules.scss")
+Themes.compile(joinpath(@__DIR__, "src/assets/chainrules.scss"))
 
 makedocs(
     modules=[ChainRulesCore],
