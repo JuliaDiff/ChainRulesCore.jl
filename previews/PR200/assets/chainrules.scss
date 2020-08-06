@@ -1,0 +1,107 @@
+html:not(.theme--documenter-dark) body #documenter {
+
+  /* Links */
+  
+  a {
+    color: #4595D1;
+  }
+  
+  a:hover, a:focus {
+    color: #194E82;
+  }
+
+  /* Navigation */
+
+  .docs-sidebar {
+    box-shadow: none;
+    color: #FFFFFF;
+    background-color: #194E82;
+
+    ul.docs-menu {
+      border-top: none;
+
+      %nav-hover {
+        color: #FFFFFF;
+        background-color: #4595D1;
+      }
+
+      .tocitem {
+        color: #FFFFFF;
+        background: none;
+        
+        &:hover { @extend %nav-hover; }
+      }
+
+      li.is-active {
+        border-top: none;
+        border-bottom: none;
+
+        .tocitem {
+          @extend %nav-hover;
+
+          &:hover { @extend %nav-hover; }
+        }
+
+        ul.internal {
+          margin: 0;
+          border-top: none;
+
+          li {
+            margin-top: 0;
+          }
+
+          .tocitem {
+            color: #194E82;
+            background-color: #FFFFFF;
+            padding: 0.5em;
+            padding-left: 1em;
+
+            &:hover { @extend %nav-hover; }
+          }
+        }
+      }
+    }
+  }
+  
+  /* Text */
+
+  article#documenter-page a.docs-heading-anchor {
+    color: #194E82;
+  }
+
+  /* Code */
+  
+  code {
+    color: inherit;
+  }
+  
+  code .hljs-meta {
+    color: #4595D1;
+  }
+  
+  code .hljs-keyword {
+    color: #194E82;
+  }
+
+  pre, code {
+    font-family: "Liberation Mono", "Consolas", "DejaVu Sans Mono", "Ubuntu Mono", "andale mono", "lucida console", monospace;
+  }
+}
+
+
+/* Terminology Block */
+
+.admonition.is-category-terminology {
+  background-color: #FFFEDD;
+  border-color: #FFEC8B;
+}
+
+.admonition.is-category-terminology > .admonition-header:before {
+  content: "Terminology: ";
+  font-family: inherit;
+  font-weight: bold;
+}
+.admonition.is-category-terminology > .admonition-header {
+  background-color: #FFEC8B;
+  color: black;
+}
