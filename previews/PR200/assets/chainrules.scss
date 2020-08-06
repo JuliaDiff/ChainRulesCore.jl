@@ -1,6 +1,8 @@
+// Only for light theme
+
 html:not(.theme--documenter-dark) body #documenter {
 
-  /* Links */
+  // Links
   
   a {
     color: #4595D1;
@@ -10,7 +12,7 @@ html:not(.theme--documenter-dark) body #documenter {
     color: #194E82;
   }
 
-  /* Navigation */
+  // Navigation
 
   .docs-sidebar {
     box-shadow: none;
@@ -63,24 +65,20 @@ html:not(.theme--documenter-dark) body #documenter {
     }
   }
   
-  /* Text */
+  // Text
 
   article#documenter-page a.docs-heading-anchor {
     color: #194E82;
   }
 
-  /* Code */
+  // Code
   
   code {
     color: inherit;
-  }
+    
+    .hljs-meta { color: #4595D1; }
   
-  code .hljs-meta {
-    color: #4595D1;
-  }
-  
-  code .hljs-keyword {
-    color: #194E82;
+    .hljs-keyword { color: #194E82; }
   }
 
   pre, code {
@@ -88,20 +86,20 @@ html:not(.theme--documenter-dark) body #documenter {
   }
 }
 
-
-/* Terminology Block */
+// Terminology Block
 
 .admonition.is-category-terminology {
   background-color: #FFFEDD;
   border-color: #FFEC8B;
-}
 
-.admonition.is-category-terminology > .admonition-header:before {
-  content: "Terminology: ";
-  font-family: inherit;
-  font-weight: bold;
-}
-.admonition.is-category-terminology > .admonition-header {
-  background-color: #FFEC8B;
-  color: black;
+  > .admonition-header {
+    background-color: #FFEC8B;
+    color: black;
+
+    &:before {
+      content: "Terminology: ";
+      font-family: inherit;
+      font-weight: bold;
+    }
+  }
 }
