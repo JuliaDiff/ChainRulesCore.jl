@@ -53,3 +53,6 @@ html:not(.theme--documenter-dark) body #documenter pre, html:not(.theme--documen
       content: "Terminology: ";
       font-family: inherit;
       font-weight: bold; }
+
+html.theme--documenter-dark .admonition.is-category-terminology {
+  border-color: #FFEC8B; }
