@@ -1,7 +1,6 @@
 using ChainRulesCore
 using Documenter
-
-@show ENV
+using DocumenterTools: Themes
 
 DocMeta.setdocmeta!(
     ChainRulesCore,
@@ -19,9 +18,15 @@ DocMeta.setdocmeta!(
     end
 )
 
+Themes.compile("src/assets/chainrules.scss")
+
 makedocs(
     modules=[ChainRulesCore],
-    format=Documenter.HTML(prettyurls=false, assets=["assets/chainrules.css"]),
+    format=Documenter.HTML(
+        prettyurls=false,
+        assets=["assets/chainrules.css"],
+        mathengine=MathJax(),
+    ),
     sitename="ChainRules",
     authors="Jarrett Revels and other contributors",
     pages=[
@@ -38,7 +43,6 @@ makedocs(
     ],
     strict=true,
     checkdocs=:exports,
-    mathengine=MathJax(),
 )
 
 deploydocs(
