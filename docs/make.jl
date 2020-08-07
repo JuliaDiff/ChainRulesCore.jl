@@ -1,7 +1,6 @@
 using ChainRulesCore
 using Documenter
-
-@show ENV
+using DocumenterTools: Themes
 
 DocMeta.setdocmeta!(
     ChainRulesCore,
@@ -19,9 +18,15 @@ DocMeta.setdocmeta!(
     end
 )
 
+Themes.compile(joinpath(@__DIR__, "src/assets/chainrules.scss"))
+
 makedocs(
     modules=[ChainRulesCore],
-    format=Documenter.HTML(prettyurls=false, assets=["assets/chainrules.css"]),
+    format=Documenter.HTML(
+        prettyurls=false,
+        assets=["assets/chainrules.css"],
+        mathengine=MathJax(),
+    ),
     sitename="ChainRules",
     authors="Jarrett Revels and other contributors",
     pages=[
@@ -40,24 +45,7 @@ makedocs(
     checkdocs=:exports,
 )
 
-const repo = "github.com/JuliaDiff/ChainRulesCore.jl.git"
-const PR = get(ENV, "TRAVIS_PULL_REQUEST", "false")
-if PR == "false"
-    # Normal case, only deploy docs if merging to master or release tagged
-    deploydocs(repo=repo)
-else
-    @info "Deploying review docs for PR #$PR"
-    # TODO: remove most of this once https://github.com/JuliaDocs/Documenter.jl/issues/1131 is resolved
-
-    # Overwrite Documenter's function for generating the versions.js file
-    foreach(Base.delete_method, methods(Documenter.Writers.HTMLWriter.generate_version_file))
-    Documenter.Writers.HTMLWriter.generate_version_file(_, _) = nothing
-    # Overwrite necessary environment variables to trick Documenter to deploy
-    ENV["TRAVIS_PULL_REQUEST"] = "false"
-    ENV["TRAVIS_BRANCH"] = "master"
-
-    deploydocs(
-        devurl="preview-PR$(PR)",
-        repo=repo,
-    )
-end
+deploydocs(
+    repo = "github.com/JuliaDiff/ChainRulesCore.jl.git",
+    push_preview=true,
+)
