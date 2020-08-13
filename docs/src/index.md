@@ -123,7 +123,7 @@ applies the chain rule to go from `∂a/∂x` to `∂b/∂x`.
 Let us think of our types geometrically. In other words, elements of a type form a _manifold_.
 This document will explain this point of view in some detail.
 
-##### Some terminology/conventions.
+##### Some terminology/conventions
 
 Let ``p`` be an element of type M, which is defined by some assignment of numbers ``x_1,...,x_m``,
 say ``(x_1,...,x_m) = (a_1,...,1_m)``
@@ -237,7 +237,7 @@ If the function is `y = f(x)` often the pushforward will be written `ẏ = last(
     The `∂y` are similar in type/structure to the original function's output `Y`.
     In particular if that function returned a tuple then `∂y` will be a tuple of the same size.
 
-### Self derivative `Δself`, `∂self`, `s̄elf`, `ṡelf` etc.
+### Self derivative `Δself`, `∂self`, `s̄elf`, `ṡelf` etc
 
 !!! terminology "Δself, ∂self, s̄elf, ṡelf"
     It is the derivatives with respect to the internal fields of the function.
@@ -325,7 +325,7 @@ The most important `AbstractDifferential`s when getting started are the ones abo
 
  -------------------------------
 
-## Example of using ChainRules directly.
+## Example of using ChainRules directly
 
 While ChainRules is largely intended as a backend for autodiff systems, it can be used directly.
 In fact, this can be very useful if you can constrain the code you need to differentiate to only use things that have rules defined for.
