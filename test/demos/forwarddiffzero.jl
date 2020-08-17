@@ -56,8 +56,8 @@ end
 # Manual refresh needed as new rule added in same file as AD after the `on_new_rule` call
 refresh_rules(); 
 
-function derv(f, args...)
-    duals = Dual.(args, one.(args))
+function derv(f, arg)
+    duals = Dual(arg, one(arg))
     return diff(f(duals...))
 end
 
