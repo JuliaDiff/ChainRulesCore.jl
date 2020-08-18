@@ -37,8 +37,8 @@ tape(d) = nothing
 get_tape(ds) = something(tape.(ds)...)
 
 # propagate the currently stored gradient back to my inputs.
-propagate!(d) = nothing
 propagate!(d::Tracked) = d.propagate(d.grad[])
+propagate!(d) = nothing
 
 # Accumulate gradient, if the value is being tracked.
 accum!(d, x̄) = nothing
