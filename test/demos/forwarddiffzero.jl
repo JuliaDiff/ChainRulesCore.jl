@@ -4,6 +4,8 @@ module ForwardDiffZero
 using ChainRulesCore
 using Test
 
+# Note that we never directly define Dual Number Arithmetic on Dual numbers
+# instread it is automatically defined from the `frules` 
 struct Dual <: Real
     primal::Float64
     diff::Float64

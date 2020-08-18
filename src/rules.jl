@@ -122,6 +122,7 @@ function on_new_rule(hook_fun, rule_kind)
 end
 
 function __init__()
+    # Need to refresh rules when a module is loaded or a file is `include`d.
     push!(Base.package_callbacks, pkgid -> refresh_rules())
     push!(Base.include_callbacks, (mod, filename) -> refresh_rules())
 end

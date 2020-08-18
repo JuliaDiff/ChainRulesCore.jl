@@ -17,7 +17,7 @@ function Tracked(propagate, primal, tape)
     return v
 end
 
-"An input, a Leaf in Nabla terms. No inputs of its on to propagate to."
+"An input, a Leaf in Nabla terms. No inputs of its own to propagate to."
 function Tracked(primal, tape)
     # don't actually need to put these on the tape, since they don't need to
     # propagate anything
