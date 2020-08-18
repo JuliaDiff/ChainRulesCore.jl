@@ -41,8 +41,8 @@ propagate!(d::Tracked) = d.propagate(d.grad[])
 propagate!(d) = nothing
 
 # Accumulate gradient, if the value is being tracked.
-accum!(d, x̄) = nothing
 accum!(d::Tracked, x̄) = d.grad[] += x̄
+accum!(d, x̄) = nothing
 
 function define_tracked_overload(sig)
     opT, argTs = Iterators.peel(sig.parameters)
