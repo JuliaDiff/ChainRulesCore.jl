@@ -43,14 +43,14 @@ end
 
 #########################################
 # Initial rule setup
-@scalar_rule x + y (One(), One())
-@scalar_rule x - y (One(), -1)
+@scalar_rule x + y (1, 1)
+@scalar_rule x - y (1, -1)
 
 on_new_rule(define_dual_overload, frule)
 
 # add a rule later also
 function ChainRulesCore.frule((_, Δx, Δy), ::typeof(*), x::Number, y::Number)
-    return (x * y, (Δx * y + x * Δy))
+    return (x * y, Δx * y + x * Δy)
 end
 
 # Manual refresh needed as new rule added in same file as AD after the `on_new_rule` call

@@ -5,7 +5,7 @@ using MuladdMacro: @muladd
 export on_new_rule, refresh_rules  # generation tools
 export frule, rrule  # core function
 export @scalar_rule, @thunk  # defination helper macros
-export canonicalize, extern, unthunk  # differnetial operations
+export canonicalize, extern, unthunk  # differential operations
 # differentials
 export Composite, DoesNotExist, InplaceableThunk, One, Thunk, Zero, AbstractZero, AbstractThunk
 export NO_FIELDS

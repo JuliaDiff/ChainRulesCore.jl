@@ -144,7 +144,8 @@ last_refresh(::typeof(frule)) = LAST_REFRESH_FRULE
 last_refresh(::typeof(rrule)) = LAST_REFRESH_RRULE
 
 """
-    refresh_rules(); refresh_rules(frule); refresh_rules(rrule)
+    refresh_rules()
+    refresh_rules(frule | rrule)
 
 This triggers all [`on_new_rule`](@ref) hooks to run on any newly defined rules.
 It is *automatically* run when ever a package is loaded, or a file is `include`d.
