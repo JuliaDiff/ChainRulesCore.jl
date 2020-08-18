@@ -73,6 +73,12 @@ end
 
     qux(x) = foo(x) + bar(x) + baz(x)
     @test derv(qux, 1.7) == (2*2.0*1.7 + 3.0) + 3.1 + 2
+
+    function quux(x)
+        y = 2.0*x + 3.0*x
+        return 4.0*y + 5.0*y
+    end
+    @test derv(quux, 11.1) == 4*(2+3) + 5*(2+3)
 end
 
 end  # module

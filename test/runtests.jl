@@ -17,5 +17,6 @@ using Test
 
     @testset "demos" begin
         include("demos/forwarddiffzero.jl")
+        include("demos/reversediffzero.jl")
     end
 end
