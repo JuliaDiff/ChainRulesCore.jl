@@ -54,11 +54,9 @@ function define_tracked_overload(sig)
         # as we can directly interpolate the function type into to the AST.
         function (op::$opT)(tracked_args::Vararg{Union{Tracked, Float64}, $N}; kwargs...)
             args = (op, primal.(tracked_args)...)
-            res = rrule(args...; kwargs...)
-            res === nothing && error("Apparently no rule for $($sig)), but we really thought there was, args=($args)")
-            y, y_pullback = res
-            t = get_tape(tracked_args)
-            y_tracked = Tracked(y, t) do ȳ
+            y, y_pullback = rrule(args...; kwargs...)
+            the_tape = get_tape(tracked_args)
+            y_tracked = Tracked(y, the_tape) do ȳ
                 # pull this partialient back and propagate it to the inputs partialient stores
                 _, ārgs = Iterators.peel(y_pullback(ȳ))
                 accum!.(tracked_args, ārgs)

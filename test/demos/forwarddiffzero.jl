@@ -33,13 +33,10 @@ function define_dual_overload(sig)
         function (op::$opT)(dual_args::Vararg{Union{Dual, Float64}, $N}; kwargs...)
             ȧrgs = (NO_FIELDS,  partial.(dual_args)...)
             args = (op, primal.(dual_args)...)
-            res = frule(ȧrgs, args...; kwargs...)
-            res === nothing && error("Apparently no rule for $($sig)), but we really thought there was, args=($args)")
-            y, ẏ = res
+            y, ẏ = frule(ȧrgs, args...; kwargs...)
             return Dual(y, ẏ)  # if y, ẏ are not `Float64` this will error.
         end
     end
-    #@show fdef
     eval(fdef)
 end
 
