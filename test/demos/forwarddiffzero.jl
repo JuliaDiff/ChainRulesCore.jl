@@ -8,14 +8,14 @@ using Test
 # instread it is automatically defined from the `frules` 
 struct Dual <: Real
     primal::Float64
-    diff::Float64
+    partial::Float64
 end
 
 primal(d::Dual) = d.primal
-diff(d::Dual) = d.diff
+partial(d::Dual) = d.partial
 
 primal(d::Real) = d
-diff(d::Real) = 0.0
+partial(d::Real) = 0.0
 
 # needed for ^ to work from having `*` defined
 Base.to_power_type(x::Dual) = x
@@ -31,7 +31,7 @@ function define_dual_overload(sig)
         # we use the function call overloading form as it lets us avoid namespacing issues
         # as we can directly interpolate the function type into to the AST.
         function (op::$opT)(dual_args::Vararg{Union{Dual, Float64}, $N}; kwargs...)
-            ȧrgs = (NO_FIELDS,  diff.(dual_args)...)
+            ȧrgs = (NO_FIELDS,  partial.(dual_args)...)
             args = (op, primal.(dual_args)...)
             res = frule(ȧrgs, args...; kwargs...)
             res === nothing && error("Apparently no rule for $($sig)), but we really thought there was, args=($args)")
@@ -60,7 +60,7 @@ refresh_rules();
 
 function derv(f, arg)
     duals = Dual(arg, one(arg))
-    return diff(f(duals...))
+    return partial(f(duals...))
 end
 
 @testset "ForwardDiffZero" begin

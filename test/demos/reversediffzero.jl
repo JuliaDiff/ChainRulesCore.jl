@@ -7,7 +7,7 @@ struct Tracked{F} <: Real
     propagate::F
     primal::Float64
     tape::Vector{Tracked}  # a reference to a shared tape
-    grad::Base.RefValue{Float64} # current accumulated gradient
+    partial::Base.RefValue{Float64} # current accumulated sensitivity
 end
 
 "An intermediate value, a Branch in Nabla terms."
@@ -27,8 +27,8 @@ end
 primal(d::Tracked) = d.primal
 primal(d) = d
 
-grad(d::Tracked) = d.grad[]
-grad(d) = nothing
+partial(d::Tracked) = d.partial[]
+partial(d) = nothing
 
 tape(d::Tracked) = d.tape
 tape(d) = nothing
@@ -36,11 +36,11 @@ tape(d) = nothing
 # we have many inputs grab the tape from the first one that is tracked
 get_tape(ds) = something(tape.(ds)...)
 
-# propagate the currently stored gradient back to my inputs.
-propagate!(d::Tracked) = d.propagate(d.grad[])
+# propagate the currently stored partialient back to my inputs.
+propagate!(d::Tracked) = d.propagate(d.partial[])
 
-# Accumulate gradient, if the value is being tracked.
-accum!(d::Tracked, x̄) = d.grad[] += x̄
+# Accumulate partialient, if the value is being tracked.
+accum!(d::Tracked, x̄) = d.partial[] += x̄
 accum!(d, x̄) = nothing
 
 function define_tracked_overload(sig)
@@ -59,7 +59,7 @@ function define_tracked_overload(sig)
             y, y_pullback = res
             t = get_tape(tracked_args)
             y_tracked = Tracked(y, t) do ȳ
-                # pull this gradient back and propagate it to the inputs gradient stores
+                # pull this partialient back and propagate it to the inputs partialient stores
                 _, ārgs = Iterators.peel(y_pullback(ȳ))
                 accum!.(tracked_args, ārgs)
             end
@@ -80,10 +80,10 @@ function derv(f, args::Vararg; kwargs...)
         accum!(tracked_output, ōut)
         for op in reverse(the_tape)
             # by going down the tape backwards we know we will
-            # have accumulated its gradient fully
+            # have accumulated its partialient fully
             propagate!(op)
         end
-        return grad.(tracked_inputs)
+        return partial.(tracked_inputs)
     end
     return back(one(out))
 end
