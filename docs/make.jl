@@ -1,6 +1,7 @@
 using ChainRulesCore
 using Documenter
 using DocumenterTools: Themes
+using Markdown
 
 DocMeta.setdocmeta!(
     ChainRulesCore,
@@ -38,6 +39,10 @@ makedocs(
         "Debug Mode" => "debug_mode.md",
         "Design" => [
             "Many Differential Types" => "design/many_differentials.md",
+        ],
+        "Usage in an AD" => [
+            "Overview" => "autodiff/overview.md",
+            "Operator Overloading" => "autodiff/operator_overloading.md"
         ],
         "API" => "api.md",
     ],
