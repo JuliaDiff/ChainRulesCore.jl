@@ -17,11 +17,13 @@ function Tracked(propagate, primal, tape)
     return v
 end
 
+"Maker for inputs (leaves) that don't need to propagate."
+struct NoPropagate end
+
 "An input, a Leaf in Nabla terms. No inputs of its own to propagate to."
 function Tracked(primal, tape)
-    # don't actually need to put these on the tape, since they don't need to
-    # propagate anything
-    return Tracked(_->nothing, primal, tape, Ref(zero(primal)))
+    # don't actually need to put these on the tape, since they don't need to propagate
+    return Tracked(NoPropagate(), primal, tape, Ref(zero(primal)))
 end
 
 primal(d::Tracked) = d.primal
@@ -33,16 +35,17 @@ partial(d) = nothing
 tape(d::Tracked) = d.tape
 tape(d) = nothing
 
-# we have many inputs grab the tape from the first one that is tracked
+"we have many inputs grab the tape from the first one that is tracked"
 get_tape(ds) = something(tape.(ds)...)
 
-# propagate the currently stored partialient back to my inputs.
+"propagate the currently stored partialient back to my inputs."
 propagate!(d::Tracked) = d.propagate(d.partial[])
 
-# Accumulate partialient, if the value is being tracked.
+"Accumulate the sensitivity, if the value is being tracked."
 accum!(d::Tracked, x̄) = d.partial[] += x̄
 accum!(d, x̄) = nothing
 
+"What to do when a new rrule is declared"
 function define_tracked_overload(sig)
     opT, argTs = Iterators.peel(sig.parameters)
     fieldcount(opT) == 0 || return  # not handling functors 
@@ -67,8 +70,9 @@ function define_tracked_overload(sig)
     eval(fdef)
 end
 
+"Do a calculus. `f` should have a single output."
 function derv(f, args::Vararg; kwargs...)
-    the_tape = Vector{Any}()
+    the_tape = Vector{Tracked}()
     tracked_inputs = Tracked.(args, Ref(the_tape))
     tracked_output = f(tracked_inputs...; kwargs...)
     @assert tape(tracked_output) === the_tape
@@ -76,9 +80,9 @@ function derv(f, args::Vararg; kwargs...)
     out = primal(tracked_output)
     function back(ōut)
         accum!(tracked_output, ōut)
+        # by going down the tape backwards we know we will have fully accumulated partials
+        # before propagating them onwards
         for op in reverse(the_tape)
-            # by going down the tape backwards we know we will
-            # have accumulated its partialient fully
             propagate!(op)
         end
         return partial.(tracked_inputs)
@@ -127,3 +131,4 @@ refresh_rules();
     @test derv(quux, 11.1) == (4*(2+3) + 5*(2+3),)
 end
 end  # module
+

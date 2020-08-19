@@ -5,7 +5,7 @@ using ChainRulesCore
 using Test
 
 # Note that we never directly define Dual Number Arithmetic on Dual numbers
-# instread it is automatically defined from the `frules` 
+# instead it is automatically defined from the `frules` 
 struct Dual <: Real
     primal::Float64
     partial::Float64
@@ -55,6 +55,7 @@ end
 # Manual refresh needed as new rule added in same file as AD after the `on_new_rule` call
 refresh_rules(); 
 
+"Do a calculus. `f` should have a single input."
 function derv(f, arg)
     duals = Dual(arg, one(arg))
     return partial(f(duals...))
