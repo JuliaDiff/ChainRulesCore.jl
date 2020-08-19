@@ -3,10 +3,10 @@ module ReverseDiffZero
 using ChainRulesCore
 using Test
 
-struct Tracked <: Real
-    propagate::Function
+struct Tracked{F} <: Real
+    propagate::F
     primal::Float64
-    tape::Vector{Any}  # a reference to a shared tape
+    tape::Vector{Tracked}  # a reference to a shared tape
     grad::Base.RefValue{Float64} # current accumulated gradient
 end
 
@@ -38,7 +38,6 @@ get_tape(ds) = something(tape.(ds)...)
 
 # propagate the currently stored gradient back to my inputs.
 propagate!(d::Tracked) = d.propagate(d.grad[])
-propagate!(d) = nothing
 
 # Accumulate gradient, if the value is being tracked.
 accum!(d::Tracked, x̄) = d.grad[] += x̄
