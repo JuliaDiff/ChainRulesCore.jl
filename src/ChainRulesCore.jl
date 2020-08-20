@@ -2,7 +2,7 @@ module ChainRulesCore
 using Base.Broadcast: broadcasted, Broadcasted, broadcastable, materialize, materialize!
 using MuladdMacro: @muladd
 
-export on_new_rule, refresh_rules  # generation tools
+export on_new_rule, refresh_rules, clear_new_rule_hooks!  # generation tools
 export frule, rrule  # core function
 export @scalar_rule, @thunk  # defination helper macros
 export canonicalize, extern, unthunk  # differential operations
@@ -23,5 +23,6 @@ include("differential_arithmetic.jl")
 
 include("rules.jl")
 include("rule_definition_tools.jl")
+include("ruleset_loading.jl")
 
 end # module

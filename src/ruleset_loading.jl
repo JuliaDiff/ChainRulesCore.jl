@@ -1,5 +1,12 @@
 # Infastructure to support generating overloads from rules.
 
+function __init__()
+    # Need to refresh rules when a module is loaded or a file is `include`d.
+    push!(Base.package_callbacks, pkgid -> refresh_rules())
+    push!(Base.include_callbacks, (mod, filename) -> refresh_rules())
+end
+
+
 const NEW_RRULE_HOOKS = Function[]
 const NEW_FRULE_HOOKS = Function[]
 _hook_list(::typeof(rrule)) = NEW_RRULE_HOOKS
@@ -45,12 +52,6 @@ If you previously wrong an incorrect hook, you can use this to get rid of the ol
     using the rule hooks that might happen to be loaded.
 """
 clear_new_rule_hooks!(rule_kind) = empty!(_hook_list(rule_kind))
-
-function __init__()
-    # Need to refresh rules when a module is loaded or a file is `include`d.
-    push!(Base.package_callbacks, pkgid -> refresh_rules())
-    push!(Base.include_callbacks, (mod, filename) -> refresh_rules())
-end
 
 
 """
@@ -105,17 +106,23 @@ end
 Returns the signature as a `Tuple{function_type, arg1_type, arg2_type,...}`.
 """
 _primal_sig(rule_kind, method::Method) = _primal_sig(rule_kind, method.sig)
-function _primal_sig(::typeof(frule), rule_sig::Type)
+function _primal_sig(::typeof(frule), rule_sig::DataType)
     @assert rule_sig.parameters[1] == typeof(frule)
     # need to skip frule and the deriviative info, so starting from the 3rd
     return Tuple{rule_sig.parameters[3:end]...}
 end
-
-function _primal_sig(::typeof(rrule), rule_sig::Type)
+function _primal_sig(::typeof(rrule), rule_sig::DataType)
     @assert rule_sig.parameters[1] == typeof(rrule)
     # need to skip rrule so starting from the 2rd
     return Tuple{rule_sig.parameters[2:end]...}
 end
+function _primal_sig(rule_kind, rule_sig::UnionAll)
+    # This looks a lot like Base.unwrap_unionall and Base.rewrap_unionall, but using those
+    # seems not to work
+    p_sig = _primal_sig(rule_kind, rule_sig.body)
+    return UnionAll(rule_sig.var, p_sig)
+end
+
 
 function _trigger_new_rule_hooks(rule_kind, sig)
     for hook_fun in _hook_list(rule_kind)
