@@ -1,5 +1,4 @@
 @testset "ruleset_loading.jl" begin
-#==
     @testset "on_new_rule" begin
         frule_history = []
         rrule_history = []
@@ -12,15 +11,18 @@
             push!(rrule_history, op)
         end
 
-        include("example_rules.jl")  # hook should trigger on include
-        #refresh_rules()
+        # Now define some rules
+        @scalar_rule x + y (1, 1)
+        @scalar_rule x - y (1, -1)
+        refresh_rules()
+
         @test Set(frule_history[end-1:end]) == Set((typeof(+), typeof(-)))
         @test Set(rrule_history[end-1:end]) == Set((typeof(+), typeof(-)))
         
         clear_new_rule_hooks!(frule)
         clear_new_rule_hooks!(rrule)
     end
-    ==#
+
     @testset "_primal_sig" begin
         _primal_sig = ChainRulesCore._primal_sig
         type_constraint_equal(T1, T2) = (T1 <: T2) && (T2 <: T1)

@@ -11,9 +11,10 @@ A signature type tuple always has the form:
 first positional argument.
 One can dispatch on the signature type, to make rules with argument types your AD does not support not call `eval`;
 or more simply you can just use conditions for this.
+The the hook is automatically triggered whenever a package is loaded.
 
 `refresh_rules`(@ref) is used to manually trigger the hook function on any new rules.
-This is useful for example if new rules are define in the REPL, or if files defining rules were modified.
+This is useful for example if new rules are define in the REPL, or if a package defining rules is modified.
 (Revise.jl will not automatically trigger).
 
 `clear_new_rule_hooks!`(@ref) clears all registered hooks.

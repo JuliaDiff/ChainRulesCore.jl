@@ -3,7 +3,6 @@
 function __init__()
     # Need to refresh rules when a module is loaded or a file is `include`d.
     push!(Base.package_callbacks, pkgid -> refresh_rules())
-    push!(Base.include_callbacks, (mod, filename) -> refresh_rules())
 end
 
 
@@ -24,8 +23,8 @@ A signature type tuple always has the form:
 `Tuple{typeof(operation), typeof{pos_arg1}, typeof{pos_arg2...}}`, where `pos_arg1` is the
 first positional argument
 
-The hooks are automatically run on new rules whenever a package is loaded, or a file is
-`include`d. They can be manually triggered by [`refresh_rules`](@ref).
+The hooks are automatically run on new rules whenever a package is loaded.
+They can be manually triggered by [`refresh_rules`](@ref).
 When a hook is first registered with `on_new_rule` it is run on all existing rules.
 """
 function on_new_rule(hook_fun, rule_kind)
@@ -75,7 +74,7 @@ last_refresh(::typeof(rrule)) = LAST_REFRESH_RRULE
     refresh_rules(frule | rrule)
 
 This triggers all [`on_new_rule`](@ref) hooks to run on any newly defined rules.
-It is *automatically* run when ever a package is loaded, or a file is `include`d.
+It is *automatically* run when ever a package is loaded.
 It can also be manually called to run it directly, for example if a rule was defined
 in the REPL or with-in the same file as the AD function.
 """
