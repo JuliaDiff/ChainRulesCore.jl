@@ -6,11 +6,9 @@
 
 ````@eval
 using Markdown
-code = read(joinpath(@__DIR__,"../../../test/demos/forwarddiffzero.jl"), String)
-code = replace(code, raw"$" => raw"\$")
 Markdown.parse("""
 ```julia
-$(code)
+$(read(joinpath(@__DIR__,"../../../test/demos/forwarddiffzero.jl"), String))
 ```
 """)
 ````
@@ -19,11 +17,9 @@ $(code)
 
 ````@eval
 using Markdown
-code = read(joinpath(@__DIR__,"../../../test/demos/reversediffzero.jl"), String)
-code = replace(code, raw"$" => raw"\$")
 Markdown.parse("""
 ```julia
-$(code)
+$(read(joinpath(@__DIR__,"../../../test/demos/reversediffzero.jl"), String))
 ```
 """)
 ````

@@ -3,6 +3,13 @@ module ReverseDiffZero
 using ChainRulesCore
 using Test
 
+#########################################
+# Initial rule setup
+@scalar_rule x + y (1, 1)
+@scalar_rule x - y (1, -1)
+##########################
+#Define the AD
+
 struct Tracked{F} <: Real
     propagate::F
     primal::Float64
@@ -45,6 +52,9 @@ propagate!(d::Tracked) = d.propagate(d.partial[])
 accum!(d::Tracked, x̄) = d.partial[] += x̄
 accum!(d, x̄) = nothing
 
+# needed for ^ to work from having `*` defined
+Base.to_power_type(x::Tracked) = x
+
 "What to do when a new rrule is declared"
 function define_tracked_overload(sig)
     opT, argTs = Iterators.peel(sig.parameters)
@@ -70,6 +80,9 @@ function define_tracked_overload(sig)
     eval(fdef)
 end
 
+# !Important!: Attach the define function to the `on_new_rule` hook
+on_new_rule(define_tracked_overload, rrule)
+
 "Do a calculus. `f` should have a single output."
 function derv(f, args::Vararg; kwargs...)
     the_tape = Vector{Tracked}()
@@ -77,32 +90,25 @@ function derv(f, args::Vararg; kwargs...)
     tracked_output = f(tracked_inputs...; kwargs...)
     @assert tape(tracked_output) === the_tape
 
+    # Now the backward pass
     out = primal(tracked_output)
-    function back(ōut)
-        accum!(tracked_output, ōut)
-        # by going down the tape backwards we know we will have fully accumulated partials
-        # before propagating them onwards
-        for op in reverse(the_tape)
-            propagate!(op)
-        end
-        return partial.(tracked_inputs)
+    ōut = one(out)
+    accum!(tracked_output, ōut)
+    # By going down the tape backwards we know we will have fully accumulated partials
+    # before propagating them onwards
+    for op in reverse(the_tape)
+        propagate!(op)
     end
-    return back(one(out))
+    return partial.(tracked_inputs)
 end
 
-# needed for ^ to work from having `*` defined
-Base.to_power_type(x::Tracked) = x
-
-#########################################
-# Initial rule setup
-@scalar_rule x + y (One(), One())
-@scalar_rule x - y (One(), -1)
-
-on_new_rule(define_tracked_overload, rrule)
+# End AD definition
+################################
 
 # add a rule later also
 function ChainRulesCore.rrule(::typeof(*), x::Number, y::Number)
     function times_pullback(ΔΩ)
+        # we will use thunks here to show we handle them fine.
         return (NO_FIELDS,  @thunk(ΔΩ * y'), @thunk(x' * ΔΩ))
     end
     return x * y, times_pullback

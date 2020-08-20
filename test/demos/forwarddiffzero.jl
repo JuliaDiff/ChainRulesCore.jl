@@ -3,6 +3,13 @@ module ForwardDiffZero
 using ChainRulesCore
 using Test
 
+#########################################
+# Initial rule setup
+@scalar_rule x + y (1, 1)
+@scalar_rule x - y (1, -1)
+##########################
+# Define the AD
+
 # Note that we never directly define Dual Number Arithmetic on Dual numbers
 # instead it is automatically defined from the `frules` 
 struct Dual <: Real
@@ -39,12 +46,17 @@ function define_dual_overload(sig)
     eval(fdef)
 end
 
-#########################################
-# Initial rule setup
-@scalar_rule x + y (1, 1)
-@scalar_rule x - y (1, -1)
-
+# !Important!: Attach the define function to the `on_new_rule` hook
 on_new_rule(define_dual_overload, frule)
+
+"Do a calculus. `f` should have a single input."
+function derv(f, arg)
+    duals = Dual(arg, one(arg))
+    return partial(f(duals...))
+end
+
+# End AD definition
+################################
 
 # add a rule later also
 function ChainRulesCore.frule((_, Δx, Δy), ::typeof(*), x::Number, y::Number)
@@ -53,12 +65,6 @@ end
 
 # Manual refresh needed as new rule added in same file as AD after the `on_new_rule` call
 refresh_rules(); 
-
-"Do a calculus. `f` should have a single input."
-function derv(f, arg)
-    duals = Dual(arg, one(arg))
-    return partial(f(duals...))
-end
 
 @testset "ForwardDiffZero" begin
     foo(x) = x + x
