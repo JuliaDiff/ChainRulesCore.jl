@@ -37,12 +37,12 @@ makedocs(
         "Complex Numbers" => "complex.md",
         "Deriving Array Rules" => "arrays.md",
         "Debug Mode" => "debug_mode.md",
-        "Design" => [
-            "Many Differential Types" => "design/many_differentials.md",
-        ],
         "Usage in an AD" => [
             "Overview" => "autodiff/overview.md",
             "Operator Overloading" => "autodiff/operator_overloading.md"
+        ],
+        "Design" => [
+            "Many Differential Types" => "design/many_differentials.md",
         ],
         "API" => "api.md",
     ],

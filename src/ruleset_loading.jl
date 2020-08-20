@@ -1,7 +1,7 @@
 # Infastructure to support generating overloads from rules.
 
 function __init__()
-    # Need to refresh rules when a module is loaded or a file is `include`d.
+    # Need to refresh rules when a package is loaded
     push!(Base.package_callbacks, pkgid -> refresh_rules())
 end
 
@@ -28,13 +28,13 @@ They can be manually triggered by [`refresh_rules`](@ref).
 When a hook is first registered with `on_new_rule` it is run on all existing rules.
 """
 function on_new_rule(hook_fun, rule_kind)
-    # get all the existing rules
+    # apply the hook to the existing rules
     ret = map(_rule_list(rule_kind)) do method
         sig = _primal_sig(rule_kind, method)
         _safe_hook_fun(hook_fun, sig)
     end
 
-    # register hook for new rules
+    # register hook for new rules -- so all new rules get this function applied
     push!(_hook_list(rule_kind), hook_fun)
     return ret
 end
