@@ -12,6 +12,13 @@ first positional argument.
 One can dispatch on the signature type, to make rules with argument types your AD does not support not call `eval`;
 or more simply you can just use conditions for this.
 
+`refresh_rules`(@ref) is used to manually trigger the hook function on any new rules.
+This is useful for example if new rules are define in the REPL, or if files defining rules were modified.
+(Revise.jl will not automatically trigger).
+
+`clear_new_rule_hooks!`(@ref) clears all registered hooks.
+It is useful to undo [`on_new_rule`] hook registration if you are iteratively developing your overload generation function.
+
 ## Examples
 
 ### ForwardDiffZero
