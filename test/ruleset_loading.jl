@@ -25,7 +25,6 @@
 
     @testset "_primal_sig" begin
         _primal_sig = ChainRulesCore._primal_sig
-        type_constraint_equal(T1, T2) = (T1 <: T2) && (T2 <: T1)
         @testset "frule" begin
             @test isequal(  # DataType without shared type but with constraint
                 _primal_sig(frule, Tuple{typeof(frule), Any, typeof(*), Int, Vector{Int}}),
