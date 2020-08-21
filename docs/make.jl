@@ -37,7 +37,7 @@ makedocs(
         "Complex Numbers" => "complex.md",
         "Deriving Array Rules" => "arrays.md",
         "Debug Mode" => "debug_mode.md",
-        "Usage in an AD" => [
+        "Usage in AD" => [
             "Overview" => "autodiff/overview.md",
             "Operator Overloading" => "autodiff/operator_overloading.md"
         ],
