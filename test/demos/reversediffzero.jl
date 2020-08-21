@@ -45,14 +45,14 @@ tape(d) = nothing
 "we have many inputs grab the tape from the first one that is tracked"
 get_tape(ds) = something(tape.(ds)...)
 
-"propagate the currently stored partialient back to my inputs."
+"propagate the currently stored partial back to my inputs."
 propagate!(d::Tracked) = d.propagate(d.partial[])
 
 "Accumulate the sensitivity, if the value is being tracked."
 accum!(d::Tracked, x̄) = d.partial[] += x̄
 accum!(d, x̄) = nothing
 
-# needed for ^ to work from having `*` defined
+# needed for `^` to work from having `*` defined
 Base.to_power_type(x::Tracked) = x
 
 "What to do when a new rrule is declared"
@@ -71,7 +71,7 @@ function define_tracked_overload(sig)
             y, y_pullback = rrule(args...; kwargs...)
             the_tape = get_tape(tracked_args)
             y_tracked = Tracked(y, the_tape) do ȳ
-                # pull this partialient back and propagate it to the inputs partialient stores
+                # pull this partial back and propagate it to the inputs partial stores
                 _, ārgs = Iterators.peel(y_pullback(ȳ))
                 accum!.(tracked_args, ārgs)
             end
@@ -126,10 +126,10 @@ refresh_rules();
     @test derv(bar, 1.2) == (3.1,)
 
     baz(x) = 2.0 * x^2 + 3.0*x + 1.2
-    @test derv(baz, 1.7) == (2*2.0*1.7 + 3.0,)
+    @test derv(baz, 1.7) == (2 * 2.0 * 1.7 + 3.0,)
 
     qux(x) = foo(x) + bar(x) + baz(x)
-    @test derv(qux, 1.7) == ((2*2.0*1.7 + 3.0) + 3.1 + 2,)
+    @test derv(qux, 1.7) == ((2 * 2.0 * 1.7 + 3.0) + 3.1 + 2,)
 
     function quux(x)
         y = 2.0*x + 3.0*x

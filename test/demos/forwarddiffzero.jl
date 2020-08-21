@@ -23,7 +23,7 @@ partial(d::Dual) = d.partial
 primal(d::Real) = d
 partial(d::Real) = 0.0
 
-# needed for ^ to work from having `*` defined
+# needed for `^` to work from having `*` defined
 Base.to_power_type(x::Dual) = x
 
 
