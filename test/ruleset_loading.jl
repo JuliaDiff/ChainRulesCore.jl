@@ -19,8 +19,8 @@
         @test Set(frule_history[end-1:end]) == Set((typeof(+), typeof(-)))
         @test Set(rrule_history[end-1:end]) == Set((typeof(+), typeof(-)))
         
-        clear_new_rule_hooks!(frule)
-        clear_new_rule_hooks!(rrule)
+        ChainRulesCore.clear_new_rule_hooks!(frule)
+        ChainRulesCore.clear_new_rule_hooks!(rrule)
     end
 
     @testset "_primal_sig" begin
