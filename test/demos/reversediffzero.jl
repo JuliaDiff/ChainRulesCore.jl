@@ -24,7 +24,7 @@ function Tracked(propagate, primal, tape)
     return v
 end
 
-"Maker for inputs (leaves) that don't need to propagate."
+"Marker for inputs (leaves) that don't need to propagate."
 struct NoPropagate end
 
 "An input, a Leaf in Nabla terms. No inputs of its own to propagate to."
@@ -138,4 +138,3 @@ refresh_rules();
     @test derv(quux, 11.1) == (4*(2+3) + 5*(2+3),)
 end
 end  # module
-
