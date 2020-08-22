@@ -71,7 +71,7 @@ function define_tracked_overload(sig)
             y, y_pullback = rrule(args...; kwargs...)
             the_tape = get_tape(tracked_args)
             y_tracked = Tracked(y, the_tape) do ȳ
-                # pull this partial back and propagate it to the inputs partial stores
+                # pull this partial back and propagate it to the input's partial store
                 _, ārgs = Iterators.peel(y_pullback(ȳ))
                 accum!.(tracked_args, ārgs)
             end

@@ -16,11 +16,11 @@ _hook_list(::typeof(frule)) = NEW_FRULE_HOOKS
 Register a `hook` function to run when new rules are defined.
 The hook receives a signature type-type as input, and generally will use `eval` to define
 and overload of AD systems overloaded type.
-For example, using the signature type `Tuple{typeof(+), Real, Real}` to define 
-`+(::DualNumber, ::DualNumber)` as calling the `frule` for `+`.
+For example, using the signature type `Tuple{typeof(+), Real, Real}` to make
+`+(::DualNumber, ::DualNumber)` call the `frule` for `+`.
 A signature type tuple always has the form:
 `Tuple{typeof(operation), typeof{pos_arg1}, typeof{pos_arg2...}}`, where `pos_arg1` is the
-first positional argument
+first positional argument.
 
 The hooks are automatically run on new rules whenever a package is loaded.
 They can be manually triggered by [`refresh_rules`](@ref).
@@ -74,7 +74,7 @@ last_refresh(::typeof(rrule)) = LAST_REFRESH_RRULE
 This triggers all [`on_new_rule`](@ref) hooks to run on any newly defined rules.
 It is *automatically* run when ever a package is loaded.
 It can also be manually called to run it directly, for example if a rule was defined
-in the REPL or with-in the same file as the AD function.
+in the REPL or within the same file as the AD function.
 """
 refresh_rules() = (refresh_rules(frule); refresh_rules(rrule))
 function refresh_rules(rule_kind)
