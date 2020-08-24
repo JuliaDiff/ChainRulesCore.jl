@@ -10,17 +10,31 @@
             op = sig.parameters[1]
             push!(rrule_history, op)
         end
-
-        # Now define some rules
-        @scalar_rule x + y (1, 1)
-        @scalar_rule x - y (1, -1)
-        refresh_rules()
-
-        @test Set(frule_history[end-1:end]) == Set((typeof(+), typeof(-)))
-        @test Set(rrule_history[end-1:end]) == Set((typeof(+), typeof(-)))
         
-        ChainRulesCore.clear_new_rule_hooks!(frule)
-        ChainRulesCore.clear_new_rule_hooks!(rrule)
+        @testset "new rules hit the hooks" begin
+            # Now define some rules
+            @scalar_rule x + y (1, 1)
+            @scalar_rule x - y (1, -1)
+            refresh_rules()
+
+            @test Set(frule_history[end-1:end]) == Set((typeof(+), typeof(-)))
+            @test Set(rrule_history[end-1:end]) == Set((typeof(+), typeof(-)))
+        end
+
+        @testset "# Make sure nothing happens anymore once we clear the hooks" begin
+            ChainRulesCore.clear_new_rule_hooks!(frule)
+            ChainRulesCore.clear_new_rule_hooks!(rrule)
+
+            old_frule_history = copy(frule_history)
+            old_rrule_history = copy(rrule_history)
+
+            @scalar_rule sin(x) cos(x)
+            refresh_rules()
+
+            @test old_rrule_history == rrule_history
+            @test old_frule_history == frule_history
+        end
+
     end
 
     @testset "_primal_sig" begin
