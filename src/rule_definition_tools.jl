@@ -122,13 +122,8 @@ function _normalize_scalarrules_macro_input(call, maybe_setup, partials)
     end
 
     # Remove annotations and escape names for the call
-    for (i, arg) in enumerate(call.args)
-        if Meta.isexpr(arg, :(::))
-            call.args[i] = esc(first(arg.args))
-        else
-            call.args[i] = esc(arg)
-        end
-    end
+    call = _without_constraints(call)
+    call.args = esc.(call.args)
 
     # For consistency in code that follows we make all partials tuple expressions
     partials = map(partials) do partial
@@ -142,6 +137,15 @@ function _normalize_scalarrules_macro_input(call, maybe_setup, partials)
 
     return call, setup_stmts, inputs, partials
 end
+
+"turn `foo(a, b::S)` into `foo(a, b)`"
+function _without_constraints(call_expr)
+    return Expr(
+        :call, 
+        (Meta.isexpr(arg, :(::)) ? first(arg.args) : arg for arg in call_expr.args)...
+    )
+end
+
 
 function scalar_frule_expr(f, call, setup_stmts, inputs, partials)
     n_outputs = length(partials)
@@ -258,3 +262,39 @@ This is able to deal with fairly complex expressions for `f`:
 propagator_name(f::Expr, propname::Symbol) = propagator_name(f.args[end], propname)
 propagator_name(fname::Symbol, propname::Symbol) = Symbol(fname, :_, propname)
 propagator_name(fname::QuoteNode, propname::Symbol) = propagator_name(fname.value, propname)
+
+
+macro @non_differentiable(call_expr)
+    Meta.isexpr(:call, call_expr) || error("Invalid use of `@non_differentiable`")
+
+    primal_call = _without_constraints(call_expr)
+    primal_call.args = esc.(primal_call.args)
+
+    # TODO Move to frule helper
+    frule_defn = Expr(
+        :(=),
+        Expr(:call, :(ChainRulesCore.frule), :_, call_expr.args...),
+        # How many outputs we have it doesn't matter: `DoesNotExist()` is a iterator that
+        # returns `DoesNotExist()` for every position.
+        Expr(:tuple, primal_call, DoesNotExist())
+    )
+
+    # TODO Move to rrule helper
+    primal_name = first(primal_call.args)
+    pullback_expr = Expr(
+        :(=),
+        Expr(:call, propagator_name(primal_name, :pullback), :_),
+        Expr(:tuple, NO_FIELDS, (DoesNotExist() for _ in primal_call.args[2:end])...)
+    )
+    rrule_defn = Expr(
+        :(=),
+        Expr(:call, :(ChainRulesCore.rrule), call_expr.args...),
+        Expr(:tuple, primal_call, pullback_expr),
+    )
+
+    quote
+        $frule_defn
+        $rrule_defn
+    end
+end
+
