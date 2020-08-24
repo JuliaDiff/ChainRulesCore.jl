@@ -28,7 +28,7 @@ Base.to_power_type(x::Dual) = x
 
 
 function define_dual_overload(sig)
-    sig = Base.unwrap_unionall(sig)
+    sig = Base.unwrap_unionall(sig)  # Not really handling most UnionAlls
     opT, argTs = Iterators.peel(sig.parameters)
     fieldcount(opT) == 0 || return  # not handling functors 
     all(Float64 <: argT for argT in argTs) || return  # only handling purely Float64 ops.

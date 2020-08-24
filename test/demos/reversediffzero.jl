@@ -57,7 +57,7 @@ Base.to_power_type(x::Tracked) = x
 
 "What to do when a new rrule is declared"
 function define_tracked_overload(sig)
-    sig = Base.unwrap_unionall(sig)
+    sig = Base.unwrap_unionall(sig)  # not really handling most UnionAll
     opT, argTs = Iterators.peel(sig.parameters)
     fieldcount(opT) == 0 || return  # not handling functors 
     all(Float64 <: argT for argT in argTs) || return  # only handling purely Float64 ops.
