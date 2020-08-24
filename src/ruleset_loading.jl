@@ -4,22 +4,22 @@ function __init__()
     push!(Base.package_callbacks, pkgid -> refresh_rules())
 end
 
-
-const NEW_RRULE_HOOKS = Function[]
-const NEW_FRULE_HOOKS = Function[]
-_hook_list(::typeof(rrule)) = NEW_RRULE_HOOKS
-_hook_list(::typeof(frule)) = NEW_FRULE_HOOKS
+# Holds all the hook functions that are invokes when a new rule is defined
+const RRULE_DEFINITION_HOOKS = Function[]
+const FRULE_DEFINITION_HOOKS = Function[]
+_hook_list(::typeof(rrule)) = RRULE_DEFINITION_HOOKS
+_hook_list(::typeof(frule)) = FRULE_DEFINITION_HOOKS
 
 """
     on_new_rule(hook, frule | rrule)
 
 Register a `hook` function to run when new rules are defined.
 The hook receives a signature type-type as input, and generally will use `eval` to define
-and overload of AD systems overloaded type.
+an overload of an AD system's overloaded type
 For example, using the signature type `Tuple{typeof(+), Real, Real}` to make
 `+(::DualNumber, ::DualNumber)` call the `frule` for `+`.
 A signature type tuple always has the form:
-`Tuple{typeof(operation), typeof{pos_arg1}, typeof{pos_arg2...}}`, where `pos_arg1` is the
+`Tuple{typeof(operation), typeof{pos_arg1}, typeof{pos_arg2}...}`, where `pos_arg1` is the
 first positional argument.
 
 The hooks are automatically run on new rules whenever a package is loaded.
@@ -76,8 +76,13 @@ It is *automatically* run when ever a package is loaded.
 It can also be manually called to run it directly, for example if a rule was defined
 in the REPL or within the same file as the AD function.
 """
-refresh_rules() = (refresh_rules(frule); refresh_rules(rrule))
+function refresh_rules()
+    refresh_rules(frule);
+    refresh_rules(rrule)
+end
+
 function refresh_rules(rule_kind)
+    isempty(_rule_list(rule_kind)) && return  # if no hooks, exit early, nothing to run
     already_done_world_age = last_refresh(rule_kind)[]
     for method in _rule_list(rule_kind)
         _defined_world(method) < already_done_world_age && continue

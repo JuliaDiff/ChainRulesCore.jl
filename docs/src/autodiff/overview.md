@@ -19,4 +19,4 @@ There are 3 main ways to access ChainRules rule sets in your AutoDiff system.
     - If an applicable `rrule`/`frule` exists in the method table then use it, else generate normal AD path.
     - This avoids having branches in your generated code.
     - This requires maintaining your own back-edges.
-    - This is pretty hard-code even by the standard of source code tranformations
+    - This is pretty hardcore even by the standard of source code tranformations.
