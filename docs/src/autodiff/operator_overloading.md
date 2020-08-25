@@ -21,7 +21,7 @@ function define_overload(sig::Type{<:Tuple{F, Vararg{ACCEPT_TYPE}}) where F
 end
 define_overload(::Any) = nothing  # don't do anything for any other signature
 
-on_new_rule(frule, define_overload)
+on_new_rule(define_overload, frule)
 ```
 
 or you might write:
@@ -36,7 +36,7 @@ function define_overload(sig) where F
     end
 end
 
-on_new_rule(frule, define_overload)
+on_new_rule(define_overload, frule)
 ```
 
 The generation of overloaded code is the responsibility of the AD implementor.
