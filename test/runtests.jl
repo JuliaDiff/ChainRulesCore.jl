@@ -13,5 +13,12 @@ using Test
         include("differentials/composite.jl")
     end
 
+    include("ruleset_loading.jl")
     include("rules.jl")
+
+
+    @testset "demos" begin
+        include("demos/forwarddiffzero.jl")
+        include("demos/reversediffzero.jl")
+    end
 end

@@ -1,6 +1,7 @@
 using ChainRulesCore
 using Documenter
 using DocumenterTools: Themes
+using Markdown
 
 DocMeta.setdocmeta!(
     ChainRulesCore,
@@ -36,6 +37,10 @@ makedocs(
         "Complex Numbers" => "complex.md",
         "Deriving Array Rules" => "arrays.md",
         "Debug Mode" => "debug_mode.md",
+        "Usage in AD" => [
+            "Overview" => "autodiff/overview.md",
+            "Operator Overloading" => "autodiff/operator_overloading.md"
+        ],
         "Design" => [
             "Many Differential Types" => "design/many_differentials.md",
         ],
