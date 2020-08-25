@@ -117,12 +117,10 @@ function _normalize_scalarrules_macro_input(call, maybe_setup, partials)
     @assert Meta.isexpr(call, :call)
 
     # Annotate all arguments in the signature as scalars
-    inputs = map(call.args[2:end]) do arg
-        esc(Meta.isexpr(arg, :(::)) ? arg : Expr(:(::), arg, :Number))
-    end
+    inputs = _constrain_and_name.(call.args[2:end], :Number)
 
     # Remove annotations and escape names for the call
-    call = _without_constraints(call)
+    call.args = _unconstrain.(call.args)
     call.args = esc.(call.args)
 
     # For consistency in code that follows we make all partials tuple expressions
@@ -138,14 +136,20 @@ function _normalize_scalarrules_macro_input(call, maybe_setup, partials)
     return call, setup_stmts, inputs, partials
 end
 
-"turn `foo(a, b::S)` into `foo(a, b)`"
-function _without_constraints(call_expr)
-    return Expr(
-        :call, 
-        (Meta.isexpr(arg, :(::)) ? first(arg.args) : arg for arg in call_expr.args)...
-    )
+"turn both `a` and `a::S` into `a`"
+_unconstrain(arg::Symbol) = arg
+function _unconstrain(arg::Expr)
+    Meta.isexpr(arg, :(::), 2) && return arg.args[1]  # dop constraint.
+    error("malformed arguments: $arg")
 end
 
+"turn both `a` and `::Number` into `a::Number` into `a::Number` etc"
+function _constrain_and_name(arg::Expr, default_constraint)
+    Meta.isexpr(arg, :(::), 2) && return arg  # it is already fine.
+    Meta.isexpr(arg, :(::), 1) && return Expr(:(::), gensym(), arg.args[1])  #add name
+    error("malformed arguments: $arg")
+end
+_constrain_and_name(name::Symbol, constraint) = Expr(:(::), name, constraint)  # add type
 
 function scalar_frule_expr(f, call, setup_stmts, inputs, partials)
     n_outputs = length(partials)
@@ -264,32 +268,37 @@ propagator_name(fname::Symbol, propname::Symbol) = Symbol(fname, :_, propname)
 propagator_name(fname::QuoteNode, propname::Symbol) = propagator_name(fname.value, propname)
 
 
-macro @non_differentiable(call_expr)
-    Meta.isexpr(:call, call_expr) || error("Invalid use of `@non_differentiable`")
+macro non_differentiable(call_expr)
+    Meta.isexpr(call_expr, :call) || error("Invalid use of `@non_differentiable`")
+    primal_name, orig_args = Iterators.peel(call_expr.args)
 
-    primal_call = _without_constraints(call_expr)
-    primal_call.args = esc.(primal_call.args)
+    constrained_args = _constrain_and_name.(orig_args, :Any)
+    unconstrained_args = _unconstrain.(constrained_args)
+    primal_invoke = Expr(:call, esc(primal_name), esc.(unconstrained_args)...)
+    
+
+    primal_sig_parts = [:(::typeof($primal_name)), constrained_args...]
 
     # TODO Move to frule helper
     frule_defn = Expr(
         :(=),
-        Expr(:call, :(ChainRulesCore.frule), :_, call_expr.args...),
+        Expr(:call, :(ChainRulesCore.frule), esc(:_), esc.(primal_sig_parts)...),
         # How many outputs we have it doesn't matter: `DoesNotExist()` is a iterator that
         # returns `DoesNotExist()` for every position.
-        Expr(:tuple, primal_call, DoesNotExist())
+        Expr(:tuple, primal_invoke, DoesNotExist())
     )
 
     # TODO Move to rrule helper
-    primal_name = first(primal_call.args)
+    
     pullback_expr = Expr(
-        :(=),
-        Expr(:call, propagator_name(primal_name, :pullback), :_),
-        Expr(:tuple, NO_FIELDS, (DoesNotExist() for _ in primal_call.args[2:end])...)
+        :function,
+        Expr(:call, esc(propagator_name(primal_name, :pullback)), esc(:_)),
+        Expr(:tuple, NO_FIELDS, (DoesNotExist() for _ in constrained_args)...)
     )
     rrule_defn = Expr(
         :(=),
-        Expr(:call, :(ChainRulesCore.rrule), call_expr.args...),
-        Expr(:tuple, primal_call, pullback_expr),
+        Expr(:call, :(ChainRulesCore.rrule), esc.(primal_sig_parts)...),
+        Expr(:tuple, primal_invoke, pullback_expr),
     )
 
     quote
