@@ -27,7 +27,7 @@ on_new_rule(frule, define_overload)
 or you might write:
 ```julia
 const ACCEPT_TYPES = (Float64, AbstractMatrix{Float64})
-function define_overload(sig) where F
+function define_overload(sig)
     sig = Base.unwrap_unionall(sig)  # not really handling most UnionAll,
     opT, argTs = Iterators.peel(sig.parameters)
     all(any(acceptT<: argT for acceptT in ACCEPT_TYPES) for argT in argTs) || return
