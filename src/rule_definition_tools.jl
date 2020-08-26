@@ -117,10 +117,9 @@ function _normalize_scalarrules_macro_input(call, maybe_setup, partials)
     @assert Meta.isexpr(call, :call)
 
     # Annotate all arguments in the signature as scalars
-    inputs = _constrain_and_name.(call.args[2:end], :Number)
-
+    inputs = esc.(_constrain_and_name.(call.args[2:end], :Number))
     # Remove annotations and escape names for the call
-    call.args = _unconstrain.(call.args)
+    call.args[2:end] .= _unconstrain.(call.args[2:end])
     call.args = esc.(call.args)
 
     # For consistency in code that follows we make all partials tuple expressions
@@ -186,7 +185,7 @@ function scalar_rrule_expr(f, call, setup_stmts, inputs, partials)
 
     # Δs is the input to the propagator rule
     # because this is a pull-back there is one per output of function
-    Δs = [Symbol(string(:Δ, i)) for i in 1:n_outputs]
+    Δs = [Symbol(:Δ, i) for i in 1:n_outputs]
 
     # 1 partial derivative per input
     pullback_returns = map(1:n_inputs) do input_i
@@ -197,7 +196,7 @@ function scalar_rrule_expr(f, call, setup_stmts, inputs, partials)
     # Multi-output functions have pullbacks with a tuple input that will be destructured
     pullback_input = n_outputs == 1 ? first(Δs) : Expr(:tuple, Δs...)
     pullback = quote
-        function $(propagator_name(f, :pullback))($pullback_input)
+        function $(esc(propagator_name(f, :pullback)))($pullback_input)
             return (NO_FIELDS, $(pullback_returns...))
         end
     end
@@ -223,16 +222,14 @@ function propagation_expr(Δs, ∂s, _conj = false)
     ∂s = map(esc, ∂s)
     n∂s = length(∂s)
 
-    # Due to bugs in Julia 1.0, we can't use `.+`  or `.*` inside expression
-    # literals.
+    # Due to bugs in Julia 1.0, we can't use `.+`  or `.*` inside expression literals.
     ∂_mul_Δs = if _conj
         ntuple(i->:(conj($(∂s[i])) * $(Δs[i])), n∂s)
     else
         ntuple(i->:($(∂s[i]) * $(Δs[i])), n∂s)
     end
 
-    # Avoiding the extra `+` operation, it is potentially expensive for vector
-    # mode AD.
+    # Avoiding the extra `+` operation, it is potentially expensive for vector mode AD.
     sumed_∂_mul_Δs = if n∂s > 1
         # we use `@.` to broadcast `*` and `+`
         :(@. +($(∂_mul_Δs...)))
@@ -273,37 +270,38 @@ macro non_differentiable(call_expr)
     primal_name, orig_args = Iterators.peel(call_expr.args)
 
     constrained_args = _constrain_and_name.(orig_args, :Any)
-    unconstrained_args = _unconstrain.(constrained_args)
-    primal_invoke = Expr(:call, esc(primal_name), esc.(unconstrained_args)...)
-    
-
     primal_sig_parts = [:(::typeof($primal_name)), constrained_args...]
 
-    # TODO Move to frule helper
-    frule_defn = Expr(
+    unconstrained_args = _unconstrain.(constrained_args)
+    primal_invoke = Expr(:call, esc(primal_name), esc.(unconstrained_args)...)
+   
+    quote
+        $(_nondiff_frule_expr(primal_sig_parts, primal_invoke))
+        $(_nondiff_rrule_expr(primal_sig_parts, primal_invoke))
+    end
+end
+
+function _nondiff_frule_expr(primal_sig_parts, primal_invoke)
+    return Expr(
         :(=),
         Expr(:call, :(ChainRulesCore.frule), esc(:_), esc.(primal_sig_parts)...),
-        # How many outputs we have it doesn't matter: `DoesNotExist()` is a iterator that
-        # returns `DoesNotExist()` for every position.
+        # Julia functions always only have 1 output, so just return a single DoesNotExist()
         Expr(:tuple, primal_invoke, DoesNotExist())
     )
+end
 
-    # TODO Move to rrule helper
-    
+function _nondiff_rrule_expr(primal_sig_parts, primal_invoke)
+    num_primal_inputs = length(primal_sig_parts) - 1
+    primal_name = first(primal_invoke.args)
     pullback_expr = Expr(
         :function,
         Expr(:call, esc(propagator_name(primal_name, :pullback)), esc(:_)),
-        Expr(:tuple, NO_FIELDS, (DoesNotExist() for _ in constrained_args)...)
+        Expr(:tuple, NO_FIELDS, ntuple(_->DoesNotExist(), num_primal_inputs)...)
     )
     rrule_defn = Expr(
         :(=),
         Expr(:call, :(ChainRulesCore.rrule), esc.(primal_sig_parts)...),
         Expr(:tuple, primal_invoke, pullback_expr),
     )
-
-    quote
-        $frule_defn
-        $rrule_defn
-    end
+    return rrule_defn
 end
-
