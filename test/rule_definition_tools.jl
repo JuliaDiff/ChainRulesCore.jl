@@ -21,7 +21,7 @@
             )
         end
 
-        @testset "specific signature" begin
+        @testset "constrained signature" begin
             nonembed_identity(x) = x
             @non_differentiable nonembed_identity(::Integer)
 
@@ -62,4 +62,3 @@
 
     end
 end
-

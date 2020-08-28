@@ -254,11 +254,10 @@ propagator_name(fname::QuoteNode, propname::Symbol) = propagator_name(fname.valu
     @non_differentiable(signature_expression)
 
 A helper to make it easier to declare that a method is not not differentiable.
-This is a short-hand for defining a [`frule`](@ref) and an [`rrule`](@ref)+ pullback that 
-returns [`DoesNotExist()`](@ref) for all partials (except for the function `s̄elf`-partial
+This is a short-hand for defining an [`frule`](@ref) and [`rrule`](@ref) that 
+return [`DoesNotExist()`](@ref) for all partials (except for the function `s̄elf`-partial
 itself which is `NO_FIELDS`)
 
-The usage is to put the macro before a function signature.
 Keyword arguments should not be included.
 
 ```jldoctest
@@ -309,7 +308,7 @@ function _nondiff_frule_expr(primal_sig_parts, primal_invoke)
         :(=),
         Expr(:call, :(ChainRulesCore.frule), esc(:_), esc.(primal_sig_parts)...),
         # Julia functions always only have 1 output, so just return a single DoesNotExist()
-        Expr(:tuple, primal_invoke, DoesNotExist())
+        Expr(:tuple, primal_invoke, DoesNotExist()),
     )
 end
 
@@ -379,12 +378,12 @@ end
 "turn both `a` and `a::S` into `a`"
 _unconstrain(arg::Symbol) = arg
 function _unconstrain(arg::Expr)
-    Meta.isexpr(arg, :(::), 2) && return arg.args[1]  # dop constraint.
+    Meta.isexpr(arg, :(::), 2) && return arg.args[1]  # drop constraint.
     error("malformed arguments: $arg")
 end
 
-"turn both `a` and `::Number` into `a::Number` into `a::Number` etc"
-function _constrain_and_name(arg::Expr, default_constraint)
+"turn both `a` and `::constraint` into `a::constraint` etc"
+function _constrain_and_name(arg::Expr, _)
     Meta.isexpr(arg, :(::), 2) && return arg  # it is already fine.
     Meta.isexpr(arg, :(::), 1) && return Expr(:(::), gensym(), arg.args[1])  #add name
     error("malformed arguments: $arg")
