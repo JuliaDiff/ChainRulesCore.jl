@@ -135,20 +135,6 @@ function _normalize_scalarrules_macro_input(call, maybe_setup, partials)
     return call, setup_stmts, inputs, partials
 end
 
-"turn both `a` and `a::S` into `a`"
-_unconstrain(arg::Symbol) = arg
-function _unconstrain(arg::Expr)
-    Meta.isexpr(arg, :(::), 2) && return arg.args[1]  # dop constraint.
-    error("malformed arguments: $arg")
-end
-
-"turn both `a` and `::Number` into `a::Number` into `a::Number` etc"
-function _constrain_and_name(arg::Expr, default_constraint)
-    Meta.isexpr(arg, :(::), 2) && return arg  # it is already fine.
-    Meta.isexpr(arg, :(::), 1) && return Expr(:(::), gensym(), arg.args[1])  #add name
-    error("malformed arguments: $arg")
-end
-_constrain_and_name(name::Symbol, constraint) = Expr(:(::), name, constraint)  # add type
 
 function scalar_frule_expr(f, call, setup_stmts, inputs, partials)
     n_outputs = length(partials)
@@ -264,10 +250,47 @@ propagator_name(f::Expr, propname::Symbol) = propagator_name(f.args[end], propna
 propagator_name(fname::Symbol, propname::Symbol) = Symbol(fname, :_, propname)
 propagator_name(fname::QuoteNode, propname::Symbol) = propagator_name(fname.value, propname)
 
+"""
+    @non_differentiable(signature_expression)
 
-macro non_differentiable(call_expr)
-    Meta.isexpr(call_expr, :call) || error("Invalid use of `@non_differentiable`")
-    primal_name, orig_args = Iterators.peel(call_expr.args)
+A helper to make it easier to declare that a method is not not differentiable.
+This is a short-hand for defining a [`frule`](@ref) and an [`rrule`](@ref)+ pullback that 
+returns [`DoesNotExist()`](@ref) for all partials (except for the function `s̄elf`-partial
+itself which is `NO_FIELDS`)
+
+The usage is to put the macro before a function signature.
+Keyword arguments should not be included.
+
+```jldoctest
+julia> @non_differentiable Base.:(==)(a, b)
+
+julia> _, pullback = rrule(==, 2.0, 3.0);
+
+julia> pullback(1.0)
+(Zero(), DoesNotExist(), DoesNotExist())
+```
+
+You can place type-constraints in the signature:
+```jldoctest
+julia> @non_differentiable Base.length(xs::Union{Number, Array})
+
+julia> frule((Zero(), 1), length, [2.0, 3.0])
+(2, DoesNotExist())
+```
+
+!!! warning
+    This helper macro covers only the simple common cases.
+    It does not support Varargs, or `where`-clauses.
+    For these you can declare the `rrule` and `frule` directly
+
+"""
+macro non_differentiable(sig_expr)
+    Meta.isexpr(sig_expr, :call) || error("Invalid use of `@non_differentiable`")
+    for arg in sig_expr.args
+        _isvararg(arg) && error("@non_differentiable does not support Varargs like: $arg")
+    end
+
+    primal_name, orig_args = Iterators.peel(sig_expr.args)
 
     constrained_args = _constrain_and_name.(orig_args, :Any)
     primal_sig_parts = [:(::typeof($primal_name)), constrained_args...]
@@ -305,3 +328,65 @@ function _nondiff_rrule_expr(primal_sig_parts, primal_invoke)
     )
     return rrule_defn
 end
+
+
+###########
+# Helpers 
+
+"""
+    _isvararg(expr)
+
+returns true if the expression could represent a vararg
+
+```jldoctest
+julia> ChainRulesCore._isvararg(:(x...))
+true
+
+julia> ChainRulesCore._isvararg(:(x::Int...))
+true
+
+julia> ChainRulesCore._isvararg(:(::Int...))
+true
+
+julia> ChainRulesCore._isvararg(:(x::Vararg))
+true
+
+julia> ChainRulesCore._isvararg(:(x::Vararg{Int}))
+true
+
+julia> ChainRulesCore._isvararg(:(::Vararg))
+true
+
+julia> ChainRulesCore._isvararg(:(::Vararg{Int}))
+true
+
+julia> ChainRulesCore._isvararg(:(x))
+false
+````
+"""
+_isvararg(expr) = false
+function _isvararg(expr::Expr)
+    Meta.isexpr(expr, :...) && return true
+    if Meta.isexpr(expr, :(::))
+        constraint = last(expr.args)
+        constraint == :Vararg && return true
+        Meta.isexpr(constraint, :curly) && first(constraint.args) == :Vararg && return true
+    end
+    return false
+end
+
+
+"turn both `a` and `a::S` into `a`"
+_unconstrain(arg::Symbol) = arg
+function _unconstrain(arg::Expr)
+    Meta.isexpr(arg, :(::), 2) && return arg.args[1]  # dop constraint.
+    error("malformed arguments: $arg")
+end
+
+"turn both `a` and `::Number` into `a::Number` into `a::Number` etc"
+function _constrain_and_name(arg::Expr, default_constraint)
+    Meta.isexpr(arg, :(::), 2) && return arg  # it is already fine.
+    Meta.isexpr(arg, :(::), 1) && return Expr(:(::), gensym(), arg.args[1])  #add name
+    error("malformed arguments: $arg")
+end
+_constrain_and_name(name::Symbol, constraint) = Expr(:(::), name, constraint)  # add type

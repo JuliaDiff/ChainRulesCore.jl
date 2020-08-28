@@ -1,5 +1,4 @@
 @testset "rule_definition_tools.jl" begin
-    
     @testset "@non_differentiable" begin
         @testset "nondiff_2_1" begin
             nondiff_2_1(x, y) = fill(7.5, 100)[x + y]
@@ -35,6 +34,32 @@
 
             @test rrule(nonembed_identity, 2.0) == nothing
         end
+
+        @testset "Pointy UnionAll constraints" begin
+            pointy_identity(x) = x
+            @non_differentiable pointy_identity(::Vector{<:AbstractString})
+
+            @test frule((Zero(), 1.2), pointy_identity, ["2"]) == (["2"], DoesNotExist())
+            @test frule((Zero(), 1.2), pointy_identity, 2.0) == nothing
+
+            res, pullback = rrule(pointy_identity, ["2"])
+            @test res == ["2"]
+            @test pullback(1.2) == (NO_FIELDS, DoesNotExist())
+
+            @test rrule(pointy_identity, 2.0) == nothing
+        end
+        
+        @testset "Not supported (Yet)" begin
+            # Varargs are not supported
+            @test_throws Exception @macroexpand(@non_differentiable vararg1(xs...))|
+            @test_throws Exception @macroexpand(@non_differentiable vararg1(xs::Vararg))
+
+            # Where clauses are not supported.
+            @test_throws Exception @macroexpand(
+                @non_differentiable where_identity(::Vector{T}) where T<:AbstractString
+            )
+        end
+
     end
 end
 
