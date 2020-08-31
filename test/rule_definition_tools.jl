@@ -9,7 +9,7 @@
             @test pullback(4.5) == (NO_FIELDS, DoesNotExist(), DoesNotExist())
         end
 
-        @testset "nondiff_1_2" begin
+        @testset "one input, 2-tuple output function" begin
             nondiff_1_2(x) = (5.0, 3.0)
             @non_differentiable nondiff_1_2(::Any)
             @test frule((Zero(), 1.2), nondiff_1_2, 3.1) == ((5.0, 3.0), DoesNotExist())
