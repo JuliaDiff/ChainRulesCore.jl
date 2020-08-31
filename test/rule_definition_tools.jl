@@ -1,6 +1,6 @@
 @testset "rule_definition_tools.jl" begin
     @testset "@non_differentiable" begin
-        @testset "nondiff_2_1" begin
+        @testset "two input one output function" begin
             nondiff_2_1(x, y) = fill(7.5, 100)[x + y]
             @non_differentiable nondiff_2_1(::Any, ::Any)
             @test frule((Zero(), 1.2, 2.3), nondiff_2_1, 3, 2) == (7.5, DoesNotExist())
