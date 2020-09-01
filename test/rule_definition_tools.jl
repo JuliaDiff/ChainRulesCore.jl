@@ -1,3 +1,27 @@
+"""
+Along same lines as  `@test_throws` but to test if a macro throw an exception when it is 
+expanded.
+"""
+macro test_macro_throws(err_expr, expr)
+    quote
+        err = nothing
+        try
+            @macroexpand($(esc(expr)))
+        catch load_err
+            # all errors thrown at macro expansion time are LoadErrors, we need to unwrap
+            @assert load_err isa LoadError
+            err = load_err.error
+        end
+        # Reuse `@test_throws` logic
+        if err!==nothing
+            @test_throws $(esc(err_expr)) ($(Meta.quot(expr)); throw(err))
+        else
+            @test_throws $(esc(err_expr)) $(Meta.quot(expr))
+        end        
+    end
+end
+
+
 @testset "rule_definition_tools.jl" begin
     @testset "@non_differentiable" begin
         @testset "two input one output function" begin
@@ -51,14 +75,14 @@
         
         @testset "Not supported (Yet)" begin
             # Varargs are not supported
-            @test_throws Exception @macroexpand(@non_differentiable vararg1(xs...))|
-            @test_throws Exception @macroexpand(@non_differentiable vararg1(xs::Vararg))
+            @test_macro_throws ErrorException @non_differentiable vararg1(xs...)
+            @test_macro_throws ErrorException @non_differentiable vararg1(xs::Vararg)
 
             # Where clauses are not supported.
-            @test_throws Exception @macroexpand(
-                @non_differentiable where_identity(::Vector{T}) where T<:AbstractString
+            @test_macro_throws(
+                ErrorException,
+                (@non_differentiable where_identity(::Vector{T}) where T<:AbstractString)
             )
         end
-
     end
 end
