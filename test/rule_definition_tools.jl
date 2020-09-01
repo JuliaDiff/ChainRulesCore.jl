@@ -1,5 +1,5 @@
 """
-Along same lines as  `@test_throws` but to test if a macro throw an exception when it is 
+Along same lines as  `@test_throws` but to test if a macro throw an exception when it is
 expanded.
 """
 macro test_macro_throws(err_expr, expr)
@@ -17,7 +17,7 @@ macro test_macro_throws(err_expr, expr)
             @test_throws $(esc(err_expr)) ($(Meta.quot(expr)); throw(err))
         else
             @test_throws $(esc(err_expr)) $(Meta.quot(expr))
-        end        
+        end
     end
 end
 
@@ -72,7 +72,7 @@ end
 
             @test rrule(pointy_identity, 2.0) == nothing
         end
-        
+
         @testset "Not supported (Yet)" begin
             # Varargs are not supported
             @test_macro_throws ErrorException @non_differentiable vararg1(xs...)

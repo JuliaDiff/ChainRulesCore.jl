@@ -254,7 +254,7 @@ propagator_name(fname::QuoteNode, propname::Symbol) = propagator_name(fname.valu
     @non_differentiable(signature_expression)
 
 A helper to make it easier to declare that a method is not not differentiable.
-This is a short-hand for defining an [`frule`](@ref) and [`rrule`](@ref) that 
+This is a short-hand for defining an [`frule`](@ref) and [`rrule`](@ref) that
 return [`DoesNotExist()`](@ref) for all partials (except for the function `s̄elf`-partial
 itself which is `NO_FIELDS`)
 
@@ -296,7 +296,7 @@ macro non_differentiable(sig_expr)
 
     unconstrained_args = _unconstrain.(constrained_args)
     primal_invoke = Expr(:call, esc(primal_name), esc.(unconstrained_args)...)
-   
+
     quote
         $(_nondiff_frule_expr(primal_sig_parts, primal_invoke))
         $(_nondiff_rrule_expr(primal_sig_parts, primal_invoke))
@@ -330,7 +330,7 @@ end
 
 
 ###########
-# Helpers 
+# Helpers
 
 """
     _isvararg(expr)
