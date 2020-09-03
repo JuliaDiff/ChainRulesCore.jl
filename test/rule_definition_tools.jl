@@ -122,8 +122,9 @@ end
 
             y, ẏ = frule((NO_FIELDS, 50f0), simo, π)
             @test y == (π, 2π)
-            # test with === because type also must match
-            @test ẏ === Composite{typeof(y)}(50f0, 100f0)
+            @test ẏ == Composite{typeof(y)}(50f0, 100f0)
+            # make sure type is exactly as expected:
+            @test ẏ isa Composite{Tuple{Irrational{:π}, Float64}, Tuple{Float32, Float32}}
         end
     end
 end
