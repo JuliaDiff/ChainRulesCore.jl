@@ -29,7 +29,7 @@ julia> Δsinx == cos(x)
 true
 ```
 
-unary input, binary output scalar function:
+Unary input, binary output scalar function:
 
 ```jldoctest frule
 julia> sincosx, Δsincosx = frule((dself, 1), sincos, x);
@@ -37,9 +37,21 @@ julia> sincosx, Δsincosx = frule((dself, 1), sincos, x);
 julia> sincosx == sincos(x)
 true
 
-julia> Δsincosx == (cos(x), -sin(x))
+julia> Δsincosx[1] == cos(x)
+true
+
+julia> Δsincosx[2] == -sin(x)
 true
 ```
+
+Note that techically speaking julia does not have multiple output functions, just functions
+that return a single output that is iterable, like a `Tuple`.
+So this is actually a [`Composite`](@ref):
+```jldoctest frule
+julia> Δsincosx
+Composite{Tuple{Float64,Float64}}(0.6795498147167869, -0.7336293678134624)
+```.
+
 
 See also: [`rrule`](@ref), [`@scalar_rule`](@ref)
 """
