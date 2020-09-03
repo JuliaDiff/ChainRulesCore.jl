@@ -148,10 +148,12 @@ function scalar_frule_expr(f, call, setup_stmts, inputs, partials)
         propagation_expr(Δs, ∂s)
     end
     if n_outputs > 1
-        # For forward-mode we only return a tuple if output actually a tuple.
-        pushforward_returns = Expr(:tuple, pushforward_returns...)
+        # For forward-mode we return a Composite if output actually a tuple.
+        pushforward_returns = Expr(
+            :call, :(ChainRulesCore.Composite{typeof($(esc(:Ω)))}), pushforward_returns...
+        )
     else
-        pushforward_returns = pushforward_returns[1]
+        pushforward_returns = first(pushforward_returns)
     end
 
     return quote

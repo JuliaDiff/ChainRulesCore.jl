@@ -110,4 +110,20 @@ end
             )
         end
     end
+
+    @testset "@scalar_rule" begin
+        @testset "@scalar_rule with multiple output" begin
+            simo(x) = (x, 2x)
+            @scalar_rule(simo(x), 1f0, 2f0)
+    
+            y, simo_pb = rrule(simo, π)
+
+            @test simo_pb((10f0, 20f0)) == (NO_FIELDS, 50f0)
+
+            y, ẏ = frule((NO_FIELDS, 50f0), simo, π)
+            @test y == (π, 2π)
+            # test with === because type also must match
+            @test ẏ === Composite{typeof(y)}(50f0, 100f0)
+        end
+    end
 end
