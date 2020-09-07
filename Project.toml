@@ -1,6 +1,6 @@
 name = "ChainRulesCore"
 uuid = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
-version = "0.9.7"
+version = "0.9.8"
 
 [deps]
 MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
