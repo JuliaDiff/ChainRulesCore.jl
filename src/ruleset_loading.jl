@@ -136,6 +136,6 @@ function _safe_hook_fun(hook_fun, sig)
     try
         hook_fun(sig)
     catch err
-        @error "Error triggering hook" hook_fun sig exception=err
+        @error "Error triggering hook" hook_fun sig exception=(err, catch_backtrace())
     end
 end
