@@ -96,7 +96,6 @@ end
 
                 @test frule((Zero(), 11.1), kw_demo, 1.5; kw=3.0) == (4.5, DoesNotExist())
             end
-
         end
 
         @testset "Not supported (Yet)" begin
