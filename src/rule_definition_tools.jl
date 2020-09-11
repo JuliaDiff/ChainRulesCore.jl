@@ -295,7 +295,8 @@ macro non_differentiable(sig_expr)
     primal_sig_parts = [:(::typeof($primal_name)), constrained_args...]
 
     unconstrained_args = _unconstrain.(constrained_args)
-    primal_invoke = Expr(:call, esc(primal_name), esc.(unconstrained_args)...)
+
+    primal_invoke = :($(primal_name)($(unconstrained_args...); kwargs...))
 
     quote
         $(_nondiff_frule_expr(primal_sig_parts, primal_invoke))
@@ -304,12 +305,12 @@ macro non_differentiable(sig_expr)
 end
 
 function _nondiff_frule_expr(primal_sig_parts, primal_invoke)
-    return Expr(
-        :(=),
-        Expr(:call, :(ChainRulesCore.frule), esc(:_), esc.(primal_sig_parts)...),
-        # Julia functions always only have 1 output, so just return a single DoesNotExist()
-        Expr(:tuple, primal_invoke, DoesNotExist()),
-    )
+    return esc(:(
+        function ChainRulesCore.frule($(gensym(:_)), $(primal_sig_parts...); kwargs...)
+            # Julia functions always only have 1 output, so return a single DoesNotExist()
+            return ($primal_invoke, DoesNotExist())
+        end
+    ))
 end
 
 function _nondiff_rrule_expr(primal_sig_parts, primal_invoke)
@@ -317,15 +318,14 @@ function _nondiff_rrule_expr(primal_sig_parts, primal_invoke)
     primal_name = first(primal_invoke.args)
     pullback_expr = Expr(
         :function,
-        Expr(:call, esc(propagator_name(primal_name, :pullback)), esc(:_)),
+        Expr(:call, propagator_name(primal_name, :pullback), :_),
         Expr(:tuple, NO_FIELDS, ntuple(_->DoesNotExist(), num_primal_inputs)...)
     )
-    rrule_defn = Expr(
-        :(=),
-        Expr(:call, :(ChainRulesCore.rrule), esc.(primal_sig_parts)...),
-        Expr(:tuple, primal_invoke, pullback_expr),
-    )
-    return rrule_defn
+    return esc(:(
+        function ChainRulesCore.rrule($(primal_sig_parts...); kwargs...)
+            return ($primal_invoke, $pullback_expr)
+        end
+    ))
 end
 
 

@@ -73,6 +73,31 @@ end
             @test rrule(pointy_identity, 2.0) == nothing
         end
 
+        @testset "kwargs" begin
+            kw_demo(x; kw=2.0) = x + kw
+            @non_differentiable kw_demo(::Any)
+
+            @testset "not setting kw" begin
+                @assert kw_demo(1.5) == 3.5
+
+                res, pullback = rrule(kw_demo, 1.5)
+                @test res == 3.5
+                @test pullback(4.1) == (NO_FIELDS, DoesNotExist())
+
+                @test frule((Zero(), 11.1), kw_demo, 1.5) == (3.5, DoesNotExist())
+            end
+
+            @testset "setting kw" begin
+                @assert kw_demo(1.5; kw=3.0) == 4.5
+
+                res, pullback = rrule(kw_demo, 1.5; kw=3.0)
+                @test res == 4.5
+                @test pullback(1.1) == (NO_FIELDS, DoesNotExist())
+
+                @test frule((Zero(), 11.1), kw_demo, 1.5; kw=3.0) == (4.5, DoesNotExist())
+            end
+        end
+
         @testset "Not supported (Yet)" begin
             # Varargs are not supported
             @test_macro_throws ErrorException @non_differentiable vararg1(xs...)
