@@ -190,6 +190,8 @@ end
 
         @test Zero() * c == Zero()
         @test c * Zero() == Zero()
+        @test dot(Zero(), c) == Zero()
+        @test dot(c, Zero()) == Zero()
 
         @test One() * c === c
         @test c * One() === c
