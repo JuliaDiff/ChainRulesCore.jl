@@ -1,5 +1,6 @@
 module ChainRulesCore
 using Base.Broadcast: broadcasted, Broadcasted, broadcastable, materialize, materialize!
+using LinearAlgebra: LinearAlgebra
 using MuladdMacro: @muladd
 
 export on_new_rule, refresh_rules  # generation tools

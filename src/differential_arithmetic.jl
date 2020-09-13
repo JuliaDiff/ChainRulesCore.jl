@@ -18,6 +18,7 @@ Base.:+(::DoesNotExist, ::DoesNotExist) = DoesNotExist()
 Base.:-(::DoesNotExist, ::DoesNotExist) = DoesNotExist()
 Base.:-(::DoesNotExist) = DoesNotExist()
 Base.:*(::DoesNotExist, ::DoesNotExist) = DoesNotExist()
+LinearAlgebra.dot(::DoesNotExist, ::DoesNotExist) = DoesNotExist()
 for T in (:One, :AbstractThunk, :Composite, :Any)
     @eval Base.:+(::DoesNotExist, b::$T) = b
     @eval Base.:+(a::$T, ::DoesNotExist) = a
@@ -26,6 +27,9 @@ for T in (:One, :AbstractThunk, :Composite, :Any)
 
     @eval Base.:*(::DoesNotExist, ::$T) = DoesNotExist()
     @eval Base.:*(::$T, ::DoesNotExist) = DoesNotExist()
+
+    @eval LinearAlgebra.dot(::DoesNotExist, ::$T) = DoesNotExist()
+    @eval LinearAlgebra.dot(::$T, ::DoesNotExist) = DoesNotExist()
 end
 # `DoesNotExist` and `Zero` have special relationship,
 # DoesNotExist wins add, Zero wins *. This is (in theory) to allow `*` to be used for
@@ -36,6 +40,9 @@ Base.:-(::DoesNotExist, ::Zero) = DoesNotExist()
 Base.:-(::Zero, ::DoesNotExist) = DoesNotExist()
 Base.:*(::DoesNotExist, ::Zero) = Zero()
 Base.:*(::Zero, ::DoesNotExist) = Zero()
+
+LinearAlgebra.dot(::DoesNotExist, ::Zero) = Zero()
+LinearAlgebra.dot(::Zero, ::DoesNotExist) = Zero()
 
 Base.muladd(::Zero, x, y) = y
 Base.muladd(x, ::Zero, y) = y
@@ -51,6 +58,7 @@ Base.:+(::Zero, ::Zero) = Zero()
 Base.:-(::Zero, ::Zero) = Zero()
 Base.:-(::Zero) = Zero()
 Base.:*(::Zero, ::Zero) = Zero()
+LinearAlgebra.dot(::Zero, ::Zero) = Zero()
 for T in (:One, :AbstractThunk, :Composite, :Any)
     @eval Base.:+(::Zero, b::$T) = b
     @eval Base.:+(a::$T, ::Zero) = a
@@ -59,6 +67,9 @@ for T in (:One, :AbstractThunk, :Composite, :Any)
 
     @eval Base.:*(::Zero, ::$T) = Zero()
     @eval Base.:*(::$T, ::Zero) = Zero()
+
+    @eval LinearAlgebra.dot(::Zero, ::$T) = Zero()
+    @eval LinearAlgebra.dot(::$T, ::Zero) = Zero()
 end
 
 Base.real(::Zero) = Zero()
@@ -88,6 +99,8 @@ for T in (:AbstractThunk, :Composite, :Any)
     @eval Base.:*(a::$T, ::One) = a
 end
 
+LinearAlgebra.dot(::One, x::Number) = x
+LinearAlgebra.dot(x::Number, ::One) = conj(x)  # see definition of Frobenius inner product
 
 Base.:+(a::AbstractThunk, b::AbstractThunk) = unthunk(a) + unthunk(b)
 Base.:*(a::AbstractThunk, b::AbstractThunk) = unthunk(a) * unthunk(b)
