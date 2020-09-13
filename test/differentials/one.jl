@@ -5,8 +5,8 @@
     @test o + 1 == 2
     @test 1 + o == 2
     @test o * o == o
-    @test o * 1 == 1
-    @test 1 * o == 1
+    @test o * 17 == 17
+    @test 6 * o == 6
     @test dot(2 + im, o) == 2 - im
     @test dot(o, 2 + im) == 2 + im
     for x in o

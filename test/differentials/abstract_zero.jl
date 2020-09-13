@@ -15,11 +15,11 @@
         @test 1 - z === 1
         @test -z === z
         @test z * z === z
-        @test z * 1 === Zero()
-        @test 1 * z === Zero()
+        @test z * 11.1 === Zero()
+        @test 12.3 * z === Zero()
         @test dot(z, z) === z
-        @test dot(z, 1) === z
-        @test dot(1, z) === z
+        @test dot(z, 1.8) === z
+        @test dot(2.1, z) === z
         @test dot([1, 2], z) === z
         @test dot(z, [1, 2]) === z
         for x in z
@@ -72,11 +72,11 @@
         @test 1 - dne == 1
         @test -dne == dne
         @test dne * dne == dne
-        @test dne * 1 == dne
-        @test 1 * dne == dne
+        @test dne * 11.1 == dne
+        @test 12.1 * dne == dne
         @test dot(dne, dne) == dne
-        @test dot(dne, 1) == dne
-        @test dot(1, dne) == dne
+        @test dot(dne, 17.2) == dne
+        @test dot(11.9, dne) == dne
 
         @test Zero() + dne == dne
         @test dne + Zero() == dne
