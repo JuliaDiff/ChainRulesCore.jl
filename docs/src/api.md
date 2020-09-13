@@ -27,8 +27,16 @@ Pages = [
 Private = false
 ```
 
+## Ruleset Loading
+```@autodocs
+Modules = [ChainRulesCore]
+Pages = ["ruleset_loading.jl"]
+Private = false
+```
+
 ## Internal
 ```@docs
 ChainRulesCore.AbstractDifferential
 ChainRulesCore.debug_mode
+ChainRulesCore.clear_new_rule_hooks!
 ```

@@ -1,6 +1,9 @@
 [deps]
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+DocumenterTools = "35a29f4d-8980-5a13-9543-d66fff28ecb8"
+Markdown = "d6f4376e-aef5-505a-96c1-9c027394607a"
 
 [compat]
-Documenter = "~0.23"
+Documenter = "0.25"
+DocumenterTools = "0.1.6"

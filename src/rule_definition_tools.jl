@@ -1,6 +1,4 @@
 # These are some macros (and supporting functions) to make it easier to define rules.
-using MuladdMacro: @muladd
-
 """
     @scalar_rule(f(x₁, x₂, ...),
                  @setup(statement₁, statement₂, ...),
@@ -119,18 +117,10 @@ function _normalize_scalarrules_macro_input(call, maybe_setup, partials)
     @assert Meta.isexpr(call, :call)
 
     # Annotate all arguments in the signature as scalars
-    inputs = map(call.args[2:end]) do arg
-        esc(Meta.isexpr(arg, :(::)) ? arg : Expr(:(::), arg, :Number))
-    end
-
+    inputs = esc.(_constrain_and_name.(call.args[2:end], :Number))
     # Remove annotations and escape names for the call
-    for (i, arg) in enumerate(call.args)
-        if Meta.isexpr(arg, :(::))
-            call.args[i] = esc(first(arg.args))
-        else
-            call.args[i] = esc(arg)
-        end
-    end
+    call.args[2:end] .= _unconstrain.(call.args[2:end])
+    call.args = esc.(call.args)
 
     # For consistency in code that follows we make all partials tuple expressions
     partials = map(partials) do partial
@@ -144,6 +134,7 @@ function _normalize_scalarrules_macro_input(call, maybe_setup, partials)
 
     return call, setup_stmts, inputs, partials
 end
+
 
 function scalar_frule_expr(f, call, setup_stmts, inputs, partials)
     n_outputs = length(partials)
@@ -180,7 +171,7 @@ function scalar_rrule_expr(f, call, setup_stmts, inputs, partials)
 
     # Δs is the input to the propagator rule
     # because this is a pull-back there is one per output of function
-    Δs = [Symbol(string(:Δ, i)) for i in 1:n_outputs]
+    Δs = [Symbol(:Δ, i) for i in 1:n_outputs]
 
     # 1 partial derivative per input
     pullback_returns = map(1:n_inputs) do input_i
@@ -191,7 +182,7 @@ function scalar_rrule_expr(f, call, setup_stmts, inputs, partials)
     # Multi-output functions have pullbacks with a tuple input that will be destructured
     pullback_input = n_outputs == 1 ? first(Δs) : Expr(:tuple, Δs...)
     pullback = quote
-        function $(propagator_name(f, :pullback))($pullback_input)
+        function $(esc(propagator_name(f, :pullback)))($pullback_input)
             return (NO_FIELDS, $(pullback_returns...))
         end
     end
@@ -217,16 +208,14 @@ function propagation_expr(Δs, ∂s, _conj = false)
     ∂s = map(esc, ∂s)
     n∂s = length(∂s)
 
-    # Due to bugs in Julia 1.0, we can't use `.+`  or `.*` inside expression
-    # literals.
+    # Due to bugs in Julia 1.0, we can't use `.+`  or `.*` inside expression literals.
     ∂_mul_Δs = if _conj
         ntuple(i->:(conj($(∂s[i])) * $(Δs[i])), n∂s)
     else
         ntuple(i->:($(∂s[i]) * $(Δs[i])), n∂s)
     end
 
-    # Avoiding the extra `+` operation, it is potentially expensive for vector
-    # mode AD.
+    # Avoiding the extra `+` operation, it is potentially expensive for vector mode AD.
     sumed_∂_mul_Δs = if n∂s > 1
         # we use `@.` to broadcast `*` and `+`
         :(@. +($(∂_mul_Δs...)))
@@ -260,3 +249,143 @@ This is able to deal with fairly complex expressions for `f`:
 propagator_name(f::Expr, propname::Symbol) = propagator_name(f.args[end], propname)
 propagator_name(fname::Symbol, propname::Symbol) = Symbol(fname, :_, propname)
 propagator_name(fname::QuoteNode, propname::Symbol) = propagator_name(fname.value, propname)
+
+"""
+    @non_differentiable(signature_expression)
+
+A helper to make it easier to declare that a method is not not differentiable.
+This is a short-hand for defining an [`frule`](@ref) and [`rrule`](@ref) that
+return [`DoesNotExist()`](@ref) for all partials (except for the function `s̄elf`-partial
+itself which is `NO_FIELDS`)
+
+Keyword arguments should not be included.
+
+```jldoctest
+julia> @non_differentiable Base.:(==)(a, b)
+
+julia> _, pullback = rrule(==, 2.0, 3.0);
+
+julia> pullback(1.0)
+(Zero(), DoesNotExist(), DoesNotExist())
+```
+
+You can place type-constraints in the signature:
+```jldoctest
+julia> @non_differentiable Base.length(xs::Union{Number, Array})
+
+julia> frule((Zero(), 1), length, [2.0, 3.0])
+(2, DoesNotExist())
+```
+
+!!! warning
+    This helper macro covers only the simple common cases.
+    It does not support Varargs, or `where`-clauses.
+    For these you can declare the `rrule` and `frule` directly
+
+"""
+macro non_differentiable(sig_expr)
+    Meta.isexpr(sig_expr, :call) || error("Invalid use of `@non_differentiable`")
+    for arg in sig_expr.args
+        _isvararg(arg) && error("@non_differentiable does not support Varargs like: $arg")
+    end
+
+    primal_name, orig_args = Iterators.peel(sig_expr.args)
+
+    constrained_args = _constrain_and_name.(orig_args, :Any)
+    primal_sig_parts = [:(::typeof($primal_name)), constrained_args...]
+
+    unconstrained_args = _unconstrain.(constrained_args)
+
+    primal_invoke = :($(primal_name)($(unconstrained_args...); kwargs...))
+
+    quote
+        $(_nondiff_frule_expr(primal_sig_parts, primal_invoke))
+        $(_nondiff_rrule_expr(primal_sig_parts, primal_invoke))
+    end
+end
+
+function _nondiff_frule_expr(primal_sig_parts, primal_invoke)
+    return esc(:(
+        function ChainRulesCore.frule($(gensym(:_)), $(primal_sig_parts...); kwargs...)
+            # Julia functions always only have 1 output, so return a single DoesNotExist()
+            return ($primal_invoke, DoesNotExist())
+        end
+    ))
+end
+
+function _nondiff_rrule_expr(primal_sig_parts, primal_invoke)
+    num_primal_inputs = length(primal_sig_parts) - 1
+    primal_name = first(primal_invoke.args)
+    pullback_expr = Expr(
+        :function,
+        Expr(:call, propagator_name(primal_name, :pullback), :_),
+        Expr(:tuple, NO_FIELDS, ntuple(_->DoesNotExist(), num_primal_inputs)...)
+    )
+    return esc(:(
+        function ChainRulesCore.rrule($(primal_sig_parts...); kwargs...)
+            return ($primal_invoke, $pullback_expr)
+        end
+    ))
+end
+
+
+###########
+# Helpers
+
+"""
+    _isvararg(expr)
+
+returns true if the expression could represent a vararg
+
+```jldoctest
+julia> ChainRulesCore._isvararg(:(x...))
+true
+
+julia> ChainRulesCore._isvararg(:(x::Int...))
+true
+
+julia> ChainRulesCore._isvararg(:(::Int...))
+true
+
+julia> ChainRulesCore._isvararg(:(x::Vararg))
+true
+
+julia> ChainRulesCore._isvararg(:(x::Vararg{Int}))
+true
+
+julia> ChainRulesCore._isvararg(:(::Vararg))
+true
+
+julia> ChainRulesCore._isvararg(:(::Vararg{Int}))
+true
+
+julia> ChainRulesCore._isvararg(:(x))
+false
+````
+"""
+_isvararg(expr) = false
+function _isvararg(expr::Expr)
+    Meta.isexpr(expr, :...) && return true
+    if Meta.isexpr(expr, :(::))
+        constraint = last(expr.args)
+        constraint == :Vararg && return true
+        Meta.isexpr(constraint, :curly) && first(constraint.args) == :Vararg && return true
+    end
+    return false
+end
+
+
+"turn both `a` and `a::S` into `a`"
+_unconstrain(arg::Symbol) = arg
+function _unconstrain(arg::Expr)
+    Meta.isexpr(arg, :(::), 2) && return arg.args[1]  # drop constraint.
+    error("malformed arguments: $arg")
+end
+
+"turn both `a` and `::constraint` into `a::constraint` etc"
+function _constrain_and_name(arg::Expr, _)
+    Meta.isexpr(arg, :(::), 2) && return arg  # it is already fine.
+    Meta.isexpr(arg, :(::), 1) && return Expr(:(::), gensym(), arg.args[1])  #add name
+    error("malformed arguments: $arg")
+end
+_constrain_and_name(name::Symbol, constraint) = Expr(:(::), name, constraint)  # add type
