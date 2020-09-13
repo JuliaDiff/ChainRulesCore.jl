@@ -100,7 +100,7 @@ for T in (:AbstractThunk, :Composite, :Any)
 end
 
 LinearAlgebra.dot(::One, x::Number) = x
-LinearAlgebra.dot(x::Number, ::One) = conj(x)
+LinearAlgebra.dot(x::Number, ::One) = conj(x)  # see definition of Frobenius inner product
 
 Base.:+(a::AbstractThunk, b::AbstractThunk) = unthunk(a) + unthunk(b)
 Base.:*(a::AbstractThunk, b::AbstractThunk) = unthunk(a) * unthunk(b)
