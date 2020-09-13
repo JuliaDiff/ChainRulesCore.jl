@@ -74,6 +74,9 @@
         @test dne * dne == dne
         @test dne * 1 == dne
         @test 1 * dne == dne
+        @test dot(dne, dne) == dne
+        @test dot(dne, 1) == dne
+        @test dot(1, dne) == dne
 
         @test Zero() + dne == dne
         @test dne + Zero() == dne
@@ -82,6 +85,8 @@
 
         @test Zero() * dne == Zero()
         @test dne * Zero() == Zero()
+        @test dot(Zero(), dne) == Zero()
+        @test dot(dne, Zero()) == Zero()
 
         for x in dne
             @test x === dne

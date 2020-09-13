@@ -18,6 +18,7 @@ Base.:+(::DoesNotExist, ::DoesNotExist) = DoesNotExist()
 Base.:-(::DoesNotExist, ::DoesNotExist) = DoesNotExist()
 Base.:-(::DoesNotExist) = DoesNotExist()
 Base.:*(::DoesNotExist, ::DoesNotExist) = DoesNotExist()
+LinearAlgebra.dot(::DoesNotExist, ::DoesNotExist) = DoesNotExist()
 for T in (:One, :AbstractThunk, :Composite, :Any)
     @eval Base.:+(::DoesNotExist, b::$T) = b
     @eval Base.:+(a::$T, ::DoesNotExist) = a
@@ -26,6 +27,9 @@ for T in (:One, :AbstractThunk, :Composite, :Any)
 
     @eval Base.:*(::DoesNotExist, ::$T) = DoesNotExist()
     @eval Base.:*(::$T, ::DoesNotExist) = DoesNotExist()
+
+    @eval LinearAlgebra.dot(::DoesNotExist, ::$T) = DoesNotExist()
+    @eval LinearAlgebra.dot(::$T, ::DoesNotExist) = DoesNotExist()
 end
 # `DoesNotExist` and `Zero` have special relationship,
 # DoesNotExist wins add, Zero wins *. This is (in theory) to allow `*` to be used for
@@ -36,6 +40,9 @@ Base.:-(::DoesNotExist, ::Zero) = DoesNotExist()
 Base.:-(::Zero, ::DoesNotExist) = DoesNotExist()
 Base.:*(::DoesNotExist, ::Zero) = Zero()
 Base.:*(::Zero, ::DoesNotExist) = Zero()
+
+LinearAlgebra.dot(::DoesNotExist, ::Zero) = Zero()
+LinearAlgebra.dot(::Zero, ::DoesNotExist) = Zero()
 
 Base.muladd(::Zero, x, y) = y
 Base.muladd(x, ::Zero, y) = y

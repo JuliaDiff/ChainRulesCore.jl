@@ -185,6 +185,8 @@ end
 
         @test DoesNotExist() * c == DoesNotExist()
         @test c * DoesNotExist() == DoesNotExist()
+        @test dot(DoesNotExist(), c) == DoesNotExist()
+        @test dot(c, DoesNotExist()) == DoesNotExist()
 
         @test Zero() * c == Zero()
         @test c * Zero() == Zero()
