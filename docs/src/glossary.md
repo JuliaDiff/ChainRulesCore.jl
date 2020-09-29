@@ -10,11 +10,25 @@ The conjugate transpose of the Jacobian for a given function `f`.
 
 ###Derivative:
 
-The derivative of a function `y = f(x)` with respect to the independent variable `x` denoted `f'(x)` or `dy/dx` is the rate of change of the dependent variable `y` with respect to the change of the independent variable `x`. In multiple dimensions, we may refer to the gradient of a function, or its directional derivative.
+The derivative of a function `y = f(x)` with respect to the independent variable `x` denoted `f'(x)` or `dy/dx` is the rate of change of the dependent variable `y` with respect to the change of the independent variable `x`. In multiple dimensions, we may refer to the gradient of a function.
 
 ###Differential:
 
 The differential of a given function `y = f(x)` denoted `dy` is the product of the derivative function `f'(x)` and the increment of the independent variable `dx`. In multiple dimensions, it is the sum of these products across each dimension (using the partial derivative and the given independent variable's increment).
+
+In ChainRules, differentials are types ("differential types") and correspond to primal types. A differential should represent a difference between two primal values.
+
+####*   Natural Differential:
+
+A natural differential type for a given primal type is the type people would intuitively associate with representing the difference between two values of the primal type.
+
+####Structural Differential:
+
+If a given primal type `P` does not have a natural differential, we need to come up with one that makes sense. These are called structural differentials and are represented as `Composite{P, <:NamedTuple}`.
+
+####Semi-Structural Differential:
+
+A structural differential that contains at least one natural differential field.
 
 ###Directional Derivative:
 
@@ -42,7 +56,7 @@ The product of the Jacobian and the vector in question. It is a description of t
 
 ###Primal:
 
-Something relating to the original problem, as opposed to relating to the derivative. For example in `y = f(x)`, `f` is the primal function, and computing `f(x)` is doing the primal computation. `y` is the primal return, and `x` is a primal argument. `typeof(y)` and `typeof(x)` are both primal types.
+Something relating to the original problem, as opposed to relating to the derivative. In ChainRules, primals are types ("primal types").
 
 ###Pullback:
 
@@ -55,3 +69,9 @@ Something relating to the original problem, as opposed to relating to the deriva
 ###R-rule:
 
 A function used in reverse-mode differentiation. For a given function `f`, it takes in the positional and keyword arguments of `f` and returns the primal result and the pullback.
+
+###Thunk:
+
+If we wish to delay the computation of a derivative for whatever reason, we wrap it in a `Thunk` or `ImplaceableThunk`. It holds off on computing the wrapped derivative until it is needed.
+
+
