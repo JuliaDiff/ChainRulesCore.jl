@@ -18,7 +18,7 @@ The differential of a given function `y = f(x)` denoted `dy` is the product of t
 
 In ChainRules, differentials are types ("differential types") and correspond to primal types. A differential should represent a difference between two primal values.
 
-####*   Natural Differential:
+####Natural Differential:
 
 A natural differential type for a given primal type is the type people would intuitively associate with representing the difference between two values of the primal type.
 
@@ -29,6 +29,14 @@ If a given primal type `P` does not have a natural differential, we need to come
 ####Semi-Structural Differential:
 
 A structural differential that contains at least one natural differential field.
+
+####Thunk:
+
+An "unnatural" differential type. If we wish to delay the computation of a derivative for whatever reason, we wrap it in a `Thunk` or `ImplaceableThunk`. It holds off on computing the wrapped derivative until it is needed.
+
+####Zero:
+
+`Zero()` can also be a differential type. If you have trouble understanding the rules enforced upon differential types, consider this one first, as `Zero()` is the trivial vector space.
 
 ###Directional Derivative:
 
@@ -69,9 +77,5 @@ Something relating to the original problem, as opposed to relating to the deriva
 ###R-rule:
 
 A function used in reverse-mode differentiation. For a given function `f`, it takes in the positional and keyword arguments of `f` and returns the primal result and the pullback.
-
-###Thunk:
-
-If we wish to delay the computation of a derivative for whatever reason, we wrap it in a `Thunk` or `ImplaceableThunk`. It holds off on computing the wrapped derivative until it is needed.
 
 
