@@ -13,6 +13,34 @@ end
     return element, (val, new_state)
 end
 
+"""
+    @thunk expr
+
+Define a [`Thunk`](@ref) wrapping the `expr`, to lazily defer its evaluation.
+"""
+macro thunk(body)
+    # Basically `:(Thunk(() -> $(esc(body))))` but use the location where it is defined.
+    # so we get useful stack traces if it errors.
+    func = Expr(:->, Expr(:tuple), Expr(:block, __source__, body))
+    return :(Thunk($(esc(func))))
+end
+
+"""
+    unthunk(x)
+
+On `AbstractThunk`s this removes 1 layer of thunking.
+On any other type, it is the identity operation.
+
+In contrast to [`extern`](@ref) this is nonrecursive.
+"""
+@inline unthunk(x) = x
+
+@inline extern(x::AbstractThunk) = extern(unthunk(x))
+
+Base.conj(x::AbstractThunk) = @thunk(conj(unthunk(x)))
+Base.adjoint(x::AbstractThunk) = @thunk(adjoint(unthunk(x)))
+Base.transpose(x::AbstractThunk) = @thunk(transpose(unthunk(x)))
+
 #####
 ##### `Thunk`
 #####
@@ -59,41 +87,13 @@ Also if we did `Zero() * res[1]` then the result would be `Zero()` and `f(x)` wo
 with a field for each variable used in the expression, and call overloaded.
 
 Do not use `@thunk` if this would be equal or more work than actually evaluating the expression itself.
+This is commonly the case for scalar operators.
 
 For more details see the manual section [on using thunks effectively](http://www.juliadiff.org/ChainRulesCore.jl/dev/writing_good_rules.html#Use-Thunks-appropriately-1)
 """
 struct Thunk{F} <: AbstractThunk
     f::F
 end
-
-
-"""
-    @thunk expr
-
-Define a [`Thunk`](@ref) wrapping the `expr`, to lazily defer its evaluation.
-"""
-macro thunk(body)
-    # Basically `:(Thunk(() -> $(esc(body))))` but use the location where it is defined.
-    # so we get useful stack traces if it errors.
-    func = Expr(:->, Expr(:tuple), Expr(:block, __source__, body))
-    return :(Thunk($(esc(func))))
-end
-
-"""
-    unthunk(x)
-
-On `AbstractThunk`s this removes 1 layer of thunking.
-On any other type, it is the identity operation.
-
-In contrast to [`extern`](@ref) this is nonrecursive.
-"""
-@inline unthunk(x) = x
-
-@inline extern(x::AbstractThunk) = extern(unthunk(x))
-
-# have to define this here after `@thunk` and `Thunk` is defined
-Base.conj(x::AbstractThunk) = @thunk(conj(unthunk(x)))
-
 
 (x::Thunk)() = x.f()
 @inline unthunk(x::Thunk) = x()

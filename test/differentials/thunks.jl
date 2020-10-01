@@ -36,6 +36,15 @@
         end
     end
 
+    @testset "Linear operators" begin
+        x_real = [2.0 4.0; 8.0 5.0]
+        x_complex = [(2.0 + im) 4.0; 8.0 (5.0 + 4im)]
+        @testset "$(typeof(x))" for x in (x_real, x_complex)
+            x_thunked = @thunk(1.0 * x)
+            @test unthunk(x_thunked') == x'
+            @test unthunk(transpose(x_thunked)) == transpose(x)
+        end
+    end
 
     @testset "Broadcast" begin
         @testset "Array" begin
