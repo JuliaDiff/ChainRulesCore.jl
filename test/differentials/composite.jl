@@ -219,6 +219,8 @@ end
 
     @testset "show" begin
         @test repr(Composite{Foo}(x=1,)) == "Composite{Foo}(x = 1,)"
+        # check for exact regex match not occurence( `^...$`) 
+        # and allowing optional whitespace (`\s?`)
         @test occursin(
             r"^Composite{Tuple{Int64,\s?Int64}}\(1,\s?2\)$",
             repr(Composite{Tuple{Int64,Int64}}(1, 2)),
