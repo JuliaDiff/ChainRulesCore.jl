@@ -99,7 +99,7 @@ end
 
         @testset "Tuples" begin
             @test ==(
-                typeof(Composite{Tuple{}}() + Composite{Tuple{}}()), 
+                typeof(Composite{Tuple{}}() + Composite{Tuple{}}()),
                 Composite{Tuple{}, Tuple{}}
             )
             @test (
@@ -219,7 +219,10 @@ end
 
     @testset "show" begin
         @test repr(Composite{Foo}(x=1,)) == "Composite{Foo}(x = 1,)"
-        @test repr(Composite{Tuple{Int,Int}}(1, 2)) == "Composite{Tuple{Int64,Int64}}(1, 2)"
+        @test occursin(
+            r"^Composite{Tuple{Int64,\s?Int64}}\(1,\s?2\)$",
+            repr(Composite{Tuple{Int64,Int64}}(1, 2)),
+        )
     end
 
     @testset "internals" begin
