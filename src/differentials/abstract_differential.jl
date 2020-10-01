@@ -7,16 +7,6 @@ The subtypes of `AbstractDifferential` define a custom \"algebra\" for chain
 rule evaluation that attempts to factor various features like complex derivative
 support, broadcast fusion, zero-elision, etc. into nicely separated parts.
 
-All subtypes of `AbstractDifferential` implement the following operations:
-
-`+(a, b)`: linearly combine differential `a` and differential `b`
-
-`*(a, b)`: multiply the differential `b` by the scaling factor `a`
-
-`Base.conj(x)`: complex conjugate of the differential `x`
-
-`Base.zero(x) = Zero()`: a zero.
-
 In general a differential type is the type of a derivative of a value.
 The type of the value is for contrast called the primal type.
 Differential types correspond to primal types, although the relation is not one-to-one.
@@ -30,6 +20,18 @@ That allows for gradients to be accumulated.
 
 It generally also should be able to be added to a primal to give back another primal, as
 this facilitates gradient descent.
+
+All subtypes of `AbstractDifferential` implement the following operations:
+
+ - `+(a, b)`: linearly combine differential `a` and differential `b`
+ - `*(a, b)`: multiply the differential `b` by the scaling factor `a`
+ -  `Base.zero(x) = Zero()`: a zero.
+
+Further, they often implement other linear operators, such as `conj`, `adjoint`, `dot`.
+Pullbacks/pushforwards are linear operators, and their inputs are often
+`AbstractDifferential` subtypes.
+Pullbacks/pushforwards in-turn call other linear operators on those inputs.
+Thus it is desirable to have all common linear operators work on `AbstractDifferential`s.
 """
 abstract type AbstractDifferential end
 
