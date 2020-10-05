@@ -20,8 +20,16 @@
                 @test result == [0.0 1.0; 2.0 3.0]
             end
 
+            @testset "RHS StaticArray" begin
+                A = @SMatrix[1.0 2.0; 3.0 4.0]
+                result = -1.0*ones(2,2)
+                ret = add!!(result, A)
+                @test ret === result  # must be same object
+                @test result == [0.0 1.0; 2.0 3.0]
+            end
+
             @testset "RHS Diagonal" begin
-                A=Diagonal([1.0, 2.0])
+                A = Diagonal([1.0, 2.0])
                 result = -1.0*ones(2,2)
                 ret = add!!(result, A)
                 @test ret === result  # must be same object
