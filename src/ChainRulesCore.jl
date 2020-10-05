@@ -7,7 +7,7 @@ export on_new_rule, refresh_rules  # generation tools
 export frule, rrule  # core function
 export @non_differentiable, @scalar_rule, @thunk  # definition helper macros
 export canonicalize, extern, unthunk  # differential operations
-export accumulate!!  # accumulation operations
+export add!!  # gradient accumulation operations
 # differentials
 export Composite, DoesNotExist, InplaceableThunk, One, Thunk, Zero, AbstractZero, AbstractThunk
 export NO_FIELDS
