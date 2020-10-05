@@ -27,6 +27,13 @@ Pages = [
 Private = false
 ```
 
+## Accumulation
+```@autodocs
+Modules = [ChainRulesCore]
+Pages = ["accumulation.jl"]
+Private = false
+```
+
 ## Ruleset Loading
 ```@autodocs
 Modules = [ChainRulesCore]
