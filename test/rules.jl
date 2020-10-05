@@ -137,17 +137,3 @@ _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
         @test ∂x ≈ j′vp(central_fdm(5, 1), complex_times, Ω̄, x)[1]
     end
 end
-
-
-simo(x) = (x, 2x)
-@scalar_rule(simo(x), 1, 2)
-
-@testset "@scalar_rule with multiple inputs" begin
-    y, simo_pb = rrule(simo, π)
-
-    @test simo_pb((10, 20)) == (NO_FIELDS, 50)
-
-    y, ẏ = frule((NO_FIELDS, 50), simo, π)
-    @test y == (π, 2π)
-    @test ẏ == (50, 100)
-end
