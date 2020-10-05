@@ -1,6 +1,5 @@
 #######
 # Demo setup
-using StaticArrays: @SVector
 
 cool(x) = x + 1
 cool(x, y) = x + y + 1
