@@ -13,6 +13,8 @@ using Test
         include("differentials/composite.jl")
     end
 
+    include("accumulation.jl")
+
     include("ruleset_loading.jl")
     include("rules.jl")
     include("rule_definition_tools.jl")
