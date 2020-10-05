@@ -3,6 +3,7 @@ using BenchmarkTools
 using ChainRulesCore
 using LinearAlgebra: Diagonal, dot
 using FiniteDifferences
+using StaticArrays
 using Test
 
 @testset "ChainRulesCore" begin
@@ -12,6 +13,8 @@ using Test
         include("differentials/thunks.jl")
         include("differentials/composite.jl")
     end
+
+    include("accumulation.jl")
 
     include("ruleset_loading.jl")
     include("rules.jl")
