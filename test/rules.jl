@@ -129,11 +129,9 @@ _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
         Ω = complex_times(x)
         Ω_fwd, Ω̇ = frule((nothing, ẋ), complex_times, x)
         @test Ω_fwd == Ω
-        @test Ω̇ ≈ jvp(central_fdm(5, 1), complex_times, (x, ẋ))
         Ω_rev, back = rrule(complex_times, x)
         @test Ω_rev == Ω
         ∂self, ∂x = back(Ω̄)
         @test ∂self == NO_FIELDS
-        @test ∂x ≈ j′vp(central_fdm(5, 1), complex_times, Ω̄, x)[1]
     end
 end
