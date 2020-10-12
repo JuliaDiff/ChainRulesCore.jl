@@ -35,7 +35,7 @@ end
         @test Composite{Foo}(y=2.5, x=Zero()) == Composite{Foo}(y=2.5)
 
         @test Composite{Tuple{Float64,}}(2.0) == Composite{Tuple{Float64,}}(2.0)
-        @test Composite{Dict}(Dict(4 => 3) == Composite{Dict}(Dict(4 => 3)
+        @test Composite{Dict}(Dict(4 => 3)) == Composite{Dict}(Dict(4 => 3))
 
     end
 
@@ -100,8 +100,8 @@ end
         )
 
         @test ==(
-            canonicalize(Composite{Dict}(Dict(4 => 3))))
-            Composite{Dict}(Dict(4 => 3)))
+            canonicalize(Composite{Dict}(Dict(4 => 3))),
+            Composite{Dict}(Dict(4 => 3)),
         )
 
         # For structure it needs to match order and Zero() fill to match primal
