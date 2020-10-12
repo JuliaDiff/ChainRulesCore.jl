@@ -95,7 +95,7 @@ end
     @testset "canonicalize" begin
         # Testing iterate via collect
         @test ==(
-            canonicalize(Composite{Tuple{Float64,}}(2.0))
+            canonicalize(Composite{Tuple{Float64,}}(2.0)),
             Composite{Tuple{Float64,}}(2.0)
         )
 
