@@ -29,6 +29,22 @@ end
         @test convert(Dict, Composite{Dict}(Dict(4 => 3))) == Dict(4 => 3)
     end
 
+    @testset "==" begin
+        @test Composite{Foo}(x=0.1, y=2.5) == Composite{Foo}(x=0.1, y=2.5)
+        @test Composite{Foo}(x=0.1, y=2.5) == Composite{Foo}(y=2.5, x=0.1)
+        @test Composite{Foo}(y=2.5, x=Zero()) == Composite{Foo}(y=2.5)
+
+        @test Composite{Tuple{Float64,}}(2.0) == Composite{Tuple{Float64,}}(2.0)
+        @test Composite{Dict}(Dict(4 => 3)) == Composite{Dict}(Dict(4 => 3))
+
+    end
+
+    @testset "hash" begin
+        @test hash(Composite{Foo}(x=0.1, y=2.5)) == hash(Composite{Foo}(y=2.5, x=0.1))
+        @test hash(Composite{Foo}(y=2.5, x=Zero())) == hash(Composite{Foo}(y=2.5))
+    end
+
+
     @testset "indexing, iterating, and properties" begin
         @test keys(Composite{Foo}(x=2.5)) == (:x,)
         @test propertynames(Composite{Foo}(x=2.5)) == (:x,)
@@ -78,7 +94,15 @@ end
 
     @testset "canonicalize" begin
         # Testing iterate via collect
-        @test collect(Composite{Tuple{Float64,}}(2.0)) == [2.0]
+        @test ==(
+            canonicalize(Composite{Tuple{Float64,}}(2.0)),
+            Composite{Tuple{Float64,}}(2.0)
+        )
+
+        @test ==(
+            canonicalize(Composite{Dict}(Dict(4 => 3))),
+            Composite{Dict}(Dict(4 => 3)),
+        )
 
         # For structure it needs to match order and Zero() fill to match primal
         CFoo = Composite{Foo}
@@ -219,7 +243,7 @@ end
 
     @testset "show" begin
         @test repr(Composite{Foo}(x=1,)) == "Composite{Foo}(x = 1,)"
-        # check for exact regex match not occurence( `^...$`) 
+        # check for exact regex match not occurence( `^...$`)
         # and allowing optional whitespace (`\s?`)
         @test occursin(
             r"^Composite{Tuple{Int64,\s?Int64}}\(1,\s?2\)$",

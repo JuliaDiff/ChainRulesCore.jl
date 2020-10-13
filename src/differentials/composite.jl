@@ -45,7 +45,15 @@ function Composite{P}(d::Dict) where {P<:Dict}
     return Composite{P, typeof(d)}(d)
 end
 
-Base.:(==)(a::Composite, b::Composite) = backing(a) == backing(b)
+function Base.:(==)(a::Composite{P, T}, b::Composite{P, T}) where {P, T}
+    return backing(a) == backing(b)
+end
+function Base.:(==)(a::Composite{P}, b::Composite{P}) where {P, T}
+    return canonicalize(a) == canonicalize(b)
+end
+Base.:(==)(a::Composite{P}, b::Composite{Q}) where {P, Q} = false
+
+Base.hash(a::Composite, h::UInt) = Base.hash(backing(canonicalize(a)), h)
 
 function Base.show(io::IO, comp::Composite{P}) where P
     print(io, "Composite{")
@@ -155,6 +163,9 @@ end
 # Tuple composites are always in their canonical form
 canonicalize(comp::Composite{<:Tuple, <:Tuple}) = comp
 
+# Dict composite are always in their canonical form.
+canonicalize(comp::Composite{<:Any, <:AbstractDict}) = comp
+
 """
     _zeroed_backing(P)
 
@@ -206,7 +217,7 @@ function elementwise_add(a::NamedTuple{an}, b::NamedTuple{bn}) where {an, bn}
     # https://github.com/JuliaLang/julia/blob/592748adb25301a45bd6edef3ac0a93eed069852/base/namedtuple.jl#L220-L231
     if @generated
         names = Base.merge_names(an, bn)
-        
+
         vals = map(names) do field
             a_field = :(getproperty(a, $(QuoteNode(field))))
             b_field = :(getproperty(b, $(QuoteNode(field))))
