@@ -121,5 +121,5 @@ unthunk(x::InplaceableThunk) = unthunk(x.val)
 (x::InplaceableThunk)() = unthunk(x)
 
 function Base.show(io::IO, x::InplaceableThunk)
-    println(io, "InplaceableThunk($(repr(x.val)), $(repr(x.add!)))")
+    println(io, "InplaceableThunk($(strip(repr(x.val))), $(strip(repr(x.add!))))")
 end
