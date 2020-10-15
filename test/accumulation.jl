@@ -4,7 +4,7 @@
             @test 16 == add!!(12, 4)
         end
 
-        @testset "Differentials" begin
+        @testset "misc AbstractDifferential subtypes" begin
             @test 16 == add!!(12, @thunk(2*2))
             @test 16 == add!!(16, Zero())
 
@@ -55,10 +55,10 @@
                 x -> x.+=A
             )
 
-            result = -1.0*ones(2,2)
-            ret = add!!(result, ithunk)
-            @test ret === result  # must be same object
-            @test result == [0.0 1.0; 2.0 3.0]
+            accumuland = -1.0*ones(2,2)
+            ret = add!!(accumuland, ithunk)
+            @test ret === accumuland  # must be same object
+            @test accumuland == [0.0 1.0; 2.0 3.0]
         end
     end
 end
