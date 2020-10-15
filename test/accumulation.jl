@@ -106,5 +106,30 @@
                 @test accumuland == [1.0 2.0; 3.0 4.0]  # must not have mutated
             end
         end
+
+        @testset "not actually inplace but said it was" begin
+            ithunk = InplaceableThunk(
+                @thunk(@assert false),  # this should never be used in this test
+                x -> 77*ones(2, 2)  # not actually inplace (also wrong)
+            )
+            accumuland = ones(2, 2)
+            @assert ChainRulesCore.debug_mode() == false
+            # without debug being enabled should return the result, not error
+            @test 77*ones(2, 2) == add!!(accumuland, ithunk)
+
+            ChainRulesCore.debug_mode() = true  # enable debug mode
+            # with debug being enabled should error
+            @test_throws ChainRulesCore.BadInplaceException add!!(accumuland, ithunk)
+            ChainRulesCore.debug_mode() = false  # disable it again
+        end
+    end
+    @testset "showerror BadInplaceException" begin
+        BadInplaceException = ChainRulesCore.BadInplaceException
+        ithunk = InplaceableThunk(@thunk(@assert false), x̄->nothing)
+        msg = sprint(showerror, BadInplaceException(ithunk, [22], [23]))
+        @test occursin("22", msg)
+
+        msg_equal = sprint(showerror, BadInplaceException(ithunk, [22], [22]))
+        @test occursin("equal", msg_equal)
     end
 end

@@ -14,7 +14,11 @@ The specialization of `add!!` for [`InplaceableThunk`](@ref) promises to only ca
 """
 function add!!(x, t::InplaceableThunk)
     return if is_inplaceable_destination(x)
-        t.add!(x)
+        if !debug_mode()
+            t.add!(x)
+        else
+            return debug_add!(x, t)
+        end
     else
         x + t
     end
@@ -50,4 +54,29 @@ function is_inplaceable_destination(x::AbstractArray)
     # basically all wrapper types delegate `setindex!` to their `parent` after some
     # processing and so are mutable if their `parent` is.
     return is_inplaceable_destination(p)
+end
+
+function debug_add!(accumuland, t::InplaceableThunk)
+    returned_value = t.add!(accumuland)
+    if returned_value !== accumuland
+        throw(BadInplaceException(t, accumuland, returned_value))
+    end
+    return returned_value
+end
+struct BadInplaceException <: Exception
+    t::InplaceableThunk
+    accumuland
+    returned_value
+end
+function Base.showerror(io::IO, err::BadInplaceException)
+    println(io, "add! of $(err.t) did not return an updated accumuland.")
+    println(io, "accumuland = $(err.accumuland)")
+    println(io, "returned_value = $(err.returned_value)")
+
+    if err.accumuland == err.returned_value
+        println(
+            io,
+            "Which in this case happenned to be equal. But they are not the same object."
+        )
+    end
 end
