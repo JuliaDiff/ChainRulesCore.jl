@@ -35,6 +35,9 @@ end
 Returns true if `x` is suitable for for storing inplace accumulation of gradients.
 For arrays this boils down `x .= y` if will work to mutate `x`, if `y` is an appropriate
 differential.
+Wrapper array types do not need to overload this if they overload `Base.parent`, and are
+`is_inplaceable_destination` if and only if their parent array is.
+Other types should overload this, as it defaults to `false`.
 """
 is_inplaceable_destination(::Any) = false
 is_inplaceable_destination(::Array) = true

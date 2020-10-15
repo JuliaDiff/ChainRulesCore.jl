@@ -10,10 +10,10 @@ uuid = "b99e7846-7c00-51b0-8f62-c81ae34c0232"
 version = "0.5.10"
 
 [[ChainRulesCore]]
-deps = ["LinearAlgebra", "MuladdMacro"]
+deps = ["LinearAlgebra", "MuladdMacro", "SparseArrays"]
 path = ".."
 uuid = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
-version = "0.9.12"
+version = "0.9.17"
 
 [[Dates]]
 deps = ["Printf"]
@@ -81,10 +81,10 @@ uuid = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
 version = "0.2.2"
 
 [[Parsers]]
-deps = ["Dates", "Test"]
-git-tree-sha1 = "8077624b3c450b15c087944363606a6ba12f925e"
+deps = ["Dates"]
+git-tree-sha1 = "6fa4202675c05ba0f8268a6ddf07606350eda3ce"
 uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
-version = "1.0.10"
+version = "1.0.11"
 
 [[Pkg]]
 deps = ["Dates", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "UUIDs"]
@@ -116,6 +116,10 @@ uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
 
 [[Sockets]]
 uuid = "6462fe0b-24de-5631-8697-dd941f90decc"
+
+[[SparseArrays]]
+deps = ["LinearAlgebra", "Random"]
+uuid = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [[Test]]
 deps = ["Distributed", "InteractiveUtils", "Logging", "Random"]

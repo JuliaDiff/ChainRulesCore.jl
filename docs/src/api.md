@@ -28,10 +28,9 @@ Private = false
 ```
 
 ## Accumulation
-```@autodocs
-Modules = [ChainRulesCore]
-Pages = ["accumulation.jl"]
-Private = false
+```@docs
+add!!
+ChainRulesCore.is_inplaceable_destination
 ```
 
 ## Ruleset Loading
