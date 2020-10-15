@@ -3,6 +3,7 @@ using BenchmarkTools
 using ChainRulesCore
 using LinearAlgebra: Diagonal, dot
 using StaticArrays
+using SparseArrays
 using Test
 
 @testset "ChainRulesCore" begin

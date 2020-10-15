@@ -1,4 +1,23 @@
 @testset "accumulation.jl" begin
+    @testset "is_inplaceable_destination" begin
+        is_inplaceable_destination = ChainRulesCore.is_inplaceable_destination
+
+        @test is_inplaceable_destination([1, 2, 3, 4])
+        @test !is_inplaceable_destination(1:4)
+
+        @test is_inplaceable_destination(Diagonal([1, 2, 3, 4]))
+        @test !is_inplaceable_destination(Diagonal(1:4))
+
+        @test is_inplaceable_destination(view([1, 2, 3, 4], :, :))
+        @test !is_inplaceable_destination(view(1:4, :, :))
+
+        @test !is_inplaceable_destination(1.3)
+        @test is_inplaceable_destination(falses(4))
+        @test is_inplaceable_destination(spzeros(4))
+        @test is_inplaceable_destination(spzeros(2, 2))
+        @test !is_inplaceable_destination(@SVector [1, 2, 3])
+    end
+
     @testset "add!!" begin
         @testset "scalar" begin
             @test 16 == add!!(12, 4)
@@ -11,31 +30,48 @@
             @test 16 == add!!(16, DoesNotExist())  # Should this be an error?
         end
 
-        @testset "Array" begin
-            @testset "Happy Path" begin
+        @testset "add!!(::AbstractArray, ::AbstractArray)" begin
+            @testset "LHS Array (inplace)" begin
                 @testset "RHS Array" begin
                     A = [1.0 2.0; 3.0 4.0]
-                    result = -1.0*ones(2,2)
-                    ret = add!!(result, A)
-                    @test ret === result  # must be same object
-                    @test result == [0.0 1.0; 2.0 3.0]
+                    accumuland = -1.0*ones(2,2)
+                    ret = add!!(accumuland, A)
+                    @test ret === accumuland  # must be same object
+                    @test accumuland == [0.0 1.0; 2.0 3.0]
                 end
 
                 @testset "RHS StaticArray" begin
                     A = @SMatrix[1.0 2.0; 3.0 4.0]
-                    result = -1.0*ones(2,2)
-                    ret = add!!(result, A)
-                    @test ret === result  # must be same object
-                    @test result == [0.0 1.0; 2.0 3.0]
+                    accumuland = -1.0*ones(2,2)
+                    ret = add!!(accumuland, A)
+                    @test ret === accumuland  # must be same object
+                    @test accumuland == [0.0 1.0; 2.0 3.0]
                 end
 
                 @testset "RHS Diagonal" begin
                     A = Diagonal([1.0, 2.0])
-                    result = -1.0*ones(2,2)
-                    ret = add!!(result, A)
-                    @test ret === result  # must be same object
-                    @test result == [0.0 -1.0; -1.0 1.0]
+                    accumuland = -1.0*ones(2,2)
+                    ret = add!!(accumuland, A)
+                    @test ret === accumuland  # must be same object
+                    @test accumuland == [0.0 -1.0; -1.0 1.0]
                 end
+            end
+
+            @testset "add!!(::StaticArray, ::Array) (out of place)" begin
+                A = [1.0 2.0; 3.0 4.0]
+                accumuland = @SMatrix [-1.0 -1.0; -1.0 -1.0]
+                ret = add!!(accumuland, A)
+                @test ret == [0.0 1.0; 2.0 3.0]  # must return right answer
+                @test ret !== accumuland  # must not be same object
+                @test accumuland == [-1.0 -1.0; -1.0 -1.0]  # must not have changed
+            end
+
+            @testset "add!!(::Diagonal{<:Vector}, ::Diagonal{<:Vector}) (inplace)" begin
+                A = Diagonal([1.0, 2.0])
+                accumuland = Diagonal([-2.0, -2.0])
+                ret = add!!(accumuland, A)
+                @test ret === accumuland  # must be same object
+                @test accumuland == Diagonal([-1.0, 0.0])
             end
 
             @testset "Unhappy Path" begin
@@ -49,16 +85,26 @@
         end
 
         @testset "InplaceableThunk" begin
-            A=[1.0 2.0; 3.0 4.0]
             ithunk = InplaceableThunk(
-                @thunk(A*B),
-                x -> x.+=A
+                @thunk(-1.0*ones(2, 2)),
+                x -> x .-= ones(2, 2)
             )
 
-            accumuland = -1.0*ones(2,2)
-            ret = add!!(accumuland, ithunk)
-            @test ret === accumuland  # must be same object
-            @test accumuland == [0.0 1.0; 2.0 3.0]
+            @testset "in place" begin
+                accumuland = [1.0 2.0; 3.0 4.0]
+                ret = add!!(accumuland, ithunk)
+                @test ret == [0.0 1.0; 2.0 3.0]  # must return right answer
+                @test ret === accumuland  # must be same object
+            end
+
+            @testset "out of place" begin
+                accumuland = @SMatrix [1.0 2.0; 3.0 4.0]
+
+                ret = add!!(accumuland, ithunk)
+                @test ret == [0.0 1.0; 2.0 3.0]  # must return right answer
+                @test ret !== accumuland  # must not be same object
+                @test accumuland == [1.0 2.0; 3.0 4.0]  # must not have mutated
+            end
         end
     end
 end
