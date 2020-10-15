@@ -17,7 +17,7 @@ function add!!(x, t::InplaceableThunk)
         if !debug_mode()
             t.add!(x)
         else
-            return debug_add!(x, t)
+            debug_add!(x, t)
         end
     else
         x + t
@@ -34,7 +34,7 @@ end
 
 
 """
-    is_inplaceable_destination(x)
+    is_inplaceable_destination(x) -> Bool
 
 Returns true if `x` is suitable for for storing inplace accumulation of gradients.
 For arrays this boils down `x .= y` if will work to mutate `x`, if `y` is an appropriate
@@ -63,13 +63,16 @@ function debug_add!(accumuland, t::InplaceableThunk)
     end
     return returned_value
 end
+
 struct BadInplaceException <: Exception
-    t::InplaceableThunk
+    ithunk::InplaceableThunk
     accumuland
     returned_value
 end
+
 function Base.showerror(io::IO, err::BadInplaceException)
-    println(io, "add! of $(err.t) did not return an updated accumuland.")
+    println(io, "`add!!(accumuland, ithunk))` did not return an updated accumuland.")
+    println(io, "ithunk = $(err.ithunk)")
     println(io, "accumuland = $(err.accumuland)")
     println(io, "returned_value = $(err.returned_value)")
 

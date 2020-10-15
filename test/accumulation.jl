@@ -123,6 +123,7 @@
             ChainRulesCore.debug_mode() = false  # disable it again
         end
     end
+
     @testset "showerror BadInplaceException" begin
         BadInplaceException = ChainRulesCore.BadInplaceException
         ithunk = InplaceableThunk(@thunk(@assert false), x̄->nothing)
