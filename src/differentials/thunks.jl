@@ -98,7 +98,7 @@ end
 (x::Thunk)() = x.f()
 @inline unthunk(x::Thunk) = x()
 
-Base.show(io::IO, x::Thunk) = println(io, "Thunk($(repr(x.f)))")
+Base.show(io::IO, x::Thunk) = print(io, "Thunk($(repr(x.f)))")
 
 """
     InplaceableThunk(val::Thunk, add!::Function)
@@ -121,5 +121,5 @@ unthunk(x::InplaceableThunk) = unthunk(x.val)
 (x::InplaceableThunk)() = unthunk(x)
 
 function Base.show(io::IO, x::InplaceableThunk)
-    println(io, "InplaceableThunk($(repr(x.val)), $(repr(x.add!)))")
+    print(io, "InplaceableThunk($(repr(x.val)), $(repr(x.add!)))")
 end
