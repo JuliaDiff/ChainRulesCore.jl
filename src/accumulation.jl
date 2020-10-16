@@ -56,6 +56,13 @@ function is_inplaceable_destination(x::AbstractArray)
     return is_inplaceable_destination(p)
 end
 
+# Hermitian and Symmetric are too fussy to deal with right now
+# https://github.com/JuliaLang/julia/issues/38056
+# TODO: https://github.com/JuliaDiff/ChainRulesCore.jl/issues/236
+is_inplaceable_destination(::LinearAlgebra.Hermitian) = false
+is_inplaceable_destination(::LinearAlgebra.Symmetric) = false
+
+
 function debug_add!(accumuland, t::InplaceableThunk)
     returned_value = t.add!(accumuland)
     if returned_value !== accumuland

@@ -11,11 +11,14 @@
         @test is_inplaceable_destination(view([1, 2, 3, 4], :, :))
         @test !is_inplaceable_destination(view(1:4, :, :))
 
-        @test !is_inplaceable_destination(1.3)
         @test is_inplaceable_destination(falses(4))
         @test is_inplaceable_destination(spzeros(4))
         @test is_inplaceable_destination(spzeros(2, 2))
+
+        @test !is_inplaceable_destination(1.3)
         @test !is_inplaceable_destination(@SVector [1, 2, 3])
+        @test !is_inplaceable_destination(Hermitian([1 2; 2 4]))
+        @test !is_inplaceable_destination(Symmetric([1 2; 2 4]))
     end
 
     @testset "add!!" begin
