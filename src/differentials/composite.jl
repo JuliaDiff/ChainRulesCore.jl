@@ -67,7 +67,7 @@ Base.convert(::Type{<:NamedTuple}, comp::Composite{<:Any, <:NamedTuple}) = backi
 Base.convert(::Type{<:Tuple}, comp::Composite{<:Any, <:Tuple}) = backing(comp)
 Base.convert(::Type{<:Dict}, comp::Composite{<:Dict, <:Dict}) = backing(comp)
 
-Base.getindex(comp::Composite, idx) = getindex(backing(comp), idx)
+Base.getindex(comp::Composite, idx) = unthunk(getindex(backing(comp), idx))
 
 # for Tuple
 Base.getproperty(comp::Composite, idx::Int) = unthunk(getproperty(backing(comp), idx))
@@ -82,7 +82,9 @@ end
 Base.keys(comp::Composite) = keys(backing(comp))
 Base.propertynames(comp::Composite) = propertynames(backing(comp))
 
-Base.iterate(comp::Composite, args...) = iterate(backing(comp), args...)
+Base.iterate(comp::Composite) = iterate(comp, 1)
+Base.iterate(comp::Composite, args...) = (getindex(comp, args[1]), args[1] + 1)
+#Base.iterate(comp::Composite, args...) = iterate(backing(comp), args...)
 Base.length(comp::Composite) = length(backing(comp))
 Base.eltype(::Type{<:Composite{<:Any, T}}) where T = eltype(T)
 
