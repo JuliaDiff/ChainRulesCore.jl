@@ -67,6 +67,8 @@ end
         # Testing iterate via collect
         @test collect(Composite{Foo}(x=2.5)) == [2.5]
         @test collect(Composite{Tuple{Float64,}}(2.0)) == [2.0]
+        @test collect(Float64, Composite{Tuple{Float64,}}(@thunk 2.0^2)) == [4.0]
+        @test collect(Float64, Composite{Tuple{Float64,}}(a=(@thunk 2.0^2),)) == [4.0]
     end
 
     @testset "unset properties" begin
