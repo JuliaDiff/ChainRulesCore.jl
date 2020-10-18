@@ -87,7 +87,7 @@ Base.iterate(comp::Composite) = iterate(comp, 1)
 function Base.iterate(comp::Composite, args...)
     idx = args[1]
     if idx <= length(comp)
-        return (getindex(comp, args[1]), args[1] + 1)
+        return (getindex(comp, idx), idx + 1)
     else
         return nothing
     end
