@@ -83,8 +83,16 @@ Base.keys(comp::Composite) = keys(backing(comp))
 Base.propertynames(comp::Composite) = propertynames(backing(comp))
 
 Base.iterate(comp::Composite) = iterate(comp, 1)
-Base.iterate(comp::Composite, args...) = (getindex(comp, args[1]), args[1] + 1)
-#Base.iterate(comp::Composite, args...) = iterate(backing(comp), args...)
+
+function Base.iterate(comp::Composite, args...)
+    idx = args[1]
+    if idx <= length(comp)
+        return (getindex(comp, args[1]), args[1] + 1)
+    else
+        return nothing
+    end
+end
+
 Base.length(comp::Composite) = length(backing(comp))
 Base.eltype(::Type{<:Composite{<:Any, T}}) where T = eltype(T)
 
