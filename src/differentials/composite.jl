@@ -84,10 +84,9 @@ Base.propertynames(comp::Composite) = propertynames(backing(comp))
 
 Base.iterate(comp::Composite) = iterate(comp, 1)
 
-function Base.iterate(comp::Composite, args...)
-    idx = args[1]
-    if idx <= length(comp)
-        return (getindex(comp, idx), idx + 1)
+function Base.iterate(comp::Composite, state::Integer)
+    if state <= length(comp)
+        return (getindex(comp, state), state + 1)
     else
         return nothing
     end
