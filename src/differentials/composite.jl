@@ -82,13 +82,12 @@ end
 Base.keys(comp::Composite) = keys(backing(comp))
 Base.propertynames(comp::Composite) = propertynames(backing(comp))
 
-Base.iterate(comp::Composite) = iterate(comp, 1)
-
-function Base.iterate(comp::Composite, state::Integer)
-    if state <= length(comp)
-        return (getindex(comp, state), state + 1)
+function Base.iterate(comp::Composite, args...)
+    out = iterate(backing(comp), args...)
+    if out isa Nothing
+        return out
     else
-        return nothing
+        return (unthunk(out[1]), out[2])
     end
 end
 
