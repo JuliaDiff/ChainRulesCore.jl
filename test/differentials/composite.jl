@@ -69,6 +69,7 @@ end
         @test collect(Composite{Tuple{Float64,}}(2.0)) == [2.0]
         @test collect(Float64, Composite{Tuple{Float64,}}(@thunk 2.0^2)) == [4.0]
         @test collect(Float64, Composite{Tuple{Float64,}}(a=(@thunk 2.0^2),)) == [4.0]
+        @test collect(Pair{String, Float64}, Composite{Dict}(Dict([("a", @thunk 2.0^2)]))) == [Pair("a", 4.0)]
     end
 
     @testset "unset properties" begin

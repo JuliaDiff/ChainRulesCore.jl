@@ -87,7 +87,12 @@ function Base.iterate(comp::Composite, args...)
     if out isa Nothing
         return out
     else
-        return (unthunk(out[1]), out[2])
+        element, next_state = out
+        if comp isa Composite{<:Dict, <:Dict}
+            return (Pair(element.first, unthunk(element.second)), next_state)
+        else
+            return (unthunk(element), next_state) 
+        end
     end
 end
 
