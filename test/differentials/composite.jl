@@ -55,6 +55,8 @@ end
         @test getproperty(Composite{Tuple{Float64,}}(2.0), 1) == 2.0
         @test getproperty(Composite{Tuple{Float64,}}(@thunk 2.0^2), 1) == 4.0
         @test getproperty(Composite{Tuple{Float64,}}(a=(@thunk 2.0^2),), :a) == 4.0
+        @test getindex(Composite{Tuple{Float64,}}(@thunk 2.0^2), 1) == 4.0
+        @test getindex(Composite{Tuple{Float64,}}(a=(@thunk 2.0^2),), 1) == 4.0
 
         @test length(Composite{Foo}(x=2.5)) == 1
         @test length(Composite{Tuple{Float64,}}(2.0)) == 1
@@ -65,6 +67,9 @@ end
         # Testing iterate via collect
         @test collect(Composite{Foo}(x=2.5)) == [2.5]
         @test collect(Composite{Tuple{Float64,}}(2.0)) == [2.0]
+        @test collect(Float64, Composite{Tuple{Float64,}}(@thunk 2.0^2)) == [4.0]
+        @test collect(Float64, Composite{Tuple{Float64,}}(a=(@thunk 2.0^2),)) == [4.0]
+        @test collect(Pair{String, Float64}, Composite{Dict}(Dict([("a", @thunk 2.0^2)]))) == [Pair("a", 4.0)]
     end
 
     @testset "unset properties" begin
