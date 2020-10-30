@@ -294,7 +294,7 @@ macro non_differentiable(sig_expr)
     primal_name, orig_args = Iterators.peel(sig_expr.args)
 
     constrained_args = _constrain_and_name.(orig_args, :Any)
-    primal_sig_parts = [:(::typeof($primal_name)), constrained_args...]
+    primal_sig_parts = [:(::Core.Typeof($primal_name)), constrained_args...]
 
     unconstrained_args = _unconstrain.(constrained_args)
 
