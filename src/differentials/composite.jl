@@ -82,6 +82,11 @@ end
 Base.keys(comp::Composite) = keys(backing(comp))
 Base.propertynames(comp::Composite) = propertynames(backing(comp))
 
+Base.haskey(comp::Composite, key) = haskey(backing(comp), key)
+if isdefined(Base, :hasproperty)
+    Base.hasproperty(comp::Composite, key::Symbol) = hasproperty(backing(comp), key)
+end
+
 Base.iterate(comp::Composite, args...) = iterate(backing(comp), args...)
 Base.length(comp::Composite) = length(backing(comp))
 Base.eltype(::Type{<:Composite{<:Any, T}}) where T = eltype(T)
