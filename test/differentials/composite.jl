@@ -61,8 +61,8 @@ end
         @test getproperty(Composite{Tuple{Float64,}}(a=(@thunk 2.0^2),), :a) == 4.0
 
         # TODO: uncomment this once https://github.com/JuliaLang/julia/issues/35516
-        # @test haskey(Composite{Tuple{Float64}}(2.0), 1) == true
-        # @test hasproperty(Composite{Tuple{Float64}}(2.0), 2) == false
+        @test_broken haskey(Composite{Tuple{Float64}}(2.0), 1) == true
+        @test_broken hasproperty(Composite{Tuple{Float64}}(2.0), 2) == false
 
         @test length(Composite{Foo}(x=2.5)) == 1
         @test length(Composite{Tuple{Float64,}}(2.0)) == 1
