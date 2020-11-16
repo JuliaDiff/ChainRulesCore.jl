@@ -48,6 +48,10 @@ end
     @testset "indexing, iterating, and properties" begin
         @test keys(Composite{Foo}(x=2.5)) == (:x,)
         @test propertynames(Composite{Foo}(x=2.5)) == (:x,)
+        @test haskey(Composite{Foo}(x=2.5), :x) == true
+        if isdefined(Base, :hasproperty)
+            @test hasproperty(Composite{Foo}(x=2.5), :y) == false
+        end
         @test Composite{Foo}(x=2.5).x == 2.5
 
         @test keys(Composite{Tuple{Float64,}}(2.0)) == Base.OneTo(1)
@@ -55,6 +59,10 @@ end
         @test getproperty(Composite{Tuple{Float64,}}(2.0), 1) == 2.0
         @test getproperty(Composite{Tuple{Float64,}}(@thunk 2.0^2), 1) == 4.0
         @test getproperty(Composite{Tuple{Float64,}}(a=(@thunk 2.0^2),), :a) == 4.0
+
+        # https://github.com/JuliaLang/julia/issues/35516
+        # @test haskey(Composite{Tuple{Float64}}(2.0), 1) == true
+        # @test hasproperty(Composite{Tuple{Float64}}(2.0), 2) == false
 
         @test length(Composite{Foo}(x=2.5)) == 1
         @test length(Composite{Tuple{Float64,}}(2.0)) == 1
