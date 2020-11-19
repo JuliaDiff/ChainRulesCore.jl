@@ -26,6 +26,10 @@ struct NonDiffExample
     x
 end
 
+struct NonDiffCounterExample
+    x
+end
+
 @testset "rule_definition_tools.jl" begin
     @testset "@non_differentiable" begin
         @testset "two input one output function" begin
@@ -113,6 +117,12 @@ end
             res, pullback = rrule(NonDiffExample, 2.0)
             @test res == NonDiffExample(2.0)
             @test pullback(1.2) == (NO_FIELDS, DoesNotExist())
+
+            # https://github.com/JuliaDiff/ChainRulesCore.jl/issues/213
+            # problem was that `@nondiff Foo(x)` was also defining rules for other types.
+            # make sure that isn't happenning
+            @test frule((Zero(), 1.2), NonDiffCounterExample, 2.0) === nothing
+            @test rrule(NonDiffCounterExample, 2.0) === nothing
         end
 
         @testset "Not supported (Yet)" begin
