@@ -11,7 +11,7 @@ using Test
 # Define the AD
 
 # Note that we never directly define Dual Number Arithmetic on Dual numbers
-# instead it is automatically defined from the `frules` 
+# instead it is automatically defined from the `frules`
 struct Dual <: Real
     primal::Float64
     partial::Float64
@@ -30,7 +30,8 @@ Base.to_power_type(x::Dual) = x
 function define_dual_overload(sig)
     sig = Base.unwrap_unionall(sig)  # Not really handling most UnionAlls
     opT, argTs = Iterators.peel(sig.parameters)
-    fieldcount(opT) == 0 || return  # not handling functors 
+    opT isa Type{<:Type} && return  # not handling constructors
+    fieldcount(opT) == 0 || return  # not handling functors
     all(Float64 <: argT for argT in argTs) || return  # only handling purely Float64 ops.
 
     N = length(sig.parameters) - 1  # skip the op
@@ -65,7 +66,7 @@ function ChainRulesCore.frule((_, Δx, Δy), ::typeof(*), x::Number, y::Number)
 end
 
 # Manual refresh needed as new rule added in same file as AD after the `on_new_rule` call
-refresh_rules(); 
+refresh_rules();
 
 @testset "ForwardDiffZero" begin
     foo(x) = x + x
