@@ -59,7 +59,8 @@ Base.to_power_type(x::Tracked) = x
 function define_tracked_overload(sig)
     sig = Base.unwrap_unionall(sig)  # not really handling most UnionAll
     opT, argTs = Iterators.peel(sig.parameters)
-    fieldcount(opT) == 0 || return  # not handling functors 
+    opT isa Type{<:Type} && return  # not handling constructors
+    fieldcount(opT) == 0 || return  # not handling functors
     all(Float64 <: argT for argT in argTs) || return  # only handling purely Float64 ops.
 
     N = length(sig.parameters) - 1  # skip the op
@@ -116,7 +117,7 @@ function ChainRulesCore.rrule(::typeof(*), x::Number, y::Number)
 end
 
 # Manual refresh needed as new rule added in same file as AD after the `on_new_rule` call
-refresh_rules(); 
+refresh_rules();
 
 @testset "ReversedDiffZero" begin
     foo(x) = x + x

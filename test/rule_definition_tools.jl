@@ -21,6 +21,14 @@ macro test_macro_throws(err_expr, expr)
     end
 end
 
+# struct need to be defined outside of tests for julia 1.0 compat
+struct NonDiffExample
+    x
+end
+
+struct NonDiffCounterExample
+    x
+end
 
 @testset "rule_definition_tools.jl" begin
     @testset "@non_differentiable" begin
@@ -98,6 +106,25 @@ end
             end
         end
 
+        @testset "Constructors" begin
+            @non_differentiable NonDiffExample(::Any)
+
+            @test isequal(
+                frule((Zero(), 1.2), NonDiffExample, 2.0),
+                (NonDiffExample(2.0), DoesNotExist())
+            )
+
+            res, pullback = rrule(NonDiffExample, 2.0)
+            @test res == NonDiffExample(2.0)
+            @test pullback(1.2) == (NO_FIELDS, DoesNotExist())
+
+            # https://github.com/JuliaDiff/ChainRulesCore.jl/issues/213
+            # problem was that `@nondiff Foo(x)` was also defining rules for other types.
+            # make sure that isn't happenning
+            @test frule((Zero(), 1.2), NonDiffCounterExample, 2.0) === nothing
+            @test rrule(NonDiffCounterExample, 2.0) === nothing
+        end
+
         @testset "Not supported (Yet)" begin
             # Varargs are not supported
             @test_macro_throws ErrorException @non_differentiable vararg1(xs...)
@@ -115,7 +142,7 @@ end
         @testset "@scalar_rule with multiple output" begin
             simo(x) = (x, 2x)
             @scalar_rule(simo(x), 1f0, 2f0)
-    
+
             y, simo_pb = rrule(simo, π)
 
             @test simo_pb((10f0, 20f0)) == (NO_FIELDS, 50f0)
