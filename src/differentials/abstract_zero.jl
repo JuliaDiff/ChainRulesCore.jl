@@ -24,8 +24,6 @@ Base.adjoint(z::AbstractZero) = z
 Base.transpose(z::AbstractZero) = z
 Base.:/(z::AbstractZero, ::Any) = z
 
-Base.convert(::Type{T}, x::AbstractZero) where T <: Real = zero(T)
-
 """
     Zero() <: AbstractZero
 
