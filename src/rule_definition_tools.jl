@@ -287,9 +287,7 @@ julia> frule((Zero(), 1), length, [2.0, 3.0])
 """
 macro non_differentiable(sig_expr)
     Meta.isexpr(sig_expr, :call) || error("Invalid use of `@non_differentiable`")
-    for arg in sig_expr.args
-        _isvararg(arg) && error("@non_differentiable does not support Varargs like: $arg")
-    end
+    has_vararg = _isvararg(sig_expr.args[end])
 
     primal_name, orig_args = Iterators.peel(sig_expr.args)
 
@@ -298,7 +296,13 @@ macro non_differentiable(sig_expr)
 
     unconstrained_args = _unconstrain.(constrained_args)
 
-    primal_invoke = :($(primal_name)($(unconstrained_args...); kwargs...))
+    primal_invoke = if !has_vararg
+        :($(primal_name)($(unconstrained_args...); kwargs...))
+    else
+        normal_args = unconstrained_args[1:end-1]
+        var_arg = unconstrained_args[end]
+        :($(primal_name)($(normal_args...), $(var_arg)...; kwargs...))
+    end
 
     quote
         $(_nondiff_frule_expr(primal_sig_parts, primal_invoke))
@@ -316,13 +320,22 @@ function _nondiff_frule_expr(primal_sig_parts, primal_invoke)
 end
 
 function _nondiff_rrule_expr(primal_sig_parts, primal_invoke)
-    num_primal_inputs = length(primal_sig_parts) - 1
+    has_vararg = _isvararg(primal_sig_parts[end])
+    if !has_vararg
+        num_primal_inputs = length(primal_sig_parts) - 1 # - primal
+        tup_expr = Expr(:tuple, NO_FIELDS, ntuple(_->DoesNotExist(), num_primal_inputs)...)
+    else
+        num_primal_inputs = length(primal_sig_parts) - 2 # - primal and vararg
+        length_expr = :(num_primal_inputs + length($(_unconstrain(primal_sig_parts[end]))))
+        tup_expr = Expr(:call, :ntuple, Expr(:(->), :_, DoesNotExist()), length_expr)
+    end
     primal_name = first(primal_invoke.args)
     pullback_expr = Expr(
         :function,
         Expr(:call, propagator_name(primal_name, :pullback), :_),
-        Expr(:tuple, NO_FIELDS, ntuple(_->DoesNotExist(), num_primal_inputs)...)
+        Expr(:tuple, NO_FIELDS, Expr(:(...), tup_expr))
     )
+    @show pullback_expr
     return esc(:(
         function ChainRulesCore.rrule($(primal_sig_parts...); kwargs...)
             return ($primal_invoke, $pullback_expr)
