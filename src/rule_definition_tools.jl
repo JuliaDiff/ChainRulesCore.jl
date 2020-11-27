@@ -323,10 +323,10 @@ function _nondiff_rrule_expr(primal_sig_parts, primal_invoke)
     has_vararg = _isvararg(primal_sig_parts[end])
     if !has_vararg
         num_primal_inputs = length(primal_sig_parts) - 1 # - primal
-        tup_expr = Expr(:tuple, NO_FIELDS, ntuple(_->DoesNotExist(), num_primal_inputs)...)
+        tup_expr = Expr(:tuple, ntuple(_->DoesNotExist(), num_primal_inputs)...)
     else
         num_primal_inputs = length(primal_sig_parts) - 2 # - primal and vararg
-        length_expr = :(num_primal_inputs + length($(_unconstrain(primal_sig_parts[end]))))
+        length_expr = :($(num_primal_inputs) + length($(_unconstrain(primal_sig_parts[end]))))
         tup_expr = Expr(:call, :ntuple, Expr(:(->), :_, DoesNotExist()), length_expr)
     end
     primal_name = first(primal_invoke.args)
