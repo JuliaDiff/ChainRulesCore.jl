@@ -126,10 +126,6 @@ end
         end
 
         @testset "Not supported (Yet)" begin
-            # Varargs are not supported
-            @test_macro_throws ErrorException @non_differentiable vararg1(xs...)
-            @test_macro_throws ErrorException @non_differentiable vararg1(xs::Vararg)
-
             # Where clauses are not supported.
             @test_macro_throws(
                 ErrorException,
