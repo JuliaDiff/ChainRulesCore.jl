@@ -281,7 +281,7 @@ julia> frule((Zero(), 1), length, [2.0, 3.0])
 
 !!! warning
     This helper macro covers only the simple common cases.
-    It does not support Varargs, or `where`-clauses.
+    It does not support `where`-clauses.
     For these you can declare the `rrule` and `frule` directly
 
 """
