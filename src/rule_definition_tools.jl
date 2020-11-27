@@ -400,7 +400,8 @@ end
 "turn both `a` and `::constraint` into `a::constraint` etc"
 function _constrain_and_name(arg::Expr, _)
     Meta.isexpr(arg, :(::), 2) && return arg  # it is already fine.
-    Meta.isexpr(arg, :(::), 1) && return Expr(:(::), gensym(), arg.args[1])  #add name
+    Meta.isexpr(arg, :(::), 1) && return Expr(:(::), gensym(), arg.args[1]) # add name
+    Meta.isexpr(arg, :(...), 1) && return Expr(:(::), arg.args[1], :Vararg) # turn xs... into xs::Vararg
     error("malformed arguments: $arg")
 end
 _constrain_and_name(name::Symbol, constraint) = Expr(:(::), name, constraint)  # add type
