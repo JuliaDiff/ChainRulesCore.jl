@@ -125,6 +125,39 @@ end
             @test rrule(NonDiffCounterExample, 2.0) === nothing
         end
 
+        @testset "Varargs" begin
+            fvarargs(a, xs...) = sum((a, xs...))
+            @testset "xs::Vararg{Int}" begin
+                @non_differentiable fvarargs(a, xs::Vararg{Int})
+
+                y, pb = rrule(fvarargs, 1)
+                @test y == fvarargs(1)
+                @test pb(1) == (Zero(), DoesNotExist())
+
+                y, pb = rrule(fvarargs, 1, 2, 3)
+                @test y == fvarargs(1, 2, 3)
+                @test pb(1) == (Zero(), DoesNotExist(), DoesNotExist(), DoesNotExist())
+
+                @test frule((1, 1), fvarargs, 1, 2) == (fvarargs(1, 2), DoesNotExist())
+
+                @test frule((1, 1), fvarargs, 1, 2.0) == nothing
+                @test rrule(fvarargs, 1, 2.0) == nothing
+            end
+            @testset "xs..." begin
+                @non_differentiable fvarargs(a, xs...)
+
+                y, pb = rrule(fvarargs, 1.)
+                @test y == fvarargs(1.)
+                @test pb(1) == (Zero(), DoesNotExist())
+
+                y, pb = rrule(fvarargs, 1, 2, 3)
+                @test y == fvarargs(1, 2, 3.)
+                @test pb(1) == (Zero(), DoesNotExist(), DoesNotExist(), DoesNotExist())
+
+                @test frule((1, 1.), fvarargs, 1, 2.) == (fvarargs(1, 2.), DoesNotExist())
+            end
+        end
+
         @testset "Not supported (Yet)" begin
             # Where clauses are not supported.
             @test_macro_throws(

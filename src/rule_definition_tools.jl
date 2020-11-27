@@ -335,7 +335,6 @@ function _nondiff_rrule_expr(primal_sig_parts, primal_invoke)
         Expr(:call, propagator_name(primal_name, :pullback), :_),
         Expr(:tuple, NO_FIELDS, Expr(:(...), tup_expr))
     )
-    @show pullback_expr
     return esc(:(
         function ChainRulesCore.rrule($(primal_sig_parts...); kwargs...)
             return ($primal_invoke, $pullback_expr)
