@@ -60,8 +60,8 @@
         @test complex(z, 2.0) === Complex{Float64}(0.0, 2.0)
         @test complex(1.5, z) === Complex{Float64}(1.5, 0.0)
 
-        @test convert(Int64, Zero()) == 0
-        @test convert(Float64, Zero()) == 0.0
+        #@test convert(Int64, Zero()) == 0
+        #@test convert(Float64, Zero()) == 0.0
     end
 
     @testset "DoesNotExist" begin
