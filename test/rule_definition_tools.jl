@@ -127,48 +127,40 @@ end
 
         @testset "Varargs" begin
             fvarargs(a, xs...) = sum((a, xs...))
-            @testset "xs::Vararg{Int}" begin
-                @non_differentiable fvarargs(a, xs::Vararg{Int})
+            @testset "xs::Float64..." begin
+                @non_differentiable fvarargs(a, xs::Float64...)
 
                 y, pb = rrule(fvarargs, 1)
                 @test y == fvarargs(1)
                 @test pb(1) == (Zero(), DoesNotExist())
 
-                y, pb = rrule(fvarargs, 1, 2, 3)
-                @test y == fvarargs(1, 2, 3)
+                y, pb = rrule(fvarargs, 1, 2.0, 3.0)
+                @test y == fvarargs(1, 2.0, 3.0)
                 @test pb(1) == (Zero(), DoesNotExist(), DoesNotExist(), DoesNotExist())
 
-                @test frule((1, 1), fvarargs, 1, 2) == (fvarargs(1, 2), DoesNotExist())
+                @test frule((1, 1), fvarargs, 1, 2.0) == (fvarargs(1, 2.0), DoesNotExist())
 
-                @test frule((1, 1), fvarargs, 1, 2.0) == nothing
-                @test rrule(fvarargs, 1, 2.0) == nothing
+                @test frule((1, 1), fvarargs, 1, 2) == nothing
+                    @test rrule(fvarargs, 1, 2) == nothing
             end
 
             @testset "::Float64..." begin
                 @non_differentiable fvarargs(a, ::Float64...)
-                
-                y, pb = rrule(fvarargs, 1.0, 1.0)
-                @test y == fvarargs(1.0, 1.0)
-                @test pb(1) == (Zero(), DoesNotExist(), DoesNotExist())
 
-                @test frule((1, 1), fvarargs, 1, 2.0) == (fvarargs(1, 2.0), DoesNotExist())
-
-                @test frule((1, 1, 1), fvarargs, 1, 1, 2.0) == nothing
-                @test rrule(fvarargs, 1, 1, 2.0) == nothing
-            end
-            
-            @testset "xs..." begin
-                @non_differentiable fvarargs(a, xs...)
-
-                y, pb = rrule(fvarargs, 1.)
-                @test y == fvarargs(1.)
-                @test pb(1) == (Zero(), DoesNotExist())
-
-                y, pb = rrule(fvarargs, 1, 2, 3)
-                @test y == fvarargs(1, 2, 3.)
+                y, pb = rrule(fvarargs, 1, 2.0, 3.0)
+                @test y == fvarargs(1, 2.0, 3.0)
                 @test pb(1) == (Zero(), DoesNotExist(), DoesNotExist(), DoesNotExist())
 
-                @test frule((1, 1.), fvarargs, 1, 2.) == (fvarargs(1, 2.), DoesNotExist())
+                @test frule((1, 1), fvarargs, 1, 2.0) == (fvarargs(1, 2.0), DoesNotExist())
+            end
+
+            @testset "::Vararg" begin
+                @non_differentiable fvarargs(a, ::Vararg)
+                @test frule((1, 1), fvarargs, 1, 2) == (fvarargs(1, 2), DoesNotExist())
+
+                y, pb = rrule(fvarargs, 1, 1)
+                @test y == fvarargs(1, 1)
+                @test pb(1) == (Zero(), DoesNotExist(), DoesNotExist())
             end
         end
 

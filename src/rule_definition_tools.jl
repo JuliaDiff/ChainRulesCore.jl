@@ -300,9 +300,8 @@ macro non_differentiable(sig_expr)
         :($(primal_name)($(unconstrained_args...); kwargs...))
     else
         normal_args = unconstrained_args[1:end-1]
-        var_arg = unconstrained_args[end] # either `xs...`` or `xs`, coming from Vararg
-        var_arg_call = Meta.isexpr(var_arg, :(...), 1) ? var_arg : Expr(:(...), var_arg)
-        :($(primal_name)($(normal_args...), $(var_arg_call); kwargs...))
+        var_arg = unconstrained_args[end]
+        :($(primal_name)($(normal_args...), $(var_arg)...; kwargs...))
     end
 
     quote
@@ -394,7 +393,7 @@ end
 _unconstrain(arg::Symbol) = arg
 function _unconstrain(arg::Expr)
     Meta.isexpr(arg, :(::), 2) && return arg.args[1]  # drop constraint.
-    Meta.isexpr(arg, :(...), 1) && return Expr(:(...), _unconstrain(arg.args[1]))
+    Meta.isexpr(arg, :(...), 1) && return _unconstrain(arg.args[1])
     error("malformed arguments: $arg")
 end
 
