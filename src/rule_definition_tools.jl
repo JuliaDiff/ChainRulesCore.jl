@@ -300,8 +300,9 @@ macro non_differentiable(sig_expr)
         :($(primal_name)($(unconstrained_args...); kwargs...))
     else
         normal_args = unconstrained_args[1:end-1]
-        var_arg = unconstrained_args[end]
-        :($(primal_name)($(normal_args...), $(var_arg)...; kwargs...))
+        var_arg = unconstrained_args[end] # either `xs...`` or `xs`, coming from Vararg
+        var_arg_call = Meta.isexpr(var_arg, :(...), 1) ? var_arg : Expr(:(...), var_arg)
+        :($(primal_name)($(normal_args...), $(var_arg_call); kwargs...))
     end
 
     quote
@@ -393,6 +394,7 @@ end
 _unconstrain(arg::Symbol) = arg
 function _unconstrain(arg::Expr)
     Meta.isexpr(arg, :(::), 2) && return arg.args[1]  # drop constraint.
+    Meta.isexpr(arg, :(...), 1) && return Expr(:(...), _unconstrain(arg.args[1]))
     error("malformed arguments: $arg")
 end
 
@@ -400,7 +402,7 @@ end
 function _constrain_and_name(arg::Expr, _)
     Meta.isexpr(arg, :(::), 2) && return arg  # it is already fine.
     Meta.isexpr(arg, :(::), 1) && return Expr(:(::), gensym(), arg.args[1]) # add name
-    Meta.isexpr(arg, :(...), 1) && return Expr(:(::), arg.args[1], :Vararg) # turn xs... into xs::Vararg
+    Meta.isexpr(arg, :(...), 1) && return Expr(:(...), _constrain_and_name(arg.args[1], :Any))
     error("malformed arguments: $arg")
 end
 _constrain_and_name(name::Symbol, constraint) = Expr(:(::), name, constraint)  # add type

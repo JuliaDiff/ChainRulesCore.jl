@@ -20,7 +20,6 @@ using Test
     include("rules.jl")
     include("rule_definition_tools.jl")
 
-
     @testset "demos" begin
         include("demos/forwarddiffzero.jl")
         include("demos/reversediffzero.jl")
