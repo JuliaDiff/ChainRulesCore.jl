@@ -154,8 +154,27 @@ end
                 @test frule((1, 1), fvarargs, 1, 2.0) == (fvarargs(1, 2.0), DoesNotExist())
             end
 
+            @testset "::Vararg{Float64}" begin
+                @non_differentiable fvarargs(a, ::Vararg{Float64})
+
+                y, pb = rrule(fvarargs, 1, 2.0, 3.0)
+                @test y == fvarargs(1, 2.0, 3.0)
+                @test pb(1) == (Zero(), DoesNotExist(), DoesNotExist(), DoesNotExist())
+
+                @test frule((1, 1), fvarargs, 1, 2.0) == (fvarargs(1, 2.0), DoesNotExist())
+            end
+
             @testset "::Vararg" begin
                 @non_differentiable fvarargs(a, ::Vararg)
+                @test frule((1, 1), fvarargs, 1, 2) == (fvarargs(1, 2), DoesNotExist())
+
+                y, pb = rrule(fvarargs, 1, 1)
+                @test y == fvarargs(1, 1)
+                @test pb(1) == (Zero(), DoesNotExist(), DoesNotExist())
+            end
+
+            @testset "xs..." begin
+                @non_differentiable fvarargs(a, xs...)
                 @test frule((1, 1), fvarargs, 1, 2) == (fvarargs(1, 2), DoesNotExist())
 
                 y, pb = rrule(fvarargs, 1, 1)
