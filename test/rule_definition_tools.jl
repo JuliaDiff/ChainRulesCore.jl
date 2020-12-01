@@ -125,11 +125,65 @@ end
             @test rrule(NonDiffCounterExample, 2.0) === nothing
         end
 
-        @testset "Not supported (Yet)" begin
-            # Varargs are not supported
-            @test_macro_throws ErrorException @non_differentiable vararg1(xs...)
-            @test_macro_throws ErrorException @non_differentiable vararg1(xs::Vararg)
+        @testset "Varargs" begin
+            fvarargs(a, xs...) = sum((a, xs...))
+            @testset "xs::Float64..." begin
+                @non_differentiable fvarargs(a, xs::Float64...)
 
+                y, pb = rrule(fvarargs, 1)
+                @test y == fvarargs(1)
+                @test pb(1) == (Zero(), DoesNotExist())
+
+                y, pb = rrule(fvarargs, 1, 2.0, 3.0)
+                @test y == fvarargs(1, 2.0, 3.0)
+                @test pb(1) == (Zero(), DoesNotExist(), DoesNotExist(), DoesNotExist())
+
+                @test frule((1, 1), fvarargs, 1, 2.0) == (fvarargs(1, 2.0), DoesNotExist())
+
+                @test frule((1, 1), fvarargs, 1, 2) == nothing
+                    @test rrule(fvarargs, 1, 2) == nothing
+            end
+
+            @testset "::Float64..." begin
+                @non_differentiable fvarargs(a, ::Float64...)
+
+                y, pb = rrule(fvarargs, 1, 2.0, 3.0)
+                @test y == fvarargs(1, 2.0, 3.0)
+                @test pb(1) == (Zero(), DoesNotExist(), DoesNotExist(), DoesNotExist())
+
+                @test frule((1, 1), fvarargs, 1, 2.0) == (fvarargs(1, 2.0), DoesNotExist())
+            end
+
+            @testset "::Vararg{Float64}" begin
+                @non_differentiable fvarargs(a, ::Vararg{Float64})
+
+                y, pb = rrule(fvarargs, 1, 2.0, 3.0)
+                @test y == fvarargs(1, 2.0, 3.0)
+                @test pb(1) == (Zero(), DoesNotExist(), DoesNotExist(), DoesNotExist())
+
+                @test frule((1, 1), fvarargs, 1, 2.0) == (fvarargs(1, 2.0), DoesNotExist())
+            end
+
+            @testset "::Vararg" begin
+                @non_differentiable fvarargs(a, ::Vararg)
+                @test frule((1, 1), fvarargs, 1, 2) == (fvarargs(1, 2), DoesNotExist())
+
+                y, pb = rrule(fvarargs, 1, 1)
+                @test y == fvarargs(1, 1)
+                @test pb(1) == (Zero(), DoesNotExist(), DoesNotExist())
+            end
+
+            @testset "xs..." begin
+                @non_differentiable fvarargs(a, xs...)
+                @test frule((1, 1), fvarargs, 1, 2) == (fvarargs(1, 2), DoesNotExist())
+
+                y, pb = rrule(fvarargs, 1, 1)
+                @test y == fvarargs(1, 1)
+                @test pb(1) == (Zero(), DoesNotExist(), DoesNotExist())
+            end
+        end
+
+        @testset "Not supported (Yet)" begin
             # Where clauses are not supported.
             @test_macro_throws(
                 ErrorException,

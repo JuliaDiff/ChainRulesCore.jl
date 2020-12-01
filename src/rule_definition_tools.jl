@@ -281,15 +281,13 @@ julia> frule((Zero(), 1), length, [2.0, 3.0])
 
 !!! warning
     This helper macro covers only the simple common cases.
-    It does not support Varargs, or `where`-clauses.
+    It does not support `where`-clauses.
     For these you can declare the `rrule` and `frule` directly
 
 """
 macro non_differentiable(sig_expr)
     Meta.isexpr(sig_expr, :call) || error("Invalid use of `@non_differentiable`")
-    for arg in sig_expr.args
-        _isvararg(arg) && error("@non_differentiable does not support Varargs like: $arg")
-    end
+    has_vararg = _isvararg(sig_expr.args[end])
 
     primal_name, orig_args = Iterators.peel(sig_expr.args)
 
@@ -298,7 +296,13 @@ macro non_differentiable(sig_expr)
 
     unconstrained_args = _unconstrain.(constrained_args)
 
-    primal_invoke = :($(primal_name)($(unconstrained_args...); kwargs...))
+    primal_invoke = if !has_vararg
+        :($(primal_name)($(unconstrained_args...); kwargs...))
+    else
+        normal_args = unconstrained_args[1:end-1]
+        var_arg = unconstrained_args[end]
+        :($(primal_name)($(normal_args...), $(var_arg)...; kwargs...))
+    end
 
     quote
         $(_nondiff_frule_expr(primal_sig_parts, primal_invoke))
@@ -315,13 +319,25 @@ function _nondiff_frule_expr(primal_sig_parts, primal_invoke)
     ))
 end
 
+function tuple_expression(primal_sig_parts)
+    has_vararg = _isvararg(primal_sig_parts[end])
+    return if !has_vararg
+        num_primal_inputs = length(primal_sig_parts) - 1 # - primal
+        Expr(:tuple, ntuple(_->DoesNotExist(), num_primal_inputs)...)
+    else
+        num_primal_inputs = length(primal_sig_parts) - 2 # - primal and vararg
+        length_expr = :($(num_primal_inputs) + length($(_unconstrain(primal_sig_parts[end]))))
+        Expr(:call, :ntuple, Expr(:(->), :_, DoesNotExist()), length_expr)
+    end
+end
+
 function _nondiff_rrule_expr(primal_sig_parts, primal_invoke)
-    num_primal_inputs = length(primal_sig_parts) - 1
+    tup_expr = tuple_expression(primal_sig_parts)
     primal_name = first(primal_invoke.args)
     pullback_expr = Expr(
         :function,
         Expr(:call, propagator_name(primal_name, :pullback), :_),
-        Expr(:tuple, NO_FIELDS, ntuple(_->DoesNotExist(), num_primal_inputs)...)
+        Expr(:tuple, NO_FIELDS, Expr(:(...), tup_expr))
     )
     return esc(:(
         function ChainRulesCore.rrule($(primal_sig_parts...); kwargs...)
@@ -381,13 +397,15 @@ end
 _unconstrain(arg::Symbol) = arg
 function _unconstrain(arg::Expr)
     Meta.isexpr(arg, :(::), 2) && return arg.args[1]  # drop constraint.
+    Meta.isexpr(arg, :(...), 1) && return _unconstrain(arg.args[1])
     error("malformed arguments: $arg")
 end
 
 "turn both `a` and `::constraint` into `a::constraint` etc"
 function _constrain_and_name(arg::Expr, _)
     Meta.isexpr(arg, :(::), 2) && return arg  # it is already fine.
-    Meta.isexpr(arg, :(::), 1) && return Expr(:(::), gensym(), arg.args[1])  #add name
+    Meta.isexpr(arg, :(::), 1) && return Expr(:(::), gensym(), arg.args[1]) # add name
+    Meta.isexpr(arg, :(...), 1) && return Expr(:(...), _constrain_and_name(arg.args[1], :Any))
     error("malformed arguments: $arg")
 end
 _constrain_and_name(name::Symbol, constraint) = Expr(:(::), name, constraint)  # add type
