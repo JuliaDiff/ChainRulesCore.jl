@@ -8,6 +8,10 @@ This glossary serves as a quick reference for common terms used in the field of 
 
 The conjugate transpose of the Jacobian for a given function `f`.
 
+###Automatic Differentiation:
+
+Automatic Differentiation is the process of applying numerical methods to solving derivative problems, most often algorithmically, using computer programs to achieve high degrees of accuracy.
+
 ###Derivative:
 
 The derivative of a function `y = f(x)` with respect to the independent variable `x` denoted `f'(x)` or `dy/dx` is the rate of change of the dependent variable `y` with respect to the change of the independent variable `x`. In multiple dimensions, we may refer to the gradient of a function.
