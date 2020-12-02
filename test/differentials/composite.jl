@@ -75,19 +75,16 @@ end
     end
 
     @testset "reverse" begin
-        t = (1, 2, "something")
-        tr = reverse(t)
-        c = Composite{typeof(t), typeof(t)}(t)
-        cr = Composite{typeof(tr), typeof(tr)}(tr)
-        @test reverse(c) == cr
+        c = Composite{Tuple{Int, Int, String}}(1, 2, "something")
+        cr = Composite{Tuple{String, Int, Int}}("something", 2, 1)
+        @test reverse(c) === cr
 
-        nt = (x=1.0, y=2.0)
-        cnt = Composite{Foo, typeof(nt)}(nt)
-        @test_throws MethodError reverse(nt) # can't reverse a named tuple
+        # can't reverse a named tuple or a dict
+        @test_throws MethodError reverse(Composite{Foo}(;x=1.0, y=2.0))
 
         d = Dict(:x => 1, :y => 2.0)
         cdict = Composite{Foo, typeof(d)}(d)
-        @test_throws MethodError reverse(cdict) # can't reverse a dict
+        @test_throws MethodError reverse(Composite{Foo}()) 
     end
 
     @testset "unset properties" begin
