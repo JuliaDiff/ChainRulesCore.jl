@@ -44,7 +44,6 @@ end
         @test hash(Composite{Foo}(y=2.5, x=Zero())) == hash(Composite{Foo}(y=2.5))
     end
 
-
     @testset "indexing, iterating, and properties" begin
         @test keys(Composite{Foo}(x=2.5)) == (:x,)
         @test propertynames(Composite{Foo}(x=2.5)) == (:x,)
@@ -73,6 +72,19 @@ end
         # Testing iterate via collect
         @test collect(Composite{Foo}(x=2.5)) == [2.5]
         @test collect(Composite{Tuple{Float64,}}(2.0)) == [2.0]
+    end
+
+    @testset "reverse" begin
+        c = Composite{Tuple{Int, Int, String}}(1, 2, "something")
+        cr = Composite{Tuple{String, Int, Int}}("something", 2, 1)
+        @test reverse(c) === cr
+
+        # can't reverse a named tuple or a dict
+        @test_throws MethodError reverse(Composite{Foo}(;x=1.0, y=2.0))
+
+        d = Dict(:x => 1, :y => 2.0)
+        cdict = Composite{Foo, typeof(d)}(d)
+        @test_throws MethodError reverse(Composite{Foo}()) 
     end
 
     @testset "unset properties" begin

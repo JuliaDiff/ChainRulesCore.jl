@@ -90,6 +90,10 @@ end
 Base.iterate(comp::Composite, args...) = iterate(backing(comp), args...)
 Base.length(comp::Composite) = length(backing(comp))
 Base.eltype(::Type{<:Composite{<:Any, T}}) where T = eltype(T)
+function Base.reverse(comp::Composite)
+    rev_backing = reverse(backing(comp))
+    Composite{typeof(rev_backing), typeof(rev_backing)}(rev_backing)
+end
 
 function Base.map(f, comp::Composite{P, <:Tuple}) where P
     vals::Tuple = map(f, backing(comp))
