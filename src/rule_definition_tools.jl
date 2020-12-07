@@ -184,7 +184,7 @@ function scalar_rrule_expr(f, call, setup_stmts, inputs, partials)
     # Multi-output functions have pullbacks with a tuple input that will be destructured
     pullback_input = n_outputs == 1 ? first(Δs) : Expr(:tuple, Δs...)
     pullback = quote
-        function $(esc(propagator_name(f, :pullback)))($pullback_input)
+        @inline function $(esc(propagator_name(f, :pullback)))($pullback_input)
             return (NO_FIELDS, $(pullback_returns...))
         end
     end
