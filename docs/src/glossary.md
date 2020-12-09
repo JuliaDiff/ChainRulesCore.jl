@@ -14,72 +14,88 @@ Automatic Differentiation is the process of applying numerical methods to solvin
 
 ###Derivative:
 
-The derivative of a function `y = f(x)` with respect to the independent variable `x` denoted `f'(x)` or `dy/dx` is the rate of change of the dependent variable `y` with respect to the change of the independent variable `x`. In multiple dimensions, we may refer to the gradient of a function.
+The derivative of a function `y = f(x)` with respect to the independent variable `x` denoted `f'(x)` or `dy/dx` is the rate of change of the dependent variable `y` with respect to the change of the independent variable `x`. In multiple dimensions, the derivative is not defined.
+Instead there are the partial derivatives, the directional derivative and the jacobian (called gradient for scalar-valued functions).
 
 ###Differential:
 
 The differential of a given function `y = f(x)` denoted `dy` is the product of the derivative function `f'(x)` and the increment of the independent variable `dx`. In multiple dimensions, it is the sum of these products across each dimension (using the partial derivative and the given independent variable's increment).
 
-In ChainRules, differentials are types ("differential types") and correspond to primal types. A differential should represent a difference between two primal values.
+In ChainRules, differentials are types ("differential types") and correspond to primal types. A differential type should represent a difference between two primal typed values.
 
 ####Natural Differential:
 
-A natural differential type for a given primal type is the type people would intuitively associate with representing the difference between two values of the primal type.
+A natural differential type for a given primal type is a `ChainRules.jl` specific term for the type people would intuitively associate with representing the difference between two values of the primal type. This is in contrast to the structural differential.
+* **Note:** Not to be confused with the [natural gradient](https://towardsdatascience.com/natural-gradient-ce454b3dcdfa), which is an unrelated concept.
+
+**eg.** A natural differential type for the primal type `DateTime` could be `Hours`
 
 ####Structural Differential:
 
-If a given primal type `P` does not have a natural differential, we need to come up with one that makes sense. These are called structural differentials and are represented as `Composite{P, <:NamedTuple}`.
-
-####Semi-Structural Differential:
-
-A structural differential that contains at least one natural differential field.
+If a given primal type `P` does not have a natural differential, we need to come up with one that makes sense. These are called structural differentials and are `ChainRules.jl` specific terms represented as `Composite{P}` and mirrors the structure of the primal type.
 
 ####Thunk:
 
-An "unnatural" differential type. If we wish to delay the computation of a derivative for whatever reason, we wrap it in a `Thunk` or `ImplaceableThunk`. It holds off on computing the wrapped derivative until it is needed.
+If we wish to delay the computation of a derivative for whatever reason, we wrap it in a [`Thunk`](https://en.wikipedia.org/wiki/Thunk) or `InplaceableThunk`. It holds off on computing the wrapped derivative until it is needed.
+
+For the purposes of `ChainRles.jl`, the `AbstractThunk` subtype is an "unnatural" differential type. It is a function set up to act like a differential.
 
 ####Zero:
 
-`Zero()` can also be a differential type. If you have trouble understanding the rules enforced upon differential types, consider this one first, as `Zero()` is the trivial vector space.
+The additive identity for differentials. It represents the hard zero (ie adding it to anything returns the original thing). `Zero()` can also be a differential type.
 
 ###Directional Derivative:
 
-The directional derivative of a function `f` at any given point in any given unit-direction is the gradient multiplied by the direction. It represents the rate of change of `f` in that direction.
+The directional derivative of a function `f` at any given point in any given unit-direction is the gradient multiplied by the direction (ie. the Jacobian Vector Product). It represents the rate of change of `f` in the given direction. This gets computed by the pushforward function.
 
-###F-rule:
+###`frule`:
 
-A function used in forward-mode differentiation. For a given function `f`, it takes in the positional and keyword arguments of `f` and returns the primal result and the pushforward.
+A forward mode rule, that descripes how to propagate the sensitivity into the forwards direction.
+
+The `frule` fuses the primal computation and the pushforward. It takes in the primal function name, the primal arguments and their matching partial derivatives. It returns the primal output, and the matching directional derivative (jvp).
 
 ###Gradient:
 
-The gradient of a scalar function `f` represented by `∇f` is a vector function whose components are the partial derivatives of `f` with respect to each dimension of the domain of `f`.
+The gradient of a scalar function `f` represented by `∇f` is a vector function whose components are the partial derivatives of `f` with respect to each dimension of the domain of `f`. This is equivalent to the jacobian for scalar-valued functions.
 
 ###Jacobian:
 
 The Jacobian of a vector-valued function `f` is the matrix of `f`'s first-order partial derivatives.
 
-###Jacobian Transpose Vector Product (j'vp):
-
-The product of the adjoint of the Jacobian and the vector in question. A description of the pullback in terms of its Jacobian.
-
-###Jacobian Vector Product (jvp):
-
-The product of the Jacobian and the vector in question. It is a description of the pushforward in terms of its Jacobian.
-
 ###Primal:
 
-Something relating to the original problem, as opposed to relating to the derivative. In ChainRules, primals are types ("primal types").
+Something relating to the original problem, as opposed to relating to the derivative.
+Such as:
+ - The primal function being the function that is to be differnetiated
+ - The primal inputs being the inputs to that function (the point that the derivative is being calculated at)
+ - The primal outputs being the result of applying the primal function to the primal inputs
+ - The primal pass (also called the forward pass) where the computation is run to get the primal outputs (generally before doing a derivative (i.e. reverse pass) in reverse mode AD).
+ - The primal computation which is the part of the code that is run during the primal pass and must at least compute the primal outputs (but may compute other things to use during the derivative pass).
+ - The primal types being the types of the primal inputs/outputs
 
 ###Pullback:
 
-`Pullback(f)` describes the sensitivity of the input of `f` as a function of (for the relative change to) the sensitivity of the output of `f`. Can be represented as the dot product of a vector (left) the adjoint Jacobian (right).
+`Pullback(f)` describes the sensitivity of a quantity to the input of `f` as a function of its sensitivity to the output of `f`. Can be represented as the dot product of a vector and the adjoint of the Jacobian.
+
+####Jacobian Transpose Vector Product (j'vp):
+
+The product of the adjoint of the Jacobian and the vector in question. A description of the pullback in terms of its Jacobian.
 
 ###Pushforward:
 
-`Pushforward(f)` describes the sensitivity of the output of `f` as a function of (for the relative change to) the sensitivity of the input of `f`. Can be represented as the dot product of the Jacobian (left) and a vector (right).
+`Pushforward(f)` describes the sensitivity of a quantity to the output of `f` as a function of its sensitivity to the input of `f`. Can be represented as the dot product of the Jacobian and a vector.
 
-###R-rule:
+####Jacobian Vector Product (jvp):
 
-A function used in reverse-mode differentiation. For a given function `f`, it takes in the positional and keyword arguments of `f` and returns the primal result and the pullback.
+The product of the Jacobian and the vector in question.
+
+* **Note:**
+The jvp is a description of the pushforward in terms of its Jacobian and is often used interchangeably with the term pushforward as a result. Strictly speaking, the pushforward computes the jvp (ie the jvp is not normally seen as the name of a function).
+
+###`rrule`:
+
+A reverse mode rule, that descripes how to propagate the sensitivity into the reverse direction.
+
+The `rrule` fuses the primal computation and the pullback. It takes in the primal function name and the primal arguments. It returns the primal output and the propogation rule (j'vp).
 
 
