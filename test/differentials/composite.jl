@@ -37,6 +37,9 @@ end
         @test Composite{Tuple{Float64,}}(2.0) == Composite{Tuple{Float64,}}(2.0)
         @test Composite{Dict}(Dict(4 => 3)) == Composite{Dict}(Dict(4 => 3))
 
+        tup = (1.0, 2.0)
+        @test Composite{typeof(tup)}(1.0, 2.0) == Composite{typeof(tup)}(1.0, @thunk(2*1.0))
+        @test Composite{typeof(tup)}(1.0, 2.0) == Composite{typeof(tup)}(1.0, 2)
     end
 
     @testset "hash" begin

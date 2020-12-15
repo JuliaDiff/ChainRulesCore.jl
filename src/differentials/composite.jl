@@ -49,7 +49,7 @@ function Base.:(==)(a::Composite{P, T}, b::Composite{P, T}) where {P, T}
     return backing(a) == backing(b)
 end
 function Base.:(==)(a::Composite{P}, b::Composite{P}) where {P, T}
-    return canonicalize(a) == canonicalize(b)
+    return extern(canonicalize(a)) == extern(canonicalize(b))
 end
 Base.:(==)(a::Composite{P}, b::Composite{Q}) where {P, Q} = false
 
