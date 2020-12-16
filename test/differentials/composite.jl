@@ -40,6 +40,11 @@ end
         tup = (1.0, 2.0)
         @test Composite{typeof(tup)}(1.0, 2.0) == Composite{typeof(tup)}(1.0, @thunk(2*1.0))
         @test Composite{typeof(tup)}(1.0, 2.0) == Composite{typeof(tup)}(1.0, 2)
+
+        nt = (x=1.0, y=2.0)
+        cnt = Composite{typeof(nt)}(;x=1.0, y=2.0)
+        @test cnt == Composite{typeof(nt)}(;x=1.0, y=@thunk(2*1.0))
+        @test cnt == Composite{typeof(nt)}(;x=1.0, y=2)
     end
 
     @testset "hash" begin
