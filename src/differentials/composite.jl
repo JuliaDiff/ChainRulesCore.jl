@@ -49,7 +49,8 @@ function Base.:(==)(a::Composite{P, T}, b::Composite{P, T}) where {P, T}
     return backing(a) == backing(b)
 end
 function Base.:(==)(a::Composite{P}, b::Composite{P}) where {P, T}
-    return canonicalize(a) == canonicalize(b)
+    all_fields = union(keys(backing(a)), keys(backing(b)))
+    return all(getproperty(a, f) == getproperty(b, f) for f in all_fields)
 end
 Base.:(==)(a::Composite{P}, b::Composite{Q}) where {P, Q} = false
 
