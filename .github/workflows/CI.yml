@@ -16,6 +16,7 @@ jobs:
       matrix:
         version:
           - "1"  # Latest Release
+          - '1.0'  # LTS
         os:
           - ubuntu-latest
           - macOS-latest
@@ -61,7 +62,7 @@ jobs:
     name: Notify Slack Failure
     needs: test
     runs-on: ubuntu-latest
-    if: github.event == 'schedule'
+    if: always() && github.event_name == 'schedule'
     steps:
       - uses: technote-space/workflow-conclusion-action@v2
       - uses: voxmedia/github-action-slack-notify-build@v1
@@ -82,15 +83,11 @@ jobs:
         with:
           version: '1'
       - run: |
-          git config --global user.name name
-          git config --global user.email email
-          git config --global github.user username
-      - run: |
           julia --project=docs -e '
-            using Pkg;
-            Pkg.develop(PackageSpec(path=pwd()));
-            Pkg.instantiate();
-            include("docs/make.jl");'
+            using Pkg
+            Pkg.develop(PackageSpec(path=pwd()))
+            Pkg.instantiate()
+            include("docs/make.jl")'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
