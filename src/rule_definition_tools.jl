@@ -210,25 +210,29 @@ function propagation_expr(Δs, ∂s, _conj = false)
     ∂s = map(esc, ∂s)
     n∂s = length(∂s)
 
-    # Due to bugs in Julia 1.0, we can't use `.+`  or `.*` inside expression literals.
-    ∂_mul_Δs = if _conj
-        ntuple(i->:(conj($(∂s[i])) * $(Δs[i])), n∂s)
+    init_expr = if _conj
+        :((*).(conj($(∂s[1])), $(Δs[1])))
     else
-        ntuple(i->:($(∂s[i]) * $(Δs[i])), n∂s)
+        :((*).($(∂s[1]), $(Δs[1])))
     end
 
     # Avoiding the extra `+` operation, it is potentially expensive for vector mode AD.
     sumed_∂_mul_Δs = if n∂s > 1
-        # we use `@.` to broadcast `*` and `+`
-        :(@. +($(∂_mul_Δs...)))
+        foldl(Iterators.drop(zip(∂s, Δs), 1); init=init_expr) do ex, (∂s_i, Δs_i)
+            if _conj
+                :((muladd).(conj($∂s_i), $Δs_i, $ex))
+            else
+                :((muladd).($∂s_i, $Δs_i, $ex))
+            end
+        end
     else
         # Note: we don't want to do broadcasting with only 1 multiply (no `+`),
         # because some arrays overload multiply with scalar. Avoiding
         # broadcasting saves compilation time.
-        ∂_mul_Δs[1]
+        init_expr
     end
 
-    return :(@muladd $sumed_∂_mul_Δs)
+    return sumed_∂_mul_Δs
 end
 
 """
