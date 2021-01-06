@@ -207,32 +207,32 @@ end
 """
 function propagation_expr(Δs, ∂s, _conj = false)
     # This is basically Δs ⋅ ∂s
-    ∂s = map(esc, ∂s)
-    n∂s = length(∂s)
-
-    init_expr = if _conj
-        :((*).(conj($(∂s[1])), $(Δs[1])))
-    else
-        :((*).($(∂s[1]), $(Δs[1])))
+    _∂s = map(∂s) do ∂s_i
+        if _conj
+            :(conj($(esc(∂s_i))))
+        else
+            esc(∂s_i)
+        end
     end
+    n∂s = length(_∂s)
 
-    # Avoiding the extra `+` operation, it is potentially expensive for vector mode AD.
-    sumed_∂_mul_Δs = if n∂s > 1
-        foldl(Iterators.drop(zip(∂s, Δs), 1); init=init_expr) do ex, (∂s_i, Δs_i)
-            if _conj
-                :((muladd).(conj($∂s_i), $Δs_i, $ex))
-            else
-                :((muladd).($∂s_i, $Δs_i, $ex))
-            end
+    summed_∂_mul_Δs = if n∂s > 1
+        # Explicit multiplication is only performed for the first pair
+        # of partial and gradient.
+        init_expr = :((*).($(_∂s[1]), $(Δs[1])))
+
+        # Apply `muladd` iteratively.
+        foldl(Iterators.drop(zip(_∂s, Δs), 1); init=init_expr) do ex, (∂s_i, Δs_i)
+            :((muladd).($∂s_i, $Δs_i, $ex))
         end
     else
         # Note: we don't want to do broadcasting with only 1 multiply (no `+`),
         # because some arrays overload multiply with scalar. Avoiding
         # broadcasting saves compilation time.
-        init_expr
+        :($(_∂s[1]) * $(Δs[1]))
     end
 
-    return sumed_∂_mul_Δs
+    return summed_∂_mul_Δs
 end
 
 """
