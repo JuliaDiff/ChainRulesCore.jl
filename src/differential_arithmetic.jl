@@ -25,11 +25,12 @@ for T in (:One, :AbstractThunk, :Composite, :Any)
     @eval Base.:-(::DoesNotExist, b::$T) = -b
     @eval Base.:-(a::$T, ::DoesNotExist) = a
 
-    @eval Base.:*(::DoesNotExist, ::$T) = DoesNotExist()
-    @eval Base.:*(::$T, ::DoesNotExist) = DoesNotExist()
-
     @eval LinearAlgebra.dot(::DoesNotExist, ::$T) = DoesNotExist()
     @eval LinearAlgebra.dot(::$T, ::DoesNotExist) = DoesNotExist()
+end
+for T in (:One, :AbstractThunk, :Composite, :Number)
+    @eval Base.:*(::DoesNotExist, ::$T) = DoesNotExist()
+    @eval Base.:*(::$T, ::DoesNotExist) = DoesNotExist()
 end
 # `DoesNotExist` and `Zero` have special relationship,
 # DoesNotExist wins add, Zero wins *. This is (in theory) to allow `*` to be used for
@@ -65,11 +66,12 @@ for T in (:One, :AbstractThunk, :Composite, :Any)
     @eval Base.:-(::Zero, b::$T) = -b
     @eval Base.:-(a::$T, ::Zero) = a
 
-    @eval Base.:*(::Zero, ::$T) = Zero()
-    @eval Base.:*(::$T, ::Zero) = Zero()
-
     @eval LinearAlgebra.dot(::Zero, ::$T) = Zero()
     @eval LinearAlgebra.dot(::$T, ::Zero) = Zero()
+end
+for T in (:One, :AbstractThunk, :Composite, :Number)
+    @eval Base.:*(::Zero, ::$T) = Zero()
+    @eval Base.:*(::$T, ::Zero) = Zero()
 end
 
 Base.real(::Zero) = Zero()
@@ -89,15 +91,15 @@ Base.complex(::One, ::Zero) = One()
 
 Base.:+(a::One, b::One) = extern(a) + extern(b)
 Base.:*(::One, ::One) = One()
-for T in (:AbstractThunk, :Composite, :Any)
-    if T != :Composite
-        @eval Base.:+(a::One, b::$T) = extern(a) + b
-        @eval Base.:+(a::$T, b::One) = a + extern(b)
-    end
-
+for T in (:AbstractThunk, :Any)
+    @eval Base.:+(a::One, b::$T) = extern(a) + b
+    @eval Base.:+(a::$T, b::One) = a + extern(b)
+end
+for T in (:AbstractThunk, :Composite, :Number)
     @eval Base.:*(::One, b::$T) = b
     @eval Base.:*(a::$T, ::One) = a
 end
+
 
 LinearAlgebra.dot(::One, x::Number) = x
 LinearAlgebra.dot(x::Number, ::One) = conj(x)  # see definition of Frobenius inner product
@@ -107,11 +109,11 @@ Base.:*(a::AbstractThunk, b::AbstractThunk) = unthunk(a) * unthunk(b)
 for T in (:Composite, :Any)
     @eval Base.:+(a::AbstractThunk, b::$T) = unthunk(a) + b
     @eval Base.:+(a::$T, b::AbstractThunk) = a + unthunk(b)
-
+end
+for T in (:Composite, :Number)
     @eval Base.:*(a::AbstractThunk, b::$T) = unthunk(a) * b
     @eval Base.:*(a::$T, b::AbstractThunk) = a * unthunk(b)
 end
-
 function Base.:+(a::Composite{P}, b::Composite{P}) where P
     data = elementwise_add(backing(a), backing(b))
     return Composite{P, typeof(data)}(data)
@@ -134,7 +136,7 @@ Base.:+(a::Composite{P}, b::P) where P = b + a
 # We intentionally do not define, `Base.*(::Composite, ::Composite)` as that is not meaningful
 # In general one doesn't have to represent multiplications of 2 differentials
 # Only of a differential and a scaling factor (generally `Real`)
-for T in (:Any,)
+for T in (:Number,)
     @eval Base.:*(s::$T, comp::Composite) = map(x->s*x, comp)
     @eval Base.:*(comp::Composite, s::$T) = map(x->x*s, comp)
 end
