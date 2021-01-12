@@ -2,7 +2,6 @@ module ChainRulesCore
 using Base.Broadcast: broadcasted, Broadcasted, broadcastable, materialize, materialize!
 using LinearAlgebra: LinearAlgebra
 using SparseArrays: SparseVector, SparseMatrixCSC
-using MuladdMacro: @muladd
 
 export on_new_rule, refresh_rules  # generation tools
 export frule, rrule  # core function
