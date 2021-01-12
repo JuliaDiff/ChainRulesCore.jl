@@ -198,6 +198,8 @@ function scalar_rrule_expr(f, call, setup_stmts, inputs, partials)
     end
 end
 
+# For context on why this is important, see 
+# https://github.com/JuliaDiff/ChainRulesCore.jl/pull/276
 "Declares properly hygenic inputs for propagation expressions"
 _propagator_inputs(n) = [esc(gensym(Symbol(:Δ, i))) for i in 1:n]
 
