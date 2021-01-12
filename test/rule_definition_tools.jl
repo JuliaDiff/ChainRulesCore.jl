@@ -207,5 +207,24 @@ end
             # make sure type is exactly as expected:
             @test ẏ isa Composite{Tuple{Irrational{:π}, Float64}, Tuple{Float32, Float32}}
         end
+
+        @testset "Regression test against #276" begin
+            # https://github.com/JuliaDiff/ChainRulesCore.jl/pull/276
+            # Symptom of this problem is creation of global variables and type instablily
+
+            num_globals_before = length(names(ChainRulesCore; all=true))
+
+            simo2(x) = (x, 2x)
+            @scalar_rule(simo2(x), 1.0, 2.0)
+            _, simo2_pb = rrule(simo2, 43.0)
+            # make sure it infers: inferability implies type stability
+            @inferred simo2_pb(Composite{Tuple{Float64, Float64}}(3.0, 6.0))
+
+            # Test no new globals were created
+            @test length(names(ChainRulesCore; all=true)) == num_globals_before
+        end
     end
+
+
+
 end
