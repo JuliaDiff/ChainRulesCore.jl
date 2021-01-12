@@ -142,7 +142,7 @@ function scalar_frule_expr(f, call, setup_stmts, inputs, partials)
 
     # Δs is the input to the propagator rule
     # because this is push-forward there is one per input to the function
-    Δs = [esc(Symbol(:Δ, i)) for i in 1:n_inputs]
+    Δs = _propagator_inputs(n_inputs)
     pushforward_returns = map(1:n_outputs) do output_i
         ∂s = partials[output_i].args
         propagation_expr(Δs, ∂s)
@@ -173,7 +173,7 @@ function scalar_rrule_expr(f, call, setup_stmts, inputs, partials)
 
     # Δs is the input to the propagator rule
     # because this is a pull-back there is one per output of function
-    Δs = [Symbol(:Δ, i) for i in 1:n_outputs]
+    Δs = _propagator_inputs(n_outputs)
 
     # 1 partial derivative per input
     pullback_returns = map(1:n_inputs) do input_i
@@ -197,6 +197,9 @@ function scalar_rrule_expr(f, call, setup_stmts, inputs, partials)
         end
     end
 end
+
+"Declares properly hygenic inputs for propagation expressions"
+_propagator_inputs(n) = [esc(gensym(Symbol(:Δ, i))) for i in 1:n]
 
 """
     propagation_expr(Δs, ∂s, _conj = false)
