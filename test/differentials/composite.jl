@@ -285,12 +285,9 @@ end
 
         @testset "Internals don't allocate a ton" begin
             bk = (; x=1.0, y=2.0)
-            if VERSION >= v"1.5"
-                @test (@ballocated(ChainRulesCore.construct($Foo, $bk))) <= 32
-            else
-                @test_broken (@ballocated(ChainRulesCore.construct($Foo, $bk))) <= 32
-            end
-            # weaker version of the above (which should pass, but make sure not failing too bad)
+            VERSION >= v"1.5" && @test (@ballocated(ChainRulesCore.construct($Foo, $bk))) <= 32
+            
+            # weaker version of the above (which should pass on all versions)
             @test (@ballocated(ChainRulesCore.construct($Foo, $bk))) <= 48
             @test (@ballocated ChainRulesCore.elementwise_add($bk, $bk)) <= 48
         end
