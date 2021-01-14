@@ -96,6 +96,10 @@ function Base.reverse(comp::Composite)
     Composite{typeof(rev_backing), typeof(rev_backing)}(rev_backing)
 end
 
+function Base.indexed_iterate(comp::Composite{P,<:Tuple}, i::Int, state=1) where {P}
+    return Base.indexed_iterate(backing(comp), i, state)
+end
+
 function Base.map(f, comp::Composite{P, <:Tuple}) where P
     vals::Tuple = map(f, backing(comp))
     return Composite{P, typeof(vals)}(vals)
