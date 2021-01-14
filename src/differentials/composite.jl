@@ -73,10 +73,9 @@ Base.getindex(comp::Composite, idx) = getindex(backing(comp), idx)
 # for Tuple
 Base.getproperty(comp::Composite, idx::Int) = unthunk(getproperty(backing(comp), idx))
 function Base.getproperty(
-    comp::Composite{P, <:NamedTuple{L}}, idx::Symbol
-) where {P, L}
-    # Need to check L directly, or else this does not constant-fold
-    idx ∈ L || return Zero()
+    comp::Composite{P, T}, idx::Symbol
+) where {P, T<:NamedTuple}
+    hasfield(T, idx) || return Zero()
     return unthunk(getproperty(backing(comp), idx))
 end
 
@@ -94,6 +93,10 @@ Base.eltype(::Type{<:Composite{<:Any, T}}) where T = eltype(T)
 function Base.reverse(comp::Composite)
     rev_backing = reverse(backing(comp))
     Composite{typeof(rev_backing), typeof(rev_backing)}(rev_backing)
+end
+
+function Base.indexed_iterate(comp::Composite{P,<:Tuple}, i::Int, state=1) where {P}
+    return Base.indexed_iterate(backing(comp), i, state)
 end
 
 function Base.map(f, comp::Composite{P, <:Tuple}) where P
