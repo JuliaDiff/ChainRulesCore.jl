@@ -73,10 +73,16 @@ Base.getindex(comp::Composite, idx) = getindex(backing(comp), idx)
 # for Tuple
 Base.getproperty(comp::Composite, idx::Int) = unthunk(getproperty(backing(comp), idx))
 function Base.getproperty(
-    comp::Composite{P, <:NamedTuple{L}}, idx::Symbol
-) where {P, L}
-    # Need to check L directly, or else this does not constant-fold
-    idx ∈ L || return Zero()
+    comp::Composite{P, T}, idx::Symbol
+) where {P, L, T<:NamedTuple{L}}
+    # hasfield was added in v1.2
+    if VERSION ≥ v"1.2.0-DEV.272"
+        # hasfield more reliably constant-folds than checking L directly
+        hasfield(T, idx) || return Zero()
+    else
+        # Need to check L directly, or else this does not constant-fold
+        idx ∈ L || return Zero()
+    end
     return unthunk(getproperty(backing(comp), idx))
 end
 
