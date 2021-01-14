@@ -18,16 +18,6 @@ struct StructWithInvariant
     StructWithInvariant(x) = new(x, 2x)
 end
 
-function _unpack2tuple(comp)
-    a, b = comp
-    return (a, b)
-end
-
-function _unpacknamedtuple(comp)
-    x, y = comp.x, comp.y
-    return (x, y)
-end
-
 @testset "Composite" begin
     @testset "empty types" begin
         @test typeof(Composite{Tuple{}}()) == Composite{Tuple{}, Tuple{}}
@@ -89,10 +79,15 @@ end
 
         # Test indexed_iterate
         ctup = Composite{Tuple{Float64,Int64}}(2.0, 3)
+        _unpack2tuple = function(comp)
+            a, b = comp
+            return (a, b)
+        end
         @inferred _unpack2tuple(ctup)
         @test _unpack2tuple(ctup) === (2.0, 3)
 
         # Test getproperty is inferrable
+        _unpacknamedtuple = comp -> (comp.x, comp.y)
         if VERSION ≥ v"1.2"
             @inferred _unpacknamedtuple(Composite{Foo}(x=2, y=3.0))
             @inferred _unpacknamedtuple(Composite{Foo}(y=3.0))
