@@ -44,8 +44,8 @@ Use named local functions for the `pullback` in an `rrule`.
 # good:
 function rrule(::typeof(foo), x)
     Y = foo(x)
-    function foo_pullback(x̄)
-        return NO_FIELDS, bar(x̄)
+    function foo_pullback(Ȳ)
+        return NO_FIELDS, bar(Ȳ)
     end
     return Y, foo_pullback
 end
