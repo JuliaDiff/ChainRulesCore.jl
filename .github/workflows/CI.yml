@@ -33,7 +33,7 @@ jobs:
         include:
           # Add a 1.5 job because that's what Invenia actually uses
           - os: ubuntu-latest
-            version: 1.5
+            version: "1.5"
             arch: x64
     steps:
       - uses: actions/checkout@v2
