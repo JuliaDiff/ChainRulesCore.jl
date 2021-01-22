@@ -1,10 +1,14 @@
 # Design Notes: Why can you change the primal?
+#TODO generalize intro/title to ask why `rrule` is how it is, and in particular about changing primal
+
 These design notes are to help you understand why ChainRules allows the primal computation, to be changed.
 We will focus this discussion on reverse mode and `rrule`, though the same also applies to forwards mode and `frule`.
 In fact, it has a particular use in forward mode for efficiently calculating the pushforward of a differential equation solve via expanding the system of equations to also include the derivatives, and solving all at once.
 In forward mode it is related to the fusing of `frule` and `pushforward`.
 In reverse mode we can focus on the the distinct primal and gradient passes.
 
+
+## The Journey to `rrule`
 
 Let's imagine a different system for rules, one that doesn't let you do this.
 This system is what a lot of AD systems have --- it is what [Nabla.jl](https://github.com/invenia/Nabla.jl/)[^1] had originally.
@@ -26,6 +30,7 @@ pullback_at(::typeof(sin), x, y, ȳ) = ȳ * cos(x)
 Great. So far so good.
 As a short exercise the reader might like to implement the one for the [logistic sigmoid](https://en.wikipedia.org/wiki/Logistic_function#Derivative).
 It also works without issue.
+#TODO should I actually just include logistic sigmoid a second example though out, and write its code next the the code for `sin`?
 
 
 Now let's consider why we implement `rrules` like this in the first place.
@@ -75,21 +80,133 @@ pullback_at(::typeof(sin), x, y, ȳ, intermediates) = ȳ * intermediates.cx
 Cool!
 That lets us do what we wanted.
 We net deceased the time it takes to run the primal and gradient passes.
-We have now demostrated the title question of why we needed to be able to modify the primal pass.
+We have now demonstrated the title question of why we needed to be able to modify the primal pass.
 We will go into that more later, and have some more examples of use.
 But first lets continue to see how we go from that `augmented_primal` _ `pullback_at` to [`rrule`](@ref).
 
 
-One thing we notice when looking at
+One thing we notice when looking at `pullback_at` is it really is starting to have a lot of arguments.
+It had a fair few already, and now we are adding `intermediates` as well.
+Not to mention this is a fairly simple function, only 1 input, no keyword arguments.
+Furthermore, we don't even use all of them all the time.
+The original new code for pulling back `sin` no longer needs the `x`, and it never needed `y` (though `sigmoid` does).
+Having all this extra stuff means that the `pullback_at` function signature is long, and we are putting a bucnh of extra stuff on the tape, using more memory.
+What if we generalized the idea of the `intermediate` named tuple, and had a struct that just held anything we might want put on the tape.
+```julia
+struct PullbackMemory{P, S}
+  primal_function::P
+  state::S
+end
+# convenience constructor:
+Memory(primal_function; state...) = PullbackMemory(primal_function, state)
+# convenience accessor so that `m.x` is same as `m.state.x`
+Base.getproperty(m::PullbackMemory, propname) = getproperty(getfield(m, :state), propname)
+```
 
-# TODO:
- - Highlight that there is a bunch of arguments to `pullback_at`.
-    - What if we wrapped them all up in a structure, like we did for `intermidates`?
- - since `pullback_at` takes only 1 argument, other than `ȳ` so it would elegant if we make that struct callable, and had it do `pullback_at`
- - It seems not geat that we are  including a bunch of things like the `output` and the `input` as well as `intermidiates`, why not treat them just like `intermidates` and only include the ones we are going to use?
- - Specifying them is kind of annoying, as is keeping them in-sync between `augmented_primal` and `pullback_at`.
-    - solve by making it a closure
+So changing our API we have:
+```julia
+y = f(x)  # primal program
+y, pb = augmented_primal(f, x)
+x̄ = pullback_at(pb, ȳ)
+```
+which is much cleaner.
 
+Let's try writing with this now:
+```julia
+y = sin(x)
+function augmented_primal(::typeof(sin), x)
+  y, cx = sincos(x)
+  return y, PullbackMemory(sin; cx=cx)
+end
+
+pullback_at(pb::PullbackMemory{typeof(sin)}, ȳ) = ȳ * pb.cx
+```
+
+I think that looks pretty nice.
+
+One way we could make it look a bit nicer for using, is if the `PullbackMemory` was actually a callable object.
+since `pullback_at` only has the 2 arguments,
+and conceptually the `PullbackMemory` is a more fixed thing -- it is fully determined by the end of the primal pass,
+then during the reverse pass the argument `ȳ` is successively computed.
+We can do that via call overloading:
+```julia
+y = f(x)  # primal program
+y, pb = augmented_primal(f, x)
+x̄ = pb(ȳ)
+```
+and for `sin`:
+```julia
+y = sin(x)
+function augmented_primal(::typeof(sin), x)
+  y, cx = sincos(x)
+  return y, PullbackMemory(sin; cx=cx)
+end
+(pb::PullbackMemory)(ȳ) = ȳ * pb.cx
+```
+
+Those looking closely will spot what we have done here.
+We now have a object (`pb`) that acts on the cotangent of the output of the primal (`ȳ`) to give us the cotangent of the input of the primal function (`x̄`).
+_`pb` is not just the **memory** of state required for the `pullback`, it **is** the pullback._
+
+We have one final thing to do.
+Lets think about make the code easy to modify.
+Lets go back and think about the changes we would have to make to swap to using `sincos` from our original `sin` then `cos` way of writing.
+To rewrite that original formulation in the new pullback form we have:
+```julia
+y = sin(x)
+function augmented_primal(::typeof(sin), x)
+  y = sin(x)
+  return y, PullbackMemory(sin; x=x)
+end
+(pb::PullbackMemory)(ȳ) = ȳ * cos(pb.x)
+```
+To go from that to:
+```julia
+y = sin(x)
+function augmented_primal(::typeof(sin), x)
+  y, cx = sincos(x)
+  return y, PullbackMemory(sin; cx=cx)
+end
+(pb::PullbackMemory)(ȳ) = ȳ * pb.cx
+```
+we need to make a series of changes.
+We need to update what work is done in the primal to compute `cx`.
+We need to update what was stored in the `PullbackMemory`.
+And we need to update the the function that applies the pullback so it uses the new thing that was stored.
+It's important these thing all stay in sync.
+It's not to bad for this simple example with just 1 thing to remember.
+For more complicated multi-argument functions, like will be talked about below, you often end up needing to remember half a dozen things, like sizes and indices relating to each input/output.
+So it gets a little more fiddly to make sure you remember all the things you need to a and give them same name in both places.
+_Is there a way we can automatically just have all the things we use remembered for us?_
+
+Surprisingly for such a specific request, there actually is.
+This is a closure.
+A closure in julia is a callable structure, that automatically contains a field for every object from its parent scope that is used in its body.
+There are [incredible ways to abuse this](https://invenia.github.io/blog/2019/10/30/julialang-features-part-1#closures-give-us-classic-object-oriented-programming); but here we can in-fact use closures exactly as they are intended.
+Replacing `PullbackMemory` with a closure that works the same lets us avoid manually controlling what is remembers, _and_ lets us avoid writing separately the call overload.
+So we have for `sin`:
+```julia
+y = sin(x)
+function augmented_primal(::typeof(sin), x)
+  y, cx = sincos(x)
+  pb = ȳ -> cx * ȳ  # pullback closure. closes over `cs`
+  return y, pb
+end
+```
+
+Our `augmented_primal` is now with-in spitting distance of `rrule`.
+All that is left is a rename, and some extra conventions around multiple outputs and gradients with respect to callable objects.
+
+This has been a journey into how we get to [`rrule`](@ref) as it is defined in `ChainRulesCore`.
+We started with anu unaugmented primal function and a `pullback_at` function that only saw the inputs and outputs of the primal.
+We realized a key limitation of this was that we couldn't share computational work between the primal and and gradient passes.
+To solve this we introduced the notation of a some shared `intermediate` that is shared from the primal to the pullback.
+We successively improved that idea, first by making it a type that held everything that is needed for the pullback: the `PullbackMemory`.
+Which we then made callabled --- so it  was itself the pullback._
+Finally, we replaced that seperate callable structure with a closure, which kept everything in one place and made it more convenient.
+
+## More Shared State
+TODO
 
 
 
