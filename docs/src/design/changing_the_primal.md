@@ -198,15 +198,113 @@ Our `augmented_primal` is now with-in spitting distance of `rrule`.
 All that is left is a rename, and some extra conventions around multiple outputs and gradients with respect to callable objects.
 
 This has been a journey into how we get to [`rrule`](@ref) as it is defined in `ChainRulesCore`.
-We started with anu unaugmented primal function and a `pullback_at` function that only saw the inputs and outputs of the primal.
+We started with an unaugmented primal function and a `pullback_at` function that only saw the inputs and outputs of the primal.
 We realized a key limitation of this was that we couldn't share computational work between the primal and and gradient passes.
 To solve this we introduced the notation of a some shared `intermediate` that is shared from the primal to the pullback.
 We successively improved that idea, first by making it a type that held everything that is needed for the pullback: the `PullbackMemory`.
-Which we then made callabled --- so it  was itself the pullback._
-Finally, we replaced that seperate callable structure with a closure, which kept everything in one place and made it more convenient.
+Which we then made callable --- so it  was itself the pullback._
+Finally, we replaced that separate callable structure with a closure, which kept everything in one place and made it more convenient.
 
-## More Shared State
-TODO
+## More Shared Work Examples
+`sincos` is a nice simple example of when it is useful to share work between primal and the pullback.
+There are many others though.
+It is surprising that in so many cases it is reasonable to write the rules where the only shared information between the primal and the pullback is the primal inputs, or primal outputs.
+Under our formulation above, those primal inputs/outputs are shared information just like any other.
+Beyond this there are a number other decent applications.
+
+### `getindex`
+In julia (and many other numerical languages) indexing can take many more arguments than simply a couple of integers.
+For example, passing in boolean masking arrays (logical indexing), passing in ranges to do slices, etc.
+Converting them to plain integers, arrays of integers, and ranges is `Base.to_indices` is the first thing that `getindex` does.
+It then re-calls `getindex` with these simpler types to get the result.
+
+The result of pulling back the `getindex` operation is always an array that is all zeros,
+except for the elements that are selected, which are set to the appropriate sensitivities being pulled back.
+So identify which actual positions in the array are being gotten/set is common work to both primal and gradient computations.
+We really don't want to deal with fancy indexing types during the pullback, because there are weird edge cases like indexing in such a way that the same element is output twice (and thus we have 2 sensitivities we need to add to it).
+We can pull the `to_indices` out of the primal computation and remember the plain indexes to used to set them during the pullback.
+
+See the [code for this in ChainRules.jl](https://github.com/JuliaDiff/ChainRules.jl/blob/v0.7.49/src/rulesets/Base/indexing.jl)
+
+### `exp(::Matrix)`
+[Matrix Functions](https://en.wikipedia.org/wiki/Matrix_function) are functions that are generalized to operate on matrixes rather than scalars.
+Note that this is distinct from simply element-wise application of the function to the matrix's elements.
+[Matrix Exponential](https://en.wikipedia.org/wiki/Matrix_exponential) `exp(::Matrix)` is one particularly important matrix function.
+
+
+[Al-Mohy, Awad H. and Higham, Nicholas J. (2009) _Computing the Fréchet Derivative of the Matrix Exponential, with an application to Condition Number Estimation_. SIAM Journal On Matrix Analysis and Applications., 30 (4). pp. 1639-1657. ISSN 1095-7162](http://eprints.maths.manchester.ac.uk/1218/), published a method for this.
+It is pretty complex and very cool.
+To quote it's abstract (emphasis mine):
+
+> The algorithm is derived from the scaling and squaring method by differentiating the Padé approximants and the squaring recurrence, **re-using quantities computed during the evaluation of the Padé approximant**, and intertwining the recurrences in the squaring phase.
+
+Julia does in fact use a Padé approximation to compute `exp(::Matrix)`.
+So we can extract the code for that into our augmented primal, and add remembering the intermediate quantities that are to be used.
+See the [code for this in ChainRules.jl](https://github.com/JuliaDiff/ChainRules.jl/blob/v0.7.49/src/rulesets/LinearAlgebra/matfun.jl)
+
+
+An interesting thing here that may be of concern to some:
+if Julia changes the algorithm it it uses to compute `exp(::Matrix)` then during an AD primal pass, it will continue to use the old Padé approximation based algorithm.
+This is a real thing that might happen, there are many other algorithms that can compute the matrix exponential.
+Further, perhaps there might be an improvement to the exact coefficient or cut-offs used by julia's current Padé approximation.
+This is not a breaking change on Julia's behalf: [exact floating point numerical values are not generally considered part of the SemVer-bound API](http://colprac.sciml.ai/#changes-that-are-not-considered-breaking).
+Rather only the general accuracy of the computed value relative to the true mathematical value (e.g. for common scalar operations Julia promises 1ULP).
+
+This change will result in the output of the AD primal pass not being exactly equal to that that would be seen from just running the primal code.
+It will still be accurate because the current implementation is accurate, but it will be different.
+It is [our argument](https://forums.swift.org/t/agreement-of-valuewithdifferential-and-value/31869) that in general this should be considered acceptable.
+As long as it is in general about as accurate as the unaugmented primal it should be acceptable.
+E.g. it might overshoot for some values the unaugmented primal undershoots for.
+
+
+### `eigvals`
+`eigvals` is a real case where the algorithm for the augmented primal, and the original primal _is already different today_.
+To compute the pullback of `eigvals` you need to know not only the eigenvalues, but also the eigenvectors.
+the `eigen` function computes both, so that is used in augmented primal.
+See the [code for this in ChainRules.jl](https://github.com/JuliaDiff/ChainRules.jl/blob/v0.7.49/src/rulesets/LinearAlgebra/factorization.jl#L209-L218).
+If we could not compute remember the eigenvectors in the primal pass we would have to call `eigen` in the gradient pass anyway, and fully recomputed eigenvectors and eigenvalues; over doubling the total work.
+
+However, if you trace this down, it actually used a different algorithm.
+
+`eigvals` basically wraps `LAPACK.syevr!('N', ...)`
+which goes through [DSYEVR](http://www.netlib.org/lapack/explore-html/d2/d8a/group__double_s_yeigen_gaeed8a131adf56eaa2a9e5b1e0cce5718.html)
+and eventually calls [DSTERF](http://www.netlib.org/lapack/explore-html/d2/d24/group__aux_o_t_h_e_rcomputational_gaf0616552c11358ae8298d0ac18ac023c.html#gaf0616552c11358ae8298d0ac18ac023c)
+which uses _"Pal-Walker-Kahan variant of the QL or QR algorithm."_ to compute eigenvalues
+
+In contrast, `eigen` wraps `LAPACK.syevr!('V',...)`
+which also goes through [DSYEVR](http://www.netlib.org/lapack/explore-html/d2/d8a/group__double_s_yeigen_gaeed8a131adf56eaa2a9e5b1e0cce5718.html)
+but eventually calls [DSTEMR](http://www.netlib.org/lapack/explore-html/da/dba/group__double_o_t_h_e_rcomputational_ga14daa3ac4e7b5d3712244f54ce40cc92.html#ga14daa3ac4e7b5d3712244f54ce40cc92)
+which calculates eigenvalues _"either by bisection or the dqds algorithm."_.
+
+Both of these are very good algorithms.
+LAPACK has had decades of work by experts and is one of the most trusted libraries for linear algebra.
+But they are different algorithms that give different results.
+The differences in practices are around $10^{-15}$, which while very small on absolute terms
+are as far as `Float64` is concerned a very real difference.
+
+### Matrix Division
+Roughly speaking:
+`Y=A\B` is the function that finds the least-square solution to `YA ≈ B`.
+When solving such a system, the efficient way to do so is to factorize `A` into an appropriate factorized form such as `Cholesky` or `QR` etc,
+then perform the `\` operation on the factorized form.
+The pullback of `A\B` with respect to `B` is `Ȳ-> A' \ Ȳ`.
+It should be noted that that involves computing the factorization of `A'` (the adjoint of `A`).
+In this computation the factorization of the original `A` can reused.
+Doing so can give a 4x speed-up.
+
+We don't have this in ChainRules.jl yet, because Julia is missing some definitions of `adjoint` of factorizations ([JuliaLang/julia#38293](https://github.com/JuliaLang/julia/issues/38293)).
+I have been promised them for Julia v1.7 though.
+You can see what the code would look like in [PR #302](https://github.com/JuliaDiff/ChainRules.jl/pull/302).
+
+
+# Conclusion
+This document has explained why [`rrule`](@ref) is the way it is.
+In particular it has highlighted why the primal computation is able to be changed from simply calling the function.
+Futher, it has explain where `rrule` returns a closure.
+It has highlighted several places in ChainRules.jl where this has allowed us to have significantly improved performance.
+Being able to change the primal computation is practically essential for a high performance AD system.
+
+
 
 
 
