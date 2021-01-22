@@ -119,24 +119,18 @@ It is very easy to check gradients or derivatives with a computer algebra system
 
 ## Which functions need rules?
 
-In principle, a perfect AD system only needs rules for basic operations and can infer the
-rules for more complicated functions automatically.
+In principle, a perfect AD system only needs rules for basic operations and can infer the rules for more complicated functions automatically.
 In practice, performance needs to be considered as well.
 
-Some functions use `ccall` internally for performance reasons, for example [`^`]
-(https://github.com/JuliaLang/julia/blob/v1.5.3/base/math.jl#L886).
+Some functions use `ccall` internally for performance reasons, for example [`^`](https://github.com/JuliaLang/julia/blob/v1.5.3/base/math.jl#L886).
 These functions can not be differentiated through by AD systems, and need custom rules.
 
-Other functions can in principle be differentiated through by an AD system, but there is a
-mathematical insight that can dramatically improve the computation of the derivative.
-An example is numerical integration, where writing a rule removes the need to perform
-AD through numerical integration.
+Other functions can in principle be differentiated through by an AD system, but there exists a mathematical insight that can dramatically improve the computation of the derivative.
+An example is numerical integration, where writing a rule removes the need to perform AD through numerical integration.
 
 Furthermore, AD systems make different trade-offs in performance due to their design.
-This means that a certain rule will help one AD system, but not improve (and also not harm)
-another.
-Below, we list some patterns relevant for the [Zygote.jl](https://github.com/FluxML/Zygote.jl)
-AD system.
+This means that a certain rule will help one AD system, but not improve (and also not harm) another.
+Below, we list some patterns relevant for the [Zygote.jl](https://github.com/FluxML/Zygote.jl) AD system.
 
 ### Patterns that need rules in [Zygote.jl](https://github.com/FluxML/Zygote.jl)
 
@@ -262,9 +256,8 @@ julia> @btime gradient(mse_cr, y, ŷ)
 
 #### Inplace accumulation
 
-Inplace accumulation of gradients is slow in `Zygote`. The issue, demonstrated in the
-folowing example, is that the gradient of `getindex` allocates an array of zeros with
-a single non-zero element. 
+Inplace accumulation of gradients is slow in `Zygote`.
+The issue, demonstrated in the folowing example, is that the gradient of `getindex` allocates an array of zeros with a single non-zero element. 
 ```julia
 function inplace(array)
     x = array[1]
@@ -287,7 +280,7 @@ function ChainRulesCore.rrule(::typeof(inplace_cr), a)
 end
 ```
 turns out to be significantly faster
-```
+```julia
 julia> @btime gradient(inplace, rand(30))
   424.510 ns (9 allocations: 2.06 KiB)
 
