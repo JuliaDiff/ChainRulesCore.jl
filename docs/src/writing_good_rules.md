@@ -231,8 +231,8 @@ takes a lot longer to AD through
 ```julia
 julia> y = rand(30)
 julia> ŷ = rand(30)
-julia> @btime gradient(mse, y, ŷ)
-  39.561 μs (1007 allocations: 65.33 KiB)
+julia> @btime gradient(mse, $y, $ŷ)
+  38.180 μs (993 allocations: 65.00 KiB)
 ```
 than if we supply an `rrule`, (restart the REPL after calling `gradient`)
 ```julia
@@ -248,8 +248,8 @@ end
 ```
 which is much faster
 ```julia
-julia> @btime gradient(mse, y, ŷ)
-  1.293 μs (18 allocations: 1.09 KiB)
+julia> @btime gradient(mse, $y, $ŷ)
+  143.697 ns (2 allocations: 672 bytes)
 ```
 
 #### Inplace accumulation
