@@ -106,7 +106,6 @@ See docstrings for the comprehensive usage instructions.
 [ChainRulesTestUtils.jl](https://github.com/JuliaDiff/ChainRulesTestUtils.jl)
 provides tools for writing tests based on [FiniteDifferences.jl](https://github.com/JuliaDiff/FiniteDifferences.jl).
 Take a look at the documentation or the existing [ChainRules.jl](https://github.com/JuliaDiff/ChainRules.jl) tests to see how to write the tests.
-It's easy!
 
 !!! warning
     Don't use analytical derivations for derivatives in the tests.
@@ -125,7 +124,7 @@ rules for more complicated functions automatically.
 In practice, performance needs to be considered as well.
 
 Some functions use `ccall` internally for performance reasons, for example [`^`]
-(https://github.com/JuliaLang/julia/blob/380abc808ad8fbd72a7a57f6ac0f811b7903046d/base/math.jl#L922).
+(https://github.com/JuliaLang/julia/blob/v1.5.3/base/math.jl#L886).
 These functions can not be differentiated through by AD systems, and need custom rules.
 
 Other functions can in principle be differentiated through by an AD system, but there is a
@@ -136,15 +135,15 @@ AD through numerical integration.
 Furthermore, AD systems make different trade-offs in performance due to their design.
 This means that a certain rule will help one AD system, but not improve (and also not harm)
 another.
-Below, we list some patterns relevant for the [`Zygote`](https://github.com/FluxML/Zygote.jl)
+Below, we list some patterns relevant for the [Zygote.jl](https://github.com/FluxML/Zygote.jl)
 AD system.
 
-### Patterns that need rules in [`Zygote`](https://github.com/FluxML/Zygote.jl)
+### Patterns that need rules in [Zygote.jl](https://github.com/FluxML/Zygote.jl)
 
 There are a few classes of functions that Zygote can not differentiate through.
 Custom rules will need to be written for these to make AD work.
 
-Other patterns can be AD'ed through, but they are slow.
+Other patterns can be AD'ed through, but the backward pass performance can be greatly improved by writing a rule.
 
 #### Functions which mutate arrays
 For example,
@@ -295,5 +294,4 @@ julia> @btime gradient(inplace, rand(30))
 julia> @btime gradient(inplace_cr, rand(30))
   192.818 ns (3 allocations: 784 bytes)
 ```
-
 
