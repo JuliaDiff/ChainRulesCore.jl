@@ -146,7 +146,6 @@ function addone!(array)
     array .+= 1
     return sum(array)
 end
-addone!_cr(array) = addone!(array)
 ```
 complains that
 ```julia
@@ -154,27 +153,28 @@ julia> using Zygote
 julia> gradient(addone!, a)
 ERROR: Mutating arrays is not supported
 ```
-However, upon adding the `rrule` (restart the REPL first)
+However, upon adding the `rrule` (restart the REPL after calling `gradient`)
 ```julia
-function ChainRules.rrule(::typeof(addone!_cr), a)
-    y = addone!_cr(a)
-    function addone!_cr_pullback(ȳ)
-        return (NO_FIELDS, ones(length(a)))
+function ChainRules.rrule(::typeof(addone!), a)
+    y = addone!(a)
+    function addone!_pullback(ȳ)
+        return NO_FIELDS, ones(length(a))
     end
-    return y, addone!_cr_pullback
+    return y, addone!_pullback
 end
 ```
 the gradient can be evaluated:
 ```julia
-julia> gradient(addone!_cr, a)
+julia> gradient(addone!, a)
 ([1.0, 1.0, 1.0],)
 ```
 
-!!! note "Why is there an extra `addone!_cr` function defined?"
-    This is only done for illustration purposes so that it is possible to follow the steps in the REPL.
+!!! note "Why restarting REPL after calling `gradient`?"
     When `gradient` is called in `Zygote` for a function with no `rrule` defined, a backward pass for the function call is generated and cached.
     When `gradient` is called for the second time on the same function signature, the backward pass is reused without checking whether an an `rrule` has been defined between the two calls to `gradient`.
+    
     If an `rrule` is defined before the first call to `gradient` it should register the rule and use it, but that prevents comparing what happens before and after the `rrule` is defined.
+    To compare both versions with and without an `rrule` in the REPL simultaneously, define a function `f(x) = <body>` (no `rrule`), another function `f_cr(x) = f(x)`, and an `rrule` for `f_cr`.
 
 #### Exception handling
 
@@ -189,26 +189,25 @@ function exception(x)
         throw(e)
     end
 end
-exception_cr(x) = exception(x)
 ```
 does not work
 ```julia
 julia> gradient(exception, 3.0)
 ERROR: Compiling Tuple{typeof(exception),Int64}: try/catch is not supported.
 ```
-without an `rrule` defined
+without an `rrule` defined (restart the REPL after calling `gradient`)
 ```julia
-function ChainRulesCore.rrule(::typeof(exception_cr), x)
-    y = exception_cr(x)
-    function exception_cr_pullback(ȳ)
-        return (NO_FIELDS, 2*x)
+function ChainRulesCore.rrule(::typeof(exception), x)
+    y = exception(x)
+    function exception_pullback(ȳ)
+        return NO_FIELDS, 2*x
     end
-    return y, exception_cr_pullback
+    return y, exception_pullback
 end
 ```
 
 ```julia
-julia> gradient(exception_cr, 3.0)
+julia> gradient(exception, 3.0)
 (6.0,)
 ```
 
@@ -227,7 +226,6 @@ function mse(y, ŷ)
     end
     return s/N
 end
-mse_cr(y, ŷ) = mse(y, ŷ)
 ```
 takes a lot longer to AD through
 ```julia
@@ -236,21 +234,21 @@ julia> ŷ = rand(30)
 julia> @btime gradient(mse, y, ŷ)
   39.561 μs (1007 allocations: 65.33 KiB)
 ```
-than if we supply an `rrule`,
+than if we supply an `rrule`, (restart the REPL after calling `gradient`)
 ```julia
-function ChainRules.rrule(::typeof(mse_cr), x, x̂)
-    output = mse_cr(x, x̂)
-    function mse_cr_pullback(ȳ)
+function ChainRules.rrule(::typeof(mse), x, x̂)
+    output = mse(x, x̂)
+    function mse_pullback(ȳ)
         N = length(x)
         g = (2 ./ N) .* (x .- x̂) .* ȳ
-        return (NO_FIELDS, g, -g)
+        return NO_FIELDS, g, -g
     end
-    return output, mse_cr_pullback
+    return output, mse_pullback
 end
 ```
 which is much faster
 ```julia
-julia> @btime gradient(mse_cr, y, ŷ)
+julia> @btime gradient(mse, y, ŷ)
   1.293 μs (18 allocations: 1.09 KiB)
 ```
 
@@ -265,12 +263,15 @@ function inplace(array)
     z = array[3]
     return x+y+z
 end
-inplace_cr(a) = inplace(a)
 ```
-Computing the gradient with only a single array allocation using an `rrule`
 ```julia
-function ChainRulesCore.rrule(::typeof(inplace_cr), a)
-    y = inplace_cr(a)
+julia> @btime gradient(inplace, rand(30))
+  424.510 ns (9 allocations: 2.06 KiB)
+```
+Computing the gradient with only a single array allocation using an `rrule` (restart the REPL after calling `gradient`)
+```julia
+function ChainRulesCore.rrule(::typeof(inplace), a)
+    y = inplace(a)
     function inplace_pullback(ȳ)
         grad = zeros(length(a))
         grad[1:3] .+= 1.0
@@ -279,12 +280,9 @@ function ChainRulesCore.rrule(::typeof(inplace_cr), a)
     return y, inplace_pullback
 end
 ```
-turns out to be significantly faster
+turns out to be significantly faster 
 ```julia
 julia> @btime gradient(inplace, rand(30))
-  424.510 ns (9 allocations: 2.06 KiB)
-
-julia> @btime gradient(inplace_cr, rand(30))
   192.818 ns (3 allocations: 784 bytes)
 ```
 
