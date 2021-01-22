@@ -257,7 +257,7 @@ julia> @btime gradient(mse, y, ŷ)
 Inplace accumulation of gradients is slow in `Zygote`.
 The issue, demonstrated in the folowing example, is that the gradient of `getindex` allocates an array of zeros with a single non-zero element. 
 ```julia
-function inplace(array)
+function sum3(array)
     x = array[1]
     y = array[2]
     z = array[3]
@@ -265,24 +265,24 @@ function inplace(array)
 end
 ```
 ```julia
-julia> @btime gradient(inplace, rand(30))
+julia> @btime gradient(sum3, rand(30))
   424.510 ns (9 allocations: 2.06 KiB)
 ```
 Computing the gradient with only a single array allocation using an `rrule` (restart the REPL after calling `gradient`)
 ```julia
-function ChainRulesCore.rrule(::typeof(inplace), a)
-    y = inplace(a)
-    function inplace_pullback(ȳ)
+function ChainRulesCore.rrule(::typeof(sum3), a)
+    y = sum3(a)
+    function sum3_pullback(ȳ)
         grad = zeros(length(a))
         grad[1:3] .+= 1.0
         return NO_FIELDS, grad
     end
-    return y, inplace_pullback
+    return y, sum3_pullback
 end
 ```
 turns out to be significantly faster 
 ```julia
-julia> @btime gradient(inplace, rand(30))
+julia> @btime gradient(sum3, rand(30))
   192.818 ns (3 allocations: 784 bytes)
 ```
 
