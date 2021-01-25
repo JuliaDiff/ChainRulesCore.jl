@@ -21,19 +21,24 @@ y = f(x)  # primal program
 x̄ = pullback_at(f, x, y, ȳ)
 ```
 
-Let's write one:
+Let's write `sin`:
 ```julia
 y = sin(x)
 pullback_at(::typeof(sin), x, y, ȳ) = ȳ * cos(x)
 ```
 
 Great. So far so good.
-As a short exercise the reader might like to implement the one for the [logistic sigmoid](https://en.wikipedia.org/wiki/Logistic_function#Derivative).
-It also works without issue.
-#TODO should I actually just include logistic sigmoid a second example though out, and write its code next the the code for `sin`?
+How about the [logistic sigmoid](https://en.wikipedia.org/wiki/Logistic_function#Derivative).
+```julia
+σ(x) = 1/(1 + exp(-x))  # = exp(x)/(1+exp(x))
+y = σ(x)
+pullback_at(::typeof(σ), x, y, ȳ) = ȳ * y * σ(-x)  # i.e. ȳ * σ(x) * σ(-x)
+```
+Notice that here we are in the `pullback_at` not only using `x` but also `y` the primal output.
+This is a nice bit of symmetry that shows up around `exp`.
 
 
-Now let's consider why we implement `rrules` like this in the first place.
+Now let's consider why we implement `rrules` in the first place.
 One key reason, [^3] is to allow us to insert our domain knowledge to do better than the AD would do just by breaking everything down into `+` and `*` etc.
 What insights do we have about `sin` and `cos`?
 Here is one:
@@ -46,14 +51,55 @@ julia> @btime cos(x) setup=(x=rand());
 
 julia> 3.838 + 4.795
 8.633
-
+```
+vs computing both together:
+```julia
 julia> @btime sincos(x) setup=(x=rand());
   6.028 ns (0 allocations: 0 bytes)
 ```
-It is \~30%[^4] faster to compute `sin` and `cos` at the same time via `sincos` than it is to compute them one after the other.
+
+What about logistic sigmoid?
+We note that the two values we need are `σ(x)` and `σ(-x)`
+If we write these as:
+$\sigma(x) = \frac{e^x}{1+e^x}$ and
+$\sigma(-x) = \frac{1}{1+e^x}$
+then we see they have the common term $e^x$.
+`exp(x)` is a much more expensive operation than `+` and `/`.
+So by using this rephrasing we can save time, if we can reuse that `exp(x)`.
+If we have to compute it twice:
+```julia
+julia> @btime 1/(1+exp(x)) setup=(x=rand());
+  5.622 ns (0 allocations: 0 bytes)
+
+julia> @btime 1/(1+exp(-x)) setup=(x=rand());
+  6.036 ns (0 allocations: 0 bytes)
+
+julia> 5.622 + 6.036
+11.658
+```
+
+vs reusing `exp(x)`:
+```julia
+julia> @btime exp(x) setup=(x=rand());
+  5.367 ns (0 allocations: 0 bytes)
+
+julia> @btime ex/(1+ex) setup=(ex=exp(rand()));
+  1.255 ns (0 allocations: 0 bytes)
+
+julia> @btime 1/(1+ex) setup=(ex=exp(rand()));
+  1.256 ns (0 allocations: 0 bytes)
+
+julia> 5.367 + 1.255 + 1.256
+7.878
+```
+
+So we are talking about a 30-40%[^4] speed-up from these optimizations.
+It's faster to  compute `sin` and `cos` at the same time via `sincos` than it is to compute them one after the other.
+And it is faster to reuse the `exp(x)` in computing `σ(x)` and `σ(-x)`.
 How can we incorporate this insight into our system?
-We know that we can compute the `cos(x)` at the same time as the `sin(x)` is computed in primal, because it only depends on `x` --- we don't need to know `ȳ`.
+We know we can compute both of these in the primal, because they only depend on `x` --- we don't need to know `ȳ`.
 But there is nowhere to put it that is accessible both to the primal pass and the gradient pass code.
+
 
 What if we introduced some variable called `intermediates` that is also recorded onto the tape during the primal pass?
 We would need to be able to modify the primal pass to do this, so that we can actually put the data into the `intermediates`.
@@ -66,9 +112,8 @@ y, intermediates = augmented_primal(f, x)
 x̄ = pullback_at(f, x, y, ȳ, intermediates)
 ```
 
-Let's try writing this now:
+Let's try writing this now for `sin`
 ```julia
-y = sin(x)
 function augmented_primal(::typeof(sin), x)
   y, cx = sincos(x)
   return y, (; cx=cx)  # use a NamedTuple for the intermediates
@@ -76,6 +121,17 @@ end
 
 pullback_at(::typeof(sin), x, y, ȳ, intermediates) = ȳ * intermediates.cx
 ```
+and for the logistic sigmoid:
+```julia
+function augmented_primal(::typeof(σ), x)
+  ex = exp(x)
+  y = ex/(1 + ex)
+  return y, (; ex=ex)  # use a NamedTuple for the intermediates
+end
+
+pullback_at(::typeof(σ), x, y, ȳ, intermediates) = ȳ * y /(1 + intermediates.ex)
+```
+
 
 Cool!
 That lets us do what we wanted.
@@ -111,9 +167,8 @@ x̄ = pullback_at(pb, ȳ)
 ```
 which is much cleaner.
 
-Let's try writing with this now:
+Let's try writing with this for `sin`:
 ```julia
-y = sin(x)
 function augmented_primal(::typeof(sin), x)
   y, cx = sincos(x)
   return y, PullbackMemory(sin; cx=cx)
@@ -121,6 +176,18 @@ end
 
 pullback_at(pb::PullbackMemory{typeof(sin)}, ȳ) = ȳ * pb.cx
 ```
+and for the logistic sigmoid:
+```julia
+function augmented_primal(::typeof(σ), x)
+  ex = exp(x)
+  y = ex/(1 + ex)
+  return y, PullbackMemory(σ; y=y, ex=ex)
+end
+
+pullback_at(pb::PullbackMemory{typeof(σ)}, ȳ) = ȳ * pb.y/(1 + pb.ex)
+```
+
+
 
 I think that looks pretty nice.
 
@@ -136,12 +203,21 @@ x̄ = pb(ȳ)
 ```
 and for `sin`:
 ```julia
-y = sin(x)
 function augmented_primal(::typeof(sin), x)
   y, cx = sincos(x)
   return y, PullbackMemory(sin; cx=cx)
 end
 (pb::PullbackMemory)(ȳ) = ȳ * pb.cx
+```
+and for the logistic sigmoid:
+```julia
+function augmented_primal(::typeof(σ), x)
+  ex = exp(x)
+  y = ex/(1 + ex)
+  return y, PullbackMemory(σ; y=y, ex=ex)
+end
+
+(pb::PullbackMemory{typeof(σ)})(ȳ) = ȳ * pb.y/(1 + pb.ex)
 ```
 
 Those looking closely will spot what we have done here.
@@ -150,10 +226,9 @@ _`pb` is not just the **memory** of state required for the `pullback`, it **is**
 
 We have one final thing to do.
 Lets think about make the code easy to modify.
-Lets go back and think about the changes we would have to make to swap to using `sincos` from our original `sin` then `cos` way of writing.
-To rewrite that original formulation in the new pullback form we have:
+Lets go back and think about the changes we would have to make to this swap from our original way of writing.
+For `sin` to rewrite that original formulation in the new pullback form we have:
 ```julia
-y = sin(x)
 function augmented_primal(::typeof(sin), x)
   y = sin(x)
   return y, PullbackMemory(sin; x=x)
@@ -162,37 +237,66 @@ end
 ```
 To go from that to:
 ```julia
-y = sin(x)
 function augmented_primal(::typeof(sin), x)
   y, cx = sincos(x)
   return y, PullbackMemory(sin; cx=cx)
 end
 (pb::PullbackMemory)(ȳ) = ȳ * pb.cx
 ```
-we need to make a series of changes.
-We need to update what work is done in the primal to compute `cx`.
+
+and for logistic sigmoid, the original would have been:
+```julia
+function augmented_primal(::typeof(σ), x)
+  y = σ(x)
+  return y, PullbackMemory(σ; y=y, x=x)
+end
+(pb::PullbackMemory{typeof(σ)})(ȳ) = ȳ * pb.y * σ(-pb.x)
+```
+to get to:
+```julia
+function augmented_primal(::typeof(σ), x)
+  ex = exp(x)
+  y = ex/(1 + ex)
+  return y, PullbackMemory(σ; y=y, ex=ex)
+end
+(pb::PullbackMemory{typeof(σ)})(ȳ) = ȳ * pb.y/(1 + pb.ex)
+```
+(NB: there is actually a further optimization that can be made to the logistic sigmoid, to avoid remembering two things and just remember one. As an exercise to the reader, consider how the code would need to be changed and where.)
+
+We need to make a series of changes.
+We need to update what work is done in the primal to compute the intermediate values.
 We need to update what was stored in the `PullbackMemory`.
 And we need to update the the function that applies the pullback so it uses the new thing that was stored.
 It's important these parts all stay in sync.
-It's not too bad for this simple example with just one thing to remember.
+It's not too bad for this simple example with just one or two things to remember.
 For more complicated multi-argument functions, like will be talked about below, you often end up needing to remember half a dozen things, like sizes and indices relating to each input/output.
 So it gets a little more fiddly to make sure you remember all the things you need to a and give them same name in both places.
 _Is there a way we can automatically just have all the things we use remembered for us?_
 
 Surprisingly for such a specific request, there actually is.
 This is a closure.
-A closure in julia is a callable structure, that automatically contains a field for every object from its parent scope that is used in its body.
+A closure in Julia is a callable structure, that automatically contains a field for every object from its parent scope that is used in its body.
 There are [incredible ways to abuse this](https://invenia.github.io/blog/2019/10/30/julialang-features-part-1#closures-give-us-classic-object-oriented-programming); but here we can in-fact use closures exactly as they are intended.
 Replacing `PullbackMemory` with a closure that works the same way lets us avoid having to manually control what is remembered, _and_ lets us avoid separately writing the call overload.
 So we have for `sin`:
 ```julia
-y = sin(x)
 function augmented_primal(::typeof(sin), x)
   y, cx = sincos(x)
   pb = ȳ -> cx * ȳ  # pullback closure. closes over `cx`
   return y, pb
 end
 ```
+and for logistic sigmoid:
+```julia
+function augmented_primal(::typeof(σ), x)
+  ex = exp(x)
+  y = ex/(1 + ex)
+  pb = ȳ -> ȳ * y/(1 + ex)  # pullback closure. closes over `y` and `ex`
+  return y, pb
+end
+```
+This is pretty clean now.
+
 
 Our `augmented_primal` is now with-in spitting distance of `rrule`.
 All that is left is a rename, and some extra conventions around multiple outputs and gradients with respect to callable objects.
@@ -206,14 +310,14 @@ Which we then made callable --- so it  was itself the pullback.
 Finally, we replaced that separate callable structure with a closure, which kept everything in one place and made it more convenient.
 
 ## More Shared Work Examples
-`sincos` is a nice simple example of when it is useful to share work between primal and the pullback.
+`sin` and the logistic sigmoid are a nice simple examples of when it is useful to share work between primal and the pullback.
 There are many others though.
-It is surprising that in so many cases it is reasonable to write the rules where the only shared information between the primal and the pullback is the primal inputs, or primal outputs.
+It is actually surprising that in so many cases it is reasonable to write the rules where the only shared information between the primal and the pullback is the primal inputs  (like our original `sin`), or primal outputs (like our original logistic sigmoid).
 Under our formulation above, those primal inputs/outputs are shared information just like any other.
 Beyond this there are a number other decent applications.
 
 ### `getindex`
-In julia (and many other numerical languages) indexing can take many more arguments than simply a couple of integers.
+In Julia (and many other numerical languages) indexing can take many more arguments than simply a couple of integers.
 For example, passing in boolean masking arrays (logical indexing), passing in ranges to do slices, etc.
 Converting them to plain integers, arrays of integers, and ranges is `Base.to_indices` is the first thing that `getindex` does.
 It then re-calls `getindex` with these simpler types to get the result.
@@ -306,8 +410,6 @@ Being able to change the primal computation is practically essential for a high 
 
 
 
-
-
 [^1]:
     I am not just picking on Nabla randomly.
     Many of the core developers of ChainRules worked on Nabla prior.
@@ -319,13 +421,13 @@ Being able to change the primal computation is practically essential for a high 
     Another key reason is if the operations is a primitive that is not defined in terms of more basic operations.
     In many languages this is the case for `sin`; where the actual implementation is in some separate `libm.so`.
     But actually [`sin` in Julia is defined in terms of a polynomial](https://github.com/JuliaLang/julia/blob/caeaceff8af97565334f35309d812566183ec687/base/special/trig.jl).
-    It's fairly vanilla julia code.
+    It's fairly vanilla Julia code.
     It shouldn't be too hard for an AD that only knows about basic operations like `+` and `*` to AD through it.
     Though that will incur something that looks a lot like truncation error (in apparent violation of Griewank and Walther's 0th Rule of AD).
     In anycase, that is another discussion, for another day.
 
 [^4]:
-    Sure, this is small-fries and depending on julia version might just get solved by the optimizer[^5], but go with it for the sake of example.
+    Sure, this is small-fries and depending on Julia version might just get solved by the optimizer[^5], but go with it for the sake of example.
 
 [^5]:
     To be precise this is very likely to be solved by the optimizer inlining both and then performing common subexpression elimination, with the result that it generates the code for `sincos` just form having `sin` and `cos` inside the same function.
