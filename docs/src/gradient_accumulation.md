@@ -118,7 +118,7 @@ Where-as with the action representation that `InplaceableThunk`s provide, there 
 One can see [the `getindex` rule in ChainRules.jl for the implementation](https://github.com/JuliaDiff/ChainRules.jl/blob/v0.7.49/src/rulesets/Base/indexing.jl).
 
 
-### MatMul (`*`)
+#### matmul etc (`*`)
 Multiplication of scalars/vectors/matrixes of compatible dimentions can all also have their derivatives represented as a `InplaceableThunk`.
 These tend to pivot around that `add!` action being defined along the lines of:
 `X̄ -> mul!(X̄, A', Ȳ, true, true)`.
