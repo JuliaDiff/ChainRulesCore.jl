@@ -1,7 +1,7 @@
 # Design Notes: Why can you change the primal?
 #TODO generalize intro/title to ask why `rrule` is how it is, and in particular about changing primal
 
-These design notes are to help you understand why ChainRules allows the primal computation, to be changed.
+These design notes are to help you understand why ChainRules allows the primal computation to be changed.
 We will focus this discussion on reverse mode and `rrule`, though the same also applies to forwards mode and `frule`.
 In fact, it has a particular use in forward mode for efficiently calculating the pushforward of a differential equation solve via expanding the system of equations to also include the derivatives, and solving all at once.
 In forward mode it is related to the fusing of `frule` and `pushforward`.
@@ -53,12 +53,12 @@ julia> @btime sincos(x) setup=(x=rand());
 It is \~30%[^4] faster to compute `sin` and `cos` at the same time via `sincos` than it is to compute them one after the other.
 How can we incorporate this insight into our system?
 We know that we can compute the `cos(x)` at the same time as the `sin(x)` is computed in primal, because it only depends on `x` --- we don't need to know `ȳ`.
-but there is no-where to put it that is accessible both to the primal pass, and the gradient pass code.
+But there is nowhere to put it that is accessible both to the primal pass and the gradient pass code.
 
-What if we introduced some variable called `intermediates` that is also record onto the tape during the primal pass?
-We would need to be able to modify the primal pass to do this, so we can actually put the data into the `intermediates`.
-So we will introduce a function: `augmented_primal`, that will return the primal output, plus the `intermediates` that we want to reuse in the gradient pass.
-Then we will make our AD system replace calls to the primal with calls to the `augmented_primal` of the primal function; and take care of all the bookkeeping.
+What if we introduced some variable called `intermediates` that is also recorded onto the tape during the primal pass?
+We would need to be able to modify the primal pass to do this, so that we can actually put the data into the `intermediates`.
+So we will introduce a function: `augmented_primal`, that will return the primal output plus the `intermediates` that we want to reuse in the gradient pass.
+Then we will make our AD system replace calls to the primal with calls to the `augmented_primal` of the primal function and take care of all the bookkeeping.
 So that would look like:
 ```julia
 y = f(x)  # primal program
@@ -79,10 +79,10 @@ pullback_at(::typeof(sin), x, y, ȳ, intermediates) = ȳ * intermediates.cx
 
 Cool!
 That lets us do what we wanted.
-We net deceased the time it takes to run the primal and gradient passes.
+We net decreased the time it takes to run the primal and gradient passes.
 We have now demonstrated the title question of why we needed to be able to modify the primal pass.
 We will go into that more later, and have some more examples of use.
-But first lets continue to see how we go from that `augmented_primal` _ `pullback_at` to [`rrule`](@ref).
+But first let's continue to see how we go from that `augmented_primal` to `pullback_at` to [`rrule`](@ref).
 
 
 One thing we notice when looking at `pullback_at` is it really is starting to have a lot of arguments.
@@ -90,7 +90,7 @@ It had a fair few already, and now we are adding `intermediates` as well.
 Not to mention this is a fairly simple function, only 1 input, no keyword arguments.
 Furthermore, we don't even use all of them all the time.
 The original new code for pulling back `sin` no longer needs the `x`, and it never needed `y` (though `sigmoid` does).
-Having all this extra stuff means that the `pullback_at` function signature is long, and we are putting a bucnh of extra stuff on the tape, using more memory.
+Having all this extra stuff means that the `pullback_at` function signature is long, and we are putting a bunch of extra stuff on the tape, using more memory.
 What if we generalized the idea of the `intermediate` named tuple, and had a struct that just held anything we might want put on the tape.
 ```julia
 struct PullbackMemory{P, S}
@@ -124,7 +124,7 @@ pullback_at(pb::PullbackMemory{typeof(sin)}, ȳ) = ȳ * pb.cx
 
 I think that looks pretty nice.
 
-One way we could make it look a bit nicer for using, is if the `PullbackMemory` was actually a callable object.
+One way we could make it look a bit nicer for usage is if the `PullbackMemory` was actually a callable object,
 since `pullback_at` only has the 2 arguments,
 and conceptually the `PullbackMemory` is a more fixed thing -- it is fully determined by the end of the primal pass,
 then during the reverse pass the argument `ȳ` is successively computed.
@@ -173,8 +173,8 @@ we need to make a series of changes.
 We need to update what work is done in the primal to compute `cx`.
 We need to update what was stored in the `PullbackMemory`.
 And we need to update the the function that applies the pullback so it uses the new thing that was stored.
-It's important these thing all stay in sync.
-It's not to bad for this simple example with just 1 thing to remember.
+It's important these parts all stay in sync.
+It's not too bad for this simple example with just one thing to remember.
 For more complicated multi-argument functions, like will be talked about below, you often end up needing to remember half a dozen things, like sizes and indices relating to each input/output.
 So it gets a little more fiddly to make sure you remember all the things you need to a and give them same name in both places.
 _Is there a way we can automatically just have all the things we use remembered for us?_
@@ -183,13 +183,13 @@ Surprisingly for such a specific request, there actually is.
 This is a closure.
 A closure in julia is a callable structure, that automatically contains a field for every object from its parent scope that is used in its body.
 There are [incredible ways to abuse this](https://invenia.github.io/blog/2019/10/30/julialang-features-part-1#closures-give-us-classic-object-oriented-programming); but here we can in-fact use closures exactly as they are intended.
-Replacing `PullbackMemory` with a closure that works the same lets us avoid manually controlling what is remembers, _and_ lets us avoid writing separately the call overload.
+Replacing `PullbackMemory` with a closure that works the same way lets us avoid having to manually control what is remembered, _and_ lets us avoid separately writing the call overload.
 So we have for `sin`:
 ```julia
 y = sin(x)
 function augmented_primal(::typeof(sin), x)
   y, cx = sincos(x)
-  pb = ȳ -> cx * ȳ  # pullback closure. closes over `cs`
+  pb = ȳ -> cx * ȳ  # pullback closure. closes over `cx`
   return y, pb
 end
 ```
@@ -200,9 +200,9 @@ All that is left is a rename, and some extra conventions around multiple outputs
 This has been a journey into how we get to [`rrule`](@ref) as it is defined in `ChainRulesCore`.
 We started with an unaugmented primal function and a `pullback_at` function that only saw the inputs and outputs of the primal.
 We realized a key limitation of this was that we couldn't share computational work between the primal and and gradient passes.
-To solve this we introduced the notation of a some shared `intermediate` that is shared from the primal to the pullback.
+To solve this we introduced the notation of a some `intermediate` that is shared from the primal to the pullback.
 We successively improved that idea, first by making it a type that held everything that is needed for the pullback: the `PullbackMemory`.
-Which we then made callable --- so it  was itself the pullback._
+Which we then made callable --- so it  was itself the pullback.
 Finally, we replaced that separate callable structure with a closure, which kept everything in one place and made it more convenient.
 
 ## More Shared Work Examples
@@ -222,7 +222,7 @@ The result of pulling back the `getindex` operation is always an array that is a
 except for the elements that are selected, which are set to the appropriate sensitivities being pulled back.
 So identify which actual positions in the array are being gotten/set is common work to both primal and gradient computations.
 We really don't want to deal with fancy indexing types during the pullback, because there are weird edge cases like indexing in such a way that the same element is output twice (and thus we have 2 sensitivities we need to add to it).
-We can pull the `to_indices` out of the primal computation and remember the plain indexes to used to set them during the pullback.
+We can pull the `to_indices` out of the primal computation and remember the plain indexes used, then can reuse them to set gradients during the pullback.
 
 See the [code for this in ChainRules.jl](https://github.com/JuliaDiff/ChainRules.jl/blob/v0.7.49/src/rulesets/Base/indexing.jl)
 
@@ -234,7 +234,7 @@ Note that this is distinct from simply element-wise application of the function 
 
 [Al-Mohy, Awad H. and Higham, Nicholas J. (2009) _Computing the Fréchet Derivative of the Matrix Exponential, with an application to Condition Number Estimation_. SIAM Journal On Matrix Analysis and Applications., 30 (4). pp. 1639-1657. ISSN 1095-7162](http://eprints.maths.manchester.ac.uk/1218/), published a method for this.
 It is pretty complex and very cool.
-To quote it's abstract (emphasis mine):
+To quote its abstract (emphasis mine):
 
 > The algorithm is derived from the scaling and squaring method by differentiating the Padé approximants and the squaring recurrence, **re-using quantities computed during the evaluation of the Padé approximant**, and intertwining the recurrences in the squaring phase.
 
@@ -264,7 +264,7 @@ the `eigen` function computes both, so that is used in augmented primal.
 See the [code for this in ChainRules.jl](https://github.com/JuliaDiff/ChainRules.jl/blob/v0.7.49/src/rulesets/LinearAlgebra/factorization.jl#L209-L218).
 If we could not compute remember the eigenvectors in the primal pass we would have to call `eigen` in the gradient pass anyway, and fully recomputed eigenvectors and eigenvalues; over doubling the total work.
 
-However, if you trace this down, it actually used a different algorithm.
+However, if you trace this down, it actually uses a different algorithm.
 
 `eigvals` basically wraps `LAPACK.syevr!('N', ...)`
 which goes through [DSYEVR](http://www.netlib.org/lapack/explore-html/d2/d8a/group__double_s_yeigen_gaeed8a131adf56eaa2a9e5b1e0cce5718.html)
@@ -300,7 +300,7 @@ You can see what the code would look like in [PR #302](https://github.com/JuliaD
 # Conclusion
 This document has explained why [`rrule`](@ref) is the way it is.
 In particular it has highlighted why the primal computation is able to be changed from simply calling the function.
-Futher, it has explain where `rrule` returns a closure.
+Futher, it has explained why `rrule` returns a closure for the pullback, rather than it being a seperate function.
 It has highlighted several places in ChainRules.jl where this has allowed us to have significantly improved performance.
 Being able to change the primal computation is practically essential for a high performance AD system.
 
@@ -325,9 +325,9 @@ Being able to change the primal computation is practically essential for a high 
     In anycase, that is another discussion, for another day.
 
 [^4]:
-Sure, this is small-fries and depending on julia version might just get solved by the optimizer[^5], but go with it for the sake of example.
+    Sure, this is small-fries and depending on julia version might just get solved by the optimizer[^5], but go with it for the sake of example.
 
 [^5]:
-  To be precise this is very likely to be solved by the optimizer inlining both and then performing common subexpression elimination, with the result that it generates the code for `sincos` just form having `sin` and `cos` inside the same function.
-  However, this actually doesn't apply in the case of AD as it is not possible to inline code called in the gradient pass into the primal pass -- those are seperate functions called at very different times.
-  This is something [opaque closures](https://github.com/JuliaLang/julia/pull/37849) should help solve.
+    To be precise this is very likely to be solved by the optimizer inlining both and then performing common subexpression elimination, with the result that it generates the code for `sincos` just form having `sin` and `cos` inside the same function.
+    However, this actually doesn't apply in the case of AD as it is not possible to inline code called in the gradient pass into the primal pass -- those are seperate functions called at very different times.
+    This is something [opaque closures](https://github.com/JuliaLang/julia/pull/37849) should help solve.
