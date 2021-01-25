@@ -1,4 +1,4 @@
-# Design Notes: Why can you change the primal?
+# Design Notes: Why can you change the primal computation?
 #TODO generalize intro/title to ask why `rrule` is how it is, and in particular about changing primal
 
 These design notes are to help you understand why ChainRules allows the primal computation to be changed.
