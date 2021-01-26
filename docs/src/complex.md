@@ -67,7 +67,7 @@ function jacobian_via_rrule(f,z)
 end
 ```
 
-If ``f(z)`` is holomorphic, then the derivative part of `frule` can be implemented as ``f'(z) \, \Delta z`` and the derivative part of `rrule` can be implemented as ``\operatorname{conj}\bigl(f'(z)\bigr) \, \Delta f``.
+If ``f(z)`` is holomorphic, then the derivative part of `frule` can be implemented as ``f'(z) \, \Delta z`` and the derivative part of `rrule` can be implemented as ``\bigl(f'(z)\bigr)^* \, \Delta f``, where ``\cdot^*`` is the complex conjugate.
 Consequently, holomorphic derivatives can be evaluated using either of the following functions.
 ```julia
 function holomorphic_derivative_via_frule(f,z)
