@@ -21,16 +21,24 @@ To make this concrete:
 y = f(x)  # primal program
 x̄ = pullback_at(f, x, y, ȳ)
 ```
+To illustrate this we will use throughout this document examples for `sin` and for the [logistic sigmoid](https://en.wikipedia.org/wiki/Logistic_function#Derivative).
 
-Let's write `sin`:
+```@raw html
+<details><summary>Example for `sin`</summary>
+```
 ```julia
 y = sin(x)
 pullback_at(::typeof(sin), x, y, ȳ) = ȳ * cos(x)
 ```
+`pullback_at` uses the primal input `x`, and the sensitivity being pulled back `ȳ`.
 
-Great.
-So far so good.
-How about the [logistic sigmoid](https://en.wikipedia.org/wiki/Logistic_function#Derivative)?
+```@raw html
+</details>
+```
+```@raw html
+<details><summary>Example for the logistic sigmoid</summary>
+```
+
 ```julia
 σ(x) = 1/(1 + exp(-x))  # = exp(x)/(1+exp(x))
 y = σ(x)
@@ -38,12 +46,17 @@ pullback_at(::typeof(σ), x, y, ȳ) = ȳ * y * σ(-x)  # i.e. ȳ * σ(x) * σ
 ```
 Notice that here we are in the `pullback_at` not only using `x` but also `y` the primal output.
 This is a nice bit of symmetry that shows up around `exp`.
-
+```@raw html
+</details>
+```
 
 Now let's consider why we implement `rrule`s in the first place.
 One key reason [^3] is to allow us to insert our domain knowledge to do better than the AD would do just by breaking everything down into `+`, `*`, etc.
 What insights do we have about `sin` and `cos`?
-Here is one:
+What about using `sincos`?
+```@raw html
+<details><summary>Example for `sin`</summary>
+```
 ```julia
 julia> using BenchmarkTools
 
@@ -61,6 +74,9 @@ vs computing both together:
 julia> @btime sincos(x) setup=(x=rand());
   6.028 ns (0 allocations: 0 bytes)
 ```
+```@raw html
+</details>
+```
 
 What about the logistic sigmoid?
 We note that the two values we need are `σ(x)` and `σ(-x)`
@@ -70,7 +86,10 @@ $\sigma(-x) = \frac{1}{1+e^x}$
 then we see they have the common term $e^x$.
 `exp(x)` is a much more expensive operation than `+` and `/`.
 So we can save time, if we can reuse that `exp(x)`.
-If we have to compute it twice:
+```@raw html
+<details><summary>Example for the logistic sigmoid</summary>
+```
+If we have to computing separately:
 ```julia
 julia> @btime 1/(1+exp(x)) setup=(x=rand());
   5.622 ns (0 allocations: 0 bytes)
@@ -96,6 +115,9 @@ julia> @btime 1/(1+ex) setup=(ex=exp(rand()));
 julia> 5.367 + 1.255 + 1.256
 7.878
 ```
+```@raw html
+</details>
+```
 
 So we are talking about a 30-40%[^4] speed-up from these optimizations.
 It's faster to  compute `sin` and `cos` at the same time via `sincos` than it is to compute them one after the other.
@@ -116,7 +138,9 @@ y, intermediates = augmented_primal(f, x)
 x̄ = pullback_at(f, x, y, ȳ, intermediates)
 ```
 
-Let's try writing this now for `sin`:
+```@raw html
+<details><summary>Example for `sin`</summary>
+```
 ```julia
 function augmented_primal(::typeof(sin), x)
   y, cx = sincos(x)
@@ -125,7 +149,13 @@ end
 
 pullback_at(::typeof(sin), x, y, ȳ, intermediates) = ȳ * intermediates.cx
 ```
-and for the logistic sigmoid:
+```@raw html
+</details>
+```
+
+```@raw html
+<details><summary>Example for the logistic sigmoid</summary>
+```
 ```julia
 function augmented_primal(::typeof(σ), x)
   ex = exp(x)
@@ -134,6 +164,9 @@ function augmented_primal(::typeof(σ), x)
 end
 
 pullback_at(::typeof(σ), x, y, ȳ, intermediates) = ȳ * y /(1 + intermediates.ex)
+```
+```@raw html
+</details>
 ```
 
 Cool!
@@ -171,7 +204,9 @@ x̄ = pullback_at(pb, ȳ)
 ```
 which is much cleaner.
 
-Let's try writing with this for `sin`:
+```@raw html
+<details><summary>Example for `sin`</summary>
+```
 ```julia
 function augmented_primal(::typeof(sin), x)
   y, cx = sincos(x)
@@ -180,7 +215,13 @@ end
 
 pullback_at(pb::PullbackMemory{typeof(sin)}, ȳ) = ȳ * pb.cx
 ```
-and for the logistic sigmoid:
+```@raw html
+</details>
+```
+
+```@raw html
+<details><summary>Example for the logistic sigmoid</summary>
+```
 ```julia
 function augmented_primal(::typeof(σ), x)
   ex = exp(x)
@@ -189,6 +230,9 @@ function augmented_primal(::typeof(σ), x)
 end
 
 pullback_at(pb::PullbackMemory{typeof(σ)}, ȳ) = ȳ * pb.y/(1 + pb.ex)
+```
+```@raw html
+</details>
 ```
 
 I think that looks pretty nice.
@@ -204,7 +248,10 @@ y = f(x)  # primal program
 y, pb = augmented_primal(f, x)
 x̄ = pb(ȳ)
 ```
-and for `sin`:
+
+```@raw html
+<details><summary>Example for `sin`</summary>
+```
 ```julia
 function augmented_primal(::typeof(sin), x)
   y, cx = sincos(x)
@@ -212,7 +259,14 @@ function augmented_primal(::typeof(sin), x)
 end
 (pb::PullbackMemory)(ȳ) = ȳ * pb.cx
 ```
-and for the logistic sigmoid:
+
+```@raw html
+</details>
+```
+
+```@raw html
+<details><summary>Example for the logistic sigmoid</summary>
+```
 ```julia
 function augmented_primal(::typeof(σ), x)
   ex = exp(x)
@@ -222,6 +276,9 @@ end
 
 (pb::PullbackMemory{typeof(σ)})(ȳ) = ȳ * pb.y/(1 + pb.ex)
 ```
+```@raw html
+</details>
+```
 
 Those looking closely will spot what we have done here.
 We now have an object (`pb`) that acts on the cotangent of the output of the primal (`ȳ`) to give us the cotangent of the input of the primal function (`x̄`).
@@ -230,7 +287,11 @@ _`pb` is not just the **memory** of state required for the `pullback`, it **is**
 We have one final thing to do.
 Let's think about making the code easy to modify.
 Let's go back and think about the changes we would have make to go from our original way of writing that only used the inputs/outputs, to one that used the intermediate state.
-For `sin` to rewrite that original formulation in the new pullback form we have:
+
+```@raw html
+<details><summary>Example for `sin`</summary>
+```
+To rewrite that original formulation in the new pullback form we have:
 ```julia
 function augmented_primal(::typeof(sin), x)
   y = sin(x)
@@ -246,8 +307,13 @@ function augmented_primal(::typeof(sin), x)
 end
 (pb::PullbackMemory)(ȳ) = ȳ * pb.cx
 ```
+```@raw html
+</details>
+```
 
-and for logistic sigmoid, the original would have been:
+```@raw html
+<details><summary>Example for the logistic sigmoid</summary>
+```
 ```julia
 function augmented_primal(::typeof(σ), x)
   y = σ(x)
@@ -264,6 +330,10 @@ function augmented_primal(::typeof(σ), x)
 end
 (pb::PullbackMemory{typeof(σ)})(ȳ) = ȳ * pb.y/(1 + pb.ex)
 ```
+```@raw html
+</details>
+```
+
 (NB: there is actually a further optimization that can be made to the logistic sigmoid, to avoid remembering two things and just remember one.
 As an exercise to the reader, consider how the code would need to be changed and where.)
 
@@ -282,7 +352,10 @@ This is a closure.
 A closure in Julia is a callable structure that automatically contains a field for every object from its parent scope that is used in its body.
 There are [incredible ways to abuse this](https://invenia.github.io/blog/2019/10/30/julialang-features-part-1#closures-give-us-classic-object-oriented-programming); but here we can in-fact use closures exactly as they are intended.
 Replacing `PullbackMemory` with a closure that works the same way lets us avoid having to manually control what is remembered _and_ lets us avoid separately writing the call overload.
-So we have for `sin`:
+
+```@raw html
+<details><summary>Example for `sin`</summary>
+```
 ```julia
 function augmented_primal(::typeof(sin), x)
   y, cx = sincos(x)
@@ -290,7 +363,13 @@ function augmented_primal(::typeof(sin), x)
   return y, pb
 end
 ```
-and for logistic sigmoid:
+```@raw html
+</details>
+```
+
+```@raw html
+<details><summary>Example for the logistic sigmoid</summary>
+```
 ```julia
 function augmented_primal(::typeof(σ), x)
   ex = exp(x)
@@ -298,6 +377,9 @@ function augmented_primal(::typeof(σ), x)
   pb = ȳ -> ȳ * y/(1 + ex)  # pullback closure. closes over `y` and `ex`
   return y, pb
 end
+```
+```@raw html
+</details>
 ```
 This is pretty clean now.
 
