@@ -234,20 +234,20 @@ which gives the identity
 \end{equation}
 ```
 
-For matrices and vectors, $\operatorname{dot}(A, B) = \operatorname{tr}(A^H B)$, and the identity simplifies to:
+For matrices and vectors, $\operatorname{dot}(A, B) = \tr(A^H B)$, and the identity simplifies to:
 
 ```math
 \begin{equation} \label{pbidentmat}
-\Re\left( \operatorname{tr}\left(
+\Re\left( \tr\left(
     \overline{\Omega}^H \dot{\Omega}
 \right) \right) =
-\sum_m \Re \left( \operatorname{tr} \left(
+\sum_m \Re \left( \tr \left(
     \overline{X}_m^H \dot{X}_m
 \right) \right),
 \end{equation}
 ```
 
-where $\operatorname{tr}(\cdot)$ is the matrix trace (`LinearAlgebra.tr`) function.
+where $\tr(\cdot)$ is the matrix trace (`LinearAlgebra.tr`) function.
 
 Our approach for deriving the adjoints $\overline{X}_m$ is then:
 
@@ -290,10 +290,10 @@ For matrices and vectors, several properties of the trace function come in handy
 
 ```math
 \begin{align}
-\operatorname{tr}(A+B) &= \operatorname{tr}(A) + \operatorname{tr}(B) \label{trexpand}\\
-\operatorname{tr}(A^T) &= \operatorname{tr}(A) \nonumber\\
-\operatorname{tr}(A^H) &= \operatorname{conj}(\operatorname{tr}(A)) \nonumber\\
-\operatorname{tr}(AB) &= \operatorname{tr}(BA) \label{trperm}
+\tr(A+B) &= \tr(A) + \tr(B) \label{trexpand}\\
+\tr(A^T) &= \tr(A) \nonumber\\
+\tr(A^H) &= \operatorname{conj}(\tr(A)) \nonumber\\
+\tr(AB) &= \tr(BA) \label{trperm}
 \end{align}
 ```
 
@@ -313,31 +313,31 @@ Using \eqref{pbidentmat}, we now multiply by $\overline{\Omega}^H$ and take the 
 
 ```math
 \begin{align*}
-\Re\left( \operatorname{tr} \left(
+\Re\left( \tr \left(
         \overline{\Omega}^H \dot{\Omega}
 \right) \right)
-    &= \Re\left( \operatorname{tr} \left( \overline{\Omega}^H ~\left(
+    &= \Re\left( \tr \left( \overline{\Omega}^H ~\left(
            \dot{A} B + A \dot{B}
        \right) \right) \right)
            && \text{substitute } \dot{\Omega} \text{ from } \eqref{diffprod}\\
-    &= \Re\left( \operatorname{tr} \left(
+    &= \Re\left( \tr \left(
            \overline{\Omega}^H \dot{A} B
        \right) \right) +
-       \Re\left( \operatorname{tr} \left(
+       \Re\left( \tr \left(
            \overline{\Omega}^H  A \dot{B}
        \right) \right)
            && \text{expand using } \eqref{trexpand} \\
-    &= \Re\left( \operatorname{tr} \left(
+    &= \Re\left( \tr \left(
            B \overline{\Omega}^H \dot{A}
        \right) \right) +
-       \Re\left( \operatorname{tr} \left(
+       \Re\left( \tr \left(
            \overline{\Omega}^H A \dot{B}
        \right) \right)
            && \text{rearrange the left term using } \eqref{trperm}\\
-    &= \Re\left( \operatorname{tr} \left(
+    &= \Re\left( \tr \left(
            \overline{A}^H  \dot{A}
        \right) \right) +
-       \Re\left( \operatorname{tr} \left(
+       \Re\left( \tr \left(
            \overline{B}^H \dot{B}
        \right) \right)
            && \text{right-hand side of } \eqref{pbidentmat}
@@ -383,18 +383,18 @@ Using \eqref{pbidentmat},
 
 ```math
 \begin{align*}
-\Re\left( \operatorname{tr} \left(
+\Re\left( \tr \left(
     \overline{\Omega}^H \dot{\Omega}
 \right) \right)
-    &= \Re\left( \operatorname{tr} \left(
+    &= \Re\left( \tr \left(
            -\overline{\Omega}^H \Omega \dot{A} \Omega
        \right) \right)
            && \text{substitute } \eqref{invdiff}\\
-    &= \Re\left( \operatorname{tr} \left(
+    &= \Re\left( \tr \left(
            -\Omega \overline{\Omega}^H \Omega \dot{A}
        \right) \right)
            && \text{rearrange using } \eqref{trperm}\\
-    &= \Re\left( \operatorname{tr} \left(
+    &= \Re\left( \tr \left(
            \overline{A}^H  \dot{A}
        \right) \right)
            && \text{right-hand side of } \eqref{pbidentmat}
@@ -585,7 +585,7 @@ We'll make frequent use of the identities:
 $$d = a s$$
 $$\operatorname{conj}(s) s = \frac{\operatorname{conj}(d) d}{a^2} = \frac{a^2}{a^2} = 1$$
 
-It will also be useful to define $b = \operatorname{tr}\left( A^{-1} \dot{A} \right)$.
+It will also be useful to define $b = \tr\left( A^{-1} \dot{A} \right)$.
 
 For $\dot{d}$, we use the pushforward for the determinant given in section 2.2.4 of [^Giles2008ext]:
 
@@ -643,7 +643,7 @@ In summary, after all of that work, the final pushforward is quite simple:
 
 ```math
 \begin{align}
-b &= \operatorname{tr} \left( A^{-1} \dot{A} \right) \label{logabsdet_b} \\
+b &= \tr \left( A^{-1} \dot{A} \right) \label{logabsdet_b} \\
 \dot{l} &= \Re(b) \label{logabsdet_ldot}\\
 \dot{s} &= i \Im(b) s \label{logabsdet_sdot}\\
 \end{align}
@@ -673,10 +673,10 @@ end
 
 ```math
 \begin{align*}
-&\Re\left( \operatorname{tr}\left(
+&\Re\left( \tr\left(
     \overline{l}^H \dot{l}
 \right) \right) +
-\Re\left( \operatorname{tr}\left(
+\Re\left( \tr\left(
     \overline{s}^H \dot{s}
 \right) \right)
     && \text{left-hand side of } \eqref{pbidentmat}\\
@@ -712,10 +712,10 @@ end
                \operatorname{conj} \left( \overline{s} \right) s
            \right)
        \right)
-       \operatorname{tr}(A^{-1} \dot{A})
+       \tr(A^{-1} \dot{A})
    \right)
        && \text{substitute } b \text{ from } \eqref{logabsdet_b} \\
-&= \Re\left( \operatorname{tr} \left(
+&= \Re\left( \tr \left(
        \left(
            \Re \left( \overline{l} \right) +
            i \Im \left(
@@ -724,8 +724,8 @@ end
        \right)
        A^{-1} \dot{A}
    \right) \right)
-       && \text{bring scalar within } \operatorname{tr} \\
-&= \Re\left( \operatorname{tr} \left( \overline{A}^H \dot{A} \right) \right)
+       && \text{bring scalar within } \tr \\
+&= \Re\left( \tr \left( \overline{A}^H \dot{A} \right) \right)
        && \text{right-hand side of } \eqref{pbidentmat}\\
 \end{align*}
 ```
