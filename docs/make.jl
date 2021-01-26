@@ -31,7 +31,7 @@ makedocs(
                 :tex => Dict(
                     # TODO: remove when using physics package
                     "macros" => Dict(
-                        "ip" => ["{\\left\\langle #1, #2, \\right\\rangle}", 2],
+                        "ip" => ["{\\left\\langle #1, #2 \\right\\rangle}", 2],
                         "Re" => "{\\operatorname{Re}}",
                         "Im" => "{\\operatorname{Im}}",
                         "tr" => "{\\operatorname{tr}}",
