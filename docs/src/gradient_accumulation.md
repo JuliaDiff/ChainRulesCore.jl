@@ -39,7 +39,7 @@ This cuts our allocations down to 2, just `ā` and `b̄`.
 However, we have a bit of a problem that not all types are mutable, so this pattern is hard to apply in general.
 To deal with that ChainRulesCore provides [`add!!`](@ref).
 Per the [BangBang.jl](https://github.com/JuliaFolds/BangBang.jl) convention, this is a maybe mutating addition.
-It may mutate its first argument (it it is mutable), but it will definitely return the correct result.
+It may mutate its first argument (if it is mutable), but it will definitely return the correct result.
 We would write using that as `X̄ = add!!(ā, b̄)`: which would in this case give us just 2 allocations.
 AD systems can generate `add!!` instead of `+` when accumulating gradient to take advantage of this.
 
