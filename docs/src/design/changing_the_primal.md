@@ -335,7 +335,7 @@ See the [code for this in ChainRules.jl](https://github.com/JuliaDiff/ChainRules
 Note that this is distinct from simply element-wise application of the function to the matrix's elements.
 The [Matrix Exponential](https://en.wikipedia.org/wiki/Matrix_exponential) `exp(::Matrix)` is a particularly important matrix function.
 
-[Al-Mohy, Awad H. and Higham, Nicholas J. (2009) _Computing the Fréchet Derivative of the Matrix Exponential, with an application to Condition Number Estimation_. SIAM Journal On Matrix Analysis and Applications., 30 (4). pp. 1639-1657. ISSN 1095-7162](http://eprints.maths.manchester.ac.uk/1218/), published a method for this.
+Al-Mohy and Higham (2009)[^6], published a method for computing the pullback of `exp(::Matrix)`.
 It is pretty complex and very cool.
 To quote its abstract (emphasis mine):
 
@@ -419,3 +419,5 @@ Being able to change the primal computation is practically essential for a high 
     However, this actually doesn't apply in the case of AD, as it is not possible to inline code called in the gradient pass into the primal pass.
     Those are separate functions called at very different times.
     This is something [opaque closures](https://github.com/JuliaLang/julia/pull/37849) should help solve.
+
+[^6]: [Al-Mohy, Awad H. and Higham, Nicholas J. (2009) _Computing the Fréchet Derivative of the Matrix Exponential, with an application to Condition Number Estimation_. SIAM Journal On Matrix Analysis and Applications., 30 (4). pp. 1639-1657. ISSN 1095-7162](http://eprints.maths.manchester.ac.uk/1218/)
