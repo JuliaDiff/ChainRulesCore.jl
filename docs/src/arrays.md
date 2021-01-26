@@ -174,7 +174,7 @@ These identities are particularly useful:
 ```math
 \begin{align*}
 \frac{d}{dt} \left( \Re(A) \right) &= \Re(\dot{A})\\
-\frac{d}{dt} \left( \operatorname{conj}(A) \right) &= \operatorname{conj}(\dot{A})\\
+\frac{d}{dt} \left( A^* \right) &= \dot{A}^*\\
 \frac{d}{dt} \left( A^T \right) &= \dot{A}^T\\
 \frac{d}{dt} \left( A^H \right) &= \dot{A}^H\\
 \frac{d}{dt} \left( \sum_{j}  A_{i \ldots j \ldots k} \right) &=
@@ -182,7 +182,7 @@ These identities are particularly useful:
 \end{align*}
 ```
 
-where $\cdot^H = \operatorname{conj}(\cdot^T)$ is the conjugate transpose (the `adjoint` function).
+where $\cdot^*$ is the complex conjugate (`conj`), and $\cdot^H = \left(\cdot^T\right)^*$ is the conjugate transpose (the `adjoint` function).
 
 ## Reverse-mode rules
 
@@ -199,18 +199,18 @@ At any step in the program, if we have intermediates $X_m$, we can write down th
 \begin{align*}
 \frac{ds}{dt}
     &= \sum_m \Re\left( \sum_{i,\ldots,j}
-           \operatorname{conj}\left( \frac{\partial s}{\partial (X_m)_{i,\ldots,j}} \right)
+           \left( \frac{\partial s}{\partial (X_m)_{i,\ldots,j}} \right)^*
            \frac{d (X_m)_{i,\ldots,j}}{dt}
        \right)\\
     &= \sum_m \Re\left( \sum_{i,\ldots,j}
-           \operatorname{conj} \left( (\overline{X}_m)_{i,\ldots,j} \right)
+           (\overline{X}_m)_{i,\ldots,j}^*
            (\dot{X}_m)_{i,\ldots,j}
        \right)\\
     &= \sum_m \Re\ip{ \overline{X}_m }{ \dot{X}_m },
 \end{align*}
 ```
 
-where $\operatorname{conj}(\cdot)$ is the complex conjugate (`conj`), $\Re(\cdot)$ is the real part of its argument (`real`), and $\ip{\cdot}{\cdot}$ is the inner product (`LinearAlgebra.dot`).
+where $\Re(\cdot)$ is the real part of a number (`real`), and $\ip{\cdot}{\cdot}$ is the inner product (`LinearAlgebra.dot`).
 Because this equation follows at any step of the program, we can equivalently write 
 
 ```math
@@ -259,7 +259,7 @@ Note that the final expressions for the adjoints will not contain any $\dot{X}_m
     \frac{ds}{dt}
         &= \ip{ \overline{x} + i \overline{y} }{ \dot{x} + i \dot{y} } \\
         &= \Re\left(
-               \operatorname{conj} \left( \overline{x} + i \overline{y} \right)
+               \left( \overline{x} + i \overline{y} \right)^*
                \left( \dot{x} + i \dot{y} \right)
            \right) \\
         &= \Re\left(
@@ -281,7 +281,7 @@ For matrices and vectors, several properties of the trace function come in handy
 \begin{align}
 \tr(A+B) &= \tr(A) + \tr(B) \label{trexpand}\\
 \tr(A^T) &= \tr(A) \nonumber\\
-\tr(A^H) &= \operatorname{conj}(\tr(A)) \nonumber\\
+\tr(A^H) &= \tr(A)^* \nonumber\\
 \tr(AB) &= \tr(BA) \label{trperm}
 \end{align}
 ```
@@ -424,9 +424,7 @@ which we write as
 
 ```math
 \Omega_{i1k} = \sum_{j} |X_{ijk}|^2
-             = \sum_{j} \Re \left(
-                  \operatorname{conj} \left( X_{ijk} \right) X_{ijk}
-               \right)
+             = \sum_{j} \Re \left( X_{ijk}^* X_{ijk} \right)
 ```
 
 The pushforward from \eqref{pf} is
@@ -435,24 +433,19 @@ The pushforward from \eqref{pf} is
 \begin{align}
 \dot{\Omega}_{i1k}
     &= \sum_j \Re\left(
-           \operatorname{conj} \left( \dot{X}_{ijk} \right) X_{ijk} +
-           \operatorname{conj} \left( X_{ijk} \right) \dot{X}_{ijk} \right) \nonumber\\
+           \dot{X}_{ijk}^* X_{ijk} + X_{ijk}^* \dot{X}_{ijk}
+        \right) \nonumber\\
     &= \sum_j \Re\left(
-            \operatorname{conj}\left(
-                \operatorname{conj} \left( X_{ijk} \right) \dot{X}_{ijk}
-            \right) +
-            \operatorname{conj}(X_{ijk}) \dot{X}_{ijk}
-       \right) \nonumber\\
-    &= \sum_j 2 \Re\left(
-           \operatorname{conj} \left( X_{ijk} \right) \dot{X}_{ijk}
-       \right), \label{sumabspf}
+            \left( X_{ijk}^* \dot{X}_{ijk} \right)^* +
+            X_{ijk}^* \dot{X}_{ijk} \right) \nonumber\\
+    &= \sum_j 2 \Re\left( X_{ijk}^* \dot{X}_{ijk} \right), \label{sumabspf}
 \end{align}
 ```
 
 where in the last step we have used the fact that for all real $a$ and $b$,
 
 ```math
-(a + i b) + \operatorname{conj}(a + i b)
+(a + i b) + (a + i b)^*
     = (a + i b) + (a - i b)
     = 2 a
     = 2 \Re (a + i b).
@@ -480,27 +473,21 @@ The array form of \eqref{pbident} is
 ```math
 \begin{align*}
 \ip{ \overline{\Omega} }{ \dot{\Omega} }
-    &= \Re \left( \sum_{ik}
-           \operatorname{conj} \left( \overline{\Omega}_{i1k} \right) \dot{\Omega}_{i1k}
-       \right)
+    &= \Re \left( \sum_{ik} \overline{\Omega}_{i1k}^*
+           \dot{\Omega}_{i1k} \right)
            && \text{expand left-hand side of } \eqref{pbident}\\
-    &= \Re \left(\sum_{ijk}
-           \operatorname{conj} \left( \overline{\Omega}_{i1k} \right)
-           2 \Re\left(
-               \operatorname{conj} \left( X_{ijk} \right) \dot{X}_{ijk}
-           \right)
+    &= \Re \left(\sum_{ijk} \overline{\Omega}_{i1k}^*
+           2 \Re\left( X_{ijk}^* \dot{X}_{ijk} \right)
        \right)
            && \text{substitute } \eqref{sumabspf}\\
     &= \Re \left( \sum_{ijk}
            \left(
                2 \Re \left( \overline{\Omega}_{i1k} \right)
-               \operatorname{conj} \left( X_{ijk} \right)
+               X_{ijk}^*
            \right) \dot{X}_{ijk}
        \right)
            && \text{bring } \dot{X}_{ijk} \text{ outside of } \Re\\
-    &= \Re \left( \sum_{ijk}
-           \operatorname{conj} \left( \overline{X}_{ijk} \right) \dot{X}_{i1k}
-       \right)
+    &= \Re \left( \sum_{ijk} \overline{X}_{ijk}^* \dot{X}_{i1k} \right)
            && \text{expand right-hand side of } \eqref{pbident}
 \end{align*}
 ```
@@ -510,10 +497,10 @@ We now solve for $\overline{X}$:
 ```math
 \begin{align*}
 \overline{X}_{ijk}
-    &= \operatorname{conj}\left(
+    &= \left(
             2 \Re \left( \overline{\Omega}_{i1k} \right)
-            \operatorname{conj} \left( X_{ijk} \right)
-        \right)\\
+            X_{ijk}^*
+        \right)^*\\
     &= 2\Re \left( \overline{\Omega}_{i1k} \right) X_{ijk}
 \end{align*}
 ```
@@ -561,7 +548,7 @@ To make this easier, let's break the computation into more manageable steps:
 ```math
 \begin{align*}
 d &= \det(A)\\
-a &= |d| = \sqrt{\Re \left( \operatorname{conj}(d) d \right)}\\
+a &= |d| = \sqrt{\Re \left( d^* d \right)}\\
 l &= \log a\\
 s &= \frac{d}{a}
 \end{align*}
@@ -570,7 +557,7 @@ s &= \frac{d}{a}
 We'll make frequent use of the identities:
 
 $$d = a s$$
-$$\operatorname{conj}(s) s = \frac{\operatorname{conj}(d) d}{a^2} = \frac{a^2}{a^2} = 1$$
+$$s^* s = \frac{d^* d}{a^2} = \frac{a^2}{a^2} = 1$$
 
 It will also be useful to define $b = \tr\left( A^{-1} \dot{A} \right)$.
 
@@ -583,45 +570,45 @@ Now we'll compute the pushforwards for the remaining steps.
 ```math
 \begin{align*}
 \dot{a} &= \frac{1}{2 a} \frac{d}{dt}
-                         \Re\left( \operatorname{conj}(d) d \right)\\
-        &= \frac{2}{2 a} \Re \left( \operatorname{conj}(d) \dot{d} \right)\\
-        &= \Re \left( \operatorname{conj}(s) \dot{d} \right)
+                         \Re\left( d^* d \right)\\
+        &= \frac{2}{2 a} \Re \left( d^* \dot{d} \right)\\
+        &= \Re \left( s^* \dot{d} \right)
             && \text{use } d = a s \\
-        &= \Re \left( \operatorname{conj}(s) d b \right)
+        &= \Re \left( s^* d b \right)
             && \text{substitute } \dot{d} \\
 \dot{l} &= a^{-1} \dot{a}\\
-        &= a^{-1} \Re \left( \operatorname{conj}(s) d b \right)
+        &= a^{-1} \Re \left( s^* d b \right)
             && \text{substitute } \dot{a}\\
-        &= \Re \left( \operatorname{conj}(s) s b \right)
+        &= \Re \left( s^* s b \right)
             && \text{use } d = a s \\
         &= \Re \left(b \right)
-            && \text{use } \operatorname{conj}(s) s = 1\\
+            && \text{use } s^* s = 1\\
 \dot{s} &= a^{-1} \dot{d} - a^{-2} d \dot{a}\\
         &= a^{-1} \left( \dot{d} - \dot{a} s \right)
             && \text{use } d = a s \\
         &= a^{-1} \left(
-               \dot{d} - \Re \left( \operatorname{conj}(s) \dot{d} \right) s
+               \dot{d} - \Re \left( s^* \dot{d} \right) s
            \right)
             && \text{substitute } \dot{a}\\
         &= a^{-1} \left(
                \dot{d} - \left(
-                   \operatorname{conj}(s) \dot{d} -
-                   i \Im \left( \operatorname{conj}(s) \dot{d} \right)
+                   s^* \dot{d} -
+                   i \Im \left( s^* \dot{d} \right)
                \right) s
            \right)
             && \text{use } \Re(x) = x - i \Im(x)\\
         &= a^{-1} \left(
-               \dot{d} - \left( \operatorname{conj}(s) s \right) \dot{d} +
-               i \Im \left( \operatorname{conj}(s) \dot{d} \right) s 
+               \dot{d} - \left( s^* s \right) \dot{d} +
+               i \Im \left( s^* \dot{d} \right) s 
                \right)\\
-        &= i a^{-1} \Im \left( \operatorname{conj}(s) \dot{d} \right) s
-            && \text{use } \operatorname{conj}(s) s = 1\\
-        &= i a^{-1} \Im \left( \operatorname{conj}(s) d b \right) s
+        &= i a^{-1} \Im \left( s^* \dot{d} \right) s
+            && \text{use } s^* s = 1\\
+        &= i a^{-1} \Im \left( s^* d b \right) s
             && \text{substitute } \dot{d}\\
-        &= i \Im \left( \operatorname{conj}(s) s b \right) s
+        &= i \Im \left( s^* s b \right) s
             && \text{use } d = a s \\
         &= i \Im(b) s
-            && \text{use } \operatorname{conj}(s) s = 1
+            && \text{use } s^* s = 1
 \end{align*}
 ```
 
@@ -667,37 +654,27 @@ end
     \overline{s}^H \dot{s}
 \right) \right)
     && \text{left-hand side of } \eqref{pbidentmat}\\
+&= \Re\left( \overline{l}^* \dot{l} + \overline{s}^* \dot{s} \right) \\
 &= \Re\left( 
-       \operatorname{conj} \left( \overline{l} \right) \dot{l} +
-       \operatorname{conj} \left( \overline{s} \right) \dot{s}
-   \right) \\
-&= \Re\left( 
-       \operatorname{conj} \left( \overline{l} \right) \Re(b) +
-       i \operatorname{conj} \left( \overline{s} \right) s \Im(b)
+       \overline{l}^* \Re(b) + i \overline{s}^* s \Im(b)
    \right)
        && \text{substitute } \eqref{logabsdet_ldot} \text{ and } \eqref{logabsdet_sdot} \\
 &= \Re\left( 
        \Re\left( \overline{l} \right) \Re(b) -
-       \Im \left(
-           \operatorname{conj} \left( \overline{s} \right) s
-       \right) \Im(b)
+       \Im \left( \overline{s}^* s \right) \Im(b)
    \right)
        && \text{discard imaginary parts} \\
 &= \Re\left(
        \left(
            \Re \left( \overline{l} \right) +
-           i \Im \left(
-               \operatorname{conj} \left( \overline{s} \right) s
-           \right)
+           i \Im \left( \overline{s}^* s \right)
        \right) b
    \right)
        && \text{gather parts of } b \\
 &= \Re\left(
        \left(
            \Re \left( \overline{l} \right) +
-           i \Im \left(
-               \operatorname{conj} \left( \overline{s} \right) s
-           \right)
+           i \Im \left( \overline{s}^* s \right)
        \right)
        \tr(A^{-1} \dot{A})
    \right)
@@ -705,9 +682,7 @@ end
 &= \Re\left( \tr \left(
        \left(
            \Re \left( \overline{l} \right) +
-           i \Im \left(
-               \operatorname{conj} \left( \overline{s} \right) s
-           \right)
+           i \Im \left( \overline{s}^* s \right)
        \right)
        A^{-1} \dot{A}
    \right) \right)
@@ -723,11 +698,11 @@ Now we solve for $\overline{A}$:
 \begin{align*}
 \overline{A} &= \left( \left(
     \Re \left( \overline{l} \right) +
-    i \Im \left( \operatorname{conj} \left( \overline{s} \right) s \right)
+    i \Im \left( \overline{s}^* s \right)
 \right) A^{-1} \right)^H\\
 &= \left(
     \Re \left( \overline{l} \right) +
-    i \Im \left( \operatorname{conj} \left( s \right) \overline{s} \right)
+    i \Im \left( s^* \overline{s} \right)
 \right) A^{-H}
 \end{align*}
 ```
@@ -764,8 +739,8 @@ end
 
     For the pullback, it again follows that only the real part of $\overline{l}$ is pulled back.
 
-    ``\operatorname{conj}(s)`` rotates a number parallel to $s$ to the real line.
-    So $\operatorname{conj}(s) \overline{s}$ rotates $\overline{s}$ so that its imaginary part is the part that was tangent to the complex circle at $s$, while the real part is the part that was not tangent.
+    ``s^*`` rotates a number parallel to $s$ to the real line.
+    So $s^* \overline{s}$ rotates $\overline{s}$ so that its imaginary part is the part that was tangent to the complex circle at $s$, while the real part is the part that was not tangent.
     Then the pullback isolates the imaginary part, which effectively is a projection.
     That is, any part of the adjoint $\overline{s}$ that is not tangent to the complex circle at $s$ will not contribute to $\overline{A}$.
 
