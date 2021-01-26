@@ -1,10 +1,10 @@
 # Gradient Accumulation
 
 Consider some function
-$$f(x) = g(x) + h(x)$$
-If we would like the derivative of $f$ with respect to $x$ we must compute it for each part and then sum them.
+$$f(x) = g(x) + h(x)$$.
+If we would like the derivative of $f$ with respect to $x$ we must compute it for each part and then sum them, i.e. 
 $$\frac{\partial f}{\partial x} = \frac{\partial g}{\partial x} + \frac{\partial h}{\partial x}$$.
-In general we must accumulate (sum) gradients from each sub-part of a program where a variable is used.
+In general, we must accumulate (sum) gradients from each sub-part of a program where a variable is used.
 
 
 Consider for example:
@@ -19,17 +19,16 @@ end
 The AD software must transform that into something which repeatedly sums up the gradient of each part:
 `X̄ = ā + b̄`.
 
-Because of this it is required that all differential types `D` must implement `+`: `+(::D, ::D)::D`.
+This requires that all differential types `D` must implement `+`: `+(::D, ::D)::D`.
 
 We can note that in this particular case `ā` and `b̄` will both be arrays.
-This operation (`X̄ = ā + b̄`) will allocates 1 array to hold `ā` and another to hold `b̄`, and a third to hold `ā + b̄`.
-Three allocations.
-Allocations are not free, they increase the time the program takes to run by a nontrivial amount.
-Even with a good allocator and a good garbage collector.
+This operation (`X̄ = ā + b̄`) will allocate one array to hold `ā`, another one to hold `b̄`, and a third one to hold `ā + b̄`.
+This is three allocations.
+Allocations are not free, they increase the time the program takes to run by a nontrivial amount, even with a good allocator and a good garbage collector.
 
 ### Maybe-mutating accumulation (`add!!`)
 We can note that in the above that neither `ā` nor `b̄` are ever used again after accumulating to get `X̄`.
-Further `Array`s are mutable.
+Furthermore, `Array`s are mutable.
 That means we could over-write either `ā` or `b̄` and use the result as `X̄`:
 ```julia
 ā .+= b̄
@@ -40,18 +39,17 @@ This cuts our allocations down to 2, just `ā` and `b̄`.
 However, we have a bit of a problem that not all types are mutable, so this pattern is hard to apply in general.
 To deal with that ChainRulesCore provides [`add!!`](@ref).
 Per the [BangBang.jl](https://github.com/JuliaFolds/BangBang.jl) convention, this is a maybe mutating addition.
-It may mutating its first argument (it it is mutable), but it will definitely return the correct result.
+It may mutate its first argument (it it is mutable), but it will definitely return the correct result.
 We would write using that as `X̄ = add!!(ā, b̄)`: which would in this case give us just 2 allocations.
 AD systems can generate `add!!` instead of `+` when accumulating gradient to take advantage of this.
 
 ### Inplaceable Thunks (`InplaceableThunks`) avoid allocating values in the first place.
 We got down to two allocations from using [`add!!`](@ref), but can we do better?
-We can think of having differential type which acts on a partially accumulated result, to mutate it to contain its current value plus the partial derivative being accumulated.
-Rather than having a actual computed value, we can just have a thing that will act on a value to perform the addition.
-This is a bit of a funny idea, lets illustrate it with our example.
+We can think of having a differential type which acts on a partially accumulated result, to mutate it to contain its current value plus the partial derivative being accumulated.
+Rather than having an actual computed value, we can just have a thing that will act on a value to perform the addition.
+Let's illustrate it with our example.
 
-`b̄` is the partial for `X[2]`.
-It's value can be computed by:
+`b̄` is the partial for `X[2]` and its value can be computed by:
 ```julia
 b̄ = zeros(size(X))
 b̄[2] = ȳ  # the scalar sensitivity of the `mysum` output
@@ -72,13 +70,13 @@ We don't need to worry about all those zeros since `x + 0 == x`.
 [`InplaceableThunk`](@ref) is the type we have to represent derivatives as gradient accumulating actions.
 We must note that to do this we do need a value form of `ā` for `b̄` to act upon.
 For this reason every inplaceable thunk has both a `val` field holding the value representation, and a `add!` field holding the action representation.
-The `val` field use a plain [`Thunk`](@ref) to avoid the computation (and thus allocation) for if it is unused.
+The `val` field use a plain [`Thunk`](@ref) to avoid the computation (and thus allocation) if it is unused.
 
 !!! note "Do we need both representations?"
     Right now every [`InplaceableThunk`](@ref) has two fields that need to be specified.
-    The value form (represented as a the `Thunk`(@ref) typed field), and the action form (represented as the `add!` field).
+    The value form (represented as a the [`Thunk`](@ref) typed field), and the action form (represented as the `add!` field).
     It is possible in a future version of ChainRulesCore.jl we will work out a clever way to find the zero differential for arbitrary primal values.
-    Given that we could always just determine the value form from `inplaceable.add!(zero_differential(primal))`.
+    Given that, we could always just determine the value form from `inplaceable.add!(zero_differential(primal))`.
     There are some technical difficulties in finding the zero differentials, but this may be solved at some point.
 
 
@@ -114,12 +112,12 @@ end
 ```
 If one only has value representation of derivatives one ends up having to allocate a derivative array for every single element of the original array `X`.
 That's terrible.
-Where-as with the action representation that `InplaceableThunk`s provide, there is just a single `Array` allocated.
+On the other hand, with the action representation that `InplaceableThunk`s provide, there is just a single `Array` allocated.
 One can see [the `getindex` rule in ChainRules.jl for the implementation](https://github.com/JuliaDiff/ChainRules.jl/blob/v0.7.49/src/rulesets/Base/indexing.jl).
 
 
 #### matmul etc (`*`)
-Multiplication of scalars/vectors/matrixes of compatible dimentions can all also have their derivatives represented as a `InplaceableThunk`.
+Multiplication of scalars/vectors/matrices of compatible dimensions can all also have their derivatives represented as an `InplaceableThunk`.
 These tend to pivot around that `add!` action being defined along the lines of:
 `X̄ -> mul!(X̄, A', Ȳ, true, true)`.
 Where 5-arg `mul!` is the in place [multiply-add operation](https://docs.julialang.org/en/v1/stdlib/LinearAlgebra/#LinearAlgebra.mul!).
