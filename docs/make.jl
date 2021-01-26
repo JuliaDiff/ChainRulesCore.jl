@@ -29,6 +29,7 @@ makedocs(
         mathengine=MathJax3(
             Dict(
                 :tex => Dict(
+                    "tags" => "ams",
                     # TODO: remove when using physics package
                     "macros" => Dict(
                         "ip" => ["{\\left\\langle #1, #2 \\right\\rangle}", 2],
