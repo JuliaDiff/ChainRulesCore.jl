@@ -83,6 +83,8 @@ The list here is incomplete, but is vetted for quality.
 
  - [Automatic Differentiation for Dummies keynote video](https://www.youtube.com/watch?v=FtnkqIsfNQc) by [Simon Peyton Jones](https://github.com/simonpj): particularly good if you like pure math type thinking.
 
+ - ["What types work with differentiation?](https://github.com/google-research/dex-lang/issues/454#issuecomment-766089519) comment on DexLang GitHub issue by [Dan Zhgeng](https://github.com/dan-zheng): summarizes several years of insights from the Swift AD work.
+
  - MIT 18337 lecture notes 8-10 (by [Christopher Rackauckas](https://github.com/ChrisRackauckas) and [David P. Sanders](https://github.com/dpsanders)  : moves fast from basic to advanced, particularly good if you like applicable mathematics
    - [Automatic Differentiation and Application](https://mitmath.github.io/18337/lecture8/automatic_differentiation): Good introduction
    - [Forward-Mode AD via High Dimensional Algebras](https://mitmath.github.io/18337/lecture9/autodiff_dimensions): actually part 2 of the introduction
