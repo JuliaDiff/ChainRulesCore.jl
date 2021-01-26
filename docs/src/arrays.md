@@ -206,35 +206,26 @@ At any step in the program, if we have intermediates $X_m$, we can write down th
            \operatorname{conj} \left( (\overline{X}_m)_{i,\ldots,j} \right)
            (\dot{X}_m)_{i,\ldots,j}
        \right)\\
-    &= \sum_m \Re\left( \operatorname{dot}\left(
-           \overline{X}_m, \dot{X}_m
-       \right) \right),
+    &= \sum_m \Re\ip{ \overline{X}_m }{ \dot{X}_m },
 \end{align*}
 ```
 
-where $\operatorname{conj}(\cdot)$ is the complex conjugate (`conj`), $\Re(\cdot)$ is the real part of its argument (`real`), and $\operatorname{dot}(\cdot, \cdot)$ is the inner product (`LinearAlgebra.dot`).
+where $\operatorname{conj}(\cdot)$ is the complex conjugate (`conj`), $\Re(\cdot)$ is the real part of its argument (`real`), and $\ip{\cdot}{\cdot}$ is the inner product (`LinearAlgebra.dot`).
 Because this equation follows at any step of the program, we can equivalently write 
 
 ```math
-\frac{ds}{dt} = \Re\left( \operatorname{dot}\left(
-                    \overline{\Omega}, \dot{\Omega}
-                \right) \right),
+\frac{ds}{dt} = \ip{ \overline{\Omega} }{ \dot{\Omega} },
 ```
 
 which gives the identity
 
 ```math
 \begin{equation} \label{pbident}
-\Re\left( \operatorname{dot}\left(
-    \overline{\Omega}, \dot{\Omega}
-\right) \right) = 
-\sum_m \Re\left( \operatorname{dot}\left(
-    \overline{X}_m, \dot{X}_m
-\right) \right).
+\ip{ \overline{\Omega} }{ \dot{\Omega} } = \sum_m \ip{ \overline{X}_m }{ \dot{X}_m }.
 \end{equation}
 ```
 
-For matrices and vectors, $\operatorname{dot}(A, B) = \tr(A^H B)$, and the identity simplifies to:
+For matrices and vectors, $\ip{A}{B} = \tr(A^H B)$, and the identity simplifies to:
 
 ```math
 \begin{equation} \label{pbidentmat}
@@ -266,9 +257,7 @@ Note that the final expressions for the adjoints will not contain any $\dot{X}_m
     ```math
     \begin{align*}
     \frac{ds}{dt}
-        &= \Re\left( \operatorname{dot}\left(
-               \overline{x} + i \overline{y}, \dot{x} + i \dot{y}
-           \right) \right) \\
+        &= \ip{ \overline{x} + i \overline{y} }{ \dot{x} + i \dot{y} } \\
         &= \Re\left(
                \operatorname{conj} \left( \overline{x} + i \overline{y} \right)
                \left( \dot{x} + i \dot{y} \right)
@@ -490,9 +479,7 @@ The array form of \eqref{pbident} is
 
 ```math
 \begin{align*}
-\Re\left( \operatorname{dot}\left(
-    \overline{\Omega}, \dot{\Omega}
-\right) \right)
+\ip{ \overline{\Omega} }{ \dot{\Omega} }
     &= \Re \left( \sum_{ik}
            \operatorname{conj} \left( \overline{\Omega}_{i1k} \right) \dot{\Omega}_{i1k}
        \right)
