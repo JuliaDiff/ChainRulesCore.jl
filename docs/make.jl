@@ -29,6 +29,7 @@ makedocs(
         mathengine=MathJax3(
             Dict(
                 :tex => Dict(
+                    "inlineMath" => [["\$","\$"], ["\\(","\\)"]],
                     "tags" => "ams",
                     # TODO: remove when using physics package
                     "macros" => Dict(
