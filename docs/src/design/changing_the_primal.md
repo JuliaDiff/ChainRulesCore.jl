@@ -1,11 +1,22 @@
 # Design Notes: Why can you change the primal computation?
-#TODO generalize intro/title to ask why `rrule` is how it is, and in particular about changing primal
 
-These design notes are to help you understand why ChainRules allows the primal computation to be changed.
-We will focus this discussion on reverse mode and `rrule`, though the same also applies to forward mode and `frule`.
-In fact, it has a particular use in forward mode for efficiently calculating the pushforward of a differential equation solve via expanding the system of equations to also include the derivatives and solving all at once.
-In forward mode it is related to the fusing of `frule` and `pushforward`.
-In reverse mode we can focus on the the distinct primal and gradient passes.
+These design notes are to help you understand why ChainRules why [`rrule`](@ref).
+It explains why we have a function, that includes the computation of the primal result, and that returns the pullback as a closure.
+This structure is perhaps surprising to some AD authors, who might expect just a function that performs the pullback.
+It is particularly notable that you are able to change the primal computation when defining the `rrule`.
+We will illustrate in this document why this is a crucial capacity.
+
+
+!!! note what about `frule`?
+    Discussion here is focused on on reverse mode and `rrule`.
+    Similar concerns to apply to to forward mode and `frule`.
+    In forward mode these concerns lead to the fusing of the `pushforward` into `frule`.
+    All the examples given here also apply in forwards mode.
+    In fact in forwards mode there are even more opportunities to take advantage of sharing work between the primal and derivative computations.
+    A particularly notable example is in efficiently calculating the pushforward of solving a differential equation via expanding the system of equations to also include the derivatives before solving it.
+
+
+
 
 
 ## The Journey to `rrule`
