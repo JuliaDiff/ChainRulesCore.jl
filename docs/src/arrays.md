@@ -173,7 +173,7 @@ These identities are particularly useful:
 
 ```math
 \begin{align*}
-\frac{d}{dt} \left( \operatorname{real}(A) \right) &= \operatorname{real}(\dot{A})\\
+\frac{d}{dt} \left( \Re(A) \right) &= \Re(\dot{A})\\
 \frac{d}{dt} \left( \operatorname{conj}(A) \right) &= \operatorname{conj}(\dot{A})\\
 \frac{d}{dt} \left( A^T \right) &= \dot{A}^T\\
 \frac{d}{dt} \left( A^H \right) &= \dot{A}^H\\
@@ -198,25 +198,25 @@ At any step in the program, if we have intermediates $X_m$, we can write down th
 ```math
 \begin{align*}
 \frac{ds}{dt}
-    &= \sum_m \operatorname{real}\left( \sum_{i,\ldots,j}
+    &= \sum_m \Re\left( \sum_{i,\ldots,j}
            \operatorname{conj}\left( \frac{\partial s}{\partial (X_m)_{i,\ldots,j}} \right)
            \frac{d (X_m)_{i,\ldots,j}}{dt}
        \right)\\
-    &= \sum_m \operatorname{real}\left( \sum_{i,\ldots,j}
+    &= \sum_m \Re\left( \sum_{i,\ldots,j}
            \operatorname{conj} \left( (\overline{X}_m)_{i,\ldots,j} \right)
            (\dot{X}_m)_{i,\ldots,j}
        \right)\\
-    &= \sum_m \operatorname{real}\left( \operatorname{dot}\left(
+    &= \sum_m \Re\left( \operatorname{dot}\left(
            \overline{X}_m, \dot{X}_m
        \right) \right),
 \end{align*}
 ```
 
-where $\operatorname{conj}(\cdot)$ is the complex conjugate (`conj`), $\operatorname{real}(\cdot)$ is the real part of its argument (`real`), and $\operatorname{dot}(\cdot, \cdot)$ is the inner product (`LinearAlgebra.dot`).
+where $\operatorname{conj}(\cdot)$ is the complex conjugate (`conj`), $\Re(\cdot)$ is the real part of its argument (`real`), and $\operatorname{dot}(\cdot, \cdot)$ is the inner product (`LinearAlgebra.dot`).
 Because this equation follows at any step of the program, we can equivalently write 
 
 ```math
-\frac{ds}{dt} = \operatorname{real}\left( \operatorname{dot}\left(
+\frac{ds}{dt} = \Re\left( \operatorname{dot}\left(
                     \overline{\Omega}, \dot{\Omega}
                 \right) \right),
 ```
@@ -225,10 +225,10 @@ which gives the identity
 
 ```math
 \begin{equation} \label{pbident}
-\operatorname{real}\left( \operatorname{dot}\left(
+\Re\left( \operatorname{dot}\left(
     \overline{\Omega}, \dot{\Omega}
 \right) \right) = 
-\sum_m \operatorname{real}\left( \operatorname{dot}\left(
+\sum_m \Re\left( \operatorname{dot}\left(
     \overline{X}_m, \dot{X}_m
 \right) \right).
 \end{equation}
@@ -238,10 +238,10 @@ For matrices and vectors, $\operatorname{dot}(A, B) = \operatorname{tr}(A^H B)$,
 
 ```math
 \begin{equation} \label{pbidentmat}
-\operatorname{real}\left( \operatorname{tr}\left(
+\Re\left( \operatorname{tr}\left(
     \overline{\Omega}^H \dot{\Omega}
 \right) \right) =
-\sum_m \operatorname{real} \left( \operatorname{tr} \left(
+\sum_m \Re \left( \operatorname{tr} \left(
     \overline{X}_m^H \dot{X}_m
 \right) \right),
 \end{equation}
@@ -266,18 +266,18 @@ Note that the final expressions for the adjoints will not contain any $\dot{X}_m
     ```math
     \begin{align*}
     \frac{ds}{dt}
-        &= \operatorname{real}\left( \operatorname{dot}\left(
+        &= \Re\left( \operatorname{dot}\left(
                \overline{x} + i \overline{y}, \dot{x} + i \dot{y}
            \right) \right) \\
-        &= \operatorname{real}\left(
+        &= \Re\left(
                \operatorname{conj} \left( \overline{x} + i \overline{y} \right)
                \left( \dot{x} + i \dot{y} \right)
            \right) \\
-        &= \operatorname{real}\left(
+        &= \Re\left(
                \left( \overline{x} - i \overline{y} \right)
                \left( \dot{x} + i \dot{y} \right)
            \right) \\
-        &= \operatorname{real}\left(
+        &= \Re\left(
                \left( \overline{x} \dot{x} + \overline{y} \dot{y} \right) +
                i \left( \overline{x} \dot{y} - \overline{y} \dot{x} \right)
            \right)\\
@@ -313,31 +313,31 @@ Using \eqref{pbidentmat}, we now multiply by $\overline{\Omega}^H$ and take the 
 
 ```math
 \begin{align*}
-\operatorname{real}\left( \operatorname{tr} \left(
+\Re\left( \operatorname{tr} \left(
         \overline{\Omega}^H \dot{\Omega}
 \right) \right)
-    &= \operatorname{real}\left( \operatorname{tr} \left( \overline{\Omega}^H ~\left(
+    &= \Re\left( \operatorname{tr} \left( \overline{\Omega}^H ~\left(
            \dot{A} B + A \dot{B}
        \right) \right) \right)
            && \text{substitute } \dot{\Omega} \text{ from } \eqref{diffprod}\\
-    &= \operatorname{real}\left( \operatorname{tr} \left(
+    &= \Re\left( \operatorname{tr} \left(
            \overline{\Omega}^H \dot{A} B
        \right) \right) +
-       \operatorname{real}\left( \operatorname{tr} \left(
+       \Re\left( \operatorname{tr} \left(
            \overline{\Omega}^H  A \dot{B}
        \right) \right)
            && \text{expand using } \eqref{trexpand} \\
-    &= \operatorname{real}\left( \operatorname{tr} \left(
+    &= \Re\left( \operatorname{tr} \left(
            B \overline{\Omega}^H \dot{A}
        \right) \right) +
-       \operatorname{real}\left( \operatorname{tr} \left(
+       \Re\left( \operatorname{tr} \left(
            \overline{\Omega}^H A \dot{B}
        \right) \right)
            && \text{rearrange the left term using } \eqref{trperm}\\
-    &= \operatorname{real}\left( \operatorname{tr} \left(
+    &= \Re\left( \operatorname{tr} \left(
            \overline{A}^H  \dot{A}
        \right) \right) +
-       \operatorname{real}\left( \operatorname{tr} \left(
+       \Re\left( \operatorname{tr} \left(
            \overline{B}^H \dot{B}
        \right) \right)
            && \text{right-hand side of } \eqref{pbidentmat}
@@ -383,18 +383,18 @@ Using \eqref{pbidentmat},
 
 ```math
 \begin{align*}
-\operatorname{real}\left( \operatorname{tr} \left(
+\Re\left( \operatorname{tr} \left(
     \overline{\Omega}^H \dot{\Omega}
 \right) \right)
-    &= \operatorname{real}\left( \operatorname{tr} \left(
+    &= \Re\left( \operatorname{tr} \left(
            -\overline{\Omega}^H \Omega \dot{A} \Omega
        \right) \right)
            && \text{substitute } \eqref{invdiff}\\
-    &= \operatorname{real}\left( \operatorname{tr} \left(
+    &= \Re\left( \operatorname{tr} \left(
            -\Omega \overline{\Omega}^H \Omega \dot{A}
        \right) \right)
            && \text{rearrange using } \eqref{trperm}\\
-    &= \operatorname{real}\left( \operatorname{tr} \left(
+    &= \Re\left( \operatorname{tr} \left(
            \overline{A}^H  \dot{A}
        \right) \right)
            && \text{right-hand side of } \eqref{pbidentmat}
@@ -435,7 +435,7 @@ which we write as
 
 ```math
 \Omega_{i1k} = \sum_{j} |X_{ijk}|^2
-             = \sum_{j} \operatorname{real} \left(
+             = \sum_{j} \Re \left(
                   \operatorname{conj} \left( X_{ijk} \right) X_{ijk}
                \right)
 ```
@@ -445,16 +445,16 @@ The pushforward from \eqref{pf} is
 ```math
 \begin{align}
 \dot{\Omega}_{i1k}
-    &= \sum_j \operatorname{real}\left(
+    &= \sum_j \Re\left(
            \operatorname{conj} \left( \dot{X}_{ijk} \right) X_{ijk} +
            \operatorname{conj} \left( X_{ijk} \right) \dot{X}_{ijk} \right) \nonumber\\
-    &= \sum_j \operatorname{real}\left(
+    &= \sum_j \Re\left(
             \operatorname{conj}\left(
                 \operatorname{conj} \left( X_{ijk} \right) \dot{X}_{ijk}
             \right) +
             \operatorname{conj}(X_{ijk}) \dot{X}_{ijk}
        \right) \nonumber\\
-    &= \sum_j 2 \operatorname{real}\left(
+    &= \sum_j 2 \Re\left(
            \operatorname{conj} \left( X_{ijk} \right) \dot{X}_{ijk}
        \right), \label{sumabspf}
 \end{align}
@@ -466,7 +466,7 @@ where in the last step we have used the fact that for all real $a$ and $b$,
 (a + i b) + \operatorname{conj}(a + i b)
     = (a + i b) + (a - i b)
     = 2 a
-    = 2 \operatorname{real} (a + i b).
+    = 2 \Re (a + i b).
 ```
 
 Because none of this derivation depended on the index (or indices), we implement `frule` generically as
@@ -490,28 +490,28 @@ The array form of \eqref{pbident} is
 
 ```math
 \begin{align*}
-\operatorname{real}\left( \operatorname{dot}\left(
+\Re\left( \operatorname{dot}\left(
     \overline{\Omega}, \dot{\Omega}
 \right) \right)
-    &= \operatorname{real} \left( \sum_{ik}
+    &= \Re \left( \sum_{ik}
            \operatorname{conj} \left( \overline{\Omega}_{i1k} \right) \dot{\Omega}_{i1k}
        \right)
            && \text{expand left-hand side of } \eqref{pbident}\\
-    &= \operatorname{real} \left(\sum_{ijk}
+    &= \Re \left(\sum_{ijk}
            \operatorname{conj} \left( \overline{\Omega}_{i1k} \right)
-           2 \operatorname{real}\left(
+           2 \Re\left(
                \operatorname{conj} \left( X_{ijk} \right) \dot{X}_{ijk}
            \right)
        \right)
            && \text{substitute } \eqref{sumabspf}\\
-    &= \operatorname{real} \left( \sum_{ijk}
+    &= \Re \left( \sum_{ijk}
            \left(
-               2 \operatorname{real} \left( \overline{\Omega}_{i1k} \right)
+               2 \Re \left( \overline{\Omega}_{i1k} \right)
                \operatorname{conj} \left( X_{ijk} \right)
            \right) \dot{X}_{ijk}
        \right)
-           && \text{bring } \dot{X}_{ijk} \text{ outside of } \operatorname{real}\\
-    &= \operatorname{real} \left( \sum_{ijk}
+           && \text{bring } \dot{X}_{ijk} \text{ outside of } \Re\\
+    &= \Re \left( \sum_{ijk}
            \operatorname{conj} \left( \overline{X}_{ijk} \right) \dot{X}_{i1k}
        \right)
            && \text{expand right-hand side of } \eqref{pbident}
@@ -524,10 +524,10 @@ We now solve for $\overline{X}$:
 \begin{align*}
 \overline{X}_{ijk}
     &= \operatorname{conj}\left(
-            2 \operatorname{real} \left( \overline{\Omega}_{i1k} \right)
+            2 \Re \left( \overline{\Omega}_{i1k} \right)
             \operatorname{conj} \left( X_{ijk} \right)
         \right)\\
-    &= 2\operatorname{real} \left( \overline{\Omega}_{i1k} \right) X_{ijk}
+    &= 2\Re \left( \overline{\Omega}_{i1k} \right) X_{ijk}
 \end{align*}
 ```
 
@@ -574,7 +574,7 @@ To make this easier, let's break the computation into more manageable steps:
 ```math
 \begin{align*}
 d &= \det(A)\\
-a &= |d| = \sqrt{\operatorname{real} \left( \operatorname{conj}(d) d \right)}\\
+a &= |d| = \sqrt{\Re \left( \operatorname{conj}(d) d \right)}\\
 l &= \log a\\
 s &= \frac{d}{a}
 \end{align*}
@@ -596,44 +596,44 @@ Now we'll compute the pushforwards for the remaining steps.
 ```math
 \begin{align*}
 \dot{a} &= \frac{1}{2 a} \frac{d}{dt}
-                         \operatorname{real}\left( \operatorname{conj}(d) d \right)\\
-        &= \frac{2}{2 a} \operatorname{real} \left( \operatorname{conj}(d) \dot{d} \right)\\
-        &= \operatorname{real} \left( \operatorname{conj}(s) \dot{d} \right)
+                         \Re\left( \operatorname{conj}(d) d \right)\\
+        &= \frac{2}{2 a} \Re \left( \operatorname{conj}(d) \dot{d} \right)\\
+        &= \Re \left( \operatorname{conj}(s) \dot{d} \right)
             && \text{use } d = a s \\
-        &= \operatorname{real} \left( \operatorname{conj}(s) d b \right)
+        &= \Re \left( \operatorname{conj}(s) d b \right)
             && \text{substitute } \dot{d} \\
 \dot{l} &= a^{-1} \dot{a}\\
-        &= a^{-1} \operatorname{real} \left( \operatorname{conj}(s) d b \right)
+        &= a^{-1} \Re \left( \operatorname{conj}(s) d b \right)
             && \text{substitute } \dot{a}\\
-        &= \operatorname{real} \left( \operatorname{conj}(s) s b \right)
+        &= \Re \left( \operatorname{conj}(s) s b \right)
             && \text{use } d = a s \\
-        &= \operatorname{real} \left(b \right)
+        &= \Re \left(b \right)
             && \text{use } \operatorname{conj}(s) s = 1\\
 \dot{s} &= a^{-1} \dot{d} - a^{-2} d \dot{a}\\
         &= a^{-1} \left( \dot{d} - \dot{a} s \right)
             && \text{use } d = a s \\
         &= a^{-1} \left(
-               \dot{d} - \operatorname{real} \left( \operatorname{conj}(s) \dot{d} \right) s
+               \dot{d} - \Re \left( \operatorname{conj}(s) \dot{d} \right) s
            \right)
             && \text{substitute } \dot{a}\\
         &= a^{-1} \left(
                \dot{d} - \left(
                    \operatorname{conj}(s) \dot{d} -
-                   i \operatorname{imag} \left( \operatorname{conj}(s) \dot{d} \right)
+                   i \Im \left( \operatorname{conj}(s) \dot{d} \right)
                \right) s
            \right)
-            && \text{use } \operatorname{real}(x) = x - i \operatorname{imag}(x)\\
+            && \text{use } \Re(x) = x - i \Im(x)\\
         &= a^{-1} \left(
                \dot{d} - \left( \operatorname{conj}(s) s \right) \dot{d} +
-               i \operatorname{imag} \left( \operatorname{conj}(s) \dot{d} \right) s 
+               i \Im \left( \operatorname{conj}(s) \dot{d} \right) s 
                \right)\\
-        &= i a^{-1} \operatorname{imag} \left( \operatorname{conj}(s) \dot{d} \right) s
+        &= i a^{-1} \Im \left( \operatorname{conj}(s) \dot{d} \right) s
             && \text{use } \operatorname{conj}(s) s = 1\\
-        &= i a^{-1} \operatorname{imag} \left( \operatorname{conj}(s) d b \right) s
+        &= i a^{-1} \Im \left( \operatorname{conj}(s) d b \right) s
             && \text{substitute } \dot{d}\\
-        &= i \operatorname{imag} \left( \operatorname{conj}(s) s b \right) s
+        &= i \Im \left( \operatorname{conj}(s) s b \right) s
             && \text{use } d = a s \\
-        &= i \operatorname{imag}(b) s
+        &= i \Im(b) s
             && \text{use } \operatorname{conj}(s) s = 1
 \end{align*}
 ```
@@ -644,8 +644,8 @@ In summary, after all of that work, the final pushforward is quite simple:
 ```math
 \begin{align}
 b &= \operatorname{tr} \left( A^{-1} \dot{A} \right) \label{logabsdet_b} \\
-\dot{l} &= \operatorname{real}(b) \label{logabsdet_ldot}\\
-\dot{s} &= i \operatorname{imag}(b) s \label{logabsdet_sdot}\\
+\dot{l} &= \Re(b) \label{logabsdet_ldot}\\
+\dot{s} &= i \Im(b) s \label{logabsdet_sdot}\\
 \end{align}
 ```
 
@@ -673,59 +673,59 @@ end
 
 ```math
 \begin{align*}
-&\operatorname{real}\left( \operatorname{tr}\left(
+&\Re\left( \operatorname{tr}\left(
     \overline{l}^H \dot{l}
 \right) \right) +
-\operatorname{real}\left( \operatorname{tr}\left(
+\Re\left( \operatorname{tr}\left(
     \overline{s}^H \dot{s}
 \right) \right)
     && \text{left-hand side of } \eqref{pbidentmat}\\
-&= \operatorname{real}\left( 
+&= \Re\left( 
        \operatorname{conj} \left( \overline{l} \right) \dot{l} +
        \operatorname{conj} \left( \overline{s} \right) \dot{s}
    \right) \\
-&= \operatorname{real}\left( 
-       \operatorname{conj} \left( \overline{l} \right) \operatorname{real}(b) +
-       i \operatorname{conj} \left( \overline{s} \right) s \operatorname{imag}(b)
+&= \Re\left( 
+       \operatorname{conj} \left( \overline{l} \right) \Re(b) +
+       i \operatorname{conj} \left( \overline{s} \right) s \Im(b)
    \right)
        && \text{substitute } \eqref{logabsdet_ldot} \text{ and } \eqref{logabsdet_sdot} \\
-&= \operatorname{real}\left( 
-       \operatorname{real}\left( \overline{l} \right) \operatorname{real}(b) -
-       \operatorname{imag} \left(
+&= \Re\left( 
+       \Re\left( \overline{l} \right) \Re(b) -
+       \Im \left(
            \operatorname{conj} \left( \overline{s} \right) s
-       \right) \operatorname{imag}(b)
+       \right) \Im(b)
    \right)
        && \text{discard imaginary parts} \\
-&= \operatorname{real}\left(
+&= \Re\left(
        \left(
-           \operatorname{real} \left( \overline{l} \right) +
-           i \operatorname{imag} \left(
+           \Re \left( \overline{l} \right) +
+           i \Im \left(
                \operatorname{conj} \left( \overline{s} \right) s
            \right)
        \right) b
    \right)
        && \text{gather parts of } b \\
-&= \operatorname{real}\left(
+&= \Re\left(
        \left(
-           \operatorname{real} \left( \overline{l} \right) +
-           i \operatorname{imag} \left(
+           \Re \left( \overline{l} \right) +
+           i \Im \left(
                \operatorname{conj} \left( \overline{s} \right) s
            \right)
        \right)
        \operatorname{tr}(A^{-1} \dot{A})
    \right)
        && \text{substitute } b \text{ from } \eqref{logabsdet_b} \\
-&= \operatorname{real}\left( \operatorname{tr} \left(
+&= \Re\left( \operatorname{tr} \left(
        \left(
-           \operatorname{real} \left( \overline{l} \right) +
-           i \operatorname{imag} \left(
+           \Re \left( \overline{l} \right) +
+           i \Im \left(
                \operatorname{conj} \left( \overline{s} \right) s
            \right)
        \right)
        A^{-1} \dot{A}
    \right) \right)
        && \text{bring scalar within } \operatorname{tr} \\
-&= \operatorname{real}\left( \operatorname{tr} \left( \overline{A}^H \dot{A} \right) \right)
+&= \Re\left( \operatorname{tr} \left( \overline{A}^H \dot{A} \right) \right)
        && \text{right-hand side of } \eqref{pbidentmat}\\
 \end{align*}
 ```
@@ -735,12 +735,12 @@ Now we solve for $\overline{A}$:
 ```math
 \begin{align*}
 \overline{A} &= \left( \left(
-    \operatorname{real} \left( \overline{l} \right) +
-    i \operatorname{imag} \left( \operatorname{conj} \left( \overline{s} \right) s \right)
+    \Re \left( \overline{l} \right) +
+    i \Im \left( \operatorname{conj} \left( \overline{s} \right) s \right)
 \right) A^{-1} \right)^H\\
 &= \left(
-    \operatorname{real} \left( \overline{l} \right) +
-    i \operatorname{imag} \left( \operatorname{conj} \left( s \right) \overline{s} \right)
+    \Re \left( \overline{l} \right) +
+    i \Im \left( \operatorname{conj} \left( s \right) \overline{s} \right)
 \right) A^{-H}
 \end{align*}
 ```
@@ -773,7 +773,7 @@ end
     What about $\dot{s}$?
     Well, $s = \frac{d}{|d|}$ is point on the unit circle in the complex plane.
     Multiplying a complex number by $i$ rotates it counter-clockwise by 90°.
-    So the expression for $\dot{s}$ takes a real number, $\operatorname{imag}(b)$, multiplies by $s$ to make it parallel to $s$, then multiplies by $i$ to make it perpendicular to $s$, that is, perfectly tangent to the unit complex circle at $s$.
+    So the expression for $\dot{s}$ takes a real number, $\Im(b)$, multiplies by $s$ to make it parallel to $s$, then multiplies by $i$ to make it perpendicular to $s$, that is, perfectly tangent to the unit complex circle at $s$.
 
     For the pullback, it again follows that only the real part of $\overline{l}$ is pulled back.
 
