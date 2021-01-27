@@ -6,7 +6,6 @@ It might be surprising to some AD authors, who might expect just a function that
 In particularly, `rrule` allows you to _change_ how the primal result is computed.
 We will illustrate in this document why being able to change the computation of the primal is crucial for efficient AD.
 
-
 !!! note "What about `frule`?"
     Discussion here is focused on on reverse mode and `rrule`.
     Similar concerns do apply to forward mode and `frule`.
@@ -14,9 +13,6 @@ We will illustrate in this document why being able to change the computation of 
     All the examples given here also apply in forward mode.
     In fact in forward mode there are even more opportunities to take advantage of sharing work between the primal and derivative computations.
     A particularly notable example is in efficiently calculating the pushforward of solving a differential equation via expanding the system of equations to also include the derivatives before solving it.
-
-
-
 
 ## The Journey to `rrule`
 
@@ -135,7 +131,6 @@ It is faster to  compute `sin` and `cos` at the same time via `sincos` than it i
 And it is faster to reuse the `exp(x)` in computing `σ(x)` and `σ(-x)`.
 How can we incorporate this insight into our system?
 We know we can compute both of these in the primal — because they only depend on `x` and not on `ȳ` — but there is nowhere to put them that is accessible both to the primal pass and the gradient pass code.
-
 
 What if we introduced some variable called `intermediates` that is also recorded onto the tape during the primal pass?
 We would need to be able to modify the primal pass to do this, so that we can actually put the data into the `intermediates`.
@@ -475,7 +470,7 @@ We don't have this in ChainRules.jl yet, because Julia is missing some definitio
 I have been promised them for Julia v1.7 though.
 You can see what the code would look like in [PR #302](https://github.com/JuliaDiff/ChainRules.jl/pull/302).
 
-# Conclusion
+## Conclusion
 This document has explained why [`rrule`](@ref) is the way it is.
 In particular it has highlighted why the primal computation is able to be changed from simply calling the function.
 Further, it has explained why `rrule` returns a closure for the pullback, rather than it being a separate function.
