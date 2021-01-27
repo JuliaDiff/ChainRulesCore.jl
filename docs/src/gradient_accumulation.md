@@ -30,10 +30,12 @@ Allocations are not free, they increase the time the program takes to run by a n
 We can note that in the above that neither `ā` nor `b̄` are ever used again after accumulating to get `X̄`.
 Furthermore, `Array`s are mutable.
 That means we could over-write either `ā` or `b̄` and use the result as `X̄`:
+
 ```julia
 ā .+= b̄
 X̄ = ā
 ```
+
 This cuts our allocations down to 2, just `ā` and `b̄`.
 
 However, we have a bit of a problem that not all types are mutable, so this pattern is hard to apply in general.
@@ -50,21 +52,21 @@ Rather than having an actual computed value, we can just have a thing that will 
 Let's illustrate it with our example.
 
 `b̄` is the partial for `X[2]` and its value can be computed by:
+
 ```julia
 b̄ = zeros(size(X))
 b̄[2] = ȳ  # the scalar sensitivity of the `mysum` output
-```
 `b̄` is a matrix entirely of zeros, except for at the index `2`, where it is set to the output sensitivity `ȳ`.
 `ā` is similar, except with the non-zero at index `1`.
 
 What is the action of `b̄` upon `ā`, to get the same result as `X̄ = add!!(ā, b̄)` (or `X̄ = ā + b̄` for that matter)?
 It is:
+
 ```julia
 function b̄_add!(ā)
     ā[2] += ȳ
     return ā
 end
-```
 We don't need to worry about all those zeros since `x + 0 == x`.
 
 [`InplaceableThunk`](@ref) is the type we have to represent derivatives as gradient accumulating actions.
