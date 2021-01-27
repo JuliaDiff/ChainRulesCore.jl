@@ -335,6 +335,7 @@ end
 </details>
 ```
 
+We should think about how we might want to make future changes to this code.[^6]
 (NB: there is actually a further optimization that can be made to the logistic sigmoid, to avoid remembering two things and just remember one.
 As an exercise to the reader, consider how the code would need to be changed and where.)
 
@@ -416,7 +417,7 @@ See the [code for this in ChainRules.jl](https://github.com/JuliaDiff/ChainRules
 Note that this is distinct from simply element-wise application of the function to the matrix's elements.
 The [Matrix Exponential](https://en.wikipedia.org/wiki/Matrix_exponential) `exp(::Matrix)` is a particularly important matrix function.
 
-Al-Mohy and Higham (2009)[^6], published a method for computing the pullback of `exp(::Matrix)`.
+Al-Mohy and Higham (2009)[^7], published a method for computing the pullback of `exp(::Matrix)`.
 It is pretty complex and very cool.
 To quote its abstract (emphasis mine):
 
@@ -501,4 +502,8 @@ Being able to change the primal computation is practically essential for a high 
     Those are separate functions called at very different times.
     This is something [opaque closures](https://github.com/JuliaLang/julia/pull/37849) should help solve.
 
-[^6]: [Al-Mohy, Awad H. and Higham, Nicholas J. (2009) _Computing the Fréchet Derivative of the Matrix Exponential, with an application to Condition Number Estimation_. SIAM Journal On Matrix Analysis and Applications., 30 (4). pp. 1639-1657. ISSN 1095-7162](http://eprints.maths.manchester.ac.uk/1218/)
+[^6]:
+    One change we might consider is to have logistic sigmoid to only remember one thing.
+    Rather than remembering `y` and `ex` to use in the pullback, we could compute `y / (1 + ex)` during the augmented primal, and just remember that.
+
+[^7]: [Al-Mohy, Awad H. and Higham, Nicholas J. (2009) _Computing the Fréchet Derivative of the Matrix Exponential, with an application to Condition Number Estimation_. SIAM Journal On Matrix Analysis and Applications., 30 (4). pp. 1639-1657. ISSN 1095-7162](http://eprints.maths.manchester.ac.uk/1218/)
