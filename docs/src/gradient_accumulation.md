@@ -121,7 +121,7 @@ Multiplication of scalars/vectors/matrices of compatible dimensions can all also
 These tend to pivot around that `add!` action being defined along the lines of:
 `X̄ -> mul!(X̄, A', Ȳ, true, true)`.
 Where 5-arg `mul!` is the in place [multiply-add operation](https://docs.julialang.org/en/v1/stdlib/LinearAlgebra/#LinearAlgebra.mul!).
-`mul!(X̄, A', Ȳ, true, true) = (X̄ .+= A'*Ȳ)`.
+`mul!(X̄, A', Ȳ, true, true)` has the same effect as `(X̄ .+= A'*Ȳ)` but avoids allocating  the matrix  `A'*Ȳ`
 This is one of the fundamental operations provided by BLAS -- including the application of the conjugate transpose.
 e.g. the Matrix-Matrix form is [`GEMM` (GEneralized Matrix-Matrix Multiplication)](http://www.netlib.org/lapack/explore-html/d1/d54/group__double__blas__level3_gaeda3cbd99c8fb834a60a6412878226e1.html#gaeda3cbd99c8fb834a60a6412878226e1),
 the Matrix-Vector form is [`GEMV` (GEneralized Matrix-Vector Multiplication)](http://www.netlib.org/lapack/explore-html/d7/d15/group__double__blas__level2_gadd421a107a488d524859b4a64c1901a9.html#gadd421a107a488d524859b4a64c1901a9) etc.
