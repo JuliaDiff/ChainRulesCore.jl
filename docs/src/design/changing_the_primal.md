@@ -186,7 +186,7 @@ Not to mention these are fairly simple example, the `sin` and `σ` functions hav
 Furthermore, we often don't even use all of the arguments to `pullback_at`.
 The new code for pulling back `sin` — which uses `sincos` and `intermediates` — no longer needs `x`, and it never needed `y` (though sigmoid `σ` does).
 And storing all these things on the tape — inputs, outputs, sensitivities, intermediates — is using up extra memory.
-What if we generalized the idea of the `intermediate` named tuple, and had a struct that just held anything we might want put on the tape.
+What if we generalized the idea of the `intermediate` named tuple, and had `augmented_primal` return a struct that just held anything we might want put on the tape.
 ```julia
 struct PullbackMemory{P, S}
   primal_function::P
@@ -468,7 +468,7 @@ In this computation the factorization of the original `A` can reused.
 Doing so can give a 4x speed-up.
 
 We don't have this in ChainRules.jl yet, because Julia is missing some definitions of `adjoint` of factorizations ([JuliaLang/julia#38293](https://github.com/JuliaLang/julia/issues/38293)).
-I have been promised them for Julia v1.7 though.
+We have been promised them for Julia v1.7 though.
 You can see what the code would look like in [PR #302](https://github.com/JuliaDiff/ChainRules.jl/pull/302).
 
 ## Conclusion
