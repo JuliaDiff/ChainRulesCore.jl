@@ -1,6 +1,10 @@
 // Only for light theme
 
 html:not(.theme--documenter-dark) body #documenter {
+  details {
+    margin-bottom: 1rem;
+  }
+
 
   // Links
   

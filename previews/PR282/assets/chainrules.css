@@ -1,3 +1,6 @@
+html:not(.theme--documenter-dark) body #documenter details {
+  margin-bottom: 1rem; }
+
 html:not(.theme--documenter-dark) body #documenter a {
   color: #4595D1; }
 
