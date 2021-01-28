@@ -1,6 +1,3 @@
-html:not(.theme--documenter-dark) body #documenter details {
-  margin-bottom: 1rem; }
-
 html:not(.theme--documenter-dark) body #documenter a {
   color: #4595D1; }
 
@@ -59,3 +56,12 @@ html:not(.theme--documenter-dark) body #documenter pre, html:not(.theme--documen
 
 html.theme--documenter-dark .admonition.is-category-terminology {
   border-color: #FFEC8B; }
+
+details {
+  padding-left: 1rem;
+  padding-right: 1rem;
+  padding-bottom: 1rem;
+  background: aliceblue; }
+
+html.theme--documenter-dark details {
+  background: #282f2f; }
