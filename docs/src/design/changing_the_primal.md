@@ -30,7 +30,7 @@ x̄ = pullback_at(f, x, y, ȳ)
 Let's illustrate this with examples for `sin` and for the [logistic sigmoid](https://en.wikipedia.org/wiki/Logistic_function#Derivative).
 
 ```@raw html
-<details><summary>Example for `sin`</summary>
+<details open><summary>Example for `sin`</summary>
 ```
 ```julia
 y = sin(x)
@@ -42,7 +42,7 @@ pullback_at(::typeof(sin), x, y, ȳ) = ȳ * cos(x)
 </details>
 ```
 ```@raw html
-<details><summary>Example for the logistic sigmoid</summary>
+<details open><summary>Example for the logistic sigmoid</summary>
 ```
 
 ```julia
@@ -61,7 +61,7 @@ One key reason is to insert domain knowledge so as to compute the derivative mor
 What insights do we have about `sin` and `cos`?
 What about using `sincos`?
 ```@raw html
-<details><summary>Example for `sin`</summary>
+<details open><summary>Example for `sin`</summary>
 ```
 ```julia
 julia> using BenchmarkTools
@@ -93,7 +93,7 @@ then we see they have the common term $e^x$.
 `exp(x)` is a much more expensive operation than `+` and `/`.
 So we can save time, if we can reuse that `exp(x)`.
 ```@raw html
-<details><summary>Example for the logistic sigmoid</summary>
+<details open><summary>Example for the logistic sigmoid</summary>
 ```
 If we have to computing separately:
 ```julia
@@ -144,7 +144,7 @@ x̄ = pullback_at(f, x, y, ȳ, intermediates)
 ```
 
 ```@raw html
-<details><summary>Example for `sin`</summary>
+<details open><summary>Example for `sin`</summary>
 ```
 ```julia
 function augmented_primal(::typeof(sin), x)
@@ -159,7 +159,7 @@ pullback_at(::typeof(sin), x, y, ȳ, intermediates) = ȳ * intermediates.cx
 ```
 
 ```@raw html
-<details><summary>Example for the logistic sigmoid</summary>
+<details open><summary>Example for the logistic sigmoid</summary>
 ```
 ```julia
 function augmented_primal(::typeof(σ), x)
@@ -207,7 +207,7 @@ x̄ = pullback_at(pb, ȳ)
 which is much cleaner.
 
 ```@raw html
-<details><summary>Example for `sin`</summary>
+<details open><summary>Example for `sin`</summary>
 ```
 ```julia
 function augmented_primal(::typeof(sin), x)
@@ -222,7 +222,7 @@ pullback_at(pb::PullbackMemory{typeof(sin)}, ȳ) = ȳ * pb.cx
 ```
 
 ```@raw html
-<details><summary>Example for the logistic sigmoid</summary>
+<details open><summary>Example for the logistic sigmoid</summary>
 ```
 ```julia
 function augmented_primal(::typeof(σ), x)
@@ -252,7 +252,7 @@ x̄ = pb(ȳ)
 ```
 
 ```@raw html
-<details><summary>Example for `sin`</summary>
+<details open><summary>Example for `sin`</summary>
 ```
 ```julia
 function augmented_primal(::typeof(sin), x)
@@ -267,7 +267,7 @@ end
 ```
 
 ```@raw html
-<details><summary>Example for the logistic sigmoid</summary>
+<details open><summary>Example for the logistic sigmoid</summary>
 ```
 ```julia
 function augmented_primal(::typeof(σ), x)
@@ -290,7 +290,7 @@ We have one final thing to do, which is to think about how we make the code easy
 Let's go back and think about the changes we would have make to go from our original way of writing that only used the inputs/outputs, to one that used the intermediate state.
 
 ```@raw html
-<details><summary>Example for `sin`</summary>
+<details open><summary>Example for `sin`</summary>
 ```
 To rewrite that original formulation in the new pullback form we have:
 ```julia
@@ -313,7 +313,7 @@ end
 ```
 
 ```@raw html
-<details><summary>Example for the logistic sigmoid</summary>
+<details open><summary>Example for the logistic sigmoid</summary>
 ```
 ```julia
 function augmented_primal(::typeof(σ), x)
@@ -354,7 +354,7 @@ There are [incredible ways to abuse this](https://invenia.github.io/blog/2019/10
 Replacing `PullbackMemory` with a closure that works the same way lets us avoid having to manually control what is remembered _and_ lets us avoid separately writing the call overload.
 
 ```@raw html
-<details><summary>Example for `sin`</summary>
+<details open><summary>Example for `sin`</summary>
 ```
 ```julia
 function augmented_primal(::typeof(sin), x)
@@ -368,7 +368,7 @@ end
 ```
 
 ```@raw html
-<details><summary>Example for the logistic sigmoid</summary>
+<details open><summary>Example for the logistic sigmoid</summary>
 ```
 ```julia
 function augmented_primal(::typeof(σ), x)
