@@ -336,8 +336,6 @@ end
 ```
 
 We should think about how we might want to make future changes to this code.[^6]
-(NB: there is actually a further optimization that can be made to the logistic sigmoid, to avoid remembering two things and just remember one.
-As an exercise to the reader, consider how the code would need to be changed and where.)
 
 We need to make a series of changes:
  * update what work is done in the primal, to compute the intermediate values.
