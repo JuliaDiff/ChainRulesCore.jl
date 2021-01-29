@@ -460,12 +460,12 @@ The differences in practice are around $10^{-15}$, which while very small on abs
 Roughly speaking:
 `Y=A\B` is the function that finds the least-square solution to `YA ≈ B`.
 When solving such a system, the efficient way to do so is to factorize `A` into an appropriate factorized form such as `Cholesky` or `QR`, then perform the `\` operation on the factorized form.
-The pullback of `A\B` with respect to `B` is `Ȳ-> A' \ Ȳ`.
-It should be noted that this involves computing the factorization of `A'` (the adjoint of `A`).
+The pullback of `A\B` with respect to `B` is `Ȳ -> A' \ Ȳ`.
+It should be noted that this involves computing the factorization of `A'` (the adjoint of `A`).[^8]
 In this computation the factorization of the original `A` can reused.
 Doing so can give a 4x speed-up.
 
-We don't have this in ChainRules.jl yet, because Julia is missing some definitions of `adjoint` of factorizations ([JuliaLang/julia#38293](https://github.com/JuliaLang/julia/issues/38293)).
+We don't have this in ChainRules.jl yet, because Julia is missing some definitions of `adjoint` of factorizations ([JuliaLang/julia#38293](https://github.com/JuliaLang/julia/issues/38293)).[^8]
 We have been promised them for Julia v1.7 though.
 You can see what the code would look like in [PR #302](https://github.com/JuliaDiff/ChainRules.jl/pull/302).
 
@@ -505,3 +505,5 @@ Being able to change the primal computation is practically essential for a high 
     Rather than remembering `y` and `ex` to use in the pullback, we could compute `y / (1 + ex)` during the augmented primal, and just remember that.
 
 [^7]: [Al-Mohy, Awad H. and Higham, Nicholas J. (2009) _Computing the Fréchet Derivative of the Matrix Exponential, with an application to Condition Number Estimation_. SIAM Journal On Matrix Analysis and Applications., 30 (4). pp. 1639-1657. ISSN 1095-7162](http://eprints.maths.manchester.ac.uk/1218/)
+
+[^8]: To be clear here we mean `adjoint` as in the conjugate transpose of a matrix, rather than in the sense of reverse mode AD.
