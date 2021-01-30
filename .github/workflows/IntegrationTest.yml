@@ -21,6 +21,7 @@ jobs:
           - {user: invenia, repo: PDMatsExtras.jl}
           - {user: chrisbrahms, repo: Hankel.jl}
           - {user: SciML, repo: DiffEqBase.jl}
+          - {user: PumasAI, repo: DataInterpolations.jl}
           - {user: dfdx, repo: Yota.jl}
 
     steps:
