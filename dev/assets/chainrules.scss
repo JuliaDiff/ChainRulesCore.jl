@@ -1,7 +1,6 @@
 // Only for light theme
 
 html:not(.theme--documenter-dark) body #documenter {
-
   // Links
   
   a {
@@ -107,3 +106,16 @@ html:not(.theme--documenter-dark) body #documenter {
 html.theme--documenter-dark .admonition.is-category-terminology {
   border-color: #FFEC8B;
 }
+
+// Details
+details {
+  padding-left: 1rem;
+  padding-right: 1rem;
+  padding-bottom: 1rem;
+  background: aliceblue;
+}
+
+html.theme--documenter-dark details {
+  background: #282f2f;
+}
+
