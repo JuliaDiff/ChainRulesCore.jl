@@ -1,5 +1,17 @@
 // Only for light theme
 
+@font-face {
+	font-family: JuliaMono;
+	src:
+		local('JuliaMono'),
+		url("https://cdn.jsdelivr.net/gh/cormullion/juliamono/webfonts/JuliaMono-Regular.woff2");
+}
+
+html.theme--documenter-dark pre,
+html.theme--documenter-dark code {
+  font-family: "JuliaMono";
+}
+
 html:not(.theme--documenter-dark) body #documenter {
   // Links
 
@@ -74,9 +86,8 @@ html:not(.theme--documenter-dark) body #documenter {
 
   code {
     color: inherit;
-
+		font-family: "JuliaMono";
     .hljs-meta { color: #4595D1; }
-
     .hljs-keyword { color: #194E82; }
   }
 
