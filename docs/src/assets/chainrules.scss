@@ -2,11 +2,11 @@
 
 html:not(.theme--documenter-dark) body #documenter {
   // Links
-  
+
   a {
     color: #4595D1;
   }
-  
+
   a:hover, a:focus {
     color: #194E82;
   }
@@ -29,7 +29,7 @@ html:not(.theme--documenter-dark) body #documenter {
       .tocitem {
         color: #FFFFFF;
         background: none;
-        
+
         &:hover { @extend %nav-hover; }
       }
 
@@ -63,7 +63,7 @@ html:not(.theme--documenter-dark) body #documenter {
       }
     }
   }
-  
+
   // Text
 
   article#documenter-page a.docs-heading-anchor {
@@ -71,18 +71,15 @@ html:not(.theme--documenter-dark) body #documenter {
   }
 
   // Code
-  
+
   code {
     color: inherit;
-    
+
     .hljs-meta { color: #4595D1; }
-  
+
     .hljs-keyword { color: #194E82; }
   }
 
-  pre, code {
-    font-family: "Liberation Mono", "Consolas", "DejaVu Sans Mono", "Ubuntu Mono", "andale mono", "lucida console", monospace;
-  }
 }
 
 // Terminology Block
@@ -118,4 +115,3 @@ details {
 html.theme--documenter-dark details {
   background: #282f2f;
 }
-
