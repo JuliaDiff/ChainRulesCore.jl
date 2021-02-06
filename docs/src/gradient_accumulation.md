@@ -2,7 +2,7 @@
 
 Consider some function
 $$f(x) = g(x) + h(x)$$.
-If we would like the derivative of $f$ with respect to $x$ we must compute it for each part and then sum them, i.e. 
+If we would like the derivative of $f$ with respect to $x$ we must compute it for each part and then sum them, i.e.
 $$\frac{\partial f}{\partial x} = \frac{\partial g}{\partial x} + \frac{\partial h}{\partial x}$$.
 In general, we must accumulate (sum) gradients from each sub-part of a program where a variable is used.
 
@@ -55,7 +55,8 @@ Let's illustrate it with our example.
 
 ```julia
 b̄ = zeros(size(X))
-b̄[2] = ȳ  # the scalar sensitivity of the `mysum` output
+b̄[2] = ȳ  # the scalar sensitivity of the `sum_first_and_second` output
+```
 `b̄` is a matrix entirely of zeros, except for at the index `2`, where it is set to the output sensitivity `ȳ`.
 `ā` is similar, except with the non-zero at index `1`.
 
