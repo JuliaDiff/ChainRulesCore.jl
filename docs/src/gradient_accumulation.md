@@ -68,6 +68,7 @@ function b̄_add!(ā)
     ā[2] += ȳ
     return ā
 end
+```
 We don't need to worry about all those zeros since `x + 0 == x`.
 
 [`InplaceableThunk`](@ref) is the type we have to represent derivatives as gradient accumulating actions.
