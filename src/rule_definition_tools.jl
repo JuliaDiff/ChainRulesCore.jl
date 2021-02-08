@@ -302,7 +302,9 @@ macro non_differentiable(sig_expr)
 
     local primal_name_sig, isfunctor
     # e.g. f(x, y)
-    if primal_name isa Symbol
+    if primal_name isa Symbol || Meta.isexpr(primal_name, :(.)) ||
+        Meta.isexpr(primal_name, :curly)
+
         primal_name_sig = :(::Core.Typeof($primal_name))
         isfunctor = false
     # e.g. (::T)(x, y)
