@@ -183,6 +183,15 @@ end
             end
         end
 
+        @testset "Functors" begin
+            (f::NonDiffExample)(y) = fill(7.5, 100)[f.x + y]
+            @non_differentiable (::NonDiffExample)(::Any)
+            @test frule((Composite{NonDiffExample}(x=1.2), 2.3), NonDiffExample(3), 2) == (7.5, DoesNotExist())
+            res, pullback = rrule(NonDiffExample(3), 2)
+            @test res == 7.5
+            @test pullback(4.5) == (DoesNotExist(), DoesNotExist())
+        end
+
         @testset "Not supported (Yet)" begin
             # Where clauses are not supported.
             @test_macro_throws(

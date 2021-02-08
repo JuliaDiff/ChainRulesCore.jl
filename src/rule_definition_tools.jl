@@ -300,8 +300,23 @@ macro non_differentiable(sig_expr)
 
     primal_name, orig_args = Iterators.peel(sig_expr.args)
 
+    local primal_name_sig, isfunctor
+    # e.g. f(x, y)
+    if primal_name isa Symbol
+        primal_name_sig = :(::Core.Typeof($primal_name))
+        isfunctor = false
+    # e.g. (::T)(x, y)
+    elseif Meta.isexpr(primal_name, :(::))
+        _primal_name = gensym(:primal) 
+        primal_name_sig = Expr(:(::), _primal_name, primal_name.args[end])
+        primal_name = _primal_name
+        isfunctor = true
+    else
+        error("invalid primal name: `$primal_name`")
+    end
+
     constrained_args = _constrain_and_name.(orig_args, :Any)
-    primal_sig_parts = [:(::Core.Typeof($primal_name)), constrained_args...]
+    primal_sig_parts = [primal_name_sig, constrained_args...]
 
     unconstrained_args = _unconstrain.(constrained_args)
 
@@ -315,7 +330,7 @@ macro non_differentiable(sig_expr)
 
     quote
         $(_nondiff_frule_expr(primal_sig_parts, primal_invoke))
-        $(_nondiff_rrule_expr(primal_sig_parts, primal_invoke))
+        $(_nondiff_rrule_expr(primal_sig_parts, primal_invoke; isfunctor=isfunctor))
     end
 end
 
@@ -340,13 +355,13 @@ function tuple_expression(primal_sig_parts)
     end
 end
 
-function _nondiff_rrule_expr(primal_sig_parts, primal_invoke)
+function _nondiff_rrule_expr(primal_sig_parts, primal_invoke; isfunctor=false)
     tup_expr = tuple_expression(primal_sig_parts)
     primal_name = first(primal_invoke.args)
     pullback_expr = Expr(
         :function,
         Expr(:call, propagator_name(primal_name, :pullback), :_),
-        Expr(:tuple, NO_FIELDS, Expr(:(...), tup_expr))
+        Expr(:tuple, isfunctor ? DoesNotExist() : NO_FIELDS, Expr(:(...), tup_expr))
     )
     return esc(:(
         function ChainRulesCore.rrule($(primal_sig_parts...); kwargs...)
