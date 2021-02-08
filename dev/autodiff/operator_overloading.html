@@ -51,7 +51,7 @@ function define_dual_overload(sig)
     opT, argTs = Iterators.peel(sig.parameters)
     opT isa Type{&lt;:Type} &amp;&amp; return  # not handling constructors
     fieldcount(opT) == 0 || return  # not handling functors
-    all(Float64 &lt;: argT for argT in argTs) || return  # only handling purely Float64 ops.
+    all(argT isa Type &amp;&amp; Float64 &lt;: argT for argT in argTs) || return  # only handling purely Float64 ops.
 
     N = length(sig.parameters) - 1  # skip the op
     fdef = quote
@@ -171,7 +171,7 @@ function define_tracked_overload(sig)
     opT, argTs = Iterators.peel(sig.parameters)
     opT isa Type{&lt;:Type} &amp;&amp; return  # not handling constructors
     fieldcount(opT) == 0 || return  # not handling functors
-    all(Float64 &lt;: argT for argT in argTs) || return  # only handling purely Float64 ops.
+    all(argT isa Type &amp;&amp; Float64 &lt;: argT for argT in argTs) || return # only handling purely Float64 ops.
 
     N = length(sig.parameters) - 1  # skip the op
     fdef = quote
@@ -249,4 +249,4 @@ refresh_rules();
     @test derv(quux, 11.1) == (4*(2+3) + 5*(2+3),)
 end
 end  # module
-</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="overview.html">« Overview</a><a class="docs-footer-nextpage" href="../design/changing_the_primal.html">Changing the Primal »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Sunday 7 February 2021 16:42">Sunday 7 February 2021</span>. Using Julia version 1.5.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="overview.html">« Overview</a><a class="docs-footer-nextpage" href="../design/changing_the_primal.html">Changing the Primal »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Monday 8 February 2021 20:53">Monday 8 February 2021</span>. Using Julia version 1.5.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
