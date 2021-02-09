@@ -300,23 +300,7 @@ macro non_differentiable(sig_expr)
 
     primal_name, orig_args = Iterators.peel(sig_expr.args)
 
-    local primal_name_sig
-    # e.g. f(x, y)
-    if primal_name isa Symbol || Meta.isexpr(primal_name, :(.)) ||
-        Meta.isexpr(primal_name, :curly)
-
-        primal_name_sig = :(::Core.Typeof($primal_name))
-        isfunctor = false
-    # e.g. (::T)(x, y)
-    elseif Meta.isexpr(primal_name, :(::))
-        _primal_name = gensym(:primal) 
-        primal_name_sig = Expr(:(::), _primal_name, primal_name.args[end])
-        primal_name = _primal_name
-        isfunctor = true
-    else
-        error("invalid primal name: `$primal_name`")
-    end
-
+    primal_name_sig, primal_name = _split_primal_name(primal_name)
     constrained_args = _constrain_and_name.(orig_args, :Any)
     primal_sig_parts = [primal_name_sig, constrained_args...]
 
@@ -418,6 +402,26 @@ function _isvararg(expr::Expr)
     return false
 end
 
+"""
+splits the first arg of the `call` expression into an expression to use in the signature
+and one to use for calling that function
+"""
+function _split_primal_name(primal_name)
+    # e.g. f(x, y)
+    if primal_name isa Symbol || Meta.isexpr(primal_name, :(.)) ||
+        Meta.isexpr(primal_name, :curly)
+
+        primal_name_sig = :(::Core.Typeof($primal_name))
+        return primal_name_sig, primal_name
+    # e.g. (::T)(x, y)
+    elseif Meta.isexpr(primal_name, :(::))
+        _primal_name = gensym(Symbol(:instance_, primal_name.args[end]))
+        primal_name_sig = Expr(:(::), _primal_name, primal_name.args[end])
+        return primal_name_sig, _primal_name
+    else
+        error("invalid primal name: `$primal_name`")
+    end
+end
 
 "turn both `a` and `a::S` into `a`"
 _unconstrain(arg::Symbol) = arg
