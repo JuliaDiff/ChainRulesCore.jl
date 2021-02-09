@@ -266,8 +266,8 @@ propagator_name(fname::QuoteNode, propname::Symbol) = propagator_name(fname.valu
 
 A helper to make it easier to declare that a method is not not differentiable.
 This is a short-hand for defining an [`frule`](@ref) and [`rrule`](@ref) that
-return [`DoesNotExist()`](@ref) for all partials (except for the function `s̄elf`-partial
-itself which is `NO_FIELDS`)
+return [`DoesNotExist()`](@ref) for all partials (even for the function `s̄elf`-partial
+itself)
 
 Keyword arguments should not be included.
 
@@ -277,7 +277,7 @@ julia> @non_differentiable Base.:(==)(a, b)
 julia> _, pullback = rrule(==, 2.0, 3.0);
 
 julia> pullback(1.0)
-(Zero(), DoesNotExist(), DoesNotExist())
+(DoesNotExist(), DoesNotExist(), DoesNotExist())
 ```
 
 You can place type-constraints in the signature:
@@ -300,7 +300,7 @@ macro non_differentiable(sig_expr)
 
     primal_name, orig_args = Iterators.peel(sig_expr.args)
 
-    local primal_name_sig, isfunctor
+    local primal_name_sig
     # e.g. f(x, y)
     if primal_name isa Symbol || Meta.isexpr(primal_name, :(.)) ||
         Meta.isexpr(primal_name, :curly)
@@ -332,7 +332,7 @@ macro non_differentiable(sig_expr)
 
     quote
         $(_nondiff_frule_expr(primal_sig_parts, primal_invoke))
-        $(_nondiff_rrule_expr(primal_sig_parts, primal_invoke; isfunctor=isfunctor))
+        $(_nondiff_rrule_expr(primal_sig_parts, primal_invoke))
     end
 end
 
@@ -357,13 +357,13 @@ function tuple_expression(primal_sig_parts)
     end
 end
 
-function _nondiff_rrule_expr(primal_sig_parts, primal_invoke; isfunctor=false)
+function _nondiff_rrule_expr(primal_sig_parts, primal_invoke)
     tup_expr = tuple_expression(primal_sig_parts)
     primal_name = first(primal_invoke.args)
     pullback_expr = Expr(
         :function,
         Expr(:call, propagator_name(primal_name, :pullback), :_),
-        Expr(:tuple, isfunctor ? DoesNotExist() : NO_FIELDS, Expr(:(...), tup_expr))
+        Expr(:tuple, DoesNotExist(), Expr(:(...), tup_expr))
     )
     return esc(:(
         function ChainRulesCore.rrule($(primal_sig_parts...); kwargs...)
