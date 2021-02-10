@@ -1,5 +1,7 @@
 name: JuliaNightly
-# Nightly Scheduled Julia Nightly Run
+# Nightly Version of Julia.
+# Runs on PRs and merge to `master`, but seperate workflow to `CI`
+# to avoid inclusion in nightly cron build with failure notifications.
 on:
   push:
     branches: [master]
