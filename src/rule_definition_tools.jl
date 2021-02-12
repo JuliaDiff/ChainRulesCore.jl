@@ -266,8 +266,8 @@ propagator_name(fname::QuoteNode, propname::Symbol) = propagator_name(fname.valu
 
 A helper to make it easier to declare that a method is not not differentiable.
 This is a short-hand for defining an [`frule`](@ref) and [`rrule`](@ref) that
-return [`DoesNotExist()`](@ref) for all partials (except for the function `s̄elf`-partial
-itself which is `NO_FIELDS`)
+return [`DoesNotExist()`](@ref) for all partials (even for the function `s̄elf`-partial
+itself)
 
 Keyword arguments should not be included.
 
@@ -277,7 +277,7 @@ julia> @non_differentiable Base.:(==)(a, b)
 julia> _, pullback = rrule(==, 2.0, 3.0);
 
 julia> pullback(1.0)
-(Zero(), DoesNotExist(), DoesNotExist())
+(DoesNotExist(), DoesNotExist(), DoesNotExist())
 ```
 
 You can place type-constraints in the signature:
@@ -300,8 +300,9 @@ macro non_differentiable(sig_expr)
 
     primal_name, orig_args = Iterators.peel(sig_expr.args)
 
+    primal_name_sig, primal_name = _split_primal_name(primal_name)
     constrained_args = _constrain_and_name.(orig_args, :Any)
-    primal_sig_parts = [:(::Core.Typeof($primal_name)), constrained_args...]
+    primal_sig_parts = [primal_name_sig, constrained_args...]
 
     unconstrained_args = _unconstrain.(constrained_args)
 
@@ -346,7 +347,7 @@ function _nondiff_rrule_expr(primal_sig_parts, primal_invoke)
     pullback_expr = Expr(
         :function,
         Expr(:call, propagator_name(primal_name, :pullback), :_),
-        Expr(:tuple, NO_FIELDS, Expr(:(...), tup_expr))
+        Expr(:tuple, DoesNotExist(), Expr(:(...), tup_expr))
     )
     return esc(:(
         function ChainRulesCore.rrule($(primal_sig_parts...); kwargs...)
@@ -401,6 +402,26 @@ function _isvararg(expr::Expr)
     return false
 end
 
+"""
+splits the first arg of the `call` expression into an expression to use in the signature
+and one to use for calling that function
+"""
+function _split_primal_name(primal_name)
+    # e.g. f(x, y)
+    if primal_name isa Symbol || Meta.isexpr(primal_name, :(.)) ||
+        Meta.isexpr(primal_name, :curly)
+
+        primal_name_sig = :(::Core.Typeof($primal_name))
+        return primal_name_sig, primal_name
+    # e.g. (::T)(x, y)
+    elseif Meta.isexpr(primal_name, :(::))
+        _primal_name = gensym(Symbol(:instance_, primal_name.args[end]))
+        primal_name_sig = Expr(:(::), _primal_name, primal_name.args[end])
+        return primal_name_sig, _primal_name
+    else
+        error("invalid primal name: `$primal_name`")
+    end
+end
 
 "turn both `a` and `a::S` into `a`"
 _unconstrain(arg::Symbol) = arg
