@@ -15,6 +15,7 @@ using Test
     end
 
     include("accumulation.jl")
+    include("projection.jl")
 
     include("ruleset_loading.jl")
     include("rules.jl")
