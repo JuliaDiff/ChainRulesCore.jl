@@ -274,7 +274,7 @@ function ChainRulesCore.rrule(::typeof(sum3), a)
     y = sum3(a)
     function sum3_pullback(ȳ)
         grad = zeros(length(a))
-        grad[1:3] .+= 1.0
+        grad[1:3] .+= ȳ
         return NO_FIELDS, grad
     end
     return y, sum3_pullback
