@@ -251,3 +251,24 @@ end
 
 
 end
+
+
+module IsolatedModuleForTestingScoping
+    using Test
+    # need to make sure macros work in somethign that hasn't imported all exports
+    # all that matters is that the following don't error, since they will resolve at
+    # parse time
+    using ChainRulesCore: ChainRulesCore
+
+    @testset "@non_differentiable" begin
+        # this is
+        # https://github.com/JuliaDiff/ChainRulesCore.jl/issues/317
+        fixed(x) = :abc
+        ChainRulesCore.@non_differentiable fixed(x)
+    end
+
+    @testset "scalar_rule" begin
+        my_id(x) = x
+        ChainRulesCore.@scalar_rule(my_id(x), 1.0)
+    end
+end
