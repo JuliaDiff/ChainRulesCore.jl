@@ -361,7 +361,7 @@ function _nondiff_rrule_expr(primal_sig_parts, primal_invoke)
     )
     return esc(quote
         # Manually defined kw version to save compiler work. See explanation in rules.jl
-        function (::Core.kwftype(typeof(rrule)))(kwargs::Any, rrule::typeof(ChainRulesCore.rrule), $(primal_sig_parts...))
+        function (::Core.kwftype(typeof(ChainRulesCore.rrule)))(kwargs::Any, rrule::typeof(ChainRulesCore.rrule), $(primal_sig_parts...))
             return ($(_with_kwargs_expr(primal_invoke)), $pullback_expr)
         end
         function ChainRulesCore.rrule($(primal_sig_parts...))
