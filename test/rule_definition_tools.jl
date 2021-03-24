@@ -267,7 +267,7 @@ module IsolatedModuleForTestingScoping
         ChainRulesCore.@non_differentiable fixed(x)
     end
 
-    @testset "scalar_rule" begin
+    @testset "@scalar_rule" begin
         my_id(x) = x
         ChainRulesCore.@scalar_rule(my_id(x), 1.0)
     end
