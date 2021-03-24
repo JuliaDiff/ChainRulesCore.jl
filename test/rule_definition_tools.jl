@@ -255,7 +255,7 @@ end
 
 module IsolatedModuleForTestingScoping
     using Test
-    # need to make sure macros work in somethign that hasn't imported all exports
+    # need to make sure macros work in something that hasn't imported all exports
     # all that matters is that the following don't error, since they will resolve at
     # parse time
     using ChainRulesCore: ChainRulesCore
