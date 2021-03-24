@@ -108,13 +108,21 @@ end
     end
 
     @testset "adjoint" begin
-        A = rand(3, 2)
-        comp_A = Composite{typeof(A)}(A)
+        @testset "Composite{Adjoint}" begin
+            A = rand(3, 2)
+            comp = Composite{typeof(A)}(A)
 
-        adj = A'
-        comp_adj = Composite{typeof(adj)}(;parent=adj)
+            adj = A'
+            comp_adj = Composite{typeof(adj)}(;parent=adj)
 
-        @test comp_A == comp_adj'
+            @test comp == comp_adj'
+        end
+
+        @testset "Composite{Complex}" begin
+            comp = Composite{Complex}(;re=1.2, im=2.1)
+            comp_adj = Composite{Complex}(;re=1.2, im=-2.1)
+            @test comp == comp_adj'
+        end
     end
 
     @testset "unset properties" begin

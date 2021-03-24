@@ -120,6 +120,12 @@ function Base.adjoint(
     return Composite{Array{P, D}}(adjoint(comp.parent))
 end
 
+function Base.adjoint(
+    comp::Composite{<:Complex, T}
+) where {P, D, T}
+    return Composite{Complex}(;re=comp.re, im=-comp.im)
+end
+
 extern(comp::Composite) = backing(map(extern, comp))  # gives a NamedTuple or Tuple
 
 
