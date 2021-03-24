@@ -107,6 +107,16 @@ end
         @test_throws MethodError reverse(Composite{Foo}()) 
     end
 
+    @testset "adjoint" begin
+        A = rand(3, 2)
+        comp_A = Composite{typeof(A)}(A)
+
+        adj = A'
+        comp_adj = Composite{typeof(adj)}(;parent=adj)
+
+        @test comp_A == comp_adj'
+    end
+
     @testset "unset properties" begin
         @test Composite{Foo}(; x=1.4).y === Zero()
     end
