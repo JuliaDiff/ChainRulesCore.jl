@@ -325,8 +325,9 @@ end
 "changes `f(x,y)` into `f(x,y; kwargs....)`"
 function _with_kwargs_expr(call_expr::Expr)
     @assert isexpr(call_expr, :call)
-    Expr(:call, call_expr.args[1], Expr(:parameters, :(kwargs...)),
-        call_expr.args[2:end]...)
+    return Expr(
+        :call, call_expr.args[1], Expr(:parameters, :(kwargs...)), call_expr.args[2:end]...
+    )
 end
 
 function _nondiff_frule_expr(primal_sig_parts, primal_invoke)
@@ -359,8 +360,7 @@ function _nondiff_rrule_expr(primal_sig_parts, primal_invoke)
         Expr(:tuple, DoesNotExist(), Expr(:(...), tup_expr))
     )
     return esc(quote
-        # Manully defined kw version to save compiler work.
-        # See rules.jl
+        # Manually defined kw version to save compiler work. See explanation in rules.jl
         function (::Core.kwftype(typeof(rrule)))(kwargs::Any, rrule::typeof(ChainRulesCore.rrule), $(primal_sig_parts...))
             return ($(_with_kwargs_expr(primal_invoke)), $pullback_expr)
         end
