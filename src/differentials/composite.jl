@@ -103,7 +103,7 @@ function Base.map(f, comp::Composite{P, <:Tuple}) where P
     vals::Tuple = map(f, backing(comp))
     return Composite{P, typeof(vals)}(vals)
 end
-function Base.map(f, comp::Composite{P, <:NamedTuple{L}}) where{P, L}
+function Base.map(f, comp::Composite{P, <:NamedTuple{L}}) where {P, L}
     vals = map(f, Tuple(backing(comp)))
     named_vals = NamedTuple{L, typeof(vals)}(vals)
     return Composite{P, typeof(named_vals)}(named_vals)
@@ -113,6 +113,12 @@ function Base.map(f, comp::Composite{P, <:Dict}) where {P<:Dict}
 end
 
 Base.conj(comp::Composite) = map(conj, comp)
+
+function Base.adjoint(
+    comp::Composite{<:LinearAlgebra.Adjoint{P, Array{P, D}}, T}
+) where {P, D, T}
+    return Composite{Array{P, D}}(adjoint(comp.parent))
+end
 
 extern(comp::Composite) = backing(map(extern, comp))  # gives a NamedTuple or Tuple
 
