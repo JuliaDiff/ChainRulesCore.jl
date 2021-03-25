@@ -182,7 +182,8 @@ canonicalize(comp::Composite{<:Any, <:AbstractDict}) = comp
 
 # Composites of unspecified primal types
 canonicalize(comp::Composite{Any, <:NamedTuple{L}}) where {L} = comp
-canonicalize(comp::Composite{Any, <:Tuple{L}}) where {L} = comp
+canonicalize(comp::Composite{Any, <:Tuple}) where {L} = comp
+canonicalize(comp::Composite{Any, <:AbstractDict}) where {L} = comp
 
 """
     _zeroed_backing(P)
