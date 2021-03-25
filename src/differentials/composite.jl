@@ -180,7 +180,7 @@ canonicalize(comp::Composite{<:Tuple, <:Tuple}) = comp
 # Dict composite are always in their canonical form.
 canonicalize(comp::Composite{<:Any, <:AbstractDict}) = comp
 
-# Composites of abstract primal types
+# Composites of unspecified primal types
 canonicalize(comp::Composite{Any, <:NamedTuple{L}}) where {L} = comp
 canonicalize(comp::Composite{Any, <:Tuple{L}}) where {L} = comp
 
