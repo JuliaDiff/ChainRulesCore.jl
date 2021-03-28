@@ -2,10 +2,7 @@
 using Base.Meta
 
 macro strip_linenos(expr)
-    strip_linenos(x::LineNumberNode) = nothing
-    strip_linenos(x::Expr) = Expr(x.head, map(strip_linenos, x.args)...)
-    strip_linenos(x) = x
-    return esc(strip_linenos(expr))
+    return esc(Base.remove_linenums!(expr))
 end
 
 """
