@@ -165,7 +165,7 @@ function scalar_frule_expr(__source__, f, call, setup_stmts, inputs, partials)
     return @strip_linenos quote
         # _ is the input derivative w.r.t. function internals. since we do not
         # allow closures/functors with @scalar_rule, it is always ignored
-        function ChainRulesCore.frule(($(esc(:_)), $(Δs...)), ::typeof($f), $(inputs...))
+        function ChainRulesCore.frule((_, $(Δs...)), ::typeof($f), $(inputs...))
             $(__source__)
             $(esc(:Ω)) = $call
             $(setup_stmts...)
@@ -357,7 +357,7 @@ function tuple_expression(primal_sig_parts)
     else
         num_primal_inputs = length(primal_sig_parts) - 1 # - vararg
         length_expr = :($num_primal_inputs + length($(esc(_unconstrain(primal_sig_parts[end])))))
-        Expr(:call, :ntuple, Expr(:(->), :($(esc(:_))), DoesNotExist()), length_expr)
+        :(ntuple(::Any -> DoesNotExist(), $length_expr))
     end
 end
 
@@ -365,11 +365,11 @@ function _nondiff_rrule_expr(__source__, primal_sig_parts, primal_invoke)
     esc_primal_sig_parts = map(esc, primal_sig_parts)
     tup_expr = tuple_expression(primal_sig_parts)
     primal_name = first(primal_invoke.args)
-    pullback_expr = @strip_linenos :(
-        function $(esc(propagator_name(primal_name, :pullback)))($(esc(:_)))
+    pullback_expr = @strip_linenos quote
+        function $(esc(propagator_name(primal_name, :pullback)))(::Any)
             return $(tup_expr)
         end
-    )
+    end
 
     @gensym kwargs
     return @strip_linenos quote
