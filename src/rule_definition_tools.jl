@@ -374,7 +374,7 @@ function _nondiff_rrule_expr(__source__, primal_sig_parts, primal_invoke)
     @gensym kwargs
     return @strip_linenos quote
         # Manually defined kw version to save compiler work. See explanation in rules.jl
-        function (::Core.kwftype(typeof($rrule)))($(esc(kwargs))::Any, ::typeof($rrule), $(esc_primal_sig_parts...))
+        function (::Core.kwftype(typeof(rrule)))($(esc(kwargs))::Any, ::typeof(rrule), $(esc_primal_sig_parts...))
             return ($(esc(_with_kwargs_expr(primal_invoke, kwargs))), $pullback_expr)
         end
         function ChainRulesCore.rrule($(esc_primal_sig_parts...))
