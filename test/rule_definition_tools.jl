@@ -264,7 +264,8 @@ module IsolatedModuleForTestingScoping
     fixed(x) = :abc
     @non_differentiable fixed(x)
 
-    # check name collision
+    # check name collision between a primal input called `kwargs` and the actual keyword
+    # arguments
     fixed_kwargs(x; kwargs...) = :abc
     @non_differentiable fixed_kwargs(kwargs)
 
