@@ -88,8 +88,8 @@ macro scalar_rule(call, maybe_setup, partials...)
     ############################################################################
     # Final return: building the expression to insert in the place of this macro
     code = quote
-        if !($f isa $Type) && $(fieldcount)($(typeof)($f)) > 0
-            $(throw)($(ArgumentError)(
+        if !($f isa Type) && fieldcount(typeof($f)) > 0
+            throw(ArgumentError(
                 "@scalar_rule cannot be used on closures/functors (such as $($f))"
             ))
         end
@@ -156,7 +156,7 @@ function scalar_frule_expr(__source__, f, call, setup_stmts, inputs, partials)
     if n_outputs > 1
         # For forward-mode we return a Composite if output actually a tuple.
         pushforward_returns = Expr(
-            :call, :($(Composite){$(typeof)($(esc(:Ω)))}), pushforward_returns...
+            :call, :(Composite{typeof($(esc(:Ω)))}), pushforward_returns...
         )
     else
         pushforward_returns = first(pushforward_returns)
@@ -165,7 +165,7 @@ function scalar_frule_expr(__source__, f, call, setup_stmts, inputs, partials)
     return @strip_linenos quote
         # _ is the input derivative w.r.t. function internals. since we do not
         # allow closures/functors with @scalar_rule, it is always ignored
-        function ($ChainRulesCore.frule)(($(esc(:_)), $(Δs...)), ::$(typeof)($f), $(inputs...))
+        function ChainRulesCore.frule(($(esc(:_)), $(Δs...)), ::typeof($f), $(inputs...))
             $(__source__)
             $(esc(:Ω)) = $call
             $(setup_stmts...)
@@ -193,12 +193,12 @@ function scalar_rrule_expr(__source__, f, call, setup_stmts, inputs, partials)
     pullback = @strip_linenos quote
         @inline function $(esc(propagator_name(f, :pullback)))($pullback_input)
             $(__source__)
-            return ($NO_FIELDS, $(pullback_returns...))
+            return (NO_FIELDS, $(pullback_returns...))
         end
     end
 
     return @strip_linenos quote
-        function ($ChainRulesCore.rrule)(::$(typeof)($f), $(inputs...))
+        function ChainRulesCore.rrule(::typeof($f), $(inputs...))
             $(__source__)
             $(esc(:Ω)) = $call
             $(setup_stmts...)
@@ -223,7 +223,7 @@ function propagation_expr(Δs, ∂s, _conj = false)
     # This is basically Δs ⋅ ∂s
     _∂s = map(∂s) do ∂s_i
         if _conj
-            :($(conj)($(esc(∂s_i))))
+            :(conj($(esc(∂s_i))))
         else
             esc(∂s_i)
         end
@@ -233,11 +233,11 @@ function propagation_expr(Δs, ∂s, _conj = false)
     summed_∂_mul_Δs = if n∂s > 1
         # Explicit multiplication is only performed for the first pair
         # of partial and gradient.
-        init_expr = :(($(*)).($(_∂s[1]), $(Δs[1])))
+        init_expr = :((*).($(_∂s[1]), $(Δs[1])))
 
         # Apply `muladd` iteratively.
         foldl(Iterators.drop(zip(_∂s, Δs), 1); init=init_expr) do ex, (∂s_i, Δs_i)
-            :(($(muladd)).($∂s_i, $Δs_i, $ex))
+            :((muladd).($∂s_i, $Δs_i, $ex))
         end
     else
         # Note: we don't want to do broadcasting with only 1 multiply (no `+`),
@@ -340,10 +340,10 @@ end
 function _nondiff_frule_expr(__source__, primal_sig_parts, primal_invoke)
     @gensym kwargs
     return @strip_linenos quote
-        function ($ChainRulesCore.frule)(_, $(map(esc, primal_sig_parts)...); $(esc(kwargs))...)
+        function ChainRulesCore.frule(_, $(map(esc, primal_sig_parts)...); $(esc(kwargs))...)
             $(__source__)
             # Julia functions always only have 1 output, so return a single DoesNotExist()
-            return ($(esc(_with_kwargs_expr(primal_invoke, kwargs))), $(DoesNotExist)())
+            return ($(esc(_with_kwargs_expr(primal_invoke, kwargs))), DoesNotExist())
         end
     end
 end
@@ -352,11 +352,11 @@ function tuple_expression(primal_sig_parts)
     has_vararg = _isvararg(primal_sig_parts[end])
     return if !has_vararg
         num_primal_inputs = length(primal_sig_parts)
-        Expr(:tuple, ntuple(_ -> :($(DoesNotExist)()), num_primal_inputs)...)
+        Expr(:tuple, ntuple(_ -> DoesNotExist(), num_primal_inputs)...)
     else
         num_primal_inputs = length(primal_sig_parts) - 1 # - vararg
-        length_expr = :($(num_primal_inputs) + $(length)($(esc(_unconstrain(primal_sig_parts[end])))))
-        Expr(:call, :ntuple, Expr(:(->), :($(esc(:_))), :($(DoesNotExist)())), length_expr)
+        length_expr = :($num_primal_inputs + length($(esc(_unconstrain(primal_sig_parts[end])))))
+        Expr(:call, :ntuple, Expr(:(->), :_, DoesNotExist()), length_expr)
     end
 end
 
@@ -364,21 +364,21 @@ function _nondiff_rrule_expr(__source__, primal_sig_parts, primal_invoke)
     esc_primal_sig_parts = map(esc, primal_sig_parts)
     tup_expr = tuple_expression(primal_sig_parts)
     primal_name = first(primal_invoke.args)
-    pullback_expr = @strip_linenos quote
+    pullback_expr = @strip_linenos :(
         function $(esc(propagator_name(primal_name, :pullback)))($(esc(:_)))
             return $(tup_expr)
         end
-    end
+    )
 
     @gensym kwargs
     return @strip_linenos quote
         # Manually defined kw version to save compiler work. See explanation in rules.jl
-        function (::$(Core.kwftype)($(typeof)($(rrule))))($(esc(kwargs))::$(Any), ::$(typeof)($(rrule)), $(esc_primal_sig_parts...))
-            return ($(esc(_with_kwargs_expr(primal_invoke, kwargs))), $(pullback_expr))
+        function (::Core.kwftype(typeof($rrule)))($(esc(kwargs))::Any, ::typeof($rrule), $(esc_primal_sig_parts...))
+            return ($(esc(_with_kwargs_expr(primal_invoke, kwargs))), $pullback_expr)
         end
-        function ($ChainRulesCore.rrule)($(esc_primal_sig_parts...))
+        function ChainRulesCore.rrule($(esc_primal_sig_parts...))
             $(__source__)
-            return ($(esc(primal_invoke)), $(pullback_expr))
+            return ($(esc(primal_invoke)), $pullback_expr)
         end
     end
 end
@@ -438,7 +438,7 @@ function _split_primal_name(primal_name)
     if primal_name isa Symbol || Meta.isexpr(primal_name, :(.)) ||
         Meta.isexpr(primal_name, :curly)
 
-        primal_name_sig = :(::Core.Typeof($primal_name))
+        primal_name_sig = :(::$Core.Typeof($primal_name))
         return primal_name_sig, primal_name
     # e.g. (::T)(x, y)
     elseif Meta.isexpr(primal_name, :(::))
