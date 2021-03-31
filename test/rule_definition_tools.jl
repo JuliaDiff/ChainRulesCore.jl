@@ -254,6 +254,7 @@ end
 
 
 module IsolatedModuleForTestingScoping
+    # check that rules can be defined by macros without any additional imports
     using ChainRulesCore: @scalar_rule, @non_differentiable
 
     # ensure that functions, types etc. in module `ChainRulesCore` can't be resolved
@@ -273,9 +274,11 @@ module IsolatedModuleForTestingScoping
     @scalar_rule(my_id(x), 1.0)
 
     module IsolatedSubmodule
-        using Test
+        # check that rules defined in isolated module without imports can be called
+        # without errors
         using ChainRulesCore: frule, rrule, Zero, DoesNotExist
         using ..IsolatedModuleForTestingScoping: fixed, fixed_kwargs, my_id
+        using Test
 
         @testset "@non_differentiable" begin
             for f in (fixed, fixed_kwargs)
