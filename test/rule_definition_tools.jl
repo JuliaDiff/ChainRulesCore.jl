@@ -254,21 +254,58 @@ end
 
 
 module IsolatedModuleForTestingScoping
-    using Test
-    # need to make sure macros work in something that hasn't imported all exports
-    # all that matters is that the following don't error, since they will resolve at
-    # parse time
-    using ChainRulesCore: ChainRulesCore
+    # check that rules can be defined by macros without any additional imports
+    using ChainRulesCore: @scalar_rule, @non_differentiable
 
-    @testset "@non_differentiable" begin
-        # this is
-        # https://github.com/JuliaDiff/ChainRulesCore.jl/issues/317
-        fixed(x) = :abc
-        ChainRulesCore.@non_differentiable fixed(x)
-    end
+    # ensure that functions, types etc. in module `ChainRulesCore` can't be resolved
+    const ChainRulesCore = nothing
 
-    @testset "@scalar_rule" begin
-        my_id(x) = x
-        ChainRulesCore.@scalar_rule(my_id(x), 1.0)
+    # this is
+    # https://github.com/JuliaDiff/ChainRulesCore.jl/issues/317
+    fixed(x) = :abc
+    @non_differentiable fixed(x)
+
+    # check name collision between a primal input called `kwargs` and the actual keyword
+    # arguments
+    fixed_kwargs(x; kwargs...) = :abc
+    @non_differentiable fixed_kwargs(kwargs)
+
+    my_id(x) = x
+    @scalar_rule(my_id(x), 1.0)
+
+    module IsolatedSubmodule
+        # check that rules defined in isolated module without imports can be called
+        # without errors
+        using ChainRulesCore: frule, rrule, Zero, DoesNotExist
+        using ..IsolatedModuleForTestingScoping: fixed, fixed_kwargs, my_id
+        using Test
+
+        @testset "@non_differentiable" begin
+            for f in (fixed, fixed_kwargs)
+                y, ẏ = frule((Zero(), randn()), f, randn())
+                @test y === :abc
+                @test ẏ === DoesNotExist()
+
+                y, f_pullback = rrule(f, randn())
+                @test y === :abc
+                @test f_pullback(randn()) === (DoesNotExist(), DoesNotExist())
+            end
+
+            y, f_pullback = rrule(fixed_kwargs, randn(); keyword=randn())
+            @test y === :abc
+            @test f_pullback(randn()) === (DoesNotExist(), DoesNotExist())
+        end
+
+        @testset "@scalar_rule" begin
+            x, ẋ = randn(2)
+            y, ẏ = frule((Zero(), ẋ), my_id, x)
+            @test y == x
+            @test ẏ == ẋ
+
+            Δy = randn()
+            y, f_pullback = rrule(my_id, x)
+            @test y == x
+            @test f_pullback(Δy) == (Zero(), Δy)
+        end
     end
 end

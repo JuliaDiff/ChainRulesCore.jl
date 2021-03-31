@@ -156,7 +156,7 @@ function scalar_frule_expr(__source__, f, call, setup_stmts, inputs, partials)
     if n_outputs > 1
         # For forward-mode we return a Composite if output actually a tuple.
         pushforward_returns = Expr(
-            :call, :(ChainRulesCore.Composite{typeof($(esc(:Ω)))}), pushforward_returns...
+            :call, :(Composite{typeof($(esc(:Ω)))}), pushforward_returns...
         )
     else
         pushforward_returns = first(pushforward_returns)
@@ -330,53 +330,58 @@ macro non_differentiable(sig_expr)
 end
 
 "changes `f(x,y)` into `f(x,y; kwargs....)`"
-function _with_kwargs_expr(call_expr::Expr)
+function _with_kwargs_expr(call_expr::Expr, kwargs)
     @assert isexpr(call_expr, :call)
     return Expr(
-        :call, call_expr.args[1], Expr(:parameters, :(kwargs...)), call_expr.args[2:end]...
+        :call, call_expr.args[1], Expr(:parameters, :($(kwargs)...)), call_expr.args[2:end]...
     )
 end
 
 function _nondiff_frule_expr(__source__, primal_sig_parts, primal_invoke)
-    return esc(@strip_linenos :(
-        function ChainRulesCore.frule($(gensym(:_)), $(primal_sig_parts...); kwargs...)
+    @gensym kwargs
+    # `::Any` instead of `_`: https://github.com/JuliaLang/julia/issues/32727
+    return @strip_linenos quote
+        function ChainRulesCore.frule(::Any, $(map(esc, primal_sig_parts)...); $(esc(kwargs))...)
             $(__source__)
             # Julia functions always only have 1 output, so return a single DoesNotExist()
-            return ($(_with_kwargs_expr(primal_invoke)), DoesNotExist())
+            return ($(esc(_with_kwargs_expr(primal_invoke, kwargs))), DoesNotExist())
         end
-    ))
+    end
 end
 
 function tuple_expression(primal_sig_parts)
     has_vararg = _isvararg(primal_sig_parts[end])
     return if !has_vararg
-        num_primal_inputs = length(primal_sig_parts) - 1 # - primal
-        Expr(:tuple, ntuple(_->DoesNotExist(), num_primal_inputs)...)
+        num_primal_inputs = length(primal_sig_parts)
+        Expr(:tuple, ntuple(_ -> DoesNotExist(), num_primal_inputs)...)
     else
-        num_primal_inputs = length(primal_sig_parts) - 2 # - primal and vararg
-        length_expr = :($(num_primal_inputs) + length($(_unconstrain(primal_sig_parts[end]))))
-        Expr(:call, :ntuple, Expr(:(->), :_, DoesNotExist()), length_expr)
+        num_primal_inputs = length(primal_sig_parts) - 1 # - vararg
+        length_expr = :($num_primal_inputs + length($(esc(_unconstrain(primal_sig_parts[end])))))
+        :(ntuple(::Any -> DoesNotExist(), $length_expr))
     end
 end
 
 function _nondiff_rrule_expr(__source__, primal_sig_parts, primal_invoke)
+    esc_primal_sig_parts = map(esc, primal_sig_parts)
     tup_expr = tuple_expression(primal_sig_parts)
     primal_name = first(primal_invoke.args)
-    pullback_expr = Expr(
-        :function,
-        Expr(:call, propagator_name(primal_name, :pullback), :_),
-        Expr(:tuple, DoesNotExist(), Expr(:(...), tup_expr))
-    )
-    return esc(@strip_linenos quote
+    pullback_expr = @strip_linenos quote
+        function $(esc(propagator_name(primal_name, :pullback)))(::Any)
+            return $(tup_expr)
+        end
+    end
+
+    @gensym kwargs
+    return @strip_linenos quote
         # Manually defined kw version to save compiler work. See explanation in rules.jl
-        function (::Core.kwftype(typeof(ChainRulesCore.rrule)))(kwargs::Any, rrule::typeof(ChainRulesCore.rrule), $(primal_sig_parts...))
-            return ($(_with_kwargs_expr(primal_invoke)), $pullback_expr)
+        function (::Core.kwftype(typeof(rrule)))($(esc(kwargs))::Any, ::typeof(rrule), $(esc_primal_sig_parts...))
+            return ($(esc(_with_kwargs_expr(primal_invoke, kwargs))), $pullback_expr)
         end
-        function ChainRulesCore.rrule($(primal_sig_parts...))
+        function ChainRulesCore.rrule($(esc_primal_sig_parts...))
             $(__source__)
-            return ($primal_invoke, $pullback_expr)
+            return ($(esc(primal_invoke)), $pullback_expr)
         end
-    end)
+    end
 end
 
 
@@ -434,7 +439,7 @@ function _split_primal_name(primal_name)
     if primal_name isa Symbol || Meta.isexpr(primal_name, :(.)) ||
         Meta.isexpr(primal_name, :curly)
 
-        primal_name_sig = :(::Core.Typeof($primal_name))
+        primal_name_sig = :(::$Core.Typeof($primal_name))
         return primal_name_sig, primal_name
     # e.g. (::T)(x, y)
     elseif Meta.isexpr(primal_name, :(::))
