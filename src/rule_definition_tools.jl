@@ -341,7 +341,9 @@ function _nondiff_frule_expr(__source__, primal_sig_parts, primal_invoke)
     @gensym kwargs
     # `::Any` instead of `_`: https://github.com/JuliaLang/julia/issues/32727
     return @strip_linenos quote
-        function ChainRulesCore.frule(::Any, $(map(esc, primal_sig_parts)...); $(esc(kwargs))...)
+        function ChainRulesCore.frule(
+            @nospecialize(::Any), $(map(esc, primal_sig_parts)...); $(esc(kwargs))...
+        )
             $(__source__)
             # Julia functions always only have 1 output, so return a single DoesNotExist()
             return ($(esc(_with_kwargs_expr(primal_invoke, kwargs))), DoesNotExist())
@@ -357,7 +359,7 @@ function tuple_expression(primal_sig_parts)
     else
         num_primal_inputs = length(primal_sig_parts) - 1 # - vararg
         length_expr = :($num_primal_inputs + length($(esc(_unconstrain(primal_sig_parts[end])))))
-        :(ntuple(::Any -> DoesNotExist(), $length_expr))
+        @strip_linenos :(ntuple(::Any -> DoesNotExist(), $length_expr))
     end
 end
 
@@ -366,7 +368,7 @@ function _nondiff_rrule_expr(__source__, primal_sig_parts, primal_invoke)
     tup_expr = tuple_expression(primal_sig_parts)
     primal_name = first(primal_invoke.args)
     pullback_expr = @strip_linenos quote
-        function $(esc(propagator_name(primal_name, :pullback)))(::Any)
+        function $(esc(propagator_name(primal_name, :pullback)))(@nospecialize(_))
             return $(tup_expr)
         end
     end
