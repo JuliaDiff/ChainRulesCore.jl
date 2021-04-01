@@ -133,7 +133,7 @@ This means that a certain rule will help one AD system, but not improve (and als
 Below, we list some patterns relevant for the [Zygote.jl](https://github.com/FluxML/Zygote.jl) AD system.
 
 Rules for functions which mutate its arguments, e.g. `sort!`, should not be written at the moment.
-While technically they are supported, they would break [`Zygote.jl`](https://github.com/FluxML/Zygote.jl) so that [it would sometimes quietly return the wrong answer](https://github.com/JuliaDiff/ChainRulesCore.jl/issues/242).
+While technically they are supported, they would break [Zygote.jl](https://github.com/FluxML/Zygote.jl) such that [it would sometimes quietly return the wrong answer](https://github.com/JuliaDiff/ChainRulesCore.jl/issues/242).
 This may be resolved in the future by [allowing AD systems to opt-in or opt-out of certain types of rules](https://github.com/JuliaDiff/ChainRulesCore.jl/issues/270).
 
 ### Patterns that need rules in [Zygote.jl](https://github.com/FluxML/Zygote.jl)
@@ -289,4 +289,3 @@ turns out to be significantly faster
 julia> @btime gradient(sum3, rand(30))
   192.818 ns (3 allocations: 784 bytes)
 ```
-
