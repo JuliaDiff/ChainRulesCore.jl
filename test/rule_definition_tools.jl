@@ -231,9 +231,10 @@ end
             @test ẏ isa Composite{Tuple{Irrational{:π}, Float64}, Tuple{Float32, Float32}}
         end
 
-        @testset "Regression test against #276" begin
+        @testset "Regression tests against #276 and #265" begin
             # https://github.com/JuliaDiff/ChainRulesCore.jl/pull/276
-            # Symptom of this problem is creation of global variables and type instablily
+            # https://github.com/JuliaDiff/ChainRulesCore.jl/pull/265
+            # Symptom of these problems is creation of global variables and type instability
 
             num_globals_before = length(names(ChainRulesCore; all=true))
 
@@ -245,11 +246,14 @@ end
 
             # Test no new globals were created
             @test length(names(ChainRulesCore; all=true)) == num_globals_before
+
+            # Example in #265
+            simo3(x) = sincos(x)
+            @scalar_rule simo3(x) @setup((sinx, cosx) = Ω) cosx -sinx
+            _, simo3_pb = @inferred rrule(simo3, randn())
+            @inferred simo3_pb(Composite{Tuple{Float64,Float64}}(randn(), randn()))
         end
     end
-
-
-
 end
 
 
