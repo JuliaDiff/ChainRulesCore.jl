@@ -359,7 +359,7 @@ function tuple_expression(primal_sig_parts)
     else
         num_primal_inputs = length(primal_sig_parts) - 1 # - vararg
         length_expr = :($num_primal_inputs + length($(esc(_unconstrain(primal_sig_parts[end])))))
-        @strip_linenos :(ntuple(::Any -> DoesNotExist(), $length_expr))
+        @strip_linenos :(ntuple(i -> DoesNotExist(), $length_expr))
     end
 end
 
