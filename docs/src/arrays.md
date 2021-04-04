@@ -292,7 +292,9 @@ That is, for arrays $A, B, C, D$ and scalars $a$ and $b$,
 Second, swapping arguments is equivalent to conjugating the inner product:
 
 ```math
-\ip{A}{B} = \ip{B}{A}^*
+\begin{equation}
+\ip{A}{B} = \ip{B}{A}^* \label{ipconj}
+\end{equation}
 ```
 
 Third, for matrices and vectors $A$, $B$, and $C$, we can move arguments from the left or right of one side to the other using the matrix adjoint:
@@ -416,7 +418,7 @@ which we write as
 
 ```math
 \Omega_{i1k} = \sum_{j} |X_{ijk}|^2
-             = \sum_{j} \Re \left( X_{ijk}^* X_{ijk} \right)
+             = \sum_{j} \Re \ip{X_{ijk}}{X_{ijk}}
 ```
 
 The pushforward from \eqref{pf} is
@@ -424,13 +426,9 @@ The pushforward from \eqref{pf} is
 ```math
 \begin{align}
 \dot{\Omega}_{i1k}
-    &= \sum_j \Re\left(
-           \dot{X}_{ijk}^* X_{ijk} + X_{ijk}^* \dot{X}_{ijk}
-        \right) \nonumber\\
-    &= \sum_j \Re\left(
-            \left( X_{ijk}^* \dot{X}_{ijk} \right)^* +
-            X_{ijk}^* \dot{X}_{ijk} \right) \nonumber\\
-    &= \sum_j 2 \Re\left( X_{ijk}^* \dot{X}_{ijk} \right), \label{sumabspf}
+    &= \sum_j \Re\ip{\dot{X}_{ijk}}{X_{ijk}} + \ip{X_{ijk}}{\dot{X}_{ijk}} \nonumber\\
+    &= \sum_j \Re\ip{X_{ijk}}{\dot{X}_{ijk}}^* + \ip{X_{ijk}}{\dot{X}_{ijk}} \nonumber\\
+    &= \sum_j 2 \Re\ip{X_{ijk}}{\dot{X}_{ijk}}, \label{sumabspf}
 \end{align}
 ```
 
@@ -460,7 +458,7 @@ end
 ```
 
 We can now derive the reverse-mode rule.
-The array form of \eqref{pbident} is
+The elementwise form of \eqref{pbident} is
 
 ```math
 \begin{align*}
@@ -479,22 +477,17 @@ The array form of \eqref{pbident} is
            \right) \dot{X}_{ijk}
        \right)
            && \text{bring } \dot{X}_{ijk} \text{ outside of } \Re\\
-    &= \Re \left( \sum_{ijk} \overline{X}_{ijk}^* \dot{X}_{i1k} \right)
-           && \text{expand right-hand side of } \eqref{pbident}
+    &= \sum_{ijk} \Re\ip{2 \Re \left( \overline{\Omega}_{i1k} \right) X_{ijk}}{\dot{X}_{ijk}}
+           && \text{rewrite as an inner product}\\
+    &= \sum_{ijk} \Re\ip{\overline{X}_{ijk}}{\dot{X}_{i1k}}
+           && \text{right-hand side of } \eqref{pbident}
 \end{align*}
 ```
 
 We now solve for $\overline{X}$:
 
 ```math
-\begin{align*}
-\overline{X}_{ijk}
-    &= \left(
-            2 \Re \left( \overline{\Omega}_{i1k} \right)
-            X_{ijk}^*
-        \right)^*\\
-    &= 2\Re \left( \overline{\Omega}_{i1k} \right) X_{ijk}
-\end{align*}
+\overline{X}_{ijk} = 2\Re \left( \overline{\Omega}_{i1k} \right) X_{ijk}
 ```
 
 Like the `frule`, this `rrule` can be implemented generically:
