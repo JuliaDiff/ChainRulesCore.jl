@@ -210,18 +210,18 @@ At any step in the program, if we have intermediates $X_m$, we can write down th
 \end{align*}
 ```
 
-where $\Re(\cdot)$ is the real part of a number (`real`), and $\ip{\cdot}{\cdot}$ is the inner product (`LinearAlgebra.dot`).
+where $\Re(\cdot)$ is the real part of a number (`real`), and $\ip{\cdot}{\cdot}$ is the [Frobenius inner product](https://en.wikipedia.org/wiki/Frobenius_inner_product) (`LinearAlgebra.dot`).
 Because this equation follows at any step of the program, we can equivalently write 
 
 ```math
-\frac{ds}{dt} = \ip{ \overline{\Omega} }{ \dot{\Omega} },
+\frac{ds}{dt} = \Re\ip{ \overline{\Omega} }{ \dot{\Omega} },
 ```
 
 which gives the identity
 
 ```math
 \begin{equation} \label{pbident}
-\ip{ \overline{\Omega} }{ \dot{\Omega} } = \sum_m \ip{ \overline{X}_m }{ \dot{X}_m }.
+\Re\ip{ \overline{\Omega} }{ \dot{\Omega} } = \sum_m \Re\ip{ \overline{X}_m }{ \dot{X}_m }.
 \end{equation}
 ```
 
@@ -239,6 +239,7 @@ For matrices and vectors, $\ip{A}{B} = \tr(A^H B)$, and the identity simplifies 
 ```
 
 where $\tr(\cdot)$ is the matrix trace (`LinearAlgebra.tr`) function.
+However, it is often cleaner and more general to work with the inner product.
 
 Our approach for deriving the adjoints $\overline{X}_m$ is then:
 
@@ -257,7 +258,7 @@ Note that the final expressions for the adjoints will not contain any $\dot{X}_m
     ```math
     \begin{align*}
     \frac{ds}{dt}
-        &= \ip{ \overline{x} + i \overline{y} }{ \dot{x} + i \dot{y} } \\
+        &= \Re\ip{ \overline{x} + i \overline{y} }{ \dot{x} + i \dot{y} } \\
         &= \Re\left(
                \left( \overline{x} + i \overline{y} \right)^*
                \left( \dot{x} + i \dot{y} \right)
@@ -275,16 +276,42 @@ Note that the final expressions for the adjoints will not contain any $\dot{X}_m
     ```
     which is exactly what the identity would produce if we had written the function as $f: (x, y) \mapsto (u, v)$.
 
-For matrices and vectors, several properties of the trace function come in handy:
+### Useful properties of the inner product
+
+Several properties of the Frobenius inner product come in handy.
+First, it is [linear](https://en.wikipedia.org/wiki/Linear_map) in its second argument and conjugate linear in its first.
+That is, for arrays $A, B, C, D$ and scalars $a$ and $b$,
 
 ```math
 \begin{align}
-\tr(A+B) &= \tr(A) + \tr(B) \label{trexpand}\\
-\tr(A^T) &= \tr(A) \nonumber\\
-\tr(A^H) &= \tr(A)^* \nonumber\\
-\tr(AB) &= \tr(BA) \label{trperm}
+\ip{A+B}{C+D} &= \ip{A}{C} + \ip{B}{C} + \ip{A}{D} + \ip{B}{D} \label{iplinear}\\
+\ip{aA}{bB} &= a^* b \ip{A}{B} \nonumber
 \end{align}
 ```
+
+Second, swapping arguments is equivalent to conjugating the inner product:
+
+```math
+\ip{A}{B} = \ip{B}{A}^*
+```
+
+Third, for matrices and vectors $A$, $B$, and $C$, we can move arguments from the left or right of one side to the other using the matrix adjoint:
+
+```math
+\begin{equation}
+\ip{A}{BCD} = \ip{B^H A}{CD} = \ip{B^H A D^H}{C} \label{ipperm}
+\end{equation}
+```
+
+Fourth, the inner product of two arrays $A$ and $B$ is equivalent to the sum of the elementwise inner products of the two arrays:
+
+```math
+\begin{equation}
+\ip{A}{B} = \sum_{i,\ldots,k} \ip{A_{i,\ldots,k}}{B_{i,\ldots,k}} = \sum_{i,\ldots,k} A_{i,\ldots,k}^* B_{i,\ldots,k}
+\end{equation}
+```
+As a result, only elements that are nonzero on both sides contribute to the inner product.
+This property is especially useful when deriving rules involving structurally sparse arrays.
 
 Now let's derive a few pullbacks using this approach.
 
@@ -302,33 +329,14 @@ Using \eqref{pbidentmat}, we now multiply by $\overline{\Omega}^H$ and take the 
 
 ```math
 \begin{align*}
-\Re\left( \tr \left(
-        \overline{\Omega}^H \dot{\Omega}
-\right) \right)
-    &= \Re\left( \tr \left( \overline{\Omega}^H ~\left(
-           \dot{A} B + A \dot{B}
-       \right) \right) \right)
+\Re\ip{\overline{\Omega}}{\dot{\Omega}}
+    &= \Re \ip{\overline \Omega}{\dot{A} B + A \dot{B}}
            && \text{substitute } \dot{\Omega} \text{ from } \eqref{diffprod}\\
-    &= \Re\left( \tr \left(
-           \overline{\Omega}^H \dot{A} B
-       \right) \right) +
-       \Re\left( \tr \left(
-           \overline{\Omega}^H  A \dot{B}
-       \right) \right)
-           && \text{expand using } \eqref{trexpand} \\
-    &= \Re\left( \tr \left(
-           B \overline{\Omega}^H \dot{A}
-       \right) \right) +
-       \Re\left( \tr \left(
-           \overline{\Omega}^H A \dot{B}
-       \right) \right)
-           && \text{rearrange the left term using } \eqref{trperm}\\
-    &= \Re\left( \tr \left(
-           \overline{A}^H  \dot{A}
-       \right) \right) +
-       \Re\left( \tr \left(
-           \overline{B}^H \dot{B}
-       \right) \right)
+    &= \Re \ip{\overline \Omega}{\dot{A} B} + \Re \ip{\overline \Omega}{A \dot{B}}
+           && \text{expand using } \eqref{iplinear} \\
+    &= \Re \ip{\overline \Omega B^H}{\dot{A}} + \Re \ip{A^H \overline \Omega}{\dot{B}}
+           && \text{rearrange the left term using } \eqref{ipperm}\\
+    &= \Re \ip{\overline A}{\dot{A}} + \Re \ip{\overline B}{\dot{B}}
            && \text{right-hand side of } \eqref{pbidentmat}
 \end{align*}
 ```
@@ -336,14 +344,7 @@ Using \eqref{pbidentmat}, we now multiply by $\overline{\Omega}^H$ and take the 
 That's it!
 The expression is in the desired form to solve for the adjoints by comparing the last two lines:
 
-```math
-\begin{align*}
-B \overline{\Omega}^H \dot{A} &= \overline{A}^H  \dot{A}, \quad
-    && \overline{A} = \overline{\Omega} B^H\\
-\overline{\Omega}^H A \dot{B} &= \overline{B}^H \dot{B}, \quad
-    && \overline{B} = A^H \overline{\Omega}
-\end{align*}
-```
+$$\overline A = \overline \Omega B^H, \qquad \overline B = A^H \overline \Omega$$
 
 Using ChainRules's notation, we would implement the `rrule` as
 
@@ -372,20 +373,12 @@ Using \eqref{pbidentmat},
 
 ```math
 \begin{align*}
-\Re\left( \tr \left(
-    \overline{\Omega}^H \dot{\Omega}
-\right) \right)
-    &= \Re\left( \tr \left(
-           -\overline{\Omega}^H \Omega \dot{A} \Omega
-       \right) \right)
+\Re\ip{\overline{\Omega}}{\dot{\Omega}}
+    &= \Re\ip{\overline{\Omega}}{-\Omega \dot{A} \Omega}
            && \text{substitute } \eqref{invdiff}\\
-    &= \Re\left( \tr \left(
-           -\Omega \overline{\Omega}^H \Omega \dot{A}
-       \right) \right)
-           && \text{rearrange using } \eqref{trperm}\\
-    &= \Re\left( \tr \left(
-           \overline{A}^H  \dot{A}
-       \right) \right)
+    &= \Re\ip{-\Omega^H \overline{\Omega} \Omega^H}{\dot{A}}
+           && \text{rearrange using } \eqref{ipperm}\\
+    &= \Re\ip{\overline{A}}{\dot{A}}
            && \text{right-hand side of } \eqref{pbidentmat}
 \end{align*}
 ```
@@ -393,8 +386,7 @@ Using \eqref{pbidentmat},
 we can now solve for $\overline{A}$:
 
 ```math
-\overline{A} = \left( -\Omega \overline{\Omega}^H \Omega \right)^H
-             = -\Omega^H \overline{\Omega} \Omega^H
+\overline{A} = -\Omega^H \overline{\Omega} \Omega^H
 ```
 
 We can implement the resulting `rrule` as
@@ -472,7 +464,7 @@ The array form of \eqref{pbident} is
 
 ```math
 \begin{align*}
-\ip{ \overline{\Omega} }{ \dot{\Omega} }
+\Re\ip{ \overline{\Omega} }{ \dot{\Omega} }
     &= \Re \left( \sum_{ik} \overline{\Omega}_{i1k}^*
            \dot{\Omega}_{i1k} \right)
            && \text{expand left-hand side of } \eqref{pbident}\\
@@ -647,12 +639,7 @@ end
 
 ```math
 \begin{align*}
-&\Re\left( \tr\left(
-    \overline{l}^H \dot{l}
-\right) \right) +
-\Re\left( \tr\left(
-    \overline{s}^H \dot{s}
-\right) \right)
+&\Re\ip{\overline{l}}{\dot{l}} + \Re\ip{\overline{s}}{\dot{s}}
     && \text{left-hand side of } \eqref{pbidentmat}\\
 &= \Re\left( \overline{l}^* \dot{l} + \overline{s}^* \dot{s} \right) \\
 &= \Re\left( 
@@ -687,8 +674,12 @@ end
        A^{-1} \dot{A}
    \right) \right)
        && \text{bring scalar within } \tr \\
-&= \Re\left( \tr \left( \overline{A}^H \dot{A} \right) \right)
-       && \text{right-hand side of } \eqref{pbidentmat}\\
+&= \Re\ip{
+        \left(
+            \Re \left( \overline{l} \right) + i \Im \left( s^* \overline{s} \right)
+        \right) A^{-H}
+    }{\dot{A}} && \text{rewrite as inner product}\\
+&= \Re\ip{\overline{A}}{\dot{A}} && \text{right-hand side of } \eqref{pbidentmat}\\
 \end{align*}
 ```
 
@@ -696,11 +687,7 @@ Now we solve for $\overline{A}$:
 
 ```math
 \begin{align*}
-\overline{A} &= \left( \left(
-    \Re \left( \overline{l} \right) +
-    i \Im \left( \overline{s}^* s \right)
-\right) A^{-1} \right)^H\\
-&= \left(
+\overline{A} = \left(
     \Re \left( \overline{l} \right) +
     i \Im \left( s^* \overline{s} \right)
 \right) A^{-H}
