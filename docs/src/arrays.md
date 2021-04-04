@@ -175,14 +175,14 @@ These identities are particularly useful:
 \begin{align*}
 \frac{d}{dt} \left( \Re(A) \right) &= \Re(\dot{A})\\
 \frac{d}{dt} \left( A^* \right) &= \dot{A}^*\\
-\frac{d}{dt} \left( A^T \right) &= \dot{A}^T\\
-\frac{d}{dt} \left( A^H \right) &= \dot{A}^H\\
+\frac{d}{dt} \left( A^\mathrm{T} \right) &= \dot{A}^\mathrm{T}\\
+\frac{d}{dt} \left( A^\mathrm{H} \right) &= \dot{A}^\mathrm{H}\\
 \frac{d}{dt} \left( \sum_{j}  A_{i \ldots j \ldots k} \right) &=
     \sum_{j} \dot{A}_{i \ldots j \ldots k},
 \end{align*}
 ```
 
-where $\cdot^*$ is the complex conjugate (`conj`), and $\cdot^H = \left(\cdot^T\right)^*$ is the conjugate transpose (the `adjoint` function).
+where $\cdot^*$ is the complex conjugate (`conj`), and $\cdot^\mathrm{H} = \left(\cdot^\mathrm{T}\right)^*$ is the conjugate transpose (the `adjoint` function).
 
 ## Reverse-mode rules
 
@@ -225,15 +225,15 @@ which gives the identity
 \end{equation}
 ```
 
-For matrices and vectors, $\ip{A}{B} = \tr(A^H B)$, and the identity simplifies to:
+For matrices and vectors, $\ip{A}{B} = \tr(A^\mathrm{H} B)$, and the identity simplifies to:
 
 ```math
 \begin{equation} \label{pbidentmat}
 \Re\left( \tr\left(
-    \overline{\Omega}^H \dot{\Omega}
+    \overline{\Omega}^\mathrm{H} \dot{\Omega}
 \right) \right) =
 \sum_m \Re \left( \tr \left(
-    \overline{X}_m^H \dot{X}_m
+    \overline{X}_m^\mathrm{H} \dot{X}_m
 \right) \right),
 \end{equation}
 ```
@@ -299,7 +299,7 @@ Third, for matrices and vectors $A$, $B$, and $C$, we can move arguments from th
 
 ```math
 \begin{equation}
-\ip{A}{BCD} = \ip{B^H A}{CD} = \ip{B^H A D^H}{C} \label{ipperm}
+\ip{A}{BCD} = \ip{B^\mathrm{H} A}{CD} = \ip{B^\mathrm{H} A D^\mathrm{H}}{C} \label{ipperm}
 \end{equation}
 ```
 
@@ -325,7 +325,7 @@ We above derived in \eqref{diffprod} the pushforward
 
 $$\dot{\Omega} = \dot{A} B + A \dot{B}$$
 
-Using \eqref{pbidentmat}, we now multiply by $\overline{\Omega}^H$ and take the real trace:
+Using \eqref{pbidentmat}, we now multiply by $\overline{\Omega}^\mathrm{H}$ and take the real trace:
 
 ```math
 \begin{align*}
@@ -334,7 +334,7 @@ Using \eqref{pbidentmat}, we now multiply by $\overline{\Omega}^H$ and take the 
            && \text{substitute } \dot{\Omega} \text{ from } \eqref{diffprod}\\
     &= \Re \ip{\overline \Omega}{\dot{A} B} + \Re \ip{\overline \Omega}{A \dot{B}}
            && \text{expand using } \eqref{iplinear} \\
-    &= \Re \ip{\overline \Omega B^H}{\dot{A}} + \Re \ip{A^H \overline \Omega}{\dot{B}}
+    &= \Re \ip{\overline \Omega B^\mathrm{H}}{\dot{A}} + \Re \ip{A^\mathrm{H} \overline \Omega}{\dot{B}}
            && \text{rearrange the left term using } \eqref{ipperm}\\
     &= \Re \ip{\overline A}{\dot{A}} + \Re \ip{\overline B}{\dot{B}}
            && \text{right-hand side of } \eqref{pbidentmat}
@@ -344,7 +344,7 @@ Using \eqref{pbidentmat}, we now multiply by $\overline{\Omega}^H$ and take the 
 That's it!
 The expression is in the desired form to solve for the adjoints by comparing the last two lines:
 
-$$\overline A = \overline \Omega B^H, \qquad \overline B = A^H \overline \Omega$$
+$$\overline A = \overline \Omega B^\mathrm{H}, \qquad \overline B = A^\mathrm{H} \overline \Omega$$
 
 Using ChainRules's notation, we would implement the `rrule` as
 
@@ -376,7 +376,7 @@ Using \eqref{pbidentmat},
 \Re\ip{\overline{\Omega}}{\dot{\Omega}}
     &= \Re\ip{\overline{\Omega}}{-\Omega \dot{A} \Omega}
            && \text{substitute } \eqref{invdiff}\\
-    &= \Re\ip{-\Omega^H \overline{\Omega} \Omega^H}{\dot{A}}
+    &= \Re\ip{-\Omega^\mathrm{H} \overline{\Omega} \Omega^\mathrm{H}}{\dot{A}}
            && \text{rearrange using } \eqref{ipperm}\\
     &= \Re\ip{\overline{A}}{\dot{A}}
            && \text{right-hand side of } \eqref{pbidentmat}
@@ -386,7 +386,7 @@ Using \eqref{pbidentmat},
 we can now solve for $\overline{A}$:
 
 ```math
-\overline{A} = -\Omega^H \overline{\Omega} \Omega^H
+\overline{A} = -\Omega^\mathrm{H} \overline{\Omega} \Omega^\mathrm{H}
 ```
 
 We can implement the resulting `rrule` as
@@ -677,7 +677,7 @@ end
 &= \Re\ip{
         \left(
             \Re \left( \overline{l} \right) + i \Im \left( s^* \overline{s} \right)
-        \right) A^{-H}
+        \right) A^{-\mathrm{H}}
     }{\dot{A}} && \text{rewrite as inner product}\\
 &= \Re\ip{\overline{A}}{\dot{A}} && \text{right-hand side of } \eqref{pbidentmat}\\
 \end{align*}
@@ -690,7 +690,7 @@ Now we solve for $\overline{A}$:
 \overline{A} = \left(
     \Re \left( \overline{l} \right) +
     i \Im \left( s^* \overline{s} \right)
-\right) A^{-H}
+\right) A^{-\mathrm{H}}
 \end{align*}
 ```
 
