@@ -1,3 +1,11 @@
+@font-face {
+  font-family: JuliaMono;
+  src: local("JuliaMono"), url("https://cdn.jsdelivr.net/gh/cormullion/juliamono/webfonts/JuliaMono-Regular.woff2"); }
+
+html.theme--documenter-dark pre,
+html.theme--documenter-dark code {
+  font-family: "JuliaMono"; }
+
 html:not(.theme--documenter-dark) body #documenter a {
   color: #4595D1; }
 
@@ -33,15 +41,13 @@ html:not(.theme--documenter-dark) body #documenter .docs-sidebar {
 html:not(.theme--documenter-dark) body #documenter article#documenter-page a.docs-heading-anchor {
   color: #194E82; }
 
-html:not(.theme--documenter-dark) body #documenter code {
-  color: inherit; }
-  html:not(.theme--documenter-dark) body #documenter code .hljs-meta {
-    color: #4595D1; }
-  html:not(.theme--documenter-dark) body #documenter code .hljs-keyword {
-    color: #194E82; }
-
 html:not(.theme--documenter-dark) body #documenter pre, html:not(.theme--documenter-dark) body #documenter code {
-  font-family: "Liberation Mono", "Consolas", "DejaVu Sans Mono", "Ubuntu Mono", "andale mono", "lucida console", monospace; }
+  color: inherit;
+  font-family: "JuliaMono"; }
+  html:not(.theme--documenter-dark) body #documenter pre .hljs-meta, html:not(.theme--documenter-dark) body #documenter code .hljs-meta {
+    color: #4595D1; }
+  html:not(.theme--documenter-dark) body #documenter pre .hljs-keyword, html:not(.theme--documenter-dark) body #documenter code .hljs-keyword {
+    color: #194E82; }
 
 .admonition.is-category-terminology {
   background-color: #FFFEDD;
@@ -56,3 +62,12 @@ html:not(.theme--documenter-dark) body #documenter pre, html:not(.theme--documen
 
 html.theme--documenter-dark .admonition.is-category-terminology {
   border-color: #FFEC8B; }
+
+details {
+  padding-left: 1rem;
+  padding-right: 1rem;
+  padding-bottom: 1rem;
+  background: aliceblue; }
+
+html.theme--documenter-dark details {
+  background: #282f2f; }
