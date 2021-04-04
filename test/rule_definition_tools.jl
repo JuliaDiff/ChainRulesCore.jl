@@ -30,6 +30,10 @@ struct NonDiffCounterExample
     x
 end
 
+module NonDiffModuleExample
+    nondiff_2_1(x, y) = fill(7.5, 100)[x + y]
+end
+
 @testset "rule_definition_tools.jl" begin
     @testset "@non_differentiable" begin
         @testset "two input one output function" begin
@@ -38,7 +42,7 @@ end
             @test frule((Zero(), 1.2, 2.3), nondiff_2_1, 3, 2) == (7.5, DoesNotExist())
             res, pullback = rrule(nondiff_2_1, 3, 2)
             @test res == 7.5
-            @test pullback(4.5) == (NO_FIELDS, DoesNotExist(), DoesNotExist())
+            @test pullback(4.5) == (DoesNotExist(), DoesNotExist(), DoesNotExist())
         end
 
         @testset "one input, 2-tuple output function" begin
@@ -49,7 +53,7 @@ end
             @test res == (5.0, 3.0)
             @test isequal(
                 pullback(Composite{Tuple{Float64, Float64}}(1.2, 3.2)),
-                (NO_FIELDS, DoesNotExist()),
+                (DoesNotExist(), DoesNotExist()),
             )
         end
 
@@ -62,7 +66,7 @@ end
 
             res, pullback = rrule(nonembed_identity, 2)
             @test res == 2
-            @test pullback(1.2) == (NO_FIELDS, DoesNotExist())
+            @test pullback(1.2) == (DoesNotExist(), DoesNotExist())
 
             @test rrule(nonembed_identity, 2.0) == nothing
         end
@@ -76,7 +80,7 @@ end
 
             res, pullback = rrule(pointy_identity, ["2"])
             @test res == ["2"]
-            @test pullback(1.2) == (NO_FIELDS, DoesNotExist())
+            @test pullback(1.2) == (DoesNotExist(), DoesNotExist())
 
             @test rrule(pointy_identity, 2.0) == nothing
         end
@@ -90,7 +94,7 @@ end
 
                 res, pullback = rrule(kw_demo, 1.5)
                 @test res == 3.5
-                @test pullback(4.1) == (NO_FIELDS, DoesNotExist())
+                @test pullback(4.1) == (DoesNotExist(), DoesNotExist())
 
                 @test frule((Zero(), 11.1), kw_demo, 1.5) == (3.5, DoesNotExist())
             end
@@ -100,7 +104,7 @@ end
 
                 res, pullback = rrule(kw_demo, 1.5; kw=3.0)
                 @test res == 4.5
-                @test pullback(1.1) == (NO_FIELDS, DoesNotExist())
+                @test pullback(1.1) == (DoesNotExist(), DoesNotExist())
 
                 @test frule((Zero(), 11.1), kw_demo, 1.5; kw=3.0) == (4.5, DoesNotExist())
             end
@@ -116,7 +120,7 @@ end
 
             res, pullback = rrule(NonDiffExample, 2.0)
             @test res == NonDiffExample(2.0)
-            @test pullback(1.2) == (NO_FIELDS, DoesNotExist())
+            @test pullback(1.2) == (DoesNotExist(), DoesNotExist())
 
             # https://github.com/JuliaDiff/ChainRulesCore.jl/issues/213
             # problem was that `@nondiff Foo(x)` was also defining rules for other types.
@@ -132,11 +136,11 @@ end
 
                 y, pb = rrule(fvarargs, 1)
                 @test y == fvarargs(1)
-                @test pb(1) == (Zero(), DoesNotExist())
+                @test pb(1) == (DoesNotExist(), DoesNotExist())
 
                 y, pb = rrule(fvarargs, 1, 2.0, 3.0)
                 @test y == fvarargs(1, 2.0, 3.0)
-                @test pb(1) == (Zero(), DoesNotExist(), DoesNotExist(), DoesNotExist())
+                @test pb(1) == (DoesNotExist(), DoesNotExist(), DoesNotExist(), DoesNotExist())
 
                 @test frule((1, 1), fvarargs, 1, 2.0) == (fvarargs(1, 2.0), DoesNotExist())
 
@@ -149,7 +153,7 @@ end
 
                 y, pb = rrule(fvarargs, 1, 2.0, 3.0)
                 @test y == fvarargs(1, 2.0, 3.0)
-                @test pb(1) == (Zero(), DoesNotExist(), DoesNotExist(), DoesNotExist())
+                @test pb(1) == (DoesNotExist(), DoesNotExist(), DoesNotExist(), DoesNotExist())
 
                 @test frule((1, 1), fvarargs, 1, 2.0) == (fvarargs(1, 2.0), DoesNotExist())
             end
@@ -159,7 +163,7 @@ end
 
                 y, pb = rrule(fvarargs, 1, 2.0, 3.0)
                 @test y == fvarargs(1, 2.0, 3.0)
-                @test pb(1) == (Zero(), DoesNotExist(), DoesNotExist(), DoesNotExist())
+                @test pb(1) == (DoesNotExist(), DoesNotExist(), DoesNotExist(), DoesNotExist())
 
                 @test frule((1, 1), fvarargs, 1, 2.0) == (fvarargs(1, 2.0), DoesNotExist())
             end
@@ -170,7 +174,7 @@ end
 
                 y, pb = rrule(fvarargs, 1, 1)
                 @test y == fvarargs(1, 1)
-                @test pb(1) == (Zero(), DoesNotExist(), DoesNotExist())
+                @test pb(1) == (DoesNotExist(), DoesNotExist(), DoesNotExist())
             end
 
             @testset "xs..." begin
@@ -179,8 +183,27 @@ end
 
                 y, pb = rrule(fvarargs, 1, 1)
                 @test y == fvarargs(1, 1)
-                @test pb(1) == (Zero(), DoesNotExist(), DoesNotExist())
+                @test pb(1) == (DoesNotExist(), DoesNotExist(), DoesNotExist())
             end
+        end
+
+        @testset "Functors" begin
+            (f::NonDiffExample)(y) = fill(7.5, 100)[f.x + y]
+            @non_differentiable (::NonDiffExample)(::Any)
+            @test frule((Composite{NonDiffExample}(x=1.2), 2.3), NonDiffExample(3), 2) ==
+                (7.5, DoesNotExist())
+            res, pullback = rrule(NonDiffExample(3), 2)
+            @test res == 7.5
+            @test pullback(4.5) == (DoesNotExist(), DoesNotExist())
+        end
+
+        @testset "Module specified explicitly" begin
+            @non_differentiable NonDiffModuleExample.nondiff_2_1(::Any, ::Any)
+            @test frule((Zero(), 1.2, 2.3), NonDiffModuleExample.nondiff_2_1, 3, 2) ==
+                (7.5, DoesNotExist())
+            res, pullback = rrule(NonDiffModuleExample.nondiff_2_1, 3, 2)
+            @test res == 7.5
+            @test pullback(4.5) == (DoesNotExist(), DoesNotExist(), DoesNotExist())
         end
 
         @testset "Not supported (Yet)" begin
@@ -208,9 +231,10 @@ end
             @test ẏ isa Composite{Tuple{Irrational{:π}, Float64}, Tuple{Float32, Float32}}
         end
 
-        @testset "Regression test against #276" begin
+        @testset "Regression tests against #276 and #265" begin
             # https://github.com/JuliaDiff/ChainRulesCore.jl/pull/276
-            # Symptom of this problem is creation of global variables and type instablily
+            # https://github.com/JuliaDiff/ChainRulesCore.jl/pull/265
+            # Symptom of these problems is creation of global variables and type instability
 
             num_globals_before = length(names(ChainRulesCore; all=true))
 
@@ -222,9 +246,70 @@ end
 
             # Test no new globals were created
             @test length(names(ChainRulesCore; all=true)) == num_globals_before
+
+            # Example in #265
+            simo3(x) = sincos(x)
+            @scalar_rule simo3(x) @setup((sinx, cosx) = Ω) cosx -sinx
+            _, simo3_pb = @inferred rrule(simo3, randn())
+            @inferred simo3_pb(Composite{Tuple{Float64,Float64}}(randn(), randn()))
         end
     end
+end
 
 
+module IsolatedModuleForTestingScoping
+    # check that rules can be defined by macros without any additional imports
+    using ChainRulesCore: @scalar_rule, @non_differentiable
 
+    # ensure that functions, types etc. in module `ChainRulesCore` can't be resolved
+    const ChainRulesCore = nothing
+
+    # this is
+    # https://github.com/JuliaDiff/ChainRulesCore.jl/issues/317
+    fixed(x) = :abc
+    @non_differentiable fixed(x)
+
+    # check name collision between a primal input called `kwargs` and the actual keyword
+    # arguments
+    fixed_kwargs(x; kwargs...) = :abc
+    @non_differentiable fixed_kwargs(kwargs)
+
+    my_id(x) = x
+    @scalar_rule(my_id(x), 1.0)
+
+    module IsolatedSubmodule
+        # check that rules defined in isolated module without imports can be called
+        # without errors
+        using ChainRulesCore: frule, rrule, Zero, DoesNotExist
+        using ..IsolatedModuleForTestingScoping: fixed, fixed_kwargs, my_id
+        using Test
+
+        @testset "@non_differentiable" begin
+            for f in (fixed, fixed_kwargs)
+                y, ẏ = frule((Zero(), randn()), f, randn())
+                @test y === :abc
+                @test ẏ === DoesNotExist()
+
+                y, f_pullback = rrule(f, randn())
+                @test y === :abc
+                @test f_pullback(randn()) === (DoesNotExist(), DoesNotExist())
+            end
+
+            y, f_pullback = rrule(fixed_kwargs, randn(); keyword=randn())
+            @test y === :abc
+            @test f_pullback(randn()) === (DoesNotExist(), DoesNotExist())
+        end
+
+        @testset "@scalar_rule" begin
+            x, ẋ = randn(2)
+            y, ẏ = frule((Zero(), ẋ), my_id, x)
+            @test y == x
+            @test ẏ == ẋ
+
+            Δy = randn()
+            y, f_pullback = rrule(my_id, x)
+            @test y == x
+            @test f_pullback(Δy) == (Zero(), Δy)
+        end
+    end
 end

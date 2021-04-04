@@ -1,4 +1,10 @@
 # These are some macros (and supporting functions) to make it easier to define rules.
+using Base.Meta
+
+macro strip_linenos(expr)
+    return esc(Base.remove_linenums!(expr))
+end
+
 """
     @scalar_rule(f(x₁, x₂, ...),
                  @setup(statement₁, statement₂, ...),
@@ -76,8 +82,8 @@ macro scalar_rule(call, maybe_setup, partials...)
     )
     f = call.args[1]
 
-    frule_expr = scalar_frule_expr(f, call, setup_stmts, inputs, partials)
-    rrule_expr = scalar_rrule_expr(f, call, setup_stmts, inputs, partials)
+    frule_expr = scalar_frule_expr(__source__, f, call, setup_stmts, inputs, partials)
+    rrule_expr = scalar_rrule_expr(__source__, f, call, setup_stmts, inputs, partials)
 
     ############################################################################
     # Final return: building the expression to insert in the place of this macro
@@ -136,7 +142,7 @@ function _normalize_scalarrules_macro_input(call, maybe_setup, partials)
 end
 
 
-function scalar_frule_expr(f, call, setup_stmts, inputs, partials)
+function scalar_frule_expr(__source__, f, call, setup_stmts, inputs, partials)
     n_outputs = length(partials)
     n_inputs = length(inputs)
 
@@ -150,16 +156,17 @@ function scalar_frule_expr(f, call, setup_stmts, inputs, partials)
     if n_outputs > 1
         # For forward-mode we return a Composite if output actually a tuple.
         pushforward_returns = Expr(
-            :call, :(ChainRulesCore.Composite{typeof($(esc(:Ω)))}), pushforward_returns...
+            :call, :(Composite{typeof($(esc(:Ω)))}), pushforward_returns...
         )
     else
         pushforward_returns = first(pushforward_returns)
     end
 
-    return quote
+    return @strip_linenos quote
         # _ is the input derivative w.r.t. function internals. since we do not
         # allow closures/functors with @scalar_rule, it is always ignored
         function ChainRulesCore.frule((_, $(Δs...)), ::typeof($f), $(inputs...))
+            $(__source__)
             $(esc(:Ω)) = $call
             $(setup_stmts...)
             return $(esc(:Ω)), $pushforward_returns
@@ -167,7 +174,7 @@ function scalar_frule_expr(f, call, setup_stmts, inputs, partials)
     end
 end
 
-function scalar_rrule_expr(f, call, setup_stmts, inputs, partials)
+function scalar_rrule_expr(__source__, f, call, setup_stmts, inputs, partials)
     n_outputs = length(partials)
     n_inputs = length(inputs)
 
@@ -183,14 +190,16 @@ function scalar_rrule_expr(f, call, setup_stmts, inputs, partials)
 
     # Multi-output functions have pullbacks with a tuple input that will be destructured
     pullback_input = n_outputs == 1 ? first(Δs) : Expr(:tuple, Δs...)
-    pullback = quote
+    pullback = @strip_linenos quote
         @inline function $(esc(propagator_name(f, :pullback)))($pullback_input)
+            $(__source__)
             return (NO_FIELDS, $(pullback_returns...))
         end
     end
 
-    return quote
+    return @strip_linenos quote
         function ChainRulesCore.rrule(::typeof($f), $(inputs...))
+            $(__source__)
             $(esc(:Ω)) = $call
             $(setup_stmts...)
             return $(esc(:Ω)), $pullback
@@ -198,7 +207,7 @@ function scalar_rrule_expr(f, call, setup_stmts, inputs, partials)
     end
 end
 
-# For context on why this is important, see 
+# For context on why this is important, see
 # https://github.com/JuliaDiff/ChainRulesCore.jl/pull/276
 "Declares properly hygenic inputs for propagation expressions"
 _propagator_inputs(n) = [esc(gensym(Symbol(:Δ, i))) for i in 1:n]
@@ -266,8 +275,8 @@ propagator_name(fname::QuoteNode, propname::Symbol) = propagator_name(fname.valu
 
 A helper to make it easier to declare that a method is not not differentiable.
 This is a short-hand for defining an [`frule`](@ref) and [`rrule`](@ref) that
-return [`DoesNotExist()`](@ref) for all partials (except for the function `s̄elf`-partial
-itself which is `NO_FIELDS`)
+return [`DoesNotExist()`](@ref) for all partials (even for the function `s̄elf`-partial
+itself)
 
 Keyword arguments should not be included.
 
@@ -277,7 +286,7 @@ julia> @non_differentiable Base.:(==)(a, b)
 julia> _, pullback = rrule(==, 2.0, 3.0);
 
 julia> pullback(1.0)
-(Zero(), DoesNotExist(), DoesNotExist())
+(DoesNotExist(), DoesNotExist(), DoesNotExist())
 ```
 
 You can place type-constraints in the signature:
@@ -300,59 +309,81 @@ macro non_differentiable(sig_expr)
 
     primal_name, orig_args = Iterators.peel(sig_expr.args)
 
+    primal_name_sig, primal_name = _split_primal_name(primal_name)
     constrained_args = _constrain_and_name.(orig_args, :Any)
-    primal_sig_parts = [:(::Core.Typeof($primal_name)), constrained_args...]
+    primal_sig_parts = [primal_name_sig, constrained_args...]
 
     unconstrained_args = _unconstrain.(constrained_args)
 
     primal_invoke = if !has_vararg
-        :($(primal_name)($(unconstrained_args...); kwargs...))
+        :($(primal_name)($(unconstrained_args...)))
     else
         normal_args = unconstrained_args[1:end-1]
         var_arg = unconstrained_args[end]
-        :($(primal_name)($(normal_args...), $(var_arg)...; kwargs...))
+        :($(primal_name)($(normal_args...), $(var_arg)...))
     end
 
     quote
-        $(_nondiff_frule_expr(primal_sig_parts, primal_invoke))
-        $(_nondiff_rrule_expr(primal_sig_parts, primal_invoke))
+        $(_nondiff_frule_expr(__source__, primal_sig_parts, primal_invoke))
+        $(_nondiff_rrule_expr(__source__, primal_sig_parts, primal_invoke))
     end
 end
 
-function _nondiff_frule_expr(primal_sig_parts, primal_invoke)
-    return esc(:(
-        function ChainRulesCore.frule($(gensym(:_)), $(primal_sig_parts...); kwargs...)
+"changes `f(x,y)` into `f(x,y; kwargs....)`"
+function _with_kwargs_expr(call_expr::Expr, kwargs)
+    @assert isexpr(call_expr, :call)
+    return Expr(
+        :call, call_expr.args[1], Expr(:parameters, :($(kwargs)...)), call_expr.args[2:end]...
+    )
+end
+
+function _nondiff_frule_expr(__source__, primal_sig_parts, primal_invoke)
+    @gensym kwargs
+    # `::Any` instead of `_`: https://github.com/JuliaLang/julia/issues/32727
+    return @strip_linenos quote
+        function ChainRulesCore.frule(
+            @nospecialize(::Any), $(map(esc, primal_sig_parts)...); $(esc(kwargs))...
+        )
+            $(__source__)
             # Julia functions always only have 1 output, so return a single DoesNotExist()
-            return ($primal_invoke, DoesNotExist())
+            return ($(esc(_with_kwargs_expr(primal_invoke, kwargs))), DoesNotExist())
         end
-    ))
+    end
 end
 
 function tuple_expression(primal_sig_parts)
     has_vararg = _isvararg(primal_sig_parts[end])
     return if !has_vararg
-        num_primal_inputs = length(primal_sig_parts) - 1 # - primal
-        Expr(:tuple, ntuple(_->DoesNotExist(), num_primal_inputs)...)
+        num_primal_inputs = length(primal_sig_parts)
+        Expr(:tuple, ntuple(_ -> DoesNotExist(), num_primal_inputs)...)
     else
-        num_primal_inputs = length(primal_sig_parts) - 2 # - primal and vararg
-        length_expr = :($(num_primal_inputs) + length($(_unconstrain(primal_sig_parts[end]))))
-        Expr(:call, :ntuple, Expr(:(->), :_, DoesNotExist()), length_expr)
+        num_primal_inputs = length(primal_sig_parts) - 1 # - vararg
+        length_expr = :($num_primal_inputs + length($(esc(_unconstrain(primal_sig_parts[end])))))
+        @strip_linenos :(ntuple(i -> DoesNotExist(), $length_expr))
     end
 end
 
-function _nondiff_rrule_expr(primal_sig_parts, primal_invoke)
+function _nondiff_rrule_expr(__source__, primal_sig_parts, primal_invoke)
+    esc_primal_sig_parts = map(esc, primal_sig_parts)
     tup_expr = tuple_expression(primal_sig_parts)
     primal_name = first(primal_invoke.args)
-    pullback_expr = Expr(
-        :function,
-        Expr(:call, propagator_name(primal_name, :pullback), :_),
-        Expr(:tuple, NO_FIELDS, Expr(:(...), tup_expr))
-    )
-    return esc(:(
-        function ChainRulesCore.rrule($(primal_sig_parts...); kwargs...)
-            return ($primal_invoke, $pullback_expr)
+    pullback_expr = @strip_linenos quote
+        function $(esc(propagator_name(primal_name, :pullback)))(@nospecialize(_))
+            return $(tup_expr)
         end
-    ))
+    end
+
+    @gensym kwargs
+    return @strip_linenos quote
+        # Manually defined kw version to save compiler work. See explanation in rules.jl
+        function (::Core.kwftype(typeof(rrule)))($(esc(kwargs))::Any, ::typeof(rrule), $(esc_primal_sig_parts...))
+            return ($(esc(_with_kwargs_expr(primal_invoke, kwargs))), $pullback_expr)
+        end
+        function ChainRulesCore.rrule($(esc_primal_sig_parts...))
+            $(__source__)
+            return ($(esc(primal_invoke)), $pullback_expr)
+        end
+    end
 end
 
 
@@ -401,6 +432,26 @@ function _isvararg(expr::Expr)
     return false
 end
 
+"""
+splits the first arg of the `call` expression into an expression to use in the signature
+and one to use for calling that function
+"""
+function _split_primal_name(primal_name)
+    # e.g. f(x, y)
+    if primal_name isa Symbol || Meta.isexpr(primal_name, :(.)) ||
+        Meta.isexpr(primal_name, :curly)
+
+        primal_name_sig = :(::$Core.Typeof($primal_name))
+        return primal_name_sig, primal_name
+    # e.g. (::T)(x, y)
+    elseif Meta.isexpr(primal_name, :(::))
+        _primal_name = gensym(Symbol(:instance_, primal_name.args[end]))
+        primal_name_sig = Expr(:(::), _primal_name, primal_name.args[end])
+        return primal_name_sig, _primal_name
+    else
+        error("invalid primal name: `$primal_name`")
+    end
+end
 
 "turn both `a` and `a::S` into `a`"
 _unconstrain(arg::Symbol) = arg

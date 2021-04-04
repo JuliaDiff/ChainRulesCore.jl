@@ -153,6 +153,16 @@ end
         @test canonicalize(CFoo(y=10)) == CFoo(x=Zero(), y=10)
 
         @test_throws ArgumentError canonicalize(CFoo(q=99.0, x=2.5))
+
+        @testset "unspecified primal type" begin
+            c1 = Composite{Any}(;a=1, b=2)
+            c2 = Composite{Any}(1, 2)
+            c3 = Composite{Any}(Dict(4 => 3))
+
+            @test c1 == canonicalize(c1)
+            @test c2 == canonicalize(c2)
+            @test c3 == canonicalize(c3)
+        end
     end
 
     @testset "+ with other composites" begin

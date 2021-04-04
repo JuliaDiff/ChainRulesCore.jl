@@ -1,8 +1,12 @@
 name: JuliaNightly
-# Nightly Scheduled Julia Nightly Run
+# Nightly Version of Julia.
+# Runs on PRs and pushes to `master`, but seperate workflow to `CI`
+# to avoid inclusion in nightly cron build with failure notifications.
 on:
-  schedule:
-    - cron: '0 2 * * *'  # Daily at 2 AM UTC (8 PM CST)
+  push:
+    branches: [master]
+    tags: ["*"]
+  pull_request:
 jobs:
   test:
     name: Julia Nightly - Ubuntu - x64

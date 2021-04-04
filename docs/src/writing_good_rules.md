@@ -44,8 +44,8 @@ Use named local functions for the `pullback` in an `rrule`.
 # good:
 function rrule(::typeof(foo), x)
     Y = foo(x)
-    function foo_pullback(Ȳ)
-        return NO_FIELDS, bar(Ȳ)
+    function foo_pullback(Ȳ)
+        return NO_FIELDS, bar(Ȳ)
     end
     return Y, foo_pullback
 end
@@ -132,6 +132,10 @@ Furthermore, AD systems make different trade-offs in performance due to their de
 This means that a certain rule will help one AD system, but not improve (and also not harm) another.
 Below, we list some patterns relevant for the [Zygote.jl](https://github.com/FluxML/Zygote.jl) AD system.
 
+Rules for functions which mutate its arguments, e.g. `sort!`, should not be written at the moment.
+While technically they are supported, they would break [Zygote.jl](https://github.com/FluxML/Zygote.jl) such that [it would sometimes quietly return the wrong answer](https://github.com/JuliaDiff/ChainRulesCore.jl/issues/242).
+This may be resolved in the future by [allowing AD systems to opt-in or opt-out of certain types of rules](https://github.com/JuliaDiff/ChainRulesCore.jl/issues/270).
+
 ### Patterns that need rules in [Zygote.jl](https://github.com/FluxML/Zygote.jl)
 
 There are a few classes of functions that Zygote can not differentiate through.
@@ -157,7 +161,7 @@ However, upon adding the `rrule` (restart the REPL after calling `gradient`)
 ```julia
 function ChainRules.rrule(::typeof(addone!), a)
     y = addone!(a)
-    function addone!_pullback(ȳ)
+    function addone!_pullback(ȳ)
         return NO_FIELDS, ones(length(a))
     end
     return y, addone!_pullback
@@ -199,7 +203,7 @@ without an `rrule` defined (restart the REPL after calling `gradient`)
 ```julia
 function ChainRulesCore.rrule(::typeof(exception), x)
     y = exception(x)
-    function exception_pullback(ȳ)
+    function exception_pullback(ȳ)
         return NO_FIELDS, 2*x
     end
     return y, exception_pullback
@@ -218,11 +222,11 @@ Julia runs loops fast.
 Unfortunately Zygote differentiates through loops slowly.
 So, for example, computing the mean squared error by using a loop
 ```julia
-function mse(y, ŷ)
+function mse(y, ŷ)
     N = length(y)
     s = 0.0
     for i in 1:N
-        s +=  (y[i] - ŷ[i])^2.0
+        s +=  (y[i] - ŷ[i])^2.0
     end
     return s/N
 end
@@ -230,17 +234,17 @@ end
 takes a lot longer to AD through
 ```julia
 julia> y = rand(30)
-julia> ŷ = rand(30)
-julia> @btime gradient(mse, $y, $ŷ)
+julia> ŷ = rand(30)
+julia> @btime gradient(mse, $y, $ŷ)
   38.180 μs (993 allocations: 65.00 KiB)
 ```
 than if we supply an `rrule`, (restart the REPL after calling `gradient`)
 ```julia
 function ChainRules.rrule(::typeof(mse), x, x̂)
     output = mse(x, x̂)
-    function mse_pullback(ȳ)
+    function mse_pullback(ȳ)
         N = length(x)
-        g = (2 ./ N) .* (x .- x̂) .* ȳ
+        g = (2 ./ N) .* (x .- x̂) .* ȳ
         return NO_FIELDS, g, -g
     end
     return output, mse_pullback
@@ -248,7 +252,7 @@ end
 ```
 which is much faster
 ```julia
-julia> @btime gradient(mse, $y, $ŷ)
+julia> @btime gradient(mse, $y, $ŷ)
   143.697 ns (2 allocations: 672 bytes)
 ```
 
@@ -272,9 +276,9 @@ Computing the gradient with only a single array allocation using an `rrule` (res
 ```julia
 function ChainRulesCore.rrule(::typeof(sum3), a)
     y = sum3(a)
-    function sum3_pullback(ȳ)
+    function sum3_pullback(ȳ)
         grad = zeros(length(a))
-        grad[1:3] .+= 1.0
+        grad[1:3] .+= ȳ
         return NO_FIELDS, grad
     end
     return y, sum3_pullback
@@ -285,4 +289,3 @@ turns out to be significantly faster
 julia> @btime gradient(sum3, rand(30))
   192.818 ns (3 allocations: 784 bytes)
 ```
-

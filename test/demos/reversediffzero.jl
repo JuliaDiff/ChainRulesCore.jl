@@ -61,7 +61,7 @@ function define_tracked_overload(sig)
     opT, argTs = Iterators.peel(sig.parameters)
     opT isa Type{<:Type} && return  # not handling constructors
     fieldcount(opT) == 0 || return  # not handling functors
-    all(Float64 <: argT for argT in argTs) || return  # only handling purely Float64 ops.
+    all(argT isa Type && Float64 <: argT for argT in argTs) || return # only handling purely Float64 ops.
 
     N = length(sig.parameters) - 1  # skip the op
     fdef = quote
