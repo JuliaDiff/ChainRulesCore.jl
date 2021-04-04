@@ -1,5 +1,60 @@
 # On writing good `rrule` / `frule` methods
 
+## Use `Type{T}`, not `typeof(T)`, to define rules for constructors
+
+To define an `frule` or `rrule` for a _function_ `foo` we dispatch on the type of `foo`, which is `typeof(foo)`.
+For example, the `rrule` signature would be like:
+
+```julia
+function rrule(::typeof(foo), args...; kwargs...)
+    ...
+    return y, foo_pullback
+end
+```
+
+But to define an `rrule` for a constructor for a  _type_ `T` we need to be careful to dispatch only on `Type{T}`.
+
+For example, the `rrule` signature for a constructor would be like:
+
+```julia
+function rrule(::Type{T}, args...; kwargs...)
+    ...
+    return y, T_pullback
+end
+```
+
+In particular, be careful not to use `typeof(T)` here.
+Because `typeof(T)` is `DataType`, using this to define an `rrule`/`frule` will define an `rrule`/`frule` for all constructors.
+
+You can check which to use with `Core.Typeof`:
+
+```julia
+julia> function foob end
+foob (generic function with 0 methods)
+
+julia> typeof(foob)
+typeof(foob)
+
+julia> Core.Typeof(foob)
+typeof(foob)
+
+julia> abstract type AbstractT end
+
+julia> struct ExampleT <: AbstractT end
+
+julia> typeof(AbstractT)
+DataType
+
+julia> typeof(ExampleT)
+DataType
+
+julia> Core.Typeof(AbstractT)
+Type{AbstractT}
+
+julia> Core.Typeof(ExampleT)
+Type{ExampleT}
+```
+
 ## Use `Zero()` or `One()` as return value
 
 The `Zero()` and `One()` differential objects exist as an alternative to directly returning
