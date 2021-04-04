@@ -724,6 +724,97 @@ end
     Then the pullback isolates the imaginary part, which effectively is a projection.
     That is, any part of the adjoint $\overline{s}$ that is not tangent to the complex circle at $s$ will not contribute to $\overline{A}$.
 
+## Implicit functions
+
+Sometimes a function is only defined implicitly, and internally some solver or iterative algorithm is used to compute the result.
+We can still in some cases derive rules by considering only the implicit functions and not the internals.
+One example is the solution $X$ to the Sylvester equation
+
+$$A X + X B = -C$$
+
+for inputs $A$, $B$, and $C$.
+We can also write this solution as $X = \operatorname{sylvester}(A, B, C)$, which in Julia is computed using `LinearAlgebra.sylvester(A, B, C)`.
+
+### Forward-mode Rule
+
+We start by differentiating the implicit function:
+
+$$\dot{A} X + A \dot{X} + \dot{X} B + X \dot{B} = -\dot{C}$$
+
+Then we isolate the terms with $\dot{X}$ on one side:
+```math
+\begin{align}
+A \dot{X} + \dot{X} B
+    &= -\dot{C} - \dot{A} X - X \dot{B} \label{sylpfimplicit}\\
+    &= -(\dot{C} + \dot{A} X + X \dot{B}) \nonumber
+\end{align}
+```
+
+So the pushforward is the solution to a different Sylvester equation:
+```math
+\begin{equation}
+\dot{X} = \operatorname{sylvester}(A, B, \dot{C} + \dot{A} X + X \dot{B}) \label{sylpf}
+\end{equation}
+```
+
+The `frule` can be implemented as
+
+```julia
+function frule((_, ΔA, ΔB, ΔC), ::typeof(sylvester), A, B, C)
+    X = sylvester(A, B, C)
+    return X, sylvester(A, B, ΔC + ΔA * X + X * ΔB)
+end
+```
+
+### Reverse-mode Rule
+
+Like when deriving the pushforward, it's easiest to start from the implicit function \eqref{sylpfimplicit} than from \eqref{sylpf}.
+We start by introducing some dummy $-Z$ and taking its inner product with both sides:
+
+$$\ip{-Z}{A \dot{X} + \dot{X} B} = \ip{-Z}{-\dot{C} - \dot{A} X - X \dot{B}}.$$
+
+Then we expand
+
+$$\ip{-Z}{A \dot{X}} + \ip{Z}{\dot{X} B} = \ip{Z}{\dot{C}} + \ip{Z}{\dot{A} X} + \ip{Z}{X \dot{B}}.$$
+
+Now permute:
+
+$$\ip{-A^\mathrm{H} Z}{\dot{X}} + \ip{-Z B^\mathrm{H}}{\dot{X}} = \ip{Z}{\dot{C}} + \ip{Z X^\mathrm{H}}{\dot{A}} + \ip{X^\mathrm{H} Z}{X \dot{B}}.$$
+
+Then combine:
+
+$$\ip{-(A^\mathrm{H} Z + Z B^\mathrm{H})}{\dot{X}} = \ip{Z X^\mathrm{H}}{\dot{A}} + \ip{X^\mathrm{H} Z}{X \dot{B}} + \ip{Z}{\dot{C}}.$$
+
+This is almost exactly the identity we need to solve for $\overline{A}$, $\overline{B}$, and $\overline{C}$.
+To manipulate it to the right form, we need only define $A^\mathrm{H} Z + Z B^\mathrm{H} = -\overline{X}$.
+This _yet another_ Sylvester equation, so letting $Z = \overline{C}$, our final pullback is:
+
+```math
+\begin{align*}
+\overline{C} &= \operatorname{sylvester}(A^\mathrm{H}, B^\mathrm{H}, \overline{X})\\
+             &= \operatorname{sylvester}(B, A, \overline{X}^\mathrm{H})^\mathrm{H}\\
+\overline{A} &= \overline{C} X^\mathrm{H}\\
+\overline{B} &= X^\mathrm{H} \overline{C}\\
+\end{align*}
+```
+
+The `rrule` can be implemented as
+
+```julia
+function rrule(::typeof(sylvester), A, B, C)
+    X = sylvester(A, B, C)
+    function sylvester_pullback(ΔX)
+        ∂C = copy(sylvester(B, A, copy(ΔX'))')
+        return NO_FIELDS, @thunk(∂C * X'), @thunk(X' * ∂C), ∂C
+    end
+    return X, sylvester_pullback
+end
+```
+
+Note, however, that the Sylvester equation is usually solved using the Schur decomposition of $A$ and $B$.
+These Schur decompositions can be reused to solve the Sylvester equations in the pushforward and pullback.
+See the [implementation in ChainRules](https://github.com/JuliaDiff/ChainRules.jl/blob/v0.7.57/src/rulesets/LinearAlgebra/dense.jl#L243-L286) for details.
+
 ## More examples
 
 For more instructive examples of array rules, see [^Giles2008ext] (real vector and matrix rules) and the [LinearAlgebra rules in ChainRules](https://github.com/JuliaDiff/ChainRules.jl/tree/master/src/rulesets/LinearAlgebra).
