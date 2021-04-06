@@ -775,7 +775,7 @@ $$\ip{-Z}{A \dot{X} + \dot{X} B} = \ip{-Z}{-\dot{C} - \dot{A} X - X \dot{B}}.$$
 
 Then we expand
 
-$$\ip{-Z}{A \dot{X}} + \ip{Z}{\dot{X} B} = \ip{Z}{\dot{C}} + \ip{Z}{\dot{A} X} + \ip{Z}{X \dot{B}}.$$
+$$\ip{-Z}{A \dot{X}} + \ip{-Z}{\dot{X} B} = \ip{Z}{\dot{C}} + \ip{Z}{\dot{A} X} + \ip{Z}{X \dot{B}}.$$
 
 Now permute:
 
