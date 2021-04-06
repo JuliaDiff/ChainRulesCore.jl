@@ -26,7 +26,21 @@ makedocs(
     format=Documenter.HTML(
         prettyurls=false,
         assets=["assets/chainrules.css"],
-        mathengine=MathJax(),
+        mathengine=MathJax3(
+            Dict(
+                :tex => Dict(
+                    "inlineMath" => [["\$","\$"], ["\\(","\\)"]],
+                    "tags" => "ams",
+                    # TODO: remove when using physics package
+                    "macros" => Dict(
+                        "ip" => ["{\\left\\langle #1, #2 \\right\\rangle}", 2],
+                        "Re" => "{\\operatorname{Re}}",
+                        "Im" => "{\\operatorname{Im}}",
+                        "tr" => "{\\operatorname{tr}}",
+                    ),
+                ),
+            ),
+        ),
     ),
     sitename="ChainRules",
     authors="Jarrett Revels and other contributors",
