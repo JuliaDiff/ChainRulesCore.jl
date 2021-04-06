@@ -175,14 +175,14 @@ These identities are particularly useful:
 \begin{align*}
 \frac{d}{dt} \left( \Re(A) \right) &= \Re(\dot{A})\\
 \frac{d}{dt} \left( A^* \right) &= \dot{A}^*\\
-\frac{d}{dt} \left( A^\mathrm{T} \right) &= \dot{A}^\mathrm{T}\\
-\frac{d}{dt} \left( A^\mathrm{H} \right) &= \dot{A}^\mathrm{H}\\
+\frac{d}{dt} \left( A^\mathsf{T} \right) &= \dot{A}^\mathsf{T}\\
+\frac{d}{dt} \left( A^\mathsf{H} \right) &= \dot{A}^\mathsf{H}\\
 \frac{d}{dt} \left( \sum_{j}  A_{i \ldots j \ldots k} \right) &=
     \sum_{j} \dot{A}_{i \ldots j \ldots k},
 \end{align*}
 ```
 
-where $\cdot^*$ is the complex conjugate (`conj`), and $\cdot^\mathrm{H} = \left(\cdot^\mathrm{T}\right)^*$ is the conjugate transpose (the `adjoint` function).
+where $\cdot^*$ is the complex conjugate (`conj`), and $\cdot^\mathsf{H} = \left(\cdot^\mathsf{T}\right)^*$ is the conjugate transpose (the `adjoint` function).
 
 ## Reverse-mode rules
 
@@ -225,15 +225,15 @@ which gives the identity
 \end{equation}
 ```
 
-For matrices and vectors, $\ip{A}{B} = \tr(A^\mathrm{H} B)$, and the identity simplifies to:
+For matrices and vectors, $\ip{A}{B} = \tr(A^\mathsf{H} B)$, and the identity simplifies to:
 
 ```math
 \begin{equation} \label{pbidentmat}
 \Re\left( \tr\left(
-    \overline{\Omega}^\mathrm{H} \dot{\Omega}
+    \overline{\Omega}^\mathsf{H} \dot{\Omega}
 \right) \right) =
 \sum_m \Re \left( \tr \left(
-    \overline{X}_m^\mathrm{H} \dot{X}_m
+    \overline{X}_m^\mathsf{H} \dot{X}_m
 \right) \right),
 \end{equation}
 ```
@@ -301,7 +301,7 @@ Third, for matrices and vectors $A$, $B$, and $C$, we can move arguments from th
 
 ```math
 \begin{equation}
-\ip{A}{BCD} = \ip{B^\mathrm{H} A}{CD} = \ip{B^\mathrm{H} A D^\mathrm{H}}{C} \label{ipperm}
+\ip{A}{BCD} = \ip{B^\mathsf{H} A}{CD} = \ip{B^\mathsf{H} A D^\mathsf{H}}{C} \label{ipperm}
 \end{equation}
 ```
 
@@ -327,7 +327,7 @@ We above derived in \eqref{diffprod} the pushforward
 
 $$\dot{\Omega} = \dot{A} B + A \dot{B}$$
 
-Using \eqref{pbidentmat}, we now multiply by $\overline{\Omega}^\mathrm{H}$ and take the real trace:
+Using \eqref{pbidentmat}, we now multiply by $\overline{\Omega}^\mathsf{H}$ and take the real trace:
 
 ```math
 \begin{align*}
@@ -336,7 +336,7 @@ Using \eqref{pbidentmat}, we now multiply by $\overline{\Omega}^\mathrm{H}$ and 
            && \text{substitute } \dot{\Omega} \text{ from } \eqref{diffprod}\\
     &= \Re \ip{\overline \Omega}{\dot{A} B} + \Re \ip{\overline \Omega}{A \dot{B}}
            && \text{expand using } \eqref{iplinear} \\
-    &= \Re \ip{\overline \Omega B^\mathrm{H}}{\dot{A}} + \Re \ip{A^\mathrm{H} \overline \Omega}{\dot{B}}
+    &= \Re \ip{\overline \Omega B^\mathsf{H}}{\dot{A}} + \Re \ip{A^\mathsf{H} \overline \Omega}{\dot{B}}
            && \text{rearrange the left term using } \eqref{ipperm}\\
     &= \Re \ip{\overline A}{\dot{A}} + \Re \ip{\overline B}{\dot{B}}
            && \text{right-hand side of } \eqref{pbidentmat}
@@ -346,7 +346,7 @@ Using \eqref{pbidentmat}, we now multiply by $\overline{\Omega}^\mathrm{H}$ and 
 That's it!
 The expression is in the desired form to solve for the adjoints by comparing the last two lines:
 
-$$\overline A = \overline \Omega B^\mathrm{H}, \qquad \overline B = A^\mathrm{H} \overline \Omega$$
+$$\overline A = \overline \Omega B^\mathsf{H}, \qquad \overline B = A^\mathsf{H} \overline \Omega$$
 
 Using ChainRules's notation, we would implement the `rrule` as
 
@@ -378,7 +378,7 @@ Using \eqref{pbidentmat},
 \Re\ip{\overline{\Omega}}{\dot{\Omega}}
     &= \Re\ip{\overline{\Omega}}{-\Omega \dot{A} \Omega}
            && \text{substitute } \eqref{invdiff}\\
-    &= \Re\ip{-\Omega^\mathrm{H} \overline{\Omega} \Omega^\mathrm{H}}{\dot{A}}
+    &= \Re\ip{-\Omega^\mathsf{H} \overline{\Omega} \Omega^\mathsf{H}}{\dot{A}}
            && \text{rearrange using } \eqref{ipperm}\\
     &= \Re\ip{\overline{A}}{\dot{A}}
            && \text{right-hand side of } \eqref{pbidentmat}
@@ -388,7 +388,7 @@ Using \eqref{pbidentmat},
 we can now solve for $\overline{A}$:
 
 ```math
-\overline{A} = -\Omega^\mathrm{H} \overline{\Omega} \Omega^\mathrm{H}
+\overline{A} = -\Omega^\mathsf{H} \overline{\Omega} \Omega^\mathsf{H}
 ```
 
 We can implement the resulting `rrule` as
@@ -670,7 +670,7 @@ end
 &= \Re\ip{
         \left(
             \Re \left( \overline{l} \right) + i \Im \left( s^* \overline{s} \right)
-        \right) A^{-\mathrm{H}}
+        \right) A^{-\mathsf{H}}
     }{\dot{A}} && \text{rewrite as inner product}\\
 &= \Re\ip{\overline{A}}{\dot{A}} && \text{right-hand side of } \eqref{pbidentmat}\\
 \end{align*}
@@ -683,7 +683,7 @@ Now we solve for $\overline{A}$:
 \overline{A} = \left(
     \Re \left( \overline{l} \right) +
     i \Im \left( s^* \overline{s} \right)
-\right) A^{-\mathrm{H}}
+\right) A^{-\mathsf{H}}
 \end{align*}
 ```
 
@@ -779,22 +779,22 @@ $$\ip{-Z}{A \dot{X}} + \ip{Z}{\dot{X} B} = \ip{Z}{\dot{C}} + \ip{Z}{\dot{A} X} +
 
 Now permute:
 
-$$\ip{-A^\mathrm{H} Z}{\dot{X}} + \ip{-Z B^\mathrm{H}}{\dot{X}} = \ip{Z}{\dot{C}} + \ip{Z X^\mathrm{H}}{\dot{A}} + \ip{X^\mathrm{H} Z}{X \dot{B}}.$$
+$$\ip{-A^\mathsf{H} Z}{\dot{X}} + \ip{-Z B^\mathsf{H}}{\dot{X}} = \ip{Z}{\dot{C}} + \ip{Z X^\mathsf{H}}{\dot{A}} + \ip{X^\mathsf{H} Z}{X \dot{B}}.$$
 
 Then combine:
 
-$$\ip{-(A^\mathrm{H} Z + Z B^\mathrm{H})}{\dot{X}} = \ip{Z X^\mathrm{H}}{\dot{A}} + \ip{X^\mathrm{H} Z}{X \dot{B}} + \ip{Z}{\dot{C}}.$$
+$$\ip{-(A^\mathsf{H} Z + Z B^\mathsf{H})}{\dot{X}} = \ip{Z X^\mathsf{H}}{\dot{A}} + \ip{X^\mathsf{H} Z}{X \dot{B}} + \ip{Z}{\dot{C}}.$$
 
 This is almost exactly the identity we need to solve for $\overline{A}$, $\overline{B}$, and $\overline{C}$.
-To manipulate it to the right form, we need only define $A^\mathrm{H} Z + Z B^\mathrm{H} = -\overline{X}$.
+To manipulate it to the right form, we need only define $A^\mathsf{H} Z + Z B^\mathsf{H} = -\overline{X}$.
 This _yet another_ Sylvester equation, so letting $Z = \overline{C}$, our final pullback is:
 
 ```math
 \begin{align*}
-\overline{C} &= \operatorname{sylvester}(A^\mathrm{H}, B^\mathrm{H}, \overline{X})\\
-             &= \operatorname{sylvester}(B, A, \overline{X}^\mathrm{H})^\mathrm{H}\\
-\overline{A} &= \overline{C} X^\mathrm{H}\\
-\overline{B} &= X^\mathrm{H} \overline{C}\\
+\overline{C} &= \operatorname{sylvester}(A^\mathsf{H}, B^\mathsf{H}, \overline{X})\\
+             &= \operatorname{sylvester}(B, A, \overline{X}^\mathsf{H})^\mathsf{H}\\
+\overline{A} &= \overline{C} X^\mathsf{H}\\
+\overline{B} &= X^\mathsf{H} \overline{C}\\
 \end{align*}
 ```
 

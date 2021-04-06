@@ -38,7 +38,7 @@ and `rrule` corresponds to
 \begin{pmatrix}
 \tfrac{\partial u}{\partial x} & \tfrac{\partial u}{\partial y} \\
 \tfrac{\partial v}{\partial x} & \tfrac{\partial v}{\partial y} \\
-\end{pmatrix}^T
+\end{pmatrix}^\mathsf{T}
 \begin{pmatrix}
 \Delta u \\ \Delta v
 \end{pmatrix}
