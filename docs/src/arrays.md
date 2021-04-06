@@ -751,11 +751,8 @@ A \dot{X} + \dot{X} B
 ```
 
 So the pushforward is the solution to a different Sylvester equation:
-```math
-\begin{equation}
-\dot{X} = \operatorname{sylvester}(A, B, \dot{C} + \dot{A} X + X \dot{B}) \label{sylpf}
-\end{equation}
-```
+
+$$\dot{X} = \operatorname{sylvester}(A, B, \dot{C} + \dot{A} X + X \dot{B})$$
 
 The `frule` can be implemented as
 
@@ -768,8 +765,8 @@ end
 
 ### Reverse-mode Rule
 
-Like when deriving the pushforward, it's easiest to start from the implicit function \eqref{sylpfimplicit} than from \eqref{sylpf}.
-We start by introducing some dummy $-Z$ and taking its inner product with both sides:
+Like with the pushforward, it's easiest to work with the implicit function.
+We start by introducing some dummy $-Z$ and taking its inner product with both sides of \eqref{sylpfimplicit}:
 
 $$\ip{-Z}{A \dot{X} + \dot{X} B} = \ip{-Z}{-\dot{C} - \dot{A} X - X \dot{B}}.$$
 
