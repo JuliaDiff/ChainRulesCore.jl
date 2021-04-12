@@ -49,7 +49,7 @@ that return a single output that is iterable, like a `Tuple`.
 So this is actually a [`Composite`](@ref):
 ```jldoctest frule
 julia> Δsincosx
-Composite{Tuple{Float64,Float64}}(0.6795498147167869, -0.7336293678134624)
+Composite{Tuple{Float64, Float64}}(0.6795498147167869, -0.7336293678134624)
 ```.
 
 
