@@ -1,6 +1,6 @@
 using ChainRulesCore
 using Documenter
-using DocumenterTools: Themes
+using DocThemeIndigo
 using Markdown
 
 DocMeta.setdocmeta!(
@@ -19,13 +19,13 @@ DocMeta.setdocmeta!(
     end
 )
 
-Themes.compile(joinpath(@__DIR__, "src/assets/chainrules.scss"))
+indigo = DocThemeIndigo.install(ChainRulesCore)
 
 makedocs(
     modules=[ChainRulesCore],
     format=Documenter.HTML(
         prettyurls=false,
-        assets=["assets/chainrules.css"],
+        assets=[indigo],
         mathengine=MathJax3(
             Dict(
                 :tex => Dict(
