@@ -9,6 +9,8 @@ struct NotImplemented{M,S,I} <: AbstractDifferential
     info::I
 end
 
+NotImplemented() = NotImplemented(nothing, nothing, nothing)
+
 extern(x::NotImplemented) = _error(x)
 
 Base.iterate(x::NotImplemented) = _error(x)
@@ -39,11 +41,10 @@ Optionally, you can provide additional information such as a Github issue
 about the missing differential. Debugging information is only tracked and
 displayed if `ChainRulesCore.debug_mode()` returns `true`.
 """
-macro not_implemented(_info=nothing)
-    mod, source, info = if debug_mode()
-        __module__, QuoteNode(__source__), _info
+macro not_implemented(info=nothing)
+    return if debug_mode()
+        :(NotImplemented($__module__, $(QuoteNode(__source__)), $info))
     else
-        nothing, nothing, nothing
+        :(NotImplemented())
     end
-    return :(NotImplemented($mod, $source, $info))
 end
