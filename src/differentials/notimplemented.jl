@@ -58,12 +58,12 @@ Optionally, one can provide additional information about the missing differentia
 Debugging information is only tracked and displayed if `ChainRulesCore.debug_mode()`
 returns `true`.
 
-!!! note:
+!!! note
     This macro should be used only if the automatic differentiation would error
     otherwise. It is mostly useful if the function has multiple inputs and one
     has worked out analytically differentials of some but not all of them.
 
-!!! note:
+!!! note
     It is good practice to provide a link to a Github issue about the missing
     differential as additional debugging information.
 """
