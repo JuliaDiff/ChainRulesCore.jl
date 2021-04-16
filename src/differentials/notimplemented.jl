@@ -20,6 +20,7 @@ Base.:+(x::NotImplemented) = _error(x)
 Base.:*(x::NotImplemented, ::Any) = x
 
 Base.Broadcast.broadcastable(x::NotImplemented) = Ref(x)
+Base.convert(::Type{<:Number}, x::NotImplemented) = _error(x)
 
 _error(::NotImplemented) = error("differential not implemented")
 function _error(x::NotImplemented{Module,LineNumberNode})
