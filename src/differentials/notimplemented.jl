@@ -42,6 +42,13 @@ function _error(x::NotImplemented{Module,LineNumberNode})
     )
 end
 
+function Base.show(io::IO, ::NotImplemented{Nothing,Nothing,Nothing})
+    return print(io, "NotImplemented()")
+end
+function Base.show(io::IO, x::NotImplemented)
+    return print(io, "NotImplemented(", x.mod, ", ", x.source, ", ", x.info, ")")
+end
+
 """
     @not_implemented(info=nothing)
 
