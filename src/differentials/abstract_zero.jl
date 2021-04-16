@@ -57,7 +57,7 @@ Adding this differential to a primal is generally wrong: gradient-based
 methods cannot be used to optimize over discrete variables.
 An optimization package making use of this might want to check for such a case.
 
-!!! note:
+!!! note
     This does not indicate that the derivative is not implemented,
     but rather that mathematically it is not defined.
 
@@ -66,7 +66,7 @@ arguments.
 ```
     function rrule(fill, x, len::Int)
         y = fill(x, len)
-        fill_pullback(ȳ) = (NO_FIELDS, @thunk(sum(Ȳ)), DoesNotExist())
+        fill_pullback(ȳ) = (NO_FIELDS, @thunk(sum(Ȳ)), DoesNotExist())
         return y, fill_pullback
     end
 ```
