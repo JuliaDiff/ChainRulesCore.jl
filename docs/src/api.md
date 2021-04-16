@@ -23,6 +23,7 @@ Pages = [
     "differentials/composite.jl",
     "differentials/thunks.jl",
     "differentials/abstract_differential.jl",
+    "differentials/notimplemented.jl",
 ]
 Private = false
 ```
