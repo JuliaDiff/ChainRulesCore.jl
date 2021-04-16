@@ -16,10 +16,19 @@ extern(x::NotImplemented) = _error(x)
 Base.iterate(x::NotImplemented) = _error(x)
 Base.iterate(x::NotImplemented, ::Any) = _error(x)
 
-Base.:+(x::NotImplemented) = _error(x)
+Base.:+(x::NotImplemented, ::Any) = x
+Base.:+(::Any, x::NotImplemented) = x
+Base.:+(x::NotImplemented, ::NotImplemented) = x
 Base.:*(x::NotImplemented, ::Any) = x
+Base.:*(::Any, x::NotImplemented) = x
+Base.:*(x::NotImplemented, ::NotImplemented) = x
+
+# Linear operators
+Base.adjoint(x::NotImplemented) = x
+Base.transpose(x::NotImplemented) = x
 
 Base.Broadcast.broadcastable(x::NotImplemented) = Ref(x)
+
 Base.convert(::Type{<:Number}, x::NotImplemented) = _error(x)
 
 _error(::NotImplemented) = error("differential not implemented")
