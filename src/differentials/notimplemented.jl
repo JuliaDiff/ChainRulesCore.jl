@@ -39,8 +39,11 @@ Optionally, you can provide additional information such as a Github issue
 about the missing differential. Debugging information is only tracked and
 displayed if `ChainRulesCore.debug_mode()` returns `true`.
 """
-macro not_implemented(info=nothing)
-    mod = debug_mode() ? __module__ : nothing
-    source = debug_mode() ? QuoteNode(__source__) : nothing
+macro not_implemented(_info=nothing)
+    mod, source, info = if debug_mode()
+        __module__, QuoteNode(__source__), _info
+    else
+        nothing, nothing, nothing
+    end
     return :(NotImplemented($mod, $source, $info))
 end
