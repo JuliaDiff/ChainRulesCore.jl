@@ -33,7 +33,7 @@ Base.convert(::Type{<:Number}, x::NotImplemented) = _error(x)
 
 _error(::NotImplemented) = error("differential not implemented")
 function _error(x::NotImplemented{Module,LineNumberNode})
-    error(
+    return error(
         "differential not implemented @ ",
         x.mod,
         " ",
