@@ -11,20 +11,13 @@ end
 
 extern(x::NotImplemented) = _error(x)
 
-Base.zero(x::NotImplemented) = _error(x)
-Base.zero(::Type{<:NotImplemented}) = _error(NotImplemented(nothing, nothing, nothing))
-
 Base.iterate(x::NotImplemented) = _error(x)
 Base.iterate(x::NotImplemented, ::Any) = _error(x)
 
-Base.adjoint(x::NotImplemented) = _error(x)
-Base.conj(x::NotImplemented) = _error(x)
-Base.transpose(x::NotImplemented) = _error(x)
-
 Base.:+(x::NotImplemented) = _error(x)
-Base.:/(x::NotImplemented, ::Any) = _error(x)
+Base.:*(x::NotImplemented, ::Any) = x
 
-Base.Broadcast.broadcastable(x::NotImplemented) = _error(x)
+Base.Broadcast.broadcastable(x::NotImplemented) = Ref(x)
 
 _error(::NotImplemented) = error("differential not implemented")
 function _error(x::NotImplemented{Module,LineNumberNode})
