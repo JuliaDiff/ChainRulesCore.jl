@@ -11,23 +11,38 @@ end
 
 NotImplemented() = NotImplemented(nothing, nothing, nothing)
 
+# required for `@scalar_rule` (together with `conj(x::AbstractDifferential) = x`)
+Base.muladd(x::NotImplemented, ::Any, ::Any) = x
+Base.muladd(x::NotImplemented, ::Any, ::NotImplemented) = x
+Base.muladd(::Any, ::Any, x::NotImplemented) = x
+Base.:*(x::NotImplemented, ::Any) = x
+Base.Broadcast.broadcastable(x::NotImplemented) = Ref(x)
+
+# throw error with debugging information for other standard information
 extern(x::NotImplemented) = throw(NotImplementedException(x))
+
+Base.:+(x::NotImplemented) = throw(NotImplementedException(x))
+Base.:+(x::NotImplemented, ::Any) = throw(NotImplementedException(x))
+Base.:+(::Any, x::NotImplemented) = throw(NotImplementedException(x))
+Base.:+(x::NotImplemented, ::NotImplemented) = throw(NotImplementedException(x))
+
+Base.:-(x::NotImplemented) = throw(NotImplementedException(x))
+Base.:-(x::NotImplemented, ::Any) = throw(NotImplementedException(x))
+Base.:-(::Any, x::NotImplemented) = throw(NotImplementedException(x))
+Base.:-(x::NotImplemented, ::NotImplemented) = throw(NotImplementedException(x))
+
+Base.:*(::Any, x::NotImplemented) = throw(NotImplementedException(x))
+Base.:*(x::NotImplemented, ::NotImplemented) = throw(NotImplementedException(x))
+
+Base.:/(x::NotImplemented, ::Any) = throw(NotImplementedException(x))
+Base.:/(::Any, x::NotImplemented) = throw(NotImplementedException(x))
+Base.:/(x::NotImplemented, ::NotImplemented) = throw(NotImplementedException(x))
 
 Base.iterate(x::NotImplemented) = throw(NotImplementedException(x))
 Base.iterate(x::NotImplemented, ::Any) = throw(NotImplementedException(x))
 
-Base.:+(x::NotImplemented, ::Any) = x
-Base.:+(::Any, x::NotImplemented) = x
-Base.:+(x::NotImplemented, ::NotImplemented) = x
-Base.:*(x::NotImplemented, ::Any) = x
-Base.:*(::Any, x::NotImplemented) = x
-Base.:*(x::NotImplemented, ::NotImplemented) = x
-
-# Linear operators
-Base.adjoint(x::NotImplemented) = x
-Base.transpose(x::NotImplemented) = x
-
-Base.Broadcast.broadcastable(x::NotImplemented) = Ref(x)
+Base.adjoint(x::NotImplemented) = throw(NotImplementedException(x))
+Base.transpose(x::NotImplemented) = throw(NotImplementedException(x))
 
 Base.convert(::Type{<:Number}, x::NotImplemented) = throw(NotImplementedException(x))
 
