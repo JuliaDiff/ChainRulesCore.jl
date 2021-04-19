@@ -12,6 +12,7 @@ using Test
         include("differentials/one.jl")
         include("differentials/thunks.jl")
         include("differentials/composite.jl")
+        include("differentials/notimplemented.jl")
     end
 
     include("accumulation.jl")

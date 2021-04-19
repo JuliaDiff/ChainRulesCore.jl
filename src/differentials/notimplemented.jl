@@ -9,28 +9,14 @@ struct NotImplemented{M,S,I} <: AbstractDifferential
     info::I
 end
 
-# required for `@scalar_rule` (together with `conj(x::AbstractDifferential) = x`)
-Base.muladd(x::NotImplemented, ::Any, ::Any) = x
-Base.muladd(x::NotImplemented, ::Any, ::NotImplemented) = x
-Base.muladd(::Any, ::Any, x::NotImplemented) = x
-Base.:*(x::NotImplemented, ::Any) = x
+# required for `@scalar_rule`
+# (together with `conj(x::AbstractDifferential) = x` and the definitions in
+# differential_arithmetic.jl)
 Base.Broadcast.broadcastable(x::NotImplemented) = Ref(x)
 
 # throw error with debugging information for other standard information
+# (`+`, `-`, `*`, and `dot` are defined in differential_arithmetic.jl)
 extern(x::NotImplemented) = throw(NotImplementedException(x))
-
-Base.:+(x::NotImplemented) = throw(NotImplementedException(x))
-Base.:+(x::NotImplemented, ::Any) = throw(NotImplementedException(x))
-Base.:+(::Any, x::NotImplemented) = throw(NotImplementedException(x))
-Base.:+(x::NotImplemented, ::NotImplemented) = throw(NotImplementedException(x))
-
-Base.:-(x::NotImplemented) = throw(NotImplementedException(x))
-Base.:-(x::NotImplemented, ::Any) = throw(NotImplementedException(x))
-Base.:-(::Any, x::NotImplemented) = throw(NotImplementedException(x))
-Base.:-(x::NotImplemented, ::NotImplemented) = throw(NotImplementedException(x))
-
-Base.:*(::Any, x::NotImplemented) = throw(NotImplementedException(x))
-Base.:*(x::NotImplemented, ::NotImplemented) = throw(NotImplementedException(x))
 
 Base.:/(x::NotImplemented, ::Any) = throw(NotImplementedException(x))
 Base.:/(::Any, x::NotImplemented) = throw(NotImplementedException(x))
