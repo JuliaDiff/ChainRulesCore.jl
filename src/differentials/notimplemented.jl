@@ -64,7 +64,7 @@ returns `true`.
     has worked out analytically differentials of some but not all of them.
 
 !!! note
-    It is good practice to provide a link to a Github issue about the missing
+    It is good practice to provide a link to a GitHub issue about the missing
     differential as additional debugging information.
 """
 macro not_implemented(info=nothing)
