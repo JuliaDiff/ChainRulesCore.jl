@@ -11,10 +11,10 @@ end
 
 NotImplemented() = NotImplemented(nothing, nothing, nothing)
 
-extern(x::NotImplemented) = _error(x)
+extern(x::NotImplemented) = throw(NotImplementedException(x))
 
-Base.iterate(x::NotImplemented) = _error(x)
-Base.iterate(x::NotImplemented, ::Any) = _error(x)
+Base.iterate(x::NotImplemented) = throw(NotImplementedException(x))
+Base.iterate(x::NotImplemented, ::Any) = throw(NotImplementedException(x))
 
 Base.:+(x::NotImplemented, ::Any) = x
 Base.:+(::Any, x::NotImplemented) = x
@@ -29,18 +29,7 @@ Base.transpose(x::NotImplemented) = x
 
 Base.Broadcast.broadcastable(x::NotImplemented) = Ref(x)
 
-Base.convert(::Type{<:Number}, x::NotImplemented) = _error(x)
-
-_error(::NotImplemented) = error("differential not implemented")
-function _error(x::NotImplemented{Module,LineNumberNode})
-    return error(
-        "differential not implemented @ ",
-        x.mod,
-        " ",
-        x.source,
-        x.info === nothing ? "" : "\nInfo: " * x.info,
-    )
-end
+Base.convert(::Type{<:Number}, x::NotImplemented) = throw(NotImplementedException(x))
 
 function Base.show(io::IO, ::NotImplemented{Nothing,Nothing,Nothing})
     return print(io, "NotImplemented()")
@@ -73,4 +62,26 @@ macro not_implemented(info=nothing)
     else
         :(NotImplemented())
     end
+end
+
+struct NotImplementedException{T<:NotImplemented} <: Exception
+    x::T
+end
+
+function Base.showerror(io::IO, e::NotImplementedException)
+    return print(io, "differential not implemented")
+end
+function Base.showerror(
+    io::IO,
+    e::NotImplementedException{<:NotImplemented{Module,LineNumberNode}},
+)
+    x = e.x
+    return print(
+        io,
+        "differential not implemented @ ",
+        x.mod,
+        " ",
+        x.source,
+        x.info === nothing ? "" : "\nInfo: " * x.info,
+    )
 end
