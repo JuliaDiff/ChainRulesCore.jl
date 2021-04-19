@@ -38,6 +38,9 @@ Base.:/(x::NotImplemented, ::Any) = throw(NotImplementedException(x))
 Base.:/(::Any, x::NotImplemented) = throw(NotImplementedException(x))
 Base.:/(x::NotImplemented, ::NotImplemented) = throw(NotImplementedException(x))
 
+Base.zero(x::NotImplemented) = throw(NotImplementedException(x))
+Base.zero(::Type{<:NotImplemented}) = zero(NotImplemented())
+
 Base.iterate(x::NotImplemented) = throw(NotImplementedException(x))
 Base.iterate(x::NotImplemented, ::Any) = throw(NotImplementedException(x))
 
