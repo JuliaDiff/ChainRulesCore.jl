@@ -9,8 +9,6 @@ struct NotImplemented{M,S,I} <: AbstractDifferential
     info::I
 end
 
-NotImplemented() = NotImplemented(nothing, nothing, nothing)
-
 # required for `@scalar_rule` (together with `conj(x::AbstractDifferential) = x`)
 Base.muladd(x::NotImplemented, ::Any, ::Any) = x
 Base.muladd(x::NotImplemented, ::Any, ::NotImplemented) = x
@@ -39,7 +37,7 @@ Base.:/(::Any, x::NotImplemented) = throw(NotImplementedException(x))
 Base.:/(x::NotImplemented, ::NotImplemented) = throw(NotImplementedException(x))
 
 Base.zero(x::NotImplemented) = throw(NotImplementedException(x))
-Base.zero(::Type{<:NotImplemented}) = zero(NotImplemented())
+Base.zero(::Type{<:NotImplemented}) = throw(NotImplementedException())
 
 Base.iterate(x::NotImplemented) = throw(NotImplementedException(x))
 Base.iterate(x::NotImplemented, ::Any) = throw(NotImplementedException(x))
@@ -49,9 +47,6 @@ Base.transpose(x::NotImplemented) = throw(NotImplementedException(x))
 
 Base.convert(::Type{<:Number}, x::NotImplemented) = throw(NotImplementedException(x))
 
-function Base.show(io::IO, ::NotImplemented{Nothing,Nothing,Nothing})
-    return print(io, "NotImplemented()")
-end
 function Base.show(io::IO, x::NotImplemented)
     return print(io, "NotImplemented(", x.mod, ", ", x.source, ", ", x.info, ")")
 end
@@ -76,24 +71,24 @@ macro not_implemented(info=nothing)
     :(NotImplemented($__module__, $(QuoteNode(__source__)), $info))
 end
 
-struct NotImplementedException{T<:NotImplemented} <: Exception
-    x::T
+struct NotImplementedException{M,S,I} <: Exception
+    mod::M
+    source::S
+    info::I
+end
+
+NotImplementedException() = NotImplementedException(nothing, nothing, nothing)
+function NotImplementedException(x::NotImplemented)
+    return NotImplementedException(x.mod, x.source, x.info)
 end
 
 function Base.showerror(io::IO, e::NotImplementedException)
     return print(io, "differential not implemented")
 end
-function Base.showerror(
-    io::IO,
-    e::NotImplementedException{<:NotImplemented{Module,LineNumberNode}},
-)
-    x = e.x
-    return print(
-        io,
-        "differential not implemented @ ",
-        x.mod,
-        " ",
-        x.source,
-        x.info === nothing ? "" : "\nInfo: " * x.info,
-    )
+function Base.showerror(io::IO, e::NotImplementedException{Module,LineNumberNode})
+    print(io, "differential not implemented @ ", e.mod, " ", e.source)
+    if e.info !== nothing
+        print(io, "\nInfo: ", e.info)
+    end
+    return
 end
