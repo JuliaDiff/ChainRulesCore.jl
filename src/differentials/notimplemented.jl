@@ -62,8 +62,6 @@ end
 Create a differential that indicates that the derivative is not implemented.
 
 Optionally, one can provide additional information about the missing differential.
-Debugging information is only tracked and displayed if `ChainRulesCore.debug_mode()`
-returns `true`.
 
 !!! note
     This macro should be used only if the automatic differentiation would error
@@ -75,11 +73,7 @@ returns `true`.
     differential as additional debugging information.
 """
 macro not_implemented(info=nothing)
-    return if debug_mode()
-        :(NotImplemented($__module__, $(QuoteNode(__source__)), $info))
-    else
-        :(NotImplemented())
-    end
+    :(NotImplemented($__module__, $(QuoteNode(__source__)), $info))
 end
 
 struct NotImplementedException{T<:NotImplemented} <: Exception
