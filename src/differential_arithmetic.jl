@@ -42,26 +42,27 @@ Base.muladd(::NotImplemented, ::Zero, z) = z
 Base.muladd(x::NotImplemented, y, ::Zero) = x
 Base.muladd(::NotImplemented, ::Zero, ::Zero) = Zero()
 
-Base.muladd(x::NotImplemented, ::NotImplemented, z) = x
-Base.muladd(x::NotImplemented, ::NotImplemented, ::Zero) = x
-
-Base.muladd(x::NotImplemented, y, ::NotImplemented) = x
-Base.muladd(::NotImplemented, ::Zero, z::NotImplemented) = z
-
 Base.muladd(x, y::NotImplemented, z) = y
 Base.muladd(::Zero, ::NotImplemented, z) = z
 Base.muladd(x, y::NotImplemented, ::Zero) = y
 Base.muladd(::Zero, ::NotImplemented, ::Zero) = Zero()
-
-Base.muladd(x, y::NotImplemented, ::NotImplemented) = y
-Base.muladd(::Zero, ::NotImplemented, z::NotImplemented) = z
 
 Base.muladd(x, y, z::NotImplemented) = z
 Base.muladd(::Zero, y, z::NotImplemented) = z
 Base.muladd(x, ::Zero, z::NotImplemented) = z
 Base.muladd(::Zero, ::Zero, z::NotImplemented) = z
 
+Base.muladd(x::NotImplemented, ::NotImplemented, z) = x
+Base.muladd(x::NotImplemented, ::NotImplemented, ::Zero) = x
+
+Base.muladd(x::NotImplemented, y, ::NotImplemented) = x
+Base.muladd(::NotImplemented, ::Zero, z::NotImplemented) = z
+
+Base.muladd(x, y::NotImplemented, ::NotImplemented) = y
+Base.muladd(::Zero, ::NotImplemented, z::NotImplemented) = z
+
 Base.muladd(x::NotImplemented, ::NotImplemented, ::NotImplemented) = x
+
 # similar to `DoesNotExist`, `Zero` wins `*` and `NotImplemented` wins `+`
 Base.:+(x::NotImplemented, ::Zero) = throw(NotImplementedException(x))
 Base.:+(::Zero, x::NotImplemented) = throw(NotImplementedException(x))
