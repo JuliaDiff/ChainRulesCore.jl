@@ -46,8 +46,8 @@ Optionally, one can provide additional information about the missing differentia
 
 !!! note
     This macro should be used only if the automatic differentiation would error
-    otherwise. It is mostly useful if the function has multiple inputs and one
-    has worked out analytically differentials of some but not all of them.
+    otherwise. It is mostly useful if the function has multiple inputs or outputs,
+    and one has worked out analytically and implemented some but not all differentials.
 
 !!! note
     It is good practice to provide a link to a GitHub issue about the missing
