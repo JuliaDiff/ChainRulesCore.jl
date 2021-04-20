@@ -53,7 +53,7 @@ https://github.com/JuliaMath/SpecialFunctions.jl/issues/160
 )
 ```
 
-Do not use `@not_implemented` if the differential does not exist mathematically.
+Do not use `@not_implemented` if the differential does not exist mathematically (use `DoesNotExist()` instead).
 
 ## Code Style
 

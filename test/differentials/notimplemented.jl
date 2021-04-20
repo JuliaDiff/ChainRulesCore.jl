@@ -120,7 +120,7 @@
         notimplemented1(x, y) = x + y
         @scalar_rule notimplemented1(x, y) (@not_implemented(), 1)
 
-        y, ẏ = frule((Zero(), 1.2, 2.3), notimplemented1, 3, 2)
+        y, ẏ = frule((NO_FIELDS, 1.2, 2.3), notimplemented1, 3, 2)
         @test y == 5
         @test ẏ isa ChainRulesCore.NotImplemented
 
@@ -134,7 +134,7 @@
         notimplemented2(x, y) = (x + y, x - y)
         @scalar_rule notimplemented2(x, y) (@not_implemented(), 1) (1, -1)
 
-        y, (ẏ1, ẏ2) = frule((Zero(), 1.2, 2.3), notimplemented2, 3, 2)
+        y, (ẏ1, ẏ2) = frule((NO_FIELDS, 1.2, 2.3), notimplemented2, 3, 2)
         @test y == (5, 1)
         @test ẏ1 isa ChainRulesCore.NotImplemented
         @test ẏ2 ≈ -1.1
