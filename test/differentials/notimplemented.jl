@@ -22,6 +22,10 @@
         @test muladd(Zero(), ni, Zero()) == Zero()
         @test muladd(x, ni, ni2) === ni
         @test muladd(Zero(), ni, ni2) === ni2
+        @test muladd(x, y, ni) === ni
+        @test muladd(Zero(), y, ni) === ni
+        @test muladd(x, Zero(), ni) === ni
+        @test muladd(Zero(), Zero(), ni) === ni
         @test ni * rand() === ni
         @test ni * Zero() == Zero()
         @test Zero() * ni == Zero()
@@ -110,5 +114,36 @@
         @test ex.mod === ni.mod
         @test ex.source === ni.source
         @test ex.info === ni.info
+    end
+
+    @testset "@scalar_rule" begin
+        notimplemented1(x, y) = x + y
+        @scalar_rule notimplemented1(x, y) (@not_implemented(), 1)
+
+        y, ẏ = frule((Zero(), 1.2, 2.3), notimplemented1, 3, 2)
+        @test y == 5
+        @test ẏ isa ChainRulesCore.NotImplemented
+
+        res, pb = rrule(notimplemented1, 3, 2)
+        @test res == 5
+        f̄, x̄1, x̄2 = pb(3.1)
+        @test f̄ == NO_FIELDS
+        @test x̄1 isa ChainRulesCore.NotImplemented
+        @test x̄2 == 3.1
+
+        notimplemented2(x, y) = (x + y, x - y)
+        @scalar_rule notimplemented2(x, y) (@not_implemented(), 1) (1, -1)
+
+        y, (ẏ1, ẏ2) = frule((Zero(), 1.2, 2.3), notimplemented2, 3, 2)
+        @test y == (5, 1)
+        @test ẏ1 isa ChainRulesCore.NotImplemented
+        @test ẏ2 ≈ -1.1
+
+        res, pb = rrule(notimplemented2, 3, 2)
+        @test res == (5, 1)
+        f̄, x̄1, x̄2 = pb((3.1, 4.5))
+        @test f̄ == NO_FIELDS
+        @test x̄1 isa ChainRulesCore.NotImplemented
+        @test x̄2 == -1.4
     end
 end
