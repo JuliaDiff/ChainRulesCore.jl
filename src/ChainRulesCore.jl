@@ -6,7 +6,7 @@ using Compat: hasfield
 
 export on_new_rule, refresh_rules  # generation tools
 export frule, rrule  # core function
-export @non_differentiable, @scalar_rule, @thunk  # definition helper macros
+export @non_differentiable, @scalar_rule, @thunk, @not_implemented  # definition helper macros
 export canonicalize, extern, unthunk  # differential operations
 export add!!  # gradient accumulation operations
 # differentials
@@ -21,6 +21,7 @@ include("differentials/abstract_zero.jl")
 include("differentials/one.jl")
 include("differentials/thunks.jl")
 include("differentials/composite.jl")
+include("differentials/notimplemented.jl")
 
 include("differential_arithmetic.jl")
 include("accumulation.jl")

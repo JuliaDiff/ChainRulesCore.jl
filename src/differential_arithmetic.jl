@@ -8,11 +8,70 @@ Thus we can avoid any ambiguities.
 
 Notice:
     The precedence goes:
-    `DoesNotExist, Zero, One, AbstractThunk, Composite, Any`
+    `NotImplemented, DoesNotExist, Zero, One, AbstractThunk, Composite, Any`
     Thus each of the @eval loops create most definitions of + and *
     defines the combination this type with all types of  lower precidence.
     This means each eval loops is 1 item smaller than the previous.
 ==#
+Base.:+(x::NotImplemented) = throw(NotImplementedException(x))
+Base.:+(x::NotImplemented, ::NotImplemented) = throw(NotImplementedException(x))
+Base.:-(x::NotImplemented, ::NotImplemented) = throw(NotImplementedException(x))
+Base.:-(x::NotImplemented) = throw(NotImplementedException(x))
+Base.:*(x::NotImplemented, ::NotImplemented) = throw(NotImplementedException(x))
+function LinearAlgebra.dot(x::NotImplemented, ::NotImplemented)
+    return throw(NotImplementedException(x))
+end
+for T in (:DoesNotExist, :One, :AbstractThunk, :Composite, :Any)
+    @eval Base.:+(x::NotImplemented, ::$T) = throw(NotImplementedException(x))
+    @eval Base.:+(::$T, x::NotImplemented) = throw(NotImplementedException(x))
+    @eval Base.:-(x::NotImplemented, ::$T) = throw(NotImplementedException(x))
+    @eval Base.:-(::$T, x::NotImplemented) = throw(NotImplementedException(x))
+
+    @eval Base.:*(::$T, x::NotImplemented) = throw(NotImplementedException(x))
+
+    @eval LinearAlgebra.dot(x::NotImplemented, ::$T) = throw(NotImplementedException(x))
+    @eval LinearAlgebra.dot(::$T, x::NotImplemented) = throw(NotImplementedException(x))
+
+    # required for `@scalar_rule`
+    @eval Base.:*(x::NotImplemented, ::$T) = x
+end
+
+# required for `@scalar_rule`
+Base.muladd(x::NotImplemented, y, z) = x
+Base.muladd(::NotImplemented, ::Zero, z) = z
+Base.muladd(x::NotImplemented, y, ::Zero) = x
+Base.muladd(::NotImplemented, ::Zero, ::Zero) = Zero()
+
+Base.muladd(x, y::NotImplemented, z) = y
+Base.muladd(::Zero, ::NotImplemented, z) = z
+Base.muladd(x, y::NotImplemented, ::Zero) = y
+Base.muladd(::Zero, ::NotImplemented, ::Zero) = Zero()
+
+Base.muladd(x, y, z::NotImplemented) = z
+Base.muladd(::Zero, y, z::NotImplemented) = z
+Base.muladd(x, ::Zero, z::NotImplemented) = z
+Base.muladd(::Zero, ::Zero, z::NotImplemented) = z
+
+Base.muladd(x::NotImplemented, ::NotImplemented, z) = x
+Base.muladd(x::NotImplemented, ::NotImplemented, ::Zero) = x
+
+Base.muladd(x::NotImplemented, y, ::NotImplemented) = x
+Base.muladd(::NotImplemented, ::Zero, z::NotImplemented) = z
+
+Base.muladd(x, y::NotImplemented, ::NotImplemented) = y
+Base.muladd(::Zero, ::NotImplemented, z::NotImplemented) = z
+
+Base.muladd(x::NotImplemented, ::NotImplemented, ::NotImplemented) = x
+
+# similar to `DoesNotExist`, `Zero` wins `*` and `NotImplemented` wins `+`
+Base.:+(x::NotImplemented, ::Zero) = throw(NotImplementedException(x))
+Base.:+(::Zero, x::NotImplemented) = throw(NotImplementedException(x))
+Base.:-(x::NotImplemented, ::Zero) = throw(NotImplementedException(x))
+Base.:-(::Zero, x::NotImplemented) = throw(NotImplementedException(x))
+Base.:*(::NotImplemented, ::Zero) = Zero()
+Base.:*(::Zero, ::NotImplemented) = Zero()
+LinearAlgebra.dot(::NotImplemented, ::Zero) = Zero()
+LinearAlgebra.dot(::Zero, ::NotImplemented) = Zero()
 
 Base.:+(::DoesNotExist, ::DoesNotExist) = DoesNotExist()
 Base.:-(::DoesNotExist, ::DoesNotExist) = DoesNotExist()

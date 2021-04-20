@@ -36,6 +36,23 @@ Examples being:
 - There is only one derivative being returned, so from the fact that the user called
   `frule`/`rrule` they clearly will want to use that one.
 
+## Use `@not_implemented` appropriately
+
+One can use [`@not_implemented`](@ref) to mark missing differentials.
+This is helpful if the function has multiple inputs or outputs, and one has worked out analytically and implemented some but not all differentials.
+
+It is recommended to include a link to a GitHub issue about the missing differential in the debugging information:
+```julia
+@not_implemented(
+"""
+derivatives of Bessel functions with respect to the order are not implemented:
+https://github.com/JuliaMath/SpecialFunctions.jl/issues/160
+"""
+)
+```
+
+Do not use `@not_implemented` if the differential does not exist mathematically (use `DoesNotExist()` instead).
+
 ## Code Style
 
 Use named local functions for the `pullback` in an `rrule`.
