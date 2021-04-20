@@ -38,12 +38,10 @@ Examples being:
 
 ## Use `@not_implemented` appropriately
 
-One can use [`@not_implemented`](@ref) to mark missing differentials. This is helpful if
-the function has multiple inputs or outputs, and one has worked out analytically and
-implemented some but not all differentials.
+One can use [`@not_implemented`](@ref) to mark missing differentials.
+This is helpful if the function has multiple inputs or outputs, and one has worked out analytically and implemented some but not all differentials.
 
-It is recommended to provide additional debugging information such as a link to a GitHub
-issue about the missing differential:
+It is recommended to provide additional debugging information such as a link to a GitHub issue about the missing differential:
 ```julia
 @not_implemented(
 """
