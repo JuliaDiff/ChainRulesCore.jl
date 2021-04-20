@@ -3,7 +3,9 @@
         ni = ChainRulesCore.NotImplemented(
             @__MODULE__, LineNumberNode(@__LINE__, @__FILE__), "error"
         )
-        ni2 = ChainRulesCore.NotImplemented(nothing, nothing, nothing)
+        ni2 = ChainRulesCore.NotImplemented(
+            @__MODULE__, LineNumberNode(@__LINE__, @__FILE__), "error2"
+        )
 
         # supported operations (for `@scalar_rule`)
         x, y, z = rand(3)
@@ -88,12 +90,6 @@
     end
 
     @testset "@not_implemented" begin
-        ni = @not_implemented()
-        @test ni isa ChainRulesCore.NotImplemented
-        @test ni.mod isa Module
-        @test ni.source isa LineNumberNode
-        @test ni.info === nothing
-
         ni = @not_implemented("myerror")
         @test ni isa ChainRulesCore.NotImplemented
         @test ni.mod isa Module
@@ -102,12 +98,6 @@
     end
 
     @testset "NotImplementedException" begin
-        ex = ChainRulesCore.NotImplementedException()
-        @test ex isa ChainRulesCore.NotImplementedException
-        @test ex.mod === nothing
-        @test ex.source === nothing
-        @test ex.info === nothing
-
         ni = @not_implemented("not implemented")
         ex = ChainRulesCore.NotImplementedException(ni)
         @test ex isa ChainRulesCore.NotImplementedException
@@ -118,7 +108,7 @@
 
     @testset "@scalar_rule" begin
         notimplemented1(x, y) = x + y
-        @scalar_rule notimplemented1(x, y) (@not_implemented(), 1)
+        @scalar_rule notimplemented1(x, y) (@not_implemented("notimplemented1"), 1)
 
         y, ẏ = frule((NO_FIELDS, 1.2, 2.3), notimplemented1, 3, 2)
         @test y == 5
@@ -132,7 +122,7 @@
         @test x̄2 == 3.1
 
         notimplemented2(x, y) = (x + y, x - y)
-        @scalar_rule notimplemented2(x, y) (@not_implemented(), 1) (1, -1)
+        @scalar_rule notimplemented2(x, y) (@not_implemented("notimplemented2"), 1) (1, -1)
 
         y, (ẏ1, ẏ2) = frule((NO_FIELDS, 1.2, 2.3), notimplemented2, 3, 2)
         @test y == (5, 1)
