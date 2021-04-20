@@ -200,6 +200,41 @@ end
             d_sum = Composite{Dict}(Dict(4 => 3.0 + 3.0, 3 => 2.0, 2 => 2.0))
             @test d1 + d2 == d_sum
         end
+
+        @testset "Fields of type NotImplemented" begin
+            CFoo = Composite{Foo}
+            a = CFoo(x=1.5)
+            b = CFoo(x=@not_implemented(""))
+            for (x, y) in ((a, b), (b, a), (b, b))
+                z = x + y
+                @test z isa CFoo
+                @test z.x isa ChainRulesCore.NotImplemented
+            end
+
+            a = Composite{Tuple}(1.5)
+            b = Composite{Tuple}(@not_implemented(""))
+            for (x, y) in ((a, b), (b, a), (b, b))
+                z = x + y
+                @test z isa Composite{Tuple}
+                @test first(z) isa ChainRulesCore.NotImplemented
+            end
+
+            a = Composite{NamedTuple{(:x,)}}(x=1.5)
+            b = Composite{NamedTuple{(:x,)}}(x=@not_implemented(""))
+            for (x, y) in ((a, b), (b, a), (b, b))
+                z = x + y
+                @test z isa Composite{NamedTuple{(:x,)}}
+                @test z.x isa ChainRulesCore.NotImplemented
+            end
+
+            a = Composite{Dict}(Dict(:x => 1.5))
+            b = Composite{Dict}(Dict(:x => @not_implemented("")))
+            for (x, y) in ((a, b), (b, a), (b, b))
+                z = x + y
+                @test z isa Composite{Dict}
+                @test z[:x] isa ChainRulesCore.NotImplemented
+            end
+        end
     end
 
     @testset "+ with Primals" begin
