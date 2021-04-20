@@ -54,7 +54,7 @@ Optionally, one can provide additional information about the missing differentia
     differential as additional debugging information.
 """
 macro not_implemented(info=nothing)
-    :(NotImplemented($__module__, $(QuoteNode(__source__)), $info))
+    return :(NotImplemented($__module__, $(QuoteNode(__source__)), $info))
 end
 
 struct NotImplementedException{M,S,I} <: Exception
