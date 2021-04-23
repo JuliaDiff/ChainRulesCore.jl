@@ -28,6 +28,17 @@
         @test muladd(Zero(), y, ni) === ni
         @test muladd(x, Zero(), ni) === ni
         @test muladd(Zero(), Zero(), ni) === ni
+        @test ni + rand() === ni
+        @test ni + Zero() === ni
+        @test ni + DoesNotExist() === ni
+        @test ni + One() === ni
+        @test ni + @thunk(x^2) === ni
+        @test rand() + ni === ni
+        @test Zero() + ni === ni
+        @test DoesNotExist() + ni === ni
+        @test One() + ni === ni
+        @test @thunk(x^2) + ni === ni
+        @test ni + ni2 === ni
         @test ni * rand() === ni
         @test ni * Zero() == Zero()
         @test Zero() * ni == Zero()
@@ -40,17 +51,6 @@
         E = ChainRulesCore.NotImplementedException
         @test_throws E extern(ni)
         @test_throws E +ni
-        @test_throws E ni + rand()
-        @test_throws E ni + Zero()
-        @test_throws E ni + DoesNotExist()
-        @test_throws E ni + One()
-        @test_throws E ni + @thunk(x^2)
-        @test_throws E rand() + ni
-        @test_throws E Zero() + ni
-        @test_throws E DoesNotExist() + ni
-        @test_throws E One() + ni
-        @test_throws E @thunk(x^2) + ni
-        @test_throws E ni + ni2
         @test_throws E -ni
         @test_throws E ni - rand()
         @test_throws E ni - Zero()
