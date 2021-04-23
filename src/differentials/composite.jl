@@ -228,12 +228,7 @@ end
 construct(::Type{T}, fields::T) where T<:NamedTuple = fields
 construct(::Type{T}, fields::T) where T<:Tuple = fields
 
-add_element(x, y) = x + y
-add_element(x::NotImplemented, y) = x
-add_element(x, y::NotImplemented) = y
-add_element(x::NotImplemented, ::NotImplemented) = x
-
-elementwise_add(a::Tuple, b::Tuple) = map(add_element, a, b)
+elementwise_add(a::Tuple, b::Tuple) = map(+, a, b)
 
 function elementwise_add(a::NamedTuple{an}, b::NamedTuple{bn}) where {an, bn}
     # Rule of Composite addition: any fields not present are implict hard Zeros
@@ -249,7 +244,7 @@ function elementwise_add(a::NamedTuple{an}, b::NamedTuple{bn}) where {an, bn}
             value_expr = if Base.sym_in(field, an)
                 if Base.sym_in(field, bn)
                     # in both
-                    :(add_element($a_field, $b_field))
+                    :($a_field + $b_field)
                 else
                     # only in `an`
                     a_field
@@ -268,7 +263,7 @@ function elementwise_add(a::NamedTuple{an}, b::NamedTuple{bn}) where {an, bn}
                 if Base.sym_in(field, bn)
                     # in both
                     b_field = getproperty(b, field)
-                    add_element(a_field, b_field)
+                    a_field + b_field
                 else
                     # only in `an`
                     a_field
@@ -282,7 +277,7 @@ function elementwise_add(a::NamedTuple{an}, b::NamedTuple{bn}) where {an, bn}
     end
 end
 
-elementwise_add(a::Dict, b::Dict) = merge(add_element, a, b)
+elementwise_add(a::Dict, b::Dict) = merge(+, a, b)
 
 struct PrimalAdditionFailedException{P} <: Exception
     primal::P
