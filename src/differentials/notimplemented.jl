@@ -15,7 +15,7 @@ The `info` should be useful information about the missing differential for debug
     differential in the debugging information.
 """
 macro not_implemented(info)
-    return :(NotImplemented($__module__, $(QuoteNode(__source__)), $info))
+    return :(NotImplemented($__module__, $(QuoteNode(__source__)), $(esc(info))))
 end
 
 """

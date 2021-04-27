@@ -95,6 +95,13 @@
         @test ni.mod isa Module
         @test ni.source isa LineNumberNode
         @test ni.info == "myerror"
+
+        info = "some info"
+        ni = @not_implemented(info)
+        @test ni isa ChainRulesCore.NotImplemented
+        @test ni.mod isa Module
+        @test ni.source isa LineNumberNode
+        @test ni.info === info
     end
 
     @testset "NotImplementedException" begin
