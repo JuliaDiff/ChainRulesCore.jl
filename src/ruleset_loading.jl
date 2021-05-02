@@ -1,7 +1,8 @@
 # Infastructure to support generating overloads from rules.
+_package_hook(::Base.PkgId) = refresh_rules()
 function __init__()
     # Need to refresh rules when a package is loaded
-    push!(Base.package_callbacks, pkgid -> refresh_rules())
+    push!(Base.package_callbacks, _package_hook)
 end
 
 # Holds all the hook functions that are invokes when a new rule is defined
@@ -139,3 +140,5 @@ function _safe_hook_fun(hook_fun, sig)
         @error "Error triggering hook" hook_fun sig exception=(err, catch_backtrace())
     end
 end
+
+precompile(_package_hook, (Base.PkgId,))
