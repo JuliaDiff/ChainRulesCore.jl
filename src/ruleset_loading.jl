@@ -140,5 +140,3 @@ function _safe_hook_fun(hook_fun, sig)
         @error "Error triggering hook" hook_fun sig exception=(err, catch_backtrace())
     end
 end
-
-precompile(_package_hook, (Base.PkgId,))
