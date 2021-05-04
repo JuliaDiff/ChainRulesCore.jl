@@ -7,7 +7,7 @@ This avoids allocations when `x` can be mutated in this way.
 add!!(x, y) = x + y
 
 """
-    add!!(x, t::InplacableThunk)
+    add!!(x, t::InplaceableThunk)
 
 The specialization of `add!!` for [`InplaceableThunk`](@ref) promises to only call
 `t.add!` on `x` if `x` is suitably mutable; otherwise it will be out of place.
