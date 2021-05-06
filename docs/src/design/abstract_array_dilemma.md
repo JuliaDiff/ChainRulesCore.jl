@@ -46,9 +46,9 @@ roughly the same as would be required to execute a primal pass had `A` been dens
 Thus, and performance gain that one might have hoped to obtain using a `Diagonal` has been
 lost.
 
-The way to rectify this problem is to require that only the diagonal of `ΔA` be preserved,
-in which case the same asymptotic complexity can be obtained in the rrule as in the
-function evaluation itself.
+A possible way to rectify this problem is to require that only the diagonal of `ΔA` be
+preserved, in which case the same asymptotic complexity can be obtained in the rrule as in
+the function evaluation itself.
 Indeed, if this rule did not exist, and the AD tool applied to `A * B` were successfully
 able to derive a pullback, this is essentially what it will do.
 Moreover, if `A` we some other `struct`, which was not to be interpretted as an array of
