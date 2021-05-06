@@ -183,8 +183,8 @@ If you evaluate it using a `Diagonal` matrix and a `Vector`
 N = 1_000_000
 h(Diagonal(rand(N) .+ 1), randn(N))
 ```
-you obtain a function which requires O(N) operations, rather than the O(N^2) required if
-you evaluate it for a `Matrix` and a `Vector`.
+you obtain a function which requires O(N) operations, rather than the O(N^3 + N^2) required
+if you evaluate it for a `Matrix` and a `Vector`.
 
 If the semantics of AD are such that it is necessary to assume that the tangent of `D`
 might be non-diagonal, it is necessary for AD to treat `D` like a `Matrix` which happens to
