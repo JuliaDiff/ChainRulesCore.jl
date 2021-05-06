@@ -546,6 +546,9 @@ julia> ReverseDiff.gradient(g, X)
 ```
 Zygote doesn't work on this example at the time of writing, hence its exclusion.
 
+As before, neither `ForwardDiff` nor `ReverseDiff` know anything about the function
+`sparse`, nor the `SparseMatrixCSC` type.
+
 
 
 
