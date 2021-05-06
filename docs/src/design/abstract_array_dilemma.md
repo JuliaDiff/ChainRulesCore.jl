@@ -10,7 +10,7 @@ So after reading this document, you should feel better equipped to form an opini
 matter.
 
 
-## Problem Statement
+## An Example Problem
 
 Consider an `rrule` with signature
 ```julia
