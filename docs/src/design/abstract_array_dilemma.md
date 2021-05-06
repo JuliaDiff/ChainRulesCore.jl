@@ -33,8 +33,11 @@ Let `M := size(A, 1)` then the reverse-pass will require at least `M^2` `Float64
 the primal pass will only require `M`.
 Similarly, letting `N := size(B, 2)`, computing `ΔA` under this implementation requires
 `O(M^2N)` operations, while the forwards requires only `O(MN)`.
-Thus, if an AD system utilises this particular `rrule`, its performance guarantees will be
-broken.
+Thus, if an AD system utilises this particular `rrule`, it will take (asymptotically) more
+compute to run reverse-mode than to evaluate the function.
+This will be particularly acute if `A` is large, and `B` is thin.
+
+
 If, as is often the case, a user's reason for expressing a function in terms of a `Diagonal`
 (rather than a `Matrix` which happens to be diagonal) is at least partly
 performance-related, then this poor performance is crucially important.
