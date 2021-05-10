@@ -87,15 +87,13 @@
             end
         end
 
-        @testset "InplaceableThunk" begin
-            ithunk = InplaceableThunk(
-                @thunk(-1.0*ones(2, 2)),
-                x -> x .-= ones(2, 2)
-            )
-
+        @testset "AbstractThunk $(typeof(thunk))" for thunk in (
+            @thunk(-1.0*ones(2, 2)),
+            InplaceableThunk(@thunk(-1.0*ones(2, 2)), x -> x .-= ones(2, 2)),
+        )
             @testset "in place" begin
                 accumuland = [1.0 2.0; 3.0 4.0]
-                ret = add!!(accumuland, ithunk)
+                ret = add!!(accumuland, thunk)
                 @test ret == [0.0 1.0; 2.0 3.0]  # must return right answer
                 @test ret === accumuland  # must be same object
             end
@@ -103,7 +101,7 @@
             @testset "out of place" begin
                 accumuland = @SMatrix [1.0 2.0; 3.0 4.0]
 
-                ret = add!!(accumuland, ithunk)
+                ret = add!!(accumuland, thunk)
                 @test ret == [0.0 1.0; 2.0 3.0]  # must return right answer
                 @test ret !== accumuland  # must not be same object
                 @test accumuland == [1.0 2.0; 3.0 4.0]  # must not have mutated
