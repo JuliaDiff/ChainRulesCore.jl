@@ -1,4 +1,4 @@
-abstract type AbstractThunk <: AbstractDifferential end
+abstract type AbstractThunk <: AbstractTangent end
 
 Base.Broadcast.broadcastable(x::AbstractThunk) = broadcastable(unthunk(x))
 
@@ -91,7 +91,7 @@ This is commonly the case for scalar operators.
 
 For more details see the manual section [on using thunks effectively](http://www.juliadiff.org/ChainRulesCore.jl/dev/writing_good_rules.html#Use-Thunks-appropriately-1)
 """
-struct Thunk{F} <: AbstractThunk
+struct ThunkedTangent{F} <: AbstractThunk
     f::F
 end
 
@@ -112,7 +112,7 @@ but it should do this more efficently than simply doing this directly.
 Most operations on an `InplaceableThunk` treat it just like a normal `Thunk`;
 and destroy its inplacability.
 """
-struct InplaceableThunk{T<:Thunk, F} <: AbstractThunk
+struct InplaceableThunkedTangent{T<:Thunk, F} <: AbstractThunk
     val::T
     add!::F
 end

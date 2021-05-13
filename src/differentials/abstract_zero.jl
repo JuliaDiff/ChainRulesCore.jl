@@ -10,7 +10,7 @@ All propagators are linear functions, and thus the final result will be zero.
 All `AbstractZero` subtypes are singleton types.
 There are two of them: [`Zero()`](@ref) and [`DoesNotExist()`](@ref).
 """
-abstract type AbstractZero <: AbstractDifferential end
+abstract type AbstractZero <: AbstractTangent end
 Base.iszero(::AbstractZero) = true
 
 Base.iterate(x::AbstractZero) = (x, nothing)
@@ -33,7 +33,7 @@ The additive identity for differentials.
 This is basically the same as `0`.
 A derivative of `Zero()` does not propagate through the primal function.
 """
-struct Zero <: AbstractZero end
+struct ZeroTangent <: AbstractZero end
 
 extern(x::Zero) = false  # false is a strong 0. E.g. `false * NaN = 0.0`
 
@@ -71,7 +71,7 @@ arguments.
     end
 ```
 """
-struct DoesNotExist <: AbstractZero end
+struct NoPossibleTangent <: AbstractZero end
 
 function extern(x::DoesNotExist)
     throw(ArgumentError("Derivative does not exit. Cannot be converted to an external type."))

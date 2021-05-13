@@ -33,7 +33,7 @@ Pullbacks/pushforwards are linear operators, and their inputs are often
 Pullbacks/pushforwards in-turn call other linear operators on those inputs.
 Thus it is desirable to have all common linear operators work on `AbstractDifferential`s.
 """
-abstract type AbstractDifferential end
+abstract type AbstractTangent end
 
 Base.:+(x::AbstractDifferential) = x
 

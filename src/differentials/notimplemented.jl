@@ -26,7 +26,7 @@ This differential indicates that the derivative is not implemented.
 It is generally best to construct this using the [`@not_implemented`](@ref) macro,
 which will automatically insert the source module and file location.
 """
-struct NotImplemented <: AbstractDifferential
+struct NotImplemented <: AbstractTangent
     mod::Module
     source::LineNumberNode
     info::String

@@ -21,7 +21,7 @@ Any fields not explictly present in the `Composite` are treated as being set to 
 To make a `Composite` have all the fields of the primal the [`canonicalize`](@ref)
 function is provided.
 """
-struct Composite{P, T} <: AbstractDifferential
+struct Tangent{P, T} <: AbstractTangent
     # Note: If T is a Tuple/Dict, then P is also a Tuple/Dict
     # (but potentially a different one, as it doesn't contain differentials)
     backing::T
