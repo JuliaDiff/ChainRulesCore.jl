@@ -15,6 +15,7 @@ export NO_FIELDS
 
 include("compat.jl")
 include("debug_mode.jl")
+include("deprecated.jl")
 
 include("differentials/abstract_differential.jl")
 include("differentials/abstract_zero.jl")
