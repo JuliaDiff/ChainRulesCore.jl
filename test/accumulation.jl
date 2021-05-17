@@ -26,11 +26,11 @@
             @test 16 == add!!(12, 4)
         end
 
-        @testset "misc AbstractDifferential subtypes" begin
+        @testset "misc AbstractTangent subtypes" begin
             @test 16 == add!!(12, @thunk(2*2))
-            @test 16 == add!!(16, Zero())
+            @test 16 == add!!(16, ZeroTangent())
 
-            @test 16 == add!!(16, DoesNotExist())  # Should this be an error?
+            @test 16 == add!!(16, NoTangent())  # Should this be an error?
         end
 
         @testset "add!!(::AbstractArray, ::AbstractArray)" begin
@@ -89,7 +89,7 @@
 
         @testset "AbstractThunk $(typeof(thunk))" for thunk in (
             @thunk(-1.0*ones(2, 2)),
-            InplaceableThunk(@thunk(-1.0*ones(2, 2)), x -> x .-= ones(2, 2)),
+            InplaceableTangent(@thunk(-1.0*ones(2, 2)), x -> x .-= ones(2, 2)),
         )
             @testset "in place" begin
                 accumuland = [1.0 2.0; 3.0 4.0]
@@ -109,7 +109,7 @@
         end
 
         @testset "not actually inplace but said it was" begin
-            ithunk = InplaceableThunk(
+            ithunk = InplaceableTangent(
                 @thunk(@assert false),  # this should never be used in this test
                 x -> 77*ones(2, 2)  # not actually inplace (also wrong)
             )
@@ -127,7 +127,7 @@
 
     @testset "showerror BadInplaceException" begin
         BadInplaceException = ChainRulesCore.BadInplaceException
-        ithunk = InplaceableThunk(@thunk(@assert false), x̄->nothing)
+        ithunk = InplaceableTangent(@thunk(@assert false), x̄->nothing)
         msg = sprint(showerror, BadInplaceException(ithunk, [22], [23]))
         @test occursin("22", msg)
 

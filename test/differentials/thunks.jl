@@ -1,9 +1,9 @@
-@testset "Thunk" begin
-    @test @thunk(3) isa Thunk
+@testset "ThunkedTangent" begin
+    @test @thunk(3) isa ThunkedTangent
 
     @testset "show" begin
-        rep = repr(Thunk(rand))
-        @test occursin(r"Thunk\(.*rand.*\)", rep)
+        rep = repr(ThunkedTangent(rand))
+        @test occursin(r"ThunkedTangent\(.*rand.*\)", rep)
     end
 
     @testset "Externing" begin
@@ -13,12 +13,12 @@
 
     @testset "unthunk" begin
         @test unthunk(@thunk(3)) == 3
-        @test unthunk(@thunk(@thunk(3))) isa Thunk
+        @test unthunk(@thunk(@thunk(3))) isa ThunkedTangent
     end
 
     @testset "calling thunks should call inner function" begin
         @test (@thunk(3))() == 3
-        @test (@thunk(@thunk(3)))() isa Thunk
+        @test (@thunk(@thunk(3)))() isa ThunkedTangent
     end
 
     @testset "erroring thunks should include the source in the backtrack" begin

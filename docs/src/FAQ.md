@@ -40,17 +40,17 @@ To the best of our knowledge no Julia AD system, with support for the definition
 At some point in the future ChainRules may support these. Maybe.
 
 
-## What is the difference between `Zero` and `DoesNotExist` ?
-`Zero` and `DoesNotExist` act almost exactly the same in practice: they result in no change whenever added to anything.
+## What is the difference between `ZeroTangent` and `NoTangent` ?
+`ZeroTangent` and `NoTangent` act almost exactly the same in practice: they result in no change whenever added to anything.
 Odds are if you write a rule that returns the wrong one everything will just work fine.
 We provide both to allow for clearer writing of rules, and easier debugging.
 
-`Zero()` represents the fact that if one perturbs (adds a small change to) the matching primal there will be no change in the behaviour of the primal function.
-For example in `fst(x,y) = x`, then the derivative of `fst` with respect to `y` is `Zero()`.
+`ZeroTangent()` represents the fact that if one perturbs (adds a small change to) the matching primal there will be no change in the behaviour of the primal function.
+For example in `fst(x,y) = x`, then the derivative of `fst` with respect to `y` is `ZeroTangent()`.
 `fst(10, 5) == 10` and if we add `0.1` to `5` we still get `fst(10, 5.1)=10`.
 
-`DoesNotExist()` represents the fact that if one perturbs the matching primal, the primal function will now error.
-For example in `access(xs, n) = xs[n]` then the derivative of `access` with respect to `n` is `DoesNotExist()`.
+`NoTangent()` represents the fact that if one perturbs the matching primal, the primal function will now error.
+For example in `access(xs, n) = xs[n]` then the derivative of `access` with respect to `n` is `NoTangent()`.
 `access([10, 20, 30], 2) = 20`, but if we add `0.1` to `2` we get `access([10, 20, 30], 2.1)` which errors as indexing can't be applied at fractional indexes.
 
 

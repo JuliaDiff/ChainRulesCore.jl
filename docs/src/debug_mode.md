@@ -14,5 +14,5 @@ ChainRulesCore.debug_mode() = true
 
 ## Features of Debug Mode:
 
- - If you add a `Composite` to a primal value, and it was unable to construct a new primal values, then a better error message will be displayed detailing what overloads need to be written to fix this.
+ - If you add a `Tangent` to a primal value, and it was unable to construct a new primal values, then a better error message will be displayed detailing what overloads need to be written to fix this.
  - during [`add!!`](@ref), if an `InplaceThunk` is used, and it runs the code that is supposed to run in place, but the return result is not the input (with updated values), then an error is thrown. Rather than silently using what ever values were returned.

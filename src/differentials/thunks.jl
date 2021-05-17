@@ -16,13 +16,13 @@ end
 """
     @thunk expr
 
-Define a [`Thunk`](@ref) wrapping the `expr`, to lazily defer its evaluation.
+Define a [`ThunkedTangent`](@ref) wrapping the `expr`, to lazily defer its evaluation.
 """
 macro thunk(body)
-    # Basically `:(Thunk(() -> $(esc(body))))` but use the location where it is defined.
+    # Basically `:(ThunkedTangent(() -> $(esc(body))))` but use the location where it is defined.
     # so we get useful stack traces if it errors.
     func = Expr(:->, Expr(:tuple), Expr(:block, __source__, body))
-    return :(Thunk($(esc(func))))
+    return :(ThunkedTangent($(esc(func))))
 end
 
 """
@@ -42,30 +42,30 @@ Base.adjoint(x::AbstractThunk) = @thunk(adjoint(unthunk(x)))
 Base.transpose(x::AbstractThunk) = @thunk(transpose(unthunk(x)))
 
 #####
-##### `Thunk`
+##### `ThunkedTangent`
 #####
 
 """
-    Thunk(()->v)
+    ThunkedTangent(()->v)
 A thunk is a deferred computation.
 It wraps a zero argument closure that when invoked returns a differential.
-`@thunk(v)` is a macro that expands into `Thunk(()->v)`.
+`@thunk(v)` is a macro that expands into `ThunkedTangent(()->v)`.
 
 Calling a thunk, calls the wrapped closure.
-If you are unsure if you have a `Thunk`, call [`unthunk`](@ref) which is a no-op when the
-argument is not a `Thunk`.
+If you are unsure if you have a `ThunkedTangent`, call [`unthunk`](@ref) which is a no-op when the
+argument is not a `ThunkedTangent`.
 If you need to unthunk recursively, call [`extern`](@ref), which also externs the differial
 that the closure returns.
 
 ```jldoctest
 julia> t = @thunk(@thunk(3))
-Thunk(var"#4#6"())
+ThunkedTangent(var"#4#6"())
 
 julia> extern(t)
 3
 
 julia> t()
-Thunk(var"#5#7"())
+ThunkedTangent(var"#5#7"())
 
 julia> t()()
 3
@@ -80,7 +80,7 @@ Propagation rules that return multiple derivatives may not have all deriviatives
 #### How do thunks prevent work?
 If we have `res = pullback(...) = @thunk(f(x)), @thunk(g(x))`
 then if we did `dx + res[1]` then only `f(x)` would be evaluated, not `g(x)`.
-Also if we did `Zero() * res[1]` then the result would be `Zero()` and `f(x)` would not be evaluated.
+Also if we did `ZeroTangent() * res[1]` then the result would be `ZeroTangent()` and `f(x)` would not be evaluated.
 
 #### So why not thunk everything?
 `@thunk` creates a closure over the expression, which (effectively) creates a `struct`
@@ -89,37 +89,37 @@ with a field for each variable used in the expression, and call overloaded.
 Do not use `@thunk` if this would be equal or more work than actually evaluating the expression itself.
 This is commonly the case for scalar operators.
 
-For more details see the manual section [on using thunks effectively](http://www.juliadiff.org/ChainRulesCore.jl/dev/writing_good_rules.html#Use-Thunks-appropriately-1)
+For more details see the manual section [on using thunks effectively](http://www.juliadiff.org/ChainRulesCore.jl/dev/writing_good_rules.html#Use-ThunkedTangents-appropriately-1)
 """
 struct ThunkedTangent{F} <: AbstractThunk
     f::F
 end
 
-(x::Thunk)() = x.f()
-@inline unthunk(x::Thunk) = x()
+(x::ThunkedTangent)() = x.f()
+@inline unthunk(x::ThunkedTangent) = x()
 
-Base.show(io::IO, x::Thunk) = print(io, "Thunk($(repr(x.f)))")
+Base.show(io::IO, x::ThunkedTangent) = print(io, "ThunkedTangent($(repr(x.f)))")
 
 """
-    InplaceableThunk(val::Thunk, add!::Function)
+    InplaceableTangent(val::ThunkedTangent, add!::Function)
 
-A wrapper for a `Thunk`, that allows it to define an inplace `add!` function.
+A wrapper for a `ThunkedTangent`, that allows it to define an inplace `add!` function.
 
 `add!` should be defined such that: `ithunk.add!(Δ) = Δ .+= ithunk.val`
 but it should do this more efficently than simply doing this directly.
-(Otherwise one can just use a normal `Thunk`).
+(Otherwise one can just use a normal `ThunkedTangent`).
 
-Most operations on an `InplaceableThunk` treat it just like a normal `Thunk`;
+Most operations on an `InplaceableTangent` treat it just like a normal `ThunkedTangent`;
 and destroy its inplacability.
 """
-struct InplaceableThunkedTangent{T<:Thunk, F} <: AbstractThunk
+struct InplaceableTangent{T<:ThunkedTangent, F} <: AbstractThunk
     val::T
     add!::F
 end
 
-unthunk(x::InplaceableThunk) = unthunk(x.val)
-(x::InplaceableThunk)() = unthunk(x)
+unthunk(x::InplaceableTangent) = unthunk(x.val)
+(x::InplaceableTangent)() = unthunk(x)
 
-function Base.show(io::IO, x::InplaceableThunk)
-    print(io, "InplaceableThunk($(repr(x.val)), $(repr(x.add!)))")
+function Base.show(io::IO, x::InplaceableTangent)
+    print(io, "InplaceableTangent($(repr(x.val)), $(repr(x.add!)))")
 end

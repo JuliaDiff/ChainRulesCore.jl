@@ -33,7 +33,7 @@ struct NotImplemented <: AbstractTangent
 end
 
 # required for `@scalar_rule`
-# (together with `conj(x::AbstractDifferential) = x` and the definitions in
+# (together with `conj(x::AbstractTangent) = x` and the definitions in
 # differential_arithmetic.jl)
 Base.Broadcast.broadcastable(x::NotImplemented) = Ref(x)
 

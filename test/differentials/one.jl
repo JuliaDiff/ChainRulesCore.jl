@@ -15,11 +15,11 @@
     @test broadcastable(o) isa Ref{One}
     @test conj(o) == o
     
-    @test reim(o) === (One(), Zero())
+    @test reim(o) === (One(), ZeroTangent())
     @test real(o) === One()
-    @test imag(o) === Zero()
+    @test imag(o) === ZeroTangent()
 
     @test complex(o) === o
-    @test complex(o, Zero()) === o
-    @test complex(Zero(), o) === im
+    @test complex(o, ZeroTangent()) === o
+    @test complex(ZeroTangent(), o) === im
 end

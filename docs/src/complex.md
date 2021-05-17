@@ -47,8 +47,8 @@ and `rrule` corresponds to
 The Jacobian of ``f:\mathbb{C} \to \mathbb{C}`` interpreted as a function ``\mathbb{R}^2 \to \mathbb{R}^2`` can hence be evaluated using either of the following functions.
 ```julia
 function jacobian_via_frule(f,z)
-    du_dx, dv_dx = reim(frule((Zero(), 1),f,z)[2])
-    du_dy, dv_dy = reim(frule((Zero(),im),f,z)[2])
+    du_dx, dv_dx = reim(frule((ZeroTangent(), 1),f,z)[2])
+    du_dy, dv_dy = reim(frule((ZeroTangent(),im),f,z)[2])
     return [
         du_dx  du_dy
         dv_dx  dv_dy
@@ -71,7 +71,7 @@ If ``f(z)`` is holomorphic, then the derivative part of `frule` can be implement
 Consequently, holomorphic derivatives can be evaluated using either of the following functions.
 ```julia
 function holomorphic_derivative_via_frule(f,z)
-    fz,df_dz = frule((Zero(),1),f,z)
+    fz,df_dz = frule((ZeroTangent(),1),f,z)
     return df_dz
 end
 ```
