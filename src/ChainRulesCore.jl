@@ -15,7 +15,6 @@ export NO_FIELDS
 
 include("compat.jl")
 include("debug_mode.jl")
-include("deprecated.jl")
 
 include("differentials/abstract_differential.jl")
 include("differentials/abstract_zero.jl")
@@ -31,6 +30,7 @@ include("rules.jl")
 include("rule_definition_tools.jl")
 include("ruleset_loading.jl")
 
+include("deprecated.jl")
 include("precompile.jl")
 
 end # module

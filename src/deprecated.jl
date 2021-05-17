@@ -1,7 +1,7 @@
-Base.@deprecate AbstractDifferential AbstractTangent
-Base.@deprecate Composite Tangent
-Base.@deprecate Zero ZeroTangent
-Base.@deprecate DoesNotExist NoTangent
-Base.@deprecate Thunk ThunkedTangent
-Base.@deprecate InplaceableThunk InplaceableTangent
+Base.@deprecate_binding AbstractDifferential AbstractTangent
+Base.@deprecate_binding Composite Tangent
+Base.@deprecate_binding Zero ZeroTangent
+Base.@deprecate_binding DoesNotExist NoTangent
+Base.@deprecate_binding Thunk ThunkedTangent
+Base.@deprecate_binding InplaceableThunk InplaceableTangent
 Base.@deprecate One() true
