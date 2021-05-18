@@ -89,7 +89,7 @@
 
         @testset "AbstractThunk $(typeof(thunk))" for thunk in (
             @thunk(-1.0*ones(2, 2)),
-            InplaceableTangent(@thunk(-1.0*ones(2, 2)), x -> x .-= ones(2, 2)),
+            InplaceableThunk(@thunk(-1.0*ones(2, 2)), x -> x .-= ones(2, 2)),
         )
             @testset "in place" begin
                 accumuland = [1.0 2.0; 3.0 4.0]
@@ -109,7 +109,7 @@
         end
 
         @testset "not actually inplace but said it was" begin
-            ithunk = InplaceableTangent(
+            ithunk = InplaceableThunk(
                 @thunk(@assert false),  # this should never be used in this test
                 x -> 77*ones(2, 2)  # not actually inplace (also wrong)
             )
@@ -127,7 +127,7 @@
 
     @testset "showerror BadInplaceException" begin
         BadInplaceException = ChainRulesCore.BadInplaceException
-        ithunk = InplaceableTangent(@thunk(@assert false), x̄->nothing)
+        ithunk = InplaceableThunk(@thunk(@assert false), x̄->nothing)
         msg = sprint(showerror, BadInplaceException(ithunk, [22], [23]))
         @test occursin("22", msg)
 

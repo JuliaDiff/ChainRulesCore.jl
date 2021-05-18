@@ -3,4 +3,4 @@ Base.@deprecate_binding Composite Tangent
 Base.@deprecate_binding Zero ZeroTangent
 Base.@deprecate_binding DoesNotExist NoTangent
 Base.@deprecate_binding Thunk ThunkedTangent
-Base.@deprecate_binding InplaceableThunk InplaceableTangent
+Base.@deprecate_binding InplaceableThunk InplaceableThunk

@@ -101,7 +101,7 @@ end
 Base.show(io::IO, x::ThunkedTangent) = print(io, "ThunkedTangent($(repr(x.f)))")
 
 """
-    InplaceableTangent(val::ThunkedTangent, add!::Function)
+    InplaceableThunk(val::ThunkedTangent, add!::Function)
 
 A wrapper for a `ThunkedTangent`, that allows it to define an inplace `add!` function.
 
@@ -109,17 +109,17 @@ A wrapper for a `ThunkedTangent`, that allows it to define an inplace `add!` fun
 but it should do this more efficently than simply doing this directly.
 (Otherwise one can just use a normal `ThunkedTangent`).
 
-Most operations on an `InplaceableTangent` treat it just like a normal `ThunkedTangent`;
+Most operations on an `InplaceableThunk` treat it just like a normal `ThunkedTangent`;
 and destroy its inplacability.
 """
-struct InplaceableTangent{T<:ThunkedTangent, F} <: AbstractThunk
+struct InplaceableThunk{T<:ThunkedTangent, F} <: AbstractThunk
     val::T
     add!::F
 end
 
-unthunk(x::InplaceableTangent) = unthunk(x.val)
-(x::InplaceableTangent)() = unthunk(x)
+unthunk(x::InplaceableThunk) = unthunk(x.val)
+(x::InplaceableThunk)() = unthunk(x)
 
-function Base.show(io::IO, x::InplaceableTangent)
-    print(io, "InplaceableTangent($(repr(x.val)), $(repr(x.add!)))")
+function Base.show(io::IO, x::InplaceableThunk)
+    print(io, "InplaceableThunk($(repr(x.val)), $(repr(x.add!)))")
 end

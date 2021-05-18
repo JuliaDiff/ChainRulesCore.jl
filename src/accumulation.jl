@@ -9,10 +9,10 @@ add!!(x, y) = x + y
 """
     add!!(x, t::InplacableThunk)
 
-The specialization of `add!!` for [`InplaceableTangent`](@ref) promises to only call
+The specialization of `add!!` for [`InplaceableThunk`](@ref) promises to only call
 `t.add!` on `x` if `x` is suitably mutable; otherwise it will be out of place.
 """
-function add!!(x, t::InplaceableTangent)
+function add!!(x, t::InplaceableThunk)
     return if is_inplaceable_destination(x)
         if !debug_mode()
             t.add!(x)
@@ -65,7 +65,7 @@ is_inplaceable_destination(::LinearAlgebra.Hermitian) = false
 is_inplaceable_destination(::LinearAlgebra.Symmetric) = false
 
 
-function debug_add!(accumuland, t::InplaceableTangent)
+function debug_add!(accumuland, t::InplaceableThunk)
     returned_value = t.add!(accumuland)
     if returned_value !== accumuland
         throw(BadInplaceException(t, accumuland, returned_value))
@@ -74,7 +74,7 @@ function debug_add!(accumuland, t::InplaceableTangent)
 end
 
 struct BadInplaceException <: Exception
-    ithunk::InplaceableTangent
+    ithunk::InplaceableThunk
     accumuland
     returned_value
 end

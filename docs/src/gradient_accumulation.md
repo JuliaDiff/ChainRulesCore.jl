@@ -45,7 +45,7 @@ It may mutate its first argument (if it is mutable), but it will definitely retu
 We would write using that as `X̄ = add!!(ā, b̄)`: which would in this case give us just 2 allocations.
 AD systems can generate `add!!` instead of `+` when accumulating gradient to take advantage of this.
 
-### Inplaceable Thunks (`InplaceableTangents`) avoid allocating values in the first place.
+### Inplaceable Thunks (`InplaceableThunks`) avoid allocating values in the first place.
 We got down to two allocations from using [`add!!`](@ref), but can we do better?
 We can think of having a differential type which acts on a partially accumulated result, to mutate it to contain its current value plus the partial derivative being accumulated.
 Rather than having an actual computed value, we can just have a thing that will act on a value to perform the addition.
@@ -71,23 +71,23 @@ end
 ```
 We don't need to worry about all those zeros since `x + 0 == x`.
 
-[`InplaceableTangent`](@ref) is the type we have to represent derivatives as gradient accumulating actions.
+[`InplaceableThunk`](@ref) is the type we have to represent derivatives as gradient accumulating actions.
 We must note that to do this we do need a value form of `ā` for `b̄` to act upon.
 For this reason every inplaceable thunk has both a `val` field holding the value representation, and a `add!` field holding the action representation.
 The `val` field use a plain [`ThunkedTangent`](@ref) to avoid the computation (and thus allocation) if it is unused.
 
 !!! note "Do we need both representations?"
-    Right now every [`InplaceableTangent`](@ref) has two fields that need to be specified.
+    Right now every [`InplaceableThunk`](@ref) has two fields that need to be specified.
     The value form (represented as a the [`ThunkedTangent`](@ref) typed field), and the action form (represented as the `add!` field).
     It is possible in a future version of ChainRulesCore.jl we will work out a clever way to find the zero differential for arbitrary primal values.
     Given that, we could always just determine the value form from `inplaceable.add!(zero_differential(primal))`.
     There are some technical difficulties in finding the zero differentials, but this may be solved at some point.
 
 
-The `+` operation on `InplaceableTangent`s is overloaded to [`unthunk`](@ref) that `val` field to get the value form.
+The `+` operation on `InplaceableThunk`s is overloaded to [`unthunk`](@ref) that `val` field to get the value form.
 Where as the [`add!!`](@ref) operation is overloaded to call `add!` to invoke the action.
 
-With `getindex` defined to return an `InplaceableTangent`, we now get to `X̄ = add!!(ā, b̄)` requires only a single allocation.
+With `getindex` defined to return an `InplaceableThunk`, we now get to `X̄ = add!!(ā, b̄)` requires only a single allocation.
 This allocation occurs when `unthunk`ing `ā`, which is then mutated to become `X̄`.
 This is basically as good as we can get: if we want `X̄` to be an `Array` then at some point we need to allocate that array.
 
@@ -99,7 +99,7 @@ This is basically as good as we can get: if we want `X̄` to be an `Array` then 
     It does start to burn stack space, and might make the compiler's optimization passes cry.
     But it's valid and should work fine.
 
-### Examples of InplaceableTangents
+### Examples of InplaceableThunks
 
 #### `getindex`
 
@@ -116,12 +116,12 @@ end
 ```
 If one only has value representation of derivatives one ends up having to allocate a derivative array for every single element of the original array `X`.
 That's terrible.
-On the other hand, with the action representation that `InplaceableTangent`s provide, there is just a single `Array` allocated.
+On the other hand, with the action representation that `InplaceableThunk`s provide, there is just a single `Array` allocated.
 One can see [the `getindex` rule in ChainRules.jl for the implementation](https://github.com/JuliaDiff/ChainRules.jl/blob/v0.7.49/src/rulesets/Base/indexing.jl).
 
 
 #### matmul etc (`*`)
-Multiplication of scalars/vectors/matrices of compatible dimensions can all also have their derivatives represented as an `InplaceableTangent`.
+Multiplication of scalars/vectors/matrices of compatible dimensions can all also have their derivatives represented as an `InplaceableThunk`.
 These tend to pivot around that `add!` action being defined along the lines of:
 `X̄ -> mul!(X̄, A', Ȳ, true, true)`.
 Where 5-arg `mul!` is the in place [multiply-add operation](https://docs.julialang.org/en/v1/stdlib/LinearAlgebra/#LinearAlgebra.mul!).

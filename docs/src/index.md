@@ -321,7 +321,7 @@ The most important `AbstractTangent`s when getting started are the ones about av
 ### Other `AbstractTangent`s:
  - [`Tangent{P}`](@ref Tangent): this is the differential for tuples and  structs. Use it like a `Tuple` or `NamedTuple`. The type parameter `P` is for the primal type.
  - [`NoTangent`](@ref): Zero-like, represents that the operation on this input is not differentiable. Its primal type is normally `Integer` or `Bool`.
- - [`InplaceableTangent`](@ref): it is like a `ThunkedTangent` but it can do in-place `add!`.
+ - [`InplaceableThunk`](@ref): it is like a `ThunkedTangent` but it can do in-place `add!`.
 
  -------------------------------
 

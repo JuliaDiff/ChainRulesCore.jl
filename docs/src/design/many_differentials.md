@@ -143,7 +143,7 @@ ChainRules disallows the addition of `Tangent{SVD}` to `Tangent{QR}` since in a 
 
 There is another kind of unnatural differential.
 One that is for computational efficiency.
-ChainRules has [`ThunkedTangent`](@ref)s and [`InplaceableTangent`](@ref)s, which wrap the computation of a derivative and delays that work until it is needed, either via the derivative being added to something or being [`unthunk`](@ref)ed manually,
+ChainRules has [`ThunkedTangent`](@ref)s and [`InplaceableThunk`](@ref)s, which wrap the computation of a derivative and delays that work until it is needed, either via the derivative being added to something or being [`unthunk`](@ref)ed manually,
 thus saving time if it is never used.
 
 Another differential type used for efficiency is [`ZeroTangent`](@ref) which represents the hard zero (in Zygote v0.4 this is `nothing`).

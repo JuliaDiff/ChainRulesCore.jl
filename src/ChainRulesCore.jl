@@ -10,7 +10,7 @@ export @non_differentiable, @scalar_rule, @thunk, @not_implemented  # definition
 export canonicalize, extern, unthunk  # differential operations
 export add!!  # gradient accumulation operations
 # differentials
-export Tangent, NoTangent, InplaceableTangent, One, ThunkedTangent, ZeroTangent, AbstractZero, AbstractThunk
+export Tangent, NoTangent, InplaceableThunk, One, ThunkedTangent, ZeroTangent, AbstractZero, AbstractThunk
 export NO_FIELDS
 
 include("compat.jl")
