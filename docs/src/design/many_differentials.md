@@ -143,7 +143,7 @@ ChainRules disallows the addition of `Tangent{SVD}` to `Tangent{QR}` since in a 
 
 There is another kind of unnatural differential.
 One that is for computational efficiency.
-ChainRules has [`ThunkedTangent`](@ref)s and [`InplaceableThunk`](@ref)s, which wrap the computation of a derivative and delays that work until it is needed, either via the derivative being added to something or being [`unthunk`](@ref)ed manually,
+ChainRules has [`Thunk`](@ref)s and [`InplaceableThunk`](@ref)s, which wrap the computation of a derivative and delays that work until it is needed, either via the derivative being added to something or being [`unthunk`](@ref)ed manually,
 thus saving time if it is never used.
 
 Another differential type used for efficiency is [`ZeroTangent`](@ref) which represents the hard zero (in Zygote v0.4 this is `nothing`).
@@ -154,7 +154,7 @@ We noted that all differentials need to be a vector space.
 Further, add `ZeroTangent()` to any primal value (no matter the type) and you get back another value of the same primal type (the same value in fact).
 So it meets the requirements of a differential type for *all* primal types.
 `ZeroTangent` can save on memory (since we can avoid allocating anything) and on time (since performing the multiplication
-`ZeroTangent` and `ThunkedTangent` are both examples of a differential type that is valid for multiple primal types.
+`ZeroTangent` and `Thunk` are both examples of a differential type that is valid for multiple primal types.
 
 ## Conclusion
 

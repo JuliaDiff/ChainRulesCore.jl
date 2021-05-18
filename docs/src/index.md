@@ -315,13 +315,13 @@ Most importantly: `+` and `*`, which let them act as mathematical objects.
 
 The most important `AbstractTangent`s when getting started are the ones about avoiding work:
 
- - [`ThunkedTangent`](@ref): this is a deferred computation. A thunk is a [word for a zero argument closure](https://en.wikipedia.org/wiki/Thunk). A computation wrapped in a `@thunk` doesn't get evaluated until [`unthunk`](@ref) is called on the thunk. `unthunk` is a no-op on non-thunked inputs.
- - [`One`](@ref), [`ZeroTangent`](@ref): There are special representations of `1` and `0`. They do great things around avoiding expanding `ThunkedTangents` in multiplication and (for `ZeroTangent`) addition.
+ - [`Thunk`](@ref): this is a deferred computation. A thunk is a [word for a zero argument closure](https://en.wikipedia.org/wiki/Thunk). A computation wrapped in a `@thunk` doesn't get evaluated until [`unthunk`](@ref) is called on the thunk. `unthunk` is a no-op on non-thunked inputs.
+ - [`One`](@ref), [`ZeroTangent`](@ref): There are special representations of `1` and `0`. They do great things around avoiding expanding `Thunks` in multiplication and (for `ZeroTangent`) addition.
 
 ### Other `AbstractTangent`s:
  - [`Tangent{P}`](@ref Tangent): this is the differential for tuples and  structs. Use it like a `Tuple` or `NamedTuple`. The type parameter `P` is for the primal type.
  - [`NoTangent`](@ref): Zero-like, represents that the operation on this input is not differentiable. Its primal type is normally `Integer` or `Bool`.
- - [`InplaceableThunk`](@ref): it is like a `ThunkedTangent` but it can do in-place `add!`.
+ - [`InplaceableThunk`](@ref): it is like a `Thunk` but it can do in-place `add!`.
 
  -------------------------------
 

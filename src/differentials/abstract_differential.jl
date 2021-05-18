@@ -57,7 +57,7 @@ Where it is defined the operation of `extern` for a primal type `P` should be
     It can be useful, if you know what you are getting out, as it recursively removes
     thunks, and otherwise makes outputs more consistent with finite differencing.
 
-    The more useful action in general is to call `+`, or in the case of a [`ThunkedTangent`](@ref)
+    The more useful action in general is to call `+`, or in the case of a [`Thunk`](@ref)
     to call [`unthunk`](@ref).
 
 !!! warning

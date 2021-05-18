@@ -74,11 +74,11 @@ We don't need to worry about all those zeros since `x + 0 == x`.
 [`InplaceableThunk`](@ref) is the type we have to represent derivatives as gradient accumulating actions.
 We must note that to do this we do need a value form of `ā` for `b̄` to act upon.
 For this reason every inplaceable thunk has both a `val` field holding the value representation, and a `add!` field holding the action representation.
-The `val` field use a plain [`ThunkedTangent`](@ref) to avoid the computation (and thus allocation) if it is unused.
+The `val` field use a plain [`Thunk`](@ref) to avoid the computation (and thus allocation) if it is unused.
 
 !!! note "Do we need both representations?"
     Right now every [`InplaceableThunk`](@ref) has two fields that need to be specified.
-    The value form (represented as a the [`ThunkedTangent`](@ref) typed field), and the action form (represented as the `add!` field).
+    The value form (represented as a the [`Thunk`](@ref) typed field), and the action form (represented as the `add!` field).
     It is possible in a future version of ChainRulesCore.jl we will work out a clever way to find the zero differential for arbitrary primal values.
     Given that, we could always just determine the value form from `inplaceable.add!(zero_differential(primal))`.
     There are some technical difficulties in finding the zero differentials, but this may be solved at some point.

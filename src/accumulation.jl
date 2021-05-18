@@ -24,7 +24,7 @@ function add!!(x, t::InplaceableThunk)
     end
 end
 
-add!!(x::AbstractArray, y::ThunkedTangent) = add!!(x, unthunk(y))
+add!!(x::AbstractArray, y::Thunk) = add!!(x, unthunk(y))
 
 function add!!(x::AbstractArray{<:Any, N}, y::AbstractArray{<:Any, N}) where N
     return if is_inplaceable_destination(x)
