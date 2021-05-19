@@ -26,11 +26,11 @@
             @test 16 == add!!(12, 4)
         end
 
-        @testset "misc AbstractDifferential subtypes" begin
+        @testset "misc AbstractTangent subtypes" begin
             @test 16 == add!!(12, @thunk(2*2))
-            @test 16 == add!!(16, Zero())
+            @test 16 == add!!(16, ZeroTangent())
 
-            @test 16 == add!!(16, DoesNotExist())  # Should this be an error?
+            @test 16 == add!!(16, NoTangent())  # Should this be an error?
         end
 
         @testset "add!!(::AbstractArray, ::AbstractArray)" begin

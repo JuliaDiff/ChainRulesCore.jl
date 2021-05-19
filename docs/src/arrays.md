@@ -495,7 +495,7 @@ Like the `frule`, this `rrule` can be implemented generically:
 ```julia
 function rrule(::typeof(sum), ::typeof(abs2), X::Array{<:RealOrComplex}; dims = :)
     function sum_abs2_pullback(ΔΩ)
-        ∂abs2 = DoesNotExist()
+        ∂abs2 = NoTangent()
         ∂X = @thunk(2 .* real.(ΔΩ) .* X)
         return (NO_FIELDS, ∂abs2, ∂X)
     end
@@ -621,9 +621,9 @@ function frule((_, ΔA), ::typeof(logabsdet), A::Matrix{<:RealOrComplex})
     ∂l = real(b)
     # for real A, ∂s will always be zero (because imag(b) = 0)
     # this is type-stable because the eltype is known
-    ∂s = eltype(A) <: Real ? Zero() : im * imag(b) * s
-    # tangents of tuples are of type Composite{<:Tuple}
-    ∂Ω = Composite{typeof(Ω)}(∂l, ∂s)
+    ∂s = eltype(A) <: Real ? ZeroTangent() : im * imag(b) * s
+    # tangents of tuples are of type Tangent{<:Tuple}
+    ∂Ω = Tangent{typeof(Ω)}(∂l, ∂s)
     return (Ω, ∂Ω)
 end
 ```

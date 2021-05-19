@@ -11,39 +11,39 @@
         x, y, z = rand(3)
         @test conj(ni) === ni
         @test muladd(ni, y, z) === ni
-        @test muladd(ni, Zero(), z) == z
-        @test muladd(ni, y, Zero()) === ni
-        @test muladd(ni, Zero(), Zero()) == Zero()
+        @test muladd(ni, ZeroTangent(), z) == z
+        @test muladd(ni, y, ZeroTangent()) === ni
+        @test muladd(ni, ZeroTangent(), ZeroTangent()) == ZeroTangent()
         @test muladd(ni, ni2, z) === ni
-        @test muladd(ni, ni2, Zero()) === ni
+        @test muladd(ni, ni2, ZeroTangent()) === ni
         @test muladd(ni, y, ni2) === ni
-        @test muladd(ni, Zero(), ni2) === ni2
+        @test muladd(ni, ZeroTangent(), ni2) === ni2
         @test muladd(x, ni, z) === ni
-        @test muladd(Zero(), ni, z) == z
-        @test muladd(x, ni, Zero()) === ni
-        @test muladd(Zero(), ni, Zero()) == Zero()
+        @test muladd(ZeroTangent(), ni, z) == z
+        @test muladd(x, ni, ZeroTangent()) === ni
+        @test muladd(ZeroTangent(), ni, ZeroTangent()) == ZeroTangent()
         @test muladd(x, ni, ni2) === ni
-        @test muladd(Zero(), ni, ni2) === ni2
+        @test muladd(ZeroTangent(), ni, ni2) === ni2
         @test muladd(x, y, ni) === ni
-        @test muladd(Zero(), y, ni) === ni
-        @test muladd(x, Zero(), ni) === ni
-        @test muladd(Zero(), Zero(), ni) === ni
+        @test muladd(ZeroTangent(), y, ni) === ni
+        @test muladd(x, ZeroTangent(), ni) === ni
+        @test muladd(ZeroTangent(), ZeroTangent(), ni) === ni
         @test ni + rand() === ni
-        @test ni + Zero() === ni
-        @test ni + DoesNotExist() === ni
+        @test ni + ZeroTangent() === ni
+        @test ni + NoTangent() === ni
         @test ni + One() === ni
         @test ni + @thunk(x^2) === ni
         @test rand() + ni === ni
-        @test Zero() + ni === ni
-        @test DoesNotExist() + ni === ni
+        @test ZeroTangent() + ni === ni
+        @test NoTangent() + ni === ni
         @test One() + ni === ni
         @test @thunk(x^2) + ni === ni
         @test ni + ni2 === ni
         @test ni * rand() === ni
-        @test ni * Zero() == Zero()
-        @test Zero() * ni == Zero()
-        @test dot(ni, Zero()) == Zero()
-        @test dot(Zero(), ni) == Zero()
+        @test ni * ZeroTangent() == ZeroTangent()
+        @test ZeroTangent() * ni == ZeroTangent()
+        @test dot(ni, ZeroTangent()) == ZeroTangent()
+        @test dot(ZeroTangent(), ni) == ZeroTangent()
         @test ni .* rand() === ni
         @test broadcastable(ni) isa Ref{typeof(ni)}
 
@@ -53,27 +53,27 @@
         @test_throws E +ni
         @test_throws E -ni
         @test_throws E ni - rand()
-        @test_throws E ni - Zero()
-        @test_throws E ni - DoesNotExist()
+        @test_throws E ni - ZeroTangent()
+        @test_throws E ni - NoTangent()
         @test_throws E ni - One()
         @test_throws E ni - @thunk(x^2)
         @test_throws E rand() - ni
-        @test_throws E Zero() - ni
-        @test_throws E DoesNotExist() - ni
+        @test_throws E ZeroTangent() - ni
+        @test_throws E NoTangent() - ni
         @test_throws E One() - ni
         @test_throws E @thunk(x^2) - ni
         @test_throws E ni - ni2
         @test_throws E rand() * ni
-        @test_throws E DoesNotExist() * ni
+        @test_throws E NoTangent() * ni
         @test_throws E One() * ni
         @test_throws E @thunk(x^2) * ni
         @test_throws E ni * ni2
         @test_throws E dot(ni, rand())
-        @test_throws E dot(ni, DoesNotExist())
+        @test_throws E dot(ni, NoTangent())
         @test_throws E dot(ni, One())
         @test_throws E dot(ni, @thunk(x^2))
         @test_throws E dot(rand(), ni)
-        @test_throws E dot(DoesNotExist(), ni)
+        @test_throws E dot(NoTangent(), ni)
         @test_throws E dot(One(), ni)
         @test_throws E dot(@thunk(x^2), ni)
         @test_throws E dot(ni, ni2)

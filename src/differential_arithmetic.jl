@@ -2,13 +2,13 @@
 All differentials need to define + and *.
 That happens here.
 
-We just use @eval to define all the combinations for AbstractDifferential
+We just use @eval to define all the combinations for AbstractTangent
 subtypes, as we know the full set that might be encountered.
 Thus we can avoid any ambiguities.
 
 Notice:
     The precedence goes:
-    `NotImplemented, DoesNotExist, Zero, One, AbstractThunk, Composite, Any`
+    `NotImplemented, NoTangent, ZeroTangent, One, AbstractThunk, Tangent, Any`
     Thus each of the @eval loops create most definitions of + and *
     defines the combination this type with all types of  lower precidence.
     This means each eval loops is 1 item smaller than the previous.
@@ -16,49 +16,49 @@ Notice:
 
 # we propagate `NotImplemented` (e.g., in `@scalar_rule`)
 # this requires the following definitions (see also #337)
-Base.:+(x::NotImplemented, ::Zero) = x
-Base.:+(::Zero, x::NotImplemented) = x
+Base.:+(x::NotImplemented, ::ZeroTangent) = x
+Base.:+(::ZeroTangent, x::NotImplemented) = x
 Base.:+(x::NotImplemented, ::NotImplemented) = x
-Base.:*(::NotImplemented, ::Zero) = Zero()
-Base.:*(::Zero, ::NotImplemented) = Zero()
-for T in (:DoesNotExist, :One, :AbstractThunk, :Composite, :Any)
+Base.:*(::NotImplemented, ::ZeroTangent) = ZeroTangent()
+Base.:*(::ZeroTangent, ::NotImplemented) = ZeroTangent()
+for T in (:NoTangent, :One, :AbstractThunk, :Tangent, :Any)
     @eval Base.:+(x::NotImplemented, ::$T) = x
     @eval Base.:+(::$T, x::NotImplemented) = x
     @eval Base.:*(x::NotImplemented, ::$T) = x
 end
 Base.muladd(x::NotImplemented, y, z) = x
-Base.muladd(::NotImplemented, ::Zero, z) = z
-Base.muladd(x::NotImplemented, y, ::Zero) = x
-Base.muladd(::NotImplemented, ::Zero, ::Zero) = Zero()
+Base.muladd(::NotImplemented, ::ZeroTangent, z) = z
+Base.muladd(x::NotImplemented, y, ::ZeroTangent) = x
+Base.muladd(::NotImplemented, ::ZeroTangent, ::ZeroTangent) = ZeroTangent()
 Base.muladd(x, y::NotImplemented, z) = y
-Base.muladd(::Zero, ::NotImplemented, z) = z
-Base.muladd(x, y::NotImplemented, ::Zero) = y
-Base.muladd(::Zero, ::NotImplemented, ::Zero) = Zero()
+Base.muladd(::ZeroTangent, ::NotImplemented, z) = z
+Base.muladd(x, y::NotImplemented, ::ZeroTangent) = y
+Base.muladd(::ZeroTangent, ::NotImplemented, ::ZeroTangent) = ZeroTangent()
 Base.muladd(x, y, z::NotImplemented) = z
-Base.muladd(::Zero, y, z::NotImplemented) = z
-Base.muladd(x, ::Zero, z::NotImplemented) = z
-Base.muladd(::Zero, ::Zero, z::NotImplemented) = z
+Base.muladd(::ZeroTangent, y, z::NotImplemented) = z
+Base.muladd(x, ::ZeroTangent, z::NotImplemented) = z
+Base.muladd(::ZeroTangent, ::ZeroTangent, z::NotImplemented) = z
 Base.muladd(x::NotImplemented, ::NotImplemented, z) = x
-Base.muladd(x::NotImplemented, ::NotImplemented, ::Zero) = x
+Base.muladd(x::NotImplemented, ::NotImplemented, ::ZeroTangent) = x
 Base.muladd(x::NotImplemented, y, ::NotImplemented) = x
-Base.muladd(::NotImplemented, ::Zero, z::NotImplemented) = z
+Base.muladd(::NotImplemented, ::ZeroTangent, z::NotImplemented) = z
 Base.muladd(x, y::NotImplemented, ::NotImplemented) = y
-Base.muladd(::Zero, ::NotImplemented, z::NotImplemented) = z
+Base.muladd(::ZeroTangent, ::NotImplemented, z::NotImplemented) = z
 Base.muladd(x::NotImplemented, ::NotImplemented, ::NotImplemented) = x
-LinearAlgebra.dot(::NotImplemented, ::Zero) = Zero()
-LinearAlgebra.dot(::Zero, ::NotImplemented) = Zero()
+LinearAlgebra.dot(::NotImplemented, ::ZeroTangent) = ZeroTangent()
+LinearAlgebra.dot(::ZeroTangent, ::NotImplemented) = ZeroTangent()
 
 # other common operations throw an exception
 Base.:+(x::NotImplemented) = throw(NotImplementedException(x))
 Base.:-(x::NotImplemented) = throw(NotImplementedException(x))
-Base.:-(x::NotImplemented, ::Zero) = throw(NotImplementedException(x))
-Base.:-(::Zero, x::NotImplemented) = throw(NotImplementedException(x))
+Base.:-(x::NotImplemented, ::ZeroTangent) = throw(NotImplementedException(x))
+Base.:-(::ZeroTangent, x::NotImplemented) = throw(NotImplementedException(x))
 Base.:-(x::NotImplemented, ::NotImplemented) = throw(NotImplementedException(x))
 Base.:*(x::NotImplemented, ::NotImplemented) = throw(NotImplementedException(x))
 function LinearAlgebra.dot(x::NotImplemented, ::NotImplemented)
     return throw(NotImplementedException(x))
 end
-for T in (:DoesNotExist, :One, :AbstractThunk, :Composite, :Any)
+for T in (:NoTangent, :One, :AbstractThunk, :Tangent, :Any)
     @eval Base.:-(x::NotImplemented, ::$T) = throw(NotImplementedException(x))
     @eval Base.:-(::$T, x::NotImplemented) = throw(NotImplementedException(x))
     @eval Base.:*(::$T, x::NotImplemented) = throw(NotImplementedException(x))
@@ -66,83 +66,83 @@ for T in (:DoesNotExist, :One, :AbstractThunk, :Composite, :Any)
     @eval LinearAlgebra.dot(::$T, x::NotImplemented) = throw(NotImplementedException(x))
 end
 
-Base.:+(::DoesNotExist, ::DoesNotExist) = DoesNotExist()
-Base.:-(::DoesNotExist, ::DoesNotExist) = DoesNotExist()
-Base.:-(::DoesNotExist) = DoesNotExist()
-Base.:*(::DoesNotExist, ::DoesNotExist) = DoesNotExist()
-LinearAlgebra.dot(::DoesNotExist, ::DoesNotExist) = DoesNotExist()
-for T in (:One, :AbstractThunk, :Composite, :Any)
-    @eval Base.:+(::DoesNotExist, b::$T) = b
-    @eval Base.:+(a::$T, ::DoesNotExist) = a
-    @eval Base.:-(::DoesNotExist, b::$T) = -b
-    @eval Base.:-(a::$T, ::DoesNotExist) = a
+Base.:+(::NoTangent, ::NoTangent) = NoTangent()
+Base.:-(::NoTangent, ::NoTangent) = NoTangent()
+Base.:-(::NoTangent) = NoTangent()
+Base.:*(::NoTangent, ::NoTangent) = NoTangent()
+LinearAlgebra.dot(::NoTangent, ::NoTangent) = NoTangent()
+for T in (:One, :AbstractThunk, :Tangent, :Any)
+    @eval Base.:+(::NoTangent, b::$T) = b
+    @eval Base.:+(a::$T, ::NoTangent) = a
+    @eval Base.:-(::NoTangent, b::$T) = -b
+    @eval Base.:-(a::$T, ::NoTangent) = a
 
-    @eval Base.:*(::DoesNotExist, ::$T) = DoesNotExist()
-    @eval Base.:*(::$T, ::DoesNotExist) = DoesNotExist()
+    @eval Base.:*(::NoTangent, ::$T) = NoTangent()
+    @eval Base.:*(::$T, ::NoTangent) = NoTangent()
 
-    @eval LinearAlgebra.dot(::DoesNotExist, ::$T) = DoesNotExist()
-    @eval LinearAlgebra.dot(::$T, ::DoesNotExist) = DoesNotExist()
+    @eval LinearAlgebra.dot(::NoTangent, ::$T) = NoTangent()
+    @eval LinearAlgebra.dot(::$T, ::NoTangent) = NoTangent()
 end
-# `DoesNotExist` and `Zero` have special relationship,
-# DoesNotExist wins add, Zero wins *. This is (in theory) to allow `*` to be used for
+# `NoTangent` and `ZeroTangent` have special relationship,
+# NoTangent wins add, ZeroTangent wins *. This is (in theory) to allow `*` to be used for
 # selecting things.
-Base.:+(::DoesNotExist, ::Zero) = DoesNotExist()
-Base.:+(::Zero, ::DoesNotExist) = DoesNotExist()
-Base.:-(::DoesNotExist, ::Zero) = DoesNotExist()
-Base.:-(::Zero, ::DoesNotExist) = DoesNotExist()
-Base.:*(::DoesNotExist, ::Zero) = Zero()
-Base.:*(::Zero, ::DoesNotExist) = Zero()
+Base.:+(::NoTangent, ::ZeroTangent) = NoTangent()
+Base.:+(::ZeroTangent, ::NoTangent) = NoTangent()
+Base.:-(::NoTangent, ::ZeroTangent) = NoTangent()
+Base.:-(::ZeroTangent, ::NoTangent) = NoTangent()
+Base.:*(::NoTangent, ::ZeroTangent) = ZeroTangent()
+Base.:*(::ZeroTangent, ::NoTangent) = ZeroTangent()
 
-LinearAlgebra.dot(::DoesNotExist, ::Zero) = Zero()
-LinearAlgebra.dot(::Zero, ::DoesNotExist) = Zero()
+LinearAlgebra.dot(::NoTangent, ::ZeroTangent) = ZeroTangent()
+LinearAlgebra.dot(::ZeroTangent, ::NoTangent) = ZeroTangent()
 
-Base.muladd(::Zero, x, y) = y
-Base.muladd(x, ::Zero, y) = y
-Base.muladd(x, y, ::Zero) = x*y
+Base.muladd(::ZeroTangent, x, y) = y
+Base.muladd(x, ::ZeroTangent, y) = y
+Base.muladd(x, y, ::ZeroTangent) = x*y
 
-Base.muladd(::Zero, ::Zero, y) = y
-Base.muladd(x, ::Zero, ::Zero) = Zero()
-Base.muladd(::Zero, x, ::Zero) = Zero()
+Base.muladd(::ZeroTangent, ::ZeroTangent, y) = y
+Base.muladd(x, ::ZeroTangent, ::ZeroTangent) = ZeroTangent()
+Base.muladd(::ZeroTangent, x, ::ZeroTangent) = ZeroTangent()
 
-Base.muladd(::Zero, ::Zero, ::Zero) = Zero()
+Base.muladd(::ZeroTangent, ::ZeroTangent, ::ZeroTangent) = ZeroTangent()
 
-Base.:+(::Zero, ::Zero) = Zero()
-Base.:-(::Zero, ::Zero) = Zero()
-Base.:-(::Zero) = Zero()
-Base.:*(::Zero, ::Zero) = Zero()
-LinearAlgebra.dot(::Zero, ::Zero) = Zero()
-for T in (:One, :AbstractThunk, :Composite, :Any)
-    @eval Base.:+(::Zero, b::$T) = b
-    @eval Base.:+(a::$T, ::Zero) = a
-    @eval Base.:-(::Zero, b::$T) = -b
-    @eval Base.:-(a::$T, ::Zero) = a
+Base.:+(::ZeroTangent, ::ZeroTangent) = ZeroTangent()
+Base.:-(::ZeroTangent, ::ZeroTangent) = ZeroTangent()
+Base.:-(::ZeroTangent) = ZeroTangent()
+Base.:*(::ZeroTangent, ::ZeroTangent) = ZeroTangent()
+LinearAlgebra.dot(::ZeroTangent, ::ZeroTangent) = ZeroTangent()
+for T in (:One, :AbstractThunk, :Tangent, :Any)
+    @eval Base.:+(::ZeroTangent, b::$T) = b
+    @eval Base.:+(a::$T, ::ZeroTangent) = a
+    @eval Base.:-(::ZeroTangent, b::$T) = -b
+    @eval Base.:-(a::$T, ::ZeroTangent) = a
 
-    @eval Base.:*(::Zero, ::$T) = Zero()
-    @eval Base.:*(::$T, ::Zero) = Zero()
+    @eval Base.:*(::ZeroTangent, ::$T) = ZeroTangent()
+    @eval Base.:*(::$T, ::ZeroTangent) = ZeroTangent()
 
-    @eval LinearAlgebra.dot(::Zero, ::$T) = Zero()
-    @eval LinearAlgebra.dot(::$T, ::Zero) = Zero()
+    @eval LinearAlgebra.dot(::ZeroTangent, ::$T) = ZeroTangent()
+    @eval LinearAlgebra.dot(::$T, ::ZeroTangent) = ZeroTangent()
 end
 
-Base.real(::Zero) = Zero()
-Base.imag(::Zero) = Zero()
+Base.real(::ZeroTangent) = ZeroTangent()
+Base.imag(::ZeroTangent) = ZeroTangent()
 
 Base.real(::One) = One()
-Base.imag(::One) = Zero()
+Base.imag(::One) = ZeroTangent()
 
-Base.complex(::Zero) = Zero()
-Base.complex(::Zero, ::Zero) = Zero()
-Base.complex(::Zero, i::Real) = complex(oftype(i, 0), i)
-Base.complex(r::Real, ::Zero) = complex(r)
+Base.complex(::ZeroTangent) = ZeroTangent()
+Base.complex(::ZeroTangent, ::ZeroTangent) = ZeroTangent()
+Base.complex(::ZeroTangent, i::Real) = complex(oftype(i, 0), i)
+Base.complex(r::Real, ::ZeroTangent) = complex(r)
 
 Base.complex(::One) = One()
-Base.complex(::Zero, ::One) = im
-Base.complex(::One, ::Zero) = One()
+Base.complex(::ZeroTangent, ::One) = im
+Base.complex(::One, ::ZeroTangent) = One()
 
 Base.:+(a::One, b::One) = extern(a) + extern(b)
 Base.:*(::One, ::One) = One()
-for T in (:AbstractThunk, :Composite, :Any)
-    if T != :Composite
+for T in (:AbstractThunk, :Tangent, :Any)
+    if T != :Tangent
         @eval Base.:+(a::One, b::$T) = extern(a) + b
         @eval Base.:+(a::$T, b::One) = a + extern(b)
     end
@@ -156,7 +156,7 @@ LinearAlgebra.dot(x::Number, ::One) = conj(x)  # see definition of Frobenius inn
 
 Base.:+(a::AbstractThunk, b::AbstractThunk) = unthunk(a) + unthunk(b)
 Base.:*(a::AbstractThunk, b::AbstractThunk) = unthunk(a) * unthunk(b)
-for T in (:Composite, :Any)
+for T in (:Tangent, :Any)
     @eval Base.:+(a::AbstractThunk, b::$T) = unthunk(a) + b
     @eval Base.:+(a::$T, b::AbstractThunk) = a + unthunk(b)
 
@@ -164,11 +164,11 @@ for T in (:Composite, :Any)
     @eval Base.:*(a::$T, b::AbstractThunk) = a * unthunk(b)
 end
 
-function Base.:+(a::Composite{P}, b::Composite{P}) where P
+function Base.:+(a::Tangent{P}, b::Tangent{P}) where P
     data = elementwise_add(backing(a), backing(b))
-    return Composite{P, typeof(data)}(data)
+    return Tangent{P, typeof(data)}(data)
 end
-function Base.:+(a::P, d::Composite{P}) where P
+function Base.:+(a::P, d::Tangent{P}) where P
     net_backing = elementwise_add(backing(a), backing(d))
     if debug_mode()
         try
@@ -180,13 +180,13 @@ function Base.:+(a::P, d::Composite{P}) where P
         return construct(P, net_backing)
     end
 end
-Base.:+(a::Dict, d::Composite{P}) where {P} = merge(+, a, backing(d))
-Base.:+(a::Composite{P}, b::P) where P = b + a
+Base.:+(a::Dict, d::Tangent{P}) where {P} = merge(+, a, backing(d))
+Base.:+(a::Tangent{P}, b::P) where P = b + a
 
-# We intentionally do not define, `Base.*(::Composite, ::Composite)` as that is not meaningful
+# We intentionally do not define, `Base.*(::Tangent, ::Tangent)` as that is not meaningful
 # In general one doesn't have to represent multiplications of 2 differentials
 # Only of a differential and a scaling factor (generally `Real`)
 for T in (:Any,)
-    @eval Base.:*(s::$T, comp::Composite) = map(x->s*x, comp)
-    @eval Base.:*(comp::Composite, s::$T) = map(x->x*s, comp)
+    @eval Base.:*(s::$T, comp::Tangent) = map(x->s*x, comp)
+    @eval Base.:*(comp::Tangent, s::$T) = map(x->x*s, comp)
 end

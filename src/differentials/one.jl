@@ -3,7 +3,7 @@
 The Differential which is the multiplicative identity.
 Basically, this represents `1`.
 """
-struct One <: AbstractDifferential end
+struct One <: AbstractTangent end
 
 extern(x::One) = true  # true is a strong 1.
 

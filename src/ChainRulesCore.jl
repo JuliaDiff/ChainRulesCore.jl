@@ -10,7 +10,7 @@ export @non_differentiable, @scalar_rule, @thunk, @not_implemented  # definition
 export canonicalize, extern, unthunk  # differential operations
 export add!!  # gradient accumulation operations
 # differentials
-export Composite, DoesNotExist, InplaceableThunk, One, Thunk, Zero, AbstractZero, AbstractThunk
+export Tangent, NoTangent, InplaceableThunk, One, Thunk, ZeroTangent, AbstractZero, AbstractThunk
 export NO_FIELDS
 
 include("compat.jl")
@@ -30,6 +30,7 @@ include("rules.jl")
 include("rule_definition_tools.jl")
 include("ruleset_loading.jl")
 
+include("deprecated.jl")
 include("precompile.jl")
 
 end # module

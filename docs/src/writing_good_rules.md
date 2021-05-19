@@ -1,8 +1,8 @@
 # On writing good `rrule` / `frule` methods
 
-## Use `Zero()` or `One()` as return value
+## Use `ZeroTangent()` or `One()` as return value
 
-The `Zero()` and `One()` differential objects exist as an alternative to directly returning
+The `ZeroTangent()` and `One()` differential objects exist as an alternative to directly returning
 `0` or `zeros(n)`, and `1` or `I`.
 They allow more optimal computation when chaining pullbacks/pushforwards, to avoid work.
 They should be used where possible.
@@ -51,7 +51,7 @@ https://github.com/JuliaMath/SpecialFunctions.jl/issues/160
 )
 ```
 
-Do not use `@not_implemented` if the differential does not exist mathematically (use `DoesNotExist()` instead).
+Do not use `@not_implemented` if the differential does not exist mathematically (use `NoTangent()` instead).
 
 ## Code Style
 
@@ -98,11 +98,11 @@ For example, instead of manually defining the `frule` and the `rrule` for string
 defines the following `frule` and `rrule` automatically
 ```julia
 function ChainRulesCore.frule(var"##_#1600", ::Core.Typeof(*), String::Any...; kwargs...)
-    return (*(String...; kwargs...), DoesNotExist())
+    return (*(String...; kwargs...), NoTangent())
 end
 function ChainRulesCore.rrule(::Core.Typeof(*), String::Any...; kwargs...)
     return (*(String...; kwargs...), function var"*_pullback"(_)
-        (Zero(), ntuple((_->DoesNotExist()), 0 + length(String))...)
+        (ZeroTangent(), ntuple((_->NoTangent()), 0 + length(String))...)
     end)
 end
 ```

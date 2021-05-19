@@ -1,5 +1,5 @@
 """
-    AbstractZero <: AbstractDifferential
+    AbstractZero <: AbstractTangent
 
 Supertype for zero-like differentials—i.e., differentials that act like zero when
 added or multiplied to other values.
@@ -8,9 +8,9 @@ then it can stop performing AD operations.
 All propagators are linear functions, and thus the final result will be zero.
 
 All `AbstractZero` subtypes are singleton types.
-There are two of them: [`Zero()`](@ref) and [`DoesNotExist()`](@ref).
+There are two of them: [`ZeroTangent()`](@ref) and [`NoTangent()`](@ref).
 """
-abstract type AbstractZero <: AbstractDifferential end
+abstract type AbstractZero <: AbstractTangent end
 Base.iszero(::AbstractZero) = true
 
 Base.iterate(x::AbstractZero) = (x, nothing)
@@ -27,30 +27,30 @@ Base.:/(z::AbstractZero, ::Any) = z
 Base.convert(::Type{T}, x::AbstractZero) where T <: Number = zero(T)
 
 """
-    Zero() <: AbstractZero
+    ZeroTangent() <: AbstractZero
 
 The additive identity for differentials.
 This is basically the same as `0`.
-A derivative of `Zero()` does not propagate through the primal function.
+A derivative of `ZeroTangent()` does not propagate through the primal function.
 """
-struct Zero <: AbstractZero end
+struct ZeroTangent <: AbstractZero end
 
-extern(x::Zero) = false  # false is a strong 0. E.g. `false * NaN = 0.0`
+extern(x::ZeroTangent) = false  # false is a strong 0. E.g. `false * NaN = 0.0`
 
-Base.eltype(::Type{Zero}) = Zero
+Base.eltype(::Type{ZeroTangent}) = ZeroTangent
 
-Base.zero(::AbstractDifferential) = Zero()
-Base.zero(::Type{<:AbstractDifferential}) = Zero()
+Base.zero(::AbstractTangent) = ZeroTangent()
+Base.zero(::Type{<:AbstractTangent}) = ZeroTangent()
 
 """
-    DoesNotExist() <: AbstractZero
+    NoTangent() <: AbstractZero
 
 This differential indicates that the derivative does not exist.
 It is the differential for primal types that are not differentiable,
 such as integers or booleans (when they are not being used to represent
 floating-point values).
 The only valid way to perturb such values is to not change them at all.
-As a consequence, `DoesNotExist` is functionally identical to `Zero()`,
+As a consequence, `NoTangent` is functionally identical to `ZeroTangent()`,
 but it provides additional semantic information.
 
 Adding this differential to a primal is generally wrong: gradient-based
@@ -66,13 +66,13 @@ arguments.
 ```
     function rrule(fill, x, len::Int)
         y = fill(x, len)
-        fill_pullback(ȳ) = (NO_FIELDS, @thunk(sum(Ȳ)), DoesNotExist())
+        fill_pullback(ȳ) = (NO_FIELDS, @thunk(sum(Ȳ)), NoTangent())
         return y, fill_pullback
     end
 ```
 """
-struct DoesNotExist <: AbstractZero end
+struct NoTangent <: AbstractZero end
 
-function extern(x::DoesNotExist)
+function extern(x::NoTangent)
     throw(ArgumentError("Derivative does not exit. Cannot be converted to an external type."))
 end

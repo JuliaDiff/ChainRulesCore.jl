@@ -1,4 +1,4 @@
-abstract type AbstractThunk <: AbstractDifferential end
+abstract type AbstractThunk <: AbstractTangent end
 
 Base.Broadcast.broadcastable(x::AbstractThunk) = broadcastable(unthunk(x))
 
@@ -80,7 +80,7 @@ Propagation rules that return multiple derivatives may not have all deriviatives
 #### How do thunks prevent work?
 If we have `res = pullback(...) = @thunk(f(x)), @thunk(g(x))`
 then if we did `dx + res[1]` then only `f(x)` would be evaluated, not `g(x)`.
-Also if we did `Zero() * res[1]` then the result would be `Zero()` and `f(x)` would not be evaluated.
+Also if we did `ZeroTangent() * res[1]` then the result would be `ZeroTangent()` and `f(x)` would not be evaluated.
 
 #### So why not thunk everything?
 `@thunk` creates a closure over the expression, which (effectively) creates a `struct`

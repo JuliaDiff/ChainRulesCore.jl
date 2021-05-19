@@ -26,14 +26,14 @@ This differential indicates that the derivative is not implemented.
 It is generally best to construct this using the [`@not_implemented`](@ref) macro,
 which will automatically insert the source module and file location.
 """
-struct NotImplemented <: AbstractDifferential
+struct NotImplemented <: AbstractTangent
     mod::Module
     source::LineNumberNode
     info::String
 end
 
 # required for `@scalar_rule`
-# (together with `conj(x::AbstractDifferential) = x` and the definitions in
+# (together with `conj(x::AbstractTangent) = x` and the definitions in
 # differential_arithmetic.jl)
 Base.Broadcast.broadcastable(x::NotImplemented) = Ref(x)
 

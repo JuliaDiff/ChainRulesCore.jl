@@ -9,7 +9,7 @@ dummy_identity(x) = x
 @scalar_rule(dummy_identity(x), One())
 
 nice(x) = 1
-@scalar_rule(nice(x), Zero())
+@scalar_rule(nice(x), ZeroTangent())
 
 very_nice(x, y) = x + y
 @scalar_rule(very_nice(x, y), (One(), One()))
@@ -63,7 +63,7 @@ ChainRulesCore.frule(dargs, ::typeof(Core._apply), f, x...) = frule(dargs[2:end]
 _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
 
 @testset "frule and rrule" begin
-    dself = Zero()
+    dself = ZeroTangent()
     @test frule((dself, 1), cool, 1) === nothing
     @test frule((dself, 1), cool, 1; iscool=true) === nothing
     @test rrule(cool, 1) === nothing
@@ -90,9 +90,9 @@ _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
     @test rr1 === 1
 
     frx, nice_pushforward = frule((dself, 1), nice, 1)
-    @test nice_pushforward === Zero()
+    @test nice_pushforward === ZeroTangent()
     rrx, nice_pullback = rrule(nice, 1)
-    @test (NO_FIELDS, Zero()) === nice_pullback(1)
+    @test (NO_FIELDS, ZeroTangent()) === nice_pullback(1)
 
 
     # Test that these run. Do not care about numerical correctness.
@@ -121,7 +121,7 @@ _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
         sy = @SVector [3, 4]
 
         # Test that @scalar_rule and `One()` play nice together, w.r.t broadcasting
-        @inferred frule((Zero(), sx, sy), very_nice, 1, 2)
+        @inferred frule((ZeroTangent(), sx, sy), very_nice, 1, 2)
     end
 
     @testset "complex inputs" begin

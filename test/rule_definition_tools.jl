@@ -45,21 +45,21 @@ end
         @testset "two input one output function" begin
             nondiff_2_1(x, y) = fill(7.5, 100)[x + y]
             @non_differentiable nondiff_2_1(::Any, ::Any)
-            @test frule((Zero(), 1.2, 2.3), nondiff_2_1, 3, 2) == (7.5, DoesNotExist())
+            @test frule((ZeroTangent(), 1.2, 2.3), nondiff_2_1, 3, 2) == (7.5, NoTangent())
             res, pullback = rrule(nondiff_2_1, 3, 2)
             @test res == 7.5
-            @test pullback(4.5) == (DoesNotExist(), DoesNotExist(), DoesNotExist())
+            @test pullback(4.5) == (NoTangent(), NoTangent(), NoTangent())
         end
 
         @testset "one input, 2-tuple output function" begin
             nondiff_1_2(x) = (5.0, 3.0)
             @non_differentiable nondiff_1_2(::Any)
-            @test frule((Zero(), 1.2), nondiff_1_2, 3.1) == ((5.0, 3.0), DoesNotExist())
+            @test frule((ZeroTangent(), 1.2), nondiff_1_2, 3.1) == ((5.0, 3.0), NoTangent())
             res, pullback = rrule(nondiff_1_2, 3.1)
             @test res == (5.0, 3.0)
             @test isequal(
-                pullback(Composite{Tuple{Float64, Float64}}(1.2, 3.2)),
-                (DoesNotExist(), DoesNotExist()),
+                pullback(Tangent{Tuple{Float64, Float64}}(1.2, 3.2)),
+                (NoTangent(), NoTangent()),
             )
         end
 
@@ -67,12 +67,12 @@ end
             nonembed_identity(x) = x
             @non_differentiable nonembed_identity(::Integer)
 
-            @test frule((Zero(), 1.2), nonembed_identity, 2) == (2, DoesNotExist())
-            @test frule((Zero(), 1.2), nonembed_identity, 2.0) == nothing
+            @test frule((ZeroTangent(), 1.2), nonembed_identity, 2) == (2, NoTangent())
+            @test frule((ZeroTangent(), 1.2), nonembed_identity, 2.0) == nothing
 
             res, pullback = rrule(nonembed_identity, 2)
             @test res == 2
-            @test pullback(1.2) == (DoesNotExist(), DoesNotExist())
+            @test pullback(1.2) == (NoTangent(), NoTangent())
 
             @test rrule(nonembed_identity, 2.0) == nothing
         end
@@ -81,12 +81,12 @@ end
             pointy_identity(x) = x
             @non_differentiable pointy_identity(::Vector{<:AbstractString})
 
-            @test frule((Zero(), 1.2), pointy_identity, ["2"]) == (["2"], DoesNotExist())
-            @test frule((Zero(), 1.2), pointy_identity, 2.0) == nothing
+            @test frule((ZeroTangent(), 1.2), pointy_identity, ["2"]) == (["2"], NoTangent())
+            @test frule((ZeroTangent(), 1.2), pointy_identity, 2.0) == nothing
 
             res, pullback = rrule(pointy_identity, ["2"])
             @test res == ["2"]
-            @test pullback(1.2) == (DoesNotExist(), DoesNotExist())
+            @test pullback(1.2) == (NoTangent(), NoTangent())
 
             @test rrule(pointy_identity, 2.0) == nothing
         end
@@ -100,9 +100,9 @@ end
 
                 res, pullback = rrule(kw_demo, 1.5)
                 @test res == 3.5
-                @test pullback(4.1) == (DoesNotExist(), DoesNotExist())
+                @test pullback(4.1) == (NoTangent(), NoTangent())
 
-                @test frule((Zero(), 11.1), kw_demo, 1.5) == (3.5, DoesNotExist())
+                @test frule((ZeroTangent(), 11.1), kw_demo, 1.5) == (3.5, NoTangent())
             end
 
             @testset "setting kw" begin
@@ -110,9 +110,9 @@ end
 
                 res, pullback = rrule(kw_demo, 1.5; kw=3.0)
                 @test res == 4.5
-                @test pullback(1.1) == (DoesNotExist(), DoesNotExist())
+                @test pullback(1.1) == (NoTangent(), NoTangent())
 
-                @test frule((Zero(), 11.1), kw_demo, 1.5; kw=3.0) == (4.5, DoesNotExist())
+                @test frule((ZeroTangent(), 11.1), kw_demo, 1.5; kw=3.0) == (4.5, NoTangent())
             end
         end
 
@@ -120,18 +120,18 @@ end
             @non_differentiable NonDiffExample(::Any)
 
             @test isequal(
-                frule((Zero(), 1.2), NonDiffExample, 2.0),
-                (NonDiffExample(2.0), DoesNotExist())
+                frule((ZeroTangent(), 1.2), NonDiffExample, 2.0),
+                (NonDiffExample(2.0), NoTangent())
             )
 
             res, pullback = rrule(NonDiffExample, 2.0)
             @test res == NonDiffExample(2.0)
-            @test pullback(1.2) == (DoesNotExist(), DoesNotExist())
+            @test pullback(1.2) == (NoTangent(), NoTangent())
 
             # https://github.com/JuliaDiff/ChainRulesCore.jl/issues/213
             # problem was that `@nondiff Foo(x)` was also defining rules for other types.
             # make sure that isn't happenning
-            @test frule((Zero(), 1.2), NonDiffCounterExample, 2.0) === nothing
+            @test frule((ZeroTangent(), 1.2), NonDiffCounterExample, 2.0) === nothing
             @test rrule(NonDiffCounterExample, 2.0) === nothing
         end
 
@@ -142,13 +142,13 @@ end
 
                 y, pb = rrule(fvarargs, 1)
                 @test y == fvarargs(1)
-                @test pb(1) == (DoesNotExist(), DoesNotExist())
+                @test pb(1) == (NoTangent(), NoTangent())
 
                 y, pb = rrule(fvarargs, 1, 2.0, 3.0)
                 @test y == fvarargs(1, 2.0, 3.0)
-                @test pb(1) == (DoesNotExist(), DoesNotExist(), DoesNotExist(), DoesNotExist())
+                @test pb(1) == (NoTangent(), NoTangent(), NoTangent(), NoTangent())
 
-                @test frule((1, 1), fvarargs, 1, 2.0) == (fvarargs(1, 2.0), DoesNotExist())
+                @test frule((1, 1), fvarargs, 1, 2.0) == (fvarargs(1, 2.0), NoTangent())
 
                 @test frule((1, 1), fvarargs, 1, 2) == nothing
                     @test rrule(fvarargs, 1, 2) == nothing
@@ -159,9 +159,9 @@ end
 
                 y, pb = rrule(fvarargs, 1, 2.0, 3.0)
                 @test y == fvarargs(1, 2.0, 3.0)
-                @test pb(1) == (DoesNotExist(), DoesNotExist(), DoesNotExist(), DoesNotExist())
+                @test pb(1) == (NoTangent(), NoTangent(), NoTangent(), NoTangent())
 
-                @test frule((1, 1), fvarargs, 1, 2.0) == (fvarargs(1, 2.0), DoesNotExist())
+                @test frule((1, 1), fvarargs, 1, 2.0) == (fvarargs(1, 2.0), NoTangent())
             end
 
             @testset "::Vararg{Float64}" begin
@@ -169,47 +169,47 @@ end
 
                 y, pb = rrule(fvarargs, 1, 2.0, 3.0)
                 @test y == fvarargs(1, 2.0, 3.0)
-                @test pb(1) == (DoesNotExist(), DoesNotExist(), DoesNotExist(), DoesNotExist())
+                @test pb(1) == (NoTangent(), NoTangent(), NoTangent(), NoTangent())
 
-                @test frule((1, 1), fvarargs, 1, 2.0) == (fvarargs(1, 2.0), DoesNotExist())
+                @test frule((1, 1), fvarargs, 1, 2.0) == (fvarargs(1, 2.0), NoTangent())
             end
 
             @testset "::Vararg" begin
                 @non_differentiable fvarargs(a, ::Vararg)
-                @test frule((1, 1), fvarargs, 1, 2) == (fvarargs(1, 2), DoesNotExist())
+                @test frule((1, 1), fvarargs, 1, 2) == (fvarargs(1, 2), NoTangent())
 
                 y, pb = rrule(fvarargs, 1, 1)
                 @test y == fvarargs(1, 1)
-                @test pb(1) == (DoesNotExist(), DoesNotExist(), DoesNotExist())
+                @test pb(1) == (NoTangent(), NoTangent(), NoTangent())
             end
 
             @testset "xs..." begin
                 @non_differentiable fvarargs(a, xs...)
-                @test frule((1, 1), fvarargs, 1, 2) == (fvarargs(1, 2), DoesNotExist())
+                @test frule((1, 1), fvarargs, 1, 2) == (fvarargs(1, 2), NoTangent())
 
                 y, pb = rrule(fvarargs, 1, 1)
                 @test y == fvarargs(1, 1)
-                @test pb(1) == (DoesNotExist(), DoesNotExist(), DoesNotExist())
+                @test pb(1) == (NoTangent(), NoTangent(), NoTangent())
             end
         end
 
         @testset "Functors" begin
             (f::NonDiffExample)(y) = fill(7.5, 100)[f.x + y]
             @non_differentiable (::NonDiffExample)(::Any)
-            @test frule((Composite{NonDiffExample}(x=1.2), 2.3), NonDiffExample(3), 2) ==
-                (7.5, DoesNotExist())
+            @test frule((Tangent{NonDiffExample}(x=1.2), 2.3), NonDiffExample(3), 2) ==
+                (7.5, NoTangent())
             res, pullback = rrule(NonDiffExample(3), 2)
             @test res == 7.5
-            @test pullback(4.5) == (DoesNotExist(), DoesNotExist())
+            @test pullback(4.5) == (NoTangent(), NoTangent())
         end
 
         @testset "Module specified explicitly" begin
             @non_differentiable NonDiffModuleExample.nondiff_2_1(::Any, ::Any)
-            @test frule((Zero(), 1.2, 2.3), NonDiffModuleExample.nondiff_2_1, 3, 2) ==
-                (7.5, DoesNotExist())
+            @test frule((ZeroTangent(), 1.2, 2.3), NonDiffModuleExample.nondiff_2_1, 3, 2) ==
+                (7.5, NoTangent())
             res, pullback = rrule(NonDiffModuleExample.nondiff_2_1, 3, 2)
             @test res == 7.5
-            @test pullback(4.5) == (DoesNotExist(), DoesNotExist(), DoesNotExist())
+            @test pullback(4.5) == (NoTangent(), NoTangent(), NoTangent())
         end
 
         @testset "Not supported (Yet)" begin
@@ -232,9 +232,9 @@ end
 
             y, ẏ = frule((NO_FIELDS, 50f0), simo, π)
             @test y == (π, 2π)
-            @test ẏ == Composite{typeof(y)}(50f0, 100f0)
+            @test ẏ == Tangent{typeof(y)}(50f0, 100f0)
             # make sure type is exactly as expected:
-            @test ẏ isa Composite{Tuple{Irrational{:π}, Float64}, Tuple{Float32, Float32}}
+            @test ẏ isa Tangent{Tuple{Irrational{:π}, Float64}, Tuple{Float32, Float32}}
         end
 
         @testset "Regression tests against #276 and #265" begin
@@ -248,7 +248,7 @@ end
             @scalar_rule(simo2(x), 1.0, 2.0)
             _, simo2_pb = rrule(simo2, 43.0)
             # make sure it infers: inferability implies type stability
-            @inferred simo2_pb(Composite{Tuple{Float64, Float64}}(3.0, 6.0))
+            @inferred simo2_pb(Tangent{Tuple{Float64, Float64}}(3.0, 6.0))
 
             # Test no new globals were created
             @test length(names(ChainRulesCore; all=true)) == num_globals_before
@@ -257,7 +257,7 @@ end
             simo3(x) = sincos(x)
             @scalar_rule simo3(x) @setup((sinx, cosx) = Ω) cosx -sinx
             _, simo3_pb = @inferred rrule(simo3, randn())
-            @inferred simo3_pb(Composite{Tuple{Float64,Float64}}(randn(), randn()))
+            @inferred simo3_pb(Tangent{Tuple{Float64,Float64}}(randn(), randn()))
         end
     end
 end
@@ -286,36 +286,36 @@ module IsolatedModuleForTestingScoping
     module IsolatedSubmodule
         # check that rules defined in isolated module without imports can be called
         # without errors
-        using ChainRulesCore: frule, rrule, Zero, DoesNotExist
+        using ChainRulesCore: frule, rrule, ZeroTangent, NoTangent
         using ..IsolatedModuleForTestingScoping: fixed, fixed_kwargs, my_id
         using Test
 
         @testset "@non_differentiable" begin
             for f in (fixed, fixed_kwargs)
-                y, ẏ = frule((Zero(), randn()), f, randn())
+                y, ẏ = frule((ZeroTangent(), randn()), f, randn())
                 @test y === :abc
-                @test ẏ === DoesNotExist()
+                @test ẏ === NoTangent()
 
                 y, f_pullback = rrule(f, randn())
                 @test y === :abc
-                @test f_pullback(randn()) === (DoesNotExist(), DoesNotExist())
+                @test f_pullback(randn()) === (NoTangent(), NoTangent())
             end
 
             y, f_pullback = rrule(fixed_kwargs, randn(); keyword=randn())
             @test y === :abc
-            @test f_pullback(randn()) === (DoesNotExist(), DoesNotExist())
+            @test f_pullback(randn()) === (NoTangent(), NoTangent())
         end
 
         @testset "@scalar_rule" begin
             x, ẋ = randn(2)
-            y, ẏ = frule((Zero(), ẋ), my_id, x)
+            y, ẏ = frule((ZeroTangent(), ẋ), my_id, x)
             @test y == x
             @test ẏ == ẋ
 
             Δy = randn()
             y, f_pullback = rrule(my_id, x)
             @test y == x
-            @test f_pullback(Δy) == (Zero(), Δy)
+            @test f_pullback(Δy) == (ZeroTangent(), Δy)
         end
     end
 end

@@ -38,7 +38,7 @@ This actually further brings us to a weirdness of differential types not actuall
 AD cannot automatically determine natural differential types for a primal. For some types we may be able to declare manually their natural differential type.
 Other types will not have natural differential types at all - e.g. `NamedTuple`, `Tuple`, `WebServer`, `Flux.Dense` -  so we are destined to make some up.
 So beyond _natural_ differential types, we also have _structural_ differential types.
-ChainRules uses [`Composite{P, <:NamedTuple}`](@ref Composite) to represent a structural differential type corresponding to primal type `P`.
+ChainRules uses [`Tangent{P, <:NamedTuple}`](@ref Tangent) to represent a structural differential type corresponding to primal type `P`.
 [Zygote](https://github.com/FluxML/Zygote.jl/) v0.4 uses `NamedTuple`.
 
 Structural differentials are derived from the structure of the input.
@@ -55,9 +55,9 @@ DateTime
 
 The corresponding structural differential is:
 ```julia
-Composite{DateTime}(
-    instant::Composite{UTInstant{Millisecond}}(
-        periods::Composite{Millisecond}(
+Tangent{DateTime}(
+    instant::Tangent{UTInstant{Millisecond}}(
+        periods::Tangent{Millisecond}(
             value::Int64
         )
     )
@@ -103,10 +103,10 @@ TimeSample
 
 Thus we see the that structural differential would be:
 ```julia
-Composite{TimeSample}(
-    time::Composite{DateTime}(
-        instant::Composite{UTInstant{Millisecond}}(
-            periods::Composite{Millisecond}(
+Tangent{TimeSample}(
+    time::Tangent{DateTime}(
+        instant::Tangent{UTInstant{Millisecond}}(
+            periods::Tangent{Millisecond}(
                 value::Int64
             )
         )
@@ -118,7 +118,7 @@ Composite{TimeSample}(
 But instead in the custom sensitivity rule we would write a semi-structured differential type.
 Since there is not a natural differential type for `TimeSample` but there is for `DateTime`.
 ```julia
-Composite{TimeSample}(
+Tangent{TimeSample}(
     time::Day,
     value::Float64
 )
@@ -131,13 +131,13 @@ In this case the structural differential will be based on the fields, but those 
 For example, the `QR` type has fields `factors` and `t`, but we would more naturally think in terms of the properties `Q` and `R`.
 So most rule authors would want to write semi-structural differentials based on the properties.
 
-To return to the question of why ChainRules has `Composite{P, <:NamedTuple}` whereas Zygote v0.4 just has `NamedTuple`, it relates to semi-structural derivatives, and being able to overload things more generally.
-If one knows that one has a semi-structural derivative based on property names, like `Composite{QR}(Q=..., R=...)`, and one is adding it to the true structural derivative based on field names `Composite{QR}(factors=..., τ=...)`, then we need to overload the addition operator to perform that correctly.
+To return to the question of why ChainRules has `Tangent{P, <:NamedTuple}` whereas Zygote v0.4 just has `NamedTuple`, it relates to semi-structural derivatives, and being able to overload things more generally.
+If one knows that one has a semi-structural derivative based on property names, like `Tangent{QR}(Q=..., R=...)`, and one is adding it to the true structural derivative based on field names `Tangent{QR}(factors=..., τ=...)`, then we need to overload the addition operator to perform that correctly.
 We cannot happily overload similar things for `NamedTuple` since we don't know the primal type, only the names of the values contained.
 In fact we can't actually overload addition at all for `NamedTuple` as that would be type-piracy, so have to use `Zygote.accum` instead.
 
 Another use of the primal being a type parameter is to catch errors.
-ChainRules disallows the addition of `Composite{SVD}` to `Composite{QR}` since in a correctly differentiated program that can never occur.
+ChainRules disallows the addition of `Tangent{SVD}` to `Tangent{QR}` since in a correctly differentiated program that can never occur.
 
 ## Differentials types for computational efficiency
 
@@ -146,15 +146,15 @@ One that is for computational efficiency.
 ChainRules has [`Thunk`](@ref)s and [`InplaceableThunk`](@ref)s, which wrap the computation of a derivative and delays that work until it is needed, either via the derivative being added to something or being [`unthunk`](@ref)ed manually,
 thus saving time if it is never used.
 
-Another differential type used for efficiency is [`Zero`](@ref) which represents the hard zero (in Zygote v0.4 this is `nothing`).
-For example the derivative of `f(x, y)=2x` with respect to `y` is `Zero()`.
-Add `Zero()` to anything, and one gets back the original thing without change.
+Another differential type used for efficiency is [`ZeroTangent`](@ref) which represents the hard zero (in Zygote v0.4 this is `nothing`).
+For example the derivative of `f(x, y)=2x` with respect to `y` is `ZeroTangent()`.
+Add `ZeroTangent()` to anything, and one gets back the original thing without change.
 We noted that all differentials need to be a vector space.
- `Zero()` is the [trivial vector space](https://proofwiki.org/wiki/Definition:Trivial_Vector_Space).
-Further, add `Zero()` to any primal value (no matter the type) and you get back another value of the same primal type (the same value in fact).
+ `ZeroTangent()` is the [trivial vector space](https://proofwiki.org/wiki/Definition:Trivial_Vector_Space).
+Further, add `ZeroTangent()` to any primal value (no matter the type) and you get back another value of the same primal type (the same value in fact).
 So it meets the requirements of a differential type for *all* primal types.
-`Zero` can save on memory (since we can avoid allocating anything) and on time (since performing the multiplication
-`Zero` and `Thunk` are both examples of a differential type that is valid for multiple primal types.
+`ZeroTangent` can save on memory (since we can avoid allocating anything) and on time (since performing the multiplication
+`ZeroTangent` and `Thunk` are both examples of a differential type that is valid for multiple primal types.
 
 ## Conclusion
 
@@ -169,7 +169,7 @@ If you have exactly 1 differential type for each primal type, you can very easil
 
 I don't know how Swift is handling thunks, maybe they are not, maybe they have an optimizing compiler that can just slice out code-paths that don't lead to values that get used; maybe they have a language built in for lazy computation.
 
-They are, as I understand it, handling `Zero` by requiring every differential type to define a `zero` method -- which it has since it is a vector space.
+They are, as I understand it, handling `ZeroTangent` by requiring every differential type to define a `zero` method -- which it has since it is a vector space.
 This costs memory and time, but probably not actually all that much.
 With regards to handling multiple different differential types for one primal, like natural and structural derivatives, everything needs to be converted to the _canonical_ differential type of that primal.
 

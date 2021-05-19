@@ -46,10 +46,10 @@ true
 
 Note that techically speaking julia does not have multiple output functions, just functions
 that return a single output that is iterable, like a `Tuple`.
-So this is actually a [`Composite`](@ref):
+So this is actually a [`Tangent`](@ref):
 ```jldoctest frule
 julia> Δsincosx
-Composite{Tuple{Float64, Float64}}(0.6795498147167869, -0.7336293678134624)
+Tangent{Tuple{Float64, Float64}}(0.6795498147167869, -0.7336293678134624)
 ```.
 
 

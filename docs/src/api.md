@@ -43,7 +43,7 @@ Private = false
 
 ## Internal
 ```@docs
-ChainRulesCore.AbstractDifferential
+ChainRulesCore.AbstractTangent
 ChainRulesCore.debug_mode
 ChainRulesCore.clear_new_rule_hooks!
 ```

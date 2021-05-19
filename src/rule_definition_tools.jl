@@ -154,9 +154,9 @@ function scalar_frule_expr(__source__, f, call, setup_stmts, inputs, partials)
         propagation_expr(Δs, ∂s)
     end
     if n_outputs > 1
-        # For forward-mode we return a Composite if output actually a tuple.
+        # For forward-mode we return a Tangent if output actually a tuple.
         pushforward_returns = Expr(
-            :call, :(Composite{typeof($(esc(:Ω)))}), pushforward_returns...
+            :call, :(Tangent{typeof($(esc(:Ω)))}), pushforward_returns...
         )
     else
         pushforward_returns = first(pushforward_returns)
@@ -275,7 +275,7 @@ propagator_name(fname::QuoteNode, propname::Symbol) = propagator_name(fname.valu
 
 A helper to make it easier to declare that a method is not not differentiable.
 This is a short-hand for defining an [`frule`](@ref) and [`rrule`](@ref) that
-return [`DoesNotExist()`](@ref) for all partials (even for the function `s̄elf`-partial
+return [`NoTangent()`](@ref) for all partials (even for the function `s̄elf`-partial
 itself)
 
 Keyword arguments should not be included.
@@ -286,15 +286,15 @@ julia> @non_differentiable Base.:(==)(a, b)
 julia> _, pullback = rrule(==, 2.0, 3.0);
 
 julia> pullback(1.0)
-(DoesNotExist(), DoesNotExist(), DoesNotExist())
+(NoTangent(), NoTangent(), NoTangent())
 ```
 
 You can place type-constraints in the signature:
 ```jldoctest
 julia> @non_differentiable Base.length(xs::Union{Number, Array})
 
-julia> frule((Zero(), 1), length, [2.0, 3.0])
-(2, DoesNotExist())
+julia> frule((ZeroTangent(), 1), length, [2.0, 3.0])
+(2, NoTangent())
 ```
 
 !!! warning
@@ -345,8 +345,8 @@ function _nondiff_frule_expr(__source__, primal_sig_parts, primal_invoke)
             @nospecialize(::Any), $(map(esc, primal_sig_parts)...); $(esc(kwargs))...
         )
             $(__source__)
-            # Julia functions always only have 1 output, so return a single DoesNotExist()
-            return ($(esc(_with_kwargs_expr(primal_invoke, kwargs))), DoesNotExist())
+            # Julia functions always only have 1 output, so return a single NoTangent()
+            return ($(esc(_with_kwargs_expr(primal_invoke, kwargs))), NoTangent())
         end
     end
 end
@@ -355,11 +355,11 @@ function tuple_expression(primal_sig_parts)
     has_vararg = _isvararg(primal_sig_parts[end])
     return if !has_vararg
         num_primal_inputs = length(primal_sig_parts)
-        Expr(:tuple, ntuple(_ -> DoesNotExist(), num_primal_inputs)...)
+        Expr(:tuple, ntuple(_ -> NoTangent(), num_primal_inputs)...)
     else
         num_primal_inputs = length(primal_sig_parts) - 1 # - vararg
         length_expr = :($num_primal_inputs + length($(esc(_unconstrain(primal_sig_parts[end])))))
-        @strip_linenos :(ntuple(i -> DoesNotExist(), $length_expr))
+        @strip_linenos :(ntuple(i -> NoTangent(), $length_expr))
     end
 end
 
