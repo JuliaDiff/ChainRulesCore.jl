@@ -4,7 +4,6 @@ using LinearAlgebra: LinearAlgebra
 using SparseArrays: SparseVector, SparseMatrixCSC
 using Compat: hasfield
 
-export on_new_rule, refresh_rules  # generation tools
 export frule, rrule  # core function
 export @non_differentiable, @scalar_rule, @thunk, @not_implemented  # definition helper macros
 export canonicalize, extern, unthunk  # differential operations
@@ -27,9 +26,7 @@ include("accumulation.jl")
 
 include("rules.jl")
 include("rule_definition_tools.jl")
-include("ruleset_loading.jl")
 
 include("deprecated.jl")
-include("precompile.jl")
 
 end # module
