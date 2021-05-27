@@ -10,6 +10,7 @@ very_nice(x, y) = x + y
     @test Zero === ZeroTangent
     @test DoesNotExist === NoTangent
     @test Composite === Tangent
+    @test_deprecated One()
 end
 
 @testset "One()" begin
