@@ -11,8 +11,8 @@ dummy_identity(x) = x
 nice(x) = 1
 @scalar_rule(nice(x), ZeroTangent())
 
-very_nice(x, y) = x + y
-@scalar_rule(very_nice(x, y), (true, true))
+sum_two(x, y) = x + y
+@scalar_rule(sum_two(x, y), (true, true))
 
 complex_times(x) = (1 + 2im) * x
 @scalar_rule(complex_times(x), 1 + 2im)
@@ -121,7 +121,7 @@ _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
         sy = @SVector [3, 4]
 
         # Test that @scalar_rule and `true` play nice together, w.r.t broadcasting
-        @inferred frule((ZeroTangent(), sx, sy), very_nice, 1, 2)
+        @inferred frule((ZeroTangent(), sx, sy), sum_two, 1, 2)
     end
 
     @testset "complex inputs" begin
