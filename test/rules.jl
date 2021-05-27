@@ -6,13 +6,13 @@ cool(x, y) = x + y + 1
 
 # a rule we define so we can test rules
 dummy_identity(x) = x
-@scalar_rule(dummy_identity(x), One())
+@scalar_rule(dummy_identity(x), true)
 
 nice(x) = 1
 @scalar_rule(nice(x), ZeroTangent())
 
 very_nice(x, y) = x + y
-@scalar_rule(very_nice(x, y), (One(), One()))
+@scalar_rule(very_nice(x, y), (true, true))
 
 complex_times(x) = (1 + 2im) * x
 @scalar_rule(complex_times(x), 1 + 2im)
@@ -116,11 +116,11 @@ _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
 
     @test frule((nothing, nothing, 5.0), Core._apply, dummy_identity, 4.0) == (4.0, 5.0)
 
-    @testset "broadcasting One" begin
+    @testset "broadcasting true" begin
         sx = @SVector [1, 2]
         sy = @SVector [3, 4]
 
-        # Test that @scalar_rule and `One()` play nice together, w.r.t broadcasting
+        # Test that @scalar_rule and `true` play nice together, w.r.t broadcasting
         @inferred frule((ZeroTangent(), sx, sy), very_nice, 1, 2)
     end
 

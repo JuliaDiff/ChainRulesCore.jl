@@ -304,8 +304,8 @@ end
         @test dot(ZeroTangent(), c) == ZeroTangent()
         @test dot(c, ZeroTangent()) == ZeroTangent()
 
-        @test One() * c === c
-        @test c * One() === c
+        @test true * c === c
+        @test c * true === c
 
         t = @thunk 2
         @test t * c == 2 * c
