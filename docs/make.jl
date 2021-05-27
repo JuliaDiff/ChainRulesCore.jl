@@ -59,6 +59,7 @@ makedocs(
         "Design" => [
             "Changing the Primal" => "design/changing_the_primal.md",
             "Many Differential Types" => "design/many_differentials.md",
+            "Zeros and Not Defined" => "design/zeros.md",
         ],
         "API" => "api.md",
     ],
