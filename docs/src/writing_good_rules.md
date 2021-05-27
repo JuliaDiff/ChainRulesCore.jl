@@ -1,10 +1,9 @@
 # On writing good `rrule` / `frule` methods
 
-## Use `ZeroTangent()` or `One()` as return value
+## Use `ZeroTangent()` as the return value
 
-The `ZeroTangent()` and `One()` differential objects exist as an alternative to directly returning
-`0` or `zeros(n)`, and `1` or `I`.
-They allow more optimal computation when chaining pullbacks/pushforwards, to avoid work.
+The `ZeroTangent()` object exists as an alternative to directly returning `0` or `zeros(n)`.
+It allows more optimal computation when chaining pullbacks/pushforwards, to avoid work.
 They should be used where possible.
 
 ## Use `Thunk`s appropriately
