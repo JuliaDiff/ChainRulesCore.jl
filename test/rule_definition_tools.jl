@@ -315,7 +315,7 @@ module IsolatedModuleForTestingScoping
             Δy = randn()
             y, f_pullback = rrule(my_id, x)
             @test y == x
-            @test f_pullback(Δy) == (ZeroTangent(), Δy)
+            @test f_pullback(Δy) == (NoTangent(), Δy)
         end
     end
 end
