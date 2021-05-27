@@ -62,7 +62,7 @@ Use named local functions for the `pullback` in an `rrule`.
 function rrule(::typeof(foo), x)
     Y = foo(x)
     function foo_pullback(Ȳ)
-        return NO_FIELDS, bar(Ȳ)
+        return NoTangent(), bar(Ȳ)
     end
     return Y, foo_pullback
 end
@@ -73,7 +73,7 @@ julia> rrule(foo, 2)
 
 # bad:
 function rrule(::typeof(foo), x)
-    return foo(x), x̄ -> (NO_FIELDS, bar(x̄))
+    return foo(x), x̄ -> (NoTangent(), bar(x̄))
 end
 #== output:
 julia> rrule(foo, 2)
@@ -179,7 +179,7 @@ However, upon adding the `rrule` (restart the REPL after calling `gradient`)
 function ChainRules.rrule(::typeof(addone!), a)
     y = addone!(a)
     function addone!_pullback(ȳ)
-        return NO_FIELDS, ones(length(a))
+        return NoTangent(), ones(length(a))
     end
     return y, addone!_pullback
 end
@@ -221,7 +221,7 @@ without an `rrule` defined (restart the REPL after calling `gradient`)
 function ChainRulesCore.rrule(::typeof(exception), x)
     y = exception(x)
     function exception_pullback(ȳ)
-        return NO_FIELDS, 2*x
+        return NoTangent(), 2*x
     end
     return y, exception_pullback
 end
@@ -262,7 +262,7 @@ function ChainRules.rrule(::typeof(mse), x, x̂)
     function mse_pullback(ȳ)
         N = length(x)
         g = (2 ./ N) .* (x .- x̂) .* ȳ
-        return NO_FIELDS, g, -g
+        return NoTangent(), g, -g
     end
     return output, mse_pullback
 end
@@ -296,7 +296,7 @@ function ChainRulesCore.rrule(::typeof(sum3), a)
     function sum3_pullback(ȳ)
         grad = zeros(length(a))
         grad[1:3] .+= ȳ
-        return NO_FIELDS, grad
+        return NoTangent(), grad
     end
     return y, sum3_pullback
 end

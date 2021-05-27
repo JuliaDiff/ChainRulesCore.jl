@@ -16,7 +16,7 @@ A convenience macro that generates simple scalar forward or reverse rules using
 the provided partial derivatives. Specifically, generates the corresponding
 methods for `frule` and `rrule`:
 
-    function ChainRulesCore.frule((NO_FIELDS, Δx₁, Δx₂, ...), ::typeof(f), x₁::Number, x₂::Number, ...)
+    function ChainRulesCore.frule((NoTangent(), Δx₁, Δx₂, ...), ::typeof(f), x₁::Number, x₂::Number, ...)
         Ω = f(x₁, x₂, ...)
         \$(statement₁, statement₂, ...)
         return Ω, (
@@ -30,7 +30,7 @@ methods for `frule` and `rrule`:
         Ω = f(x₁, x₂, ...)
         \$(statement₁, statement₂, ...)
         return Ω, ((ΔΩ₁, ΔΩ₂, ...)) -> (
-                NO_FIELDS,
+                NoTangent(),
                 ∂f₁_∂x₁ * ΔΩ₁ + ∂f₂_∂x₁ * ΔΩ₂ + ...),
                 ∂f₁_∂x₂ * ΔΩ₁ + ∂f₂_∂x₂ * ΔΩ₂ + ...),
                 ...
@@ -46,7 +46,7 @@ e.g. `f(x₁::Complex, x₂)`, which will constrain `x₁` to `Complex` and `x�
 
 At present this does not support defining for closures/functors.
 Thus in reverse-mode, the first returned partial,
-representing the derivative with respect to the function itself, is always `NO_FIELDS`.
+representing the derivative with respect to the function itself, is always `NoTangent()`.
 And in forward-mode, the first input to the returned propagator is always ignored.
 
 The result of `f(x₁, x₂, ...)` is automatically bound to `Ω`. This
@@ -193,7 +193,7 @@ function scalar_rrule_expr(__source__, f, call, setup_stmts, inputs, partials)
     pullback = @strip_linenos quote
         @inline function $(esc(propagator_name(f, :pullback)))($pullback_input)
             $(__source__)
-            return (NO_FIELDS, $(pullback_returns...))
+            return (NoTangent(), $(pullback_returns...))
         end
     end
 

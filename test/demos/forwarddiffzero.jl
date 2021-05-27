@@ -39,7 +39,7 @@ function define_dual_overload(sig)
         # we use the function call overloading form as it lets us avoid namespacing issues
         # as we can directly interpolate the function type into to the AST.
         function (op::$opT)(dual_args::Vararg{Union{Dual, Float64}, $N}; kwargs...)
-            ȧrgs = (NO_FIELDS,  partial.(dual_args)...)
+            ȧrgs = (NoTangent(),  partial.(dual_args)...)
             args = (op, primal.(dual_args)...)
             y, ẏ = frule(ȧrgs, args...; kwargs...)
             return Dual(y, ẏ)  # if y, ẏ are not `Float64` this will error.

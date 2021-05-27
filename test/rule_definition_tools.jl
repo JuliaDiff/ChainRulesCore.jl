@@ -228,9 +228,9 @@ end
 
             y, simo_pb = rrule(simo, π)
 
-            @test simo_pb((10f0, 20f0)) == (NO_FIELDS, 50f0)
+            @test simo_pb((10f0, 20f0)) == (NoTangent(), 50f0)
 
-            y, ẏ = frule((NO_FIELDS, 50f0), simo, π)
+            y, ẏ = frule((NoTangent(), 50f0), simo, π)
             @test y == (π, 2π)
             @test ẏ == Tangent{typeof(y)}(50f0, 100f0)
             # make sure type is exactly as expected:
