@@ -56,6 +56,9 @@ derivative/setup expressions.
 This macro assumes complex functions are holomorphic. In general, for non-holomorphic
 functions, the `frule` and `rrule` must be defined manually.
 
+If the derivative is one, (e.g. for identity functions) `true` can be used as the most 
+general multiplicative identity.
+
 The `@setup` argument can be elided if no setup code is need. In other
 words:
 

@@ -316,7 +316,7 @@ Most importantly: `+` and `*`, which let them act as mathematical objects.
 The most important `AbstractTangent`s when getting started are the ones about avoiding work:
 
  - [`Thunk`](@ref): this is a deferred computation. A thunk is a [word for a zero argument closure](https://en.wikipedia.org/wiki/Thunk). A computation wrapped in a `@thunk` doesn't get evaluated until [`unthunk`](@ref) is called on the thunk. `unthunk` is a no-op on non-thunked inputs.
- - [`One`](@ref), [`ZeroTangent`](@ref): There are special representations of `1` and `0`. They do great things around avoiding expanding `Thunks` in multiplication and (for `ZeroTangent`) addition.
+ - [`ZeroTangent`](@ref): It is a special representation of `0`. It does great things around avoiding expanding `Thunks` in addition.
 
 ### Other `AbstractTangent`s:
  - [`Tangent{P}`](@ref Tangent): this is the differential for tuples and  structs. Use it like a `Tuple` or `NamedTuple`. The type parameter `P` is for the primal type.
@@ -345,7 +345,7 @@ end
 
 # Define rules (alternatively get them for free via `using ChainRules`)
 @scalar_rule(sin(x), cos(x))
-@scalar_rule(+(x, y), (One(), One()))
+@scalar_rule(+(x, y), (1.0, 1.0))
 @scalar_rule(asin(x), inv(sqrt(1 - x^2)))
 # output
 

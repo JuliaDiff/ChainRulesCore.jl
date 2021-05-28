@@ -3,7 +3,9 @@
 The Differential which is the multiplicative identity.
 Basically, this represents `1`.
 """
-struct One <: AbstractTangent end
+struct One <: AbstractTangent
+    One() = (Base.depwarn("`One()` is deprecated; use `true` instead", :One); return new())
+end
 
 extern(x::One) = true  # true is a strong 1.
 

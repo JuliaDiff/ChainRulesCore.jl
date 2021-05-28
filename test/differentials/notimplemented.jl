@@ -31,12 +31,12 @@
         @test ni + rand() === ni
         @test ni + ZeroTangent() === ni
         @test ni + NoTangent() === ni
-        @test ni + One() === ni
+        @test ni + true === ni
         @test ni + @thunk(x^2) === ni
         @test rand() + ni === ni
         @test ZeroTangent() + ni === ni
         @test NoTangent() + ni === ni
-        @test One() + ni === ni
+        @test true + ni === ni
         @test @thunk(x^2) + ni === ni
         @test ni + ni2 === ni
         @test ni * rand() === ni
@@ -55,26 +55,26 @@
         @test_throws E ni - rand()
         @test_throws E ni - ZeroTangent()
         @test_throws E ni - NoTangent()
-        @test_throws E ni - One()
+        @test_throws E ni - true
         @test_throws E ni - @thunk(x^2)
         @test_throws E rand() - ni
         @test_throws E ZeroTangent() - ni
         @test_throws E NoTangent() - ni
-        @test_throws E One() - ni
+        @test_throws E true - ni
         @test_throws E @thunk(x^2) - ni
         @test_throws E ni - ni2
         @test_throws E rand() * ni
         @test_throws E NoTangent() * ni
-        @test_throws E One() * ni
+        @test_throws E true * ni
         @test_throws E @thunk(x^2) * ni
         @test_throws E ni * ni2
         @test_throws E dot(ni, rand())
         @test_throws E dot(ni, NoTangent())
-        @test_throws E dot(ni, One())
+        @test_throws E dot(ni, true)
         @test_throws E dot(ni, @thunk(x^2))
         @test_throws E dot(rand(), ni)
         @test_throws E dot(NoTangent(), ni)
-        @test_throws E dot(One(), ni)
+        @test_throws E dot(true, ni)
         @test_throws E dot(@thunk(x^2), ni)
         @test_throws E dot(ni, ni2)
         @test_throws E ni / rand()

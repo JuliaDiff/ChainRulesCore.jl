@@ -9,7 +9,6 @@ using Test
 @testset "ChainRulesCore" begin
     @testset "differentials" begin
         include("differentials/abstract_zero.jl")
-        include("differentials/one.jl")
         include("differentials/thunks.jl")
         include("differentials/composite.jl")
         include("differentials/notimplemented.jl")
