@@ -34,16 +34,8 @@ add!!
 ChainRulesCore.is_inplaceable_destination
 ```
 
-## Ruleset Loading
-```@autodocs
-Modules = [ChainRulesCore]
-Pages = ["ruleset_loading.jl"]
-Private = false
-```
-
 ## Internal
 ```@docs
 ChainRulesCore.AbstractTangent
 ChainRulesCore.debug_mode
-ChainRulesCore.clear_new_rule_hooks!
 ```
