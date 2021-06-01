@@ -10,14 +10,13 @@ export @non_differentiable, @scalar_rule, @thunk, @not_implemented  # definition
 export canonicalize, extern, unthunk  # differential operations
 export add!!  # gradient accumulation operations
 # differentials
-export Tangent, NoTangent, InplaceableThunk, One, Thunk, ZeroTangent, AbstractZero, AbstractThunk
+export Tangent, NoTangent, InplaceableThunk, Thunk, ZeroTangent, AbstractZero, AbstractThunk
 
 include("compat.jl")
 include("debug_mode.jl")
 
 include("differentials/abstract_differential.jl")
 include("differentials/abstract_zero.jl")
-include("differentials/one.jl")
 include("differentials/thunks.jl")
 include("differentials/composite.jl")
 include("differentials/notimplemented.jl")
