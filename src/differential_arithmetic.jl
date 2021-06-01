@@ -8,7 +8,7 @@ Thus we can avoid any ambiguities.
 
 Notice:
     The precedence goes:
-    `NotImplemented, NoTangent, ZeroTangent, One, AbstractThunk, Tangent, Any`
+    `NotImplemented, NoTangent, ZeroTangent, AbstractThunk, Tangent, Any`
     Thus each of the @eval loops create most definitions of + and *
     defines the combination this type with all types of  lower precidence.
     This means each eval loops is 1 item smaller than the previous.
@@ -21,7 +21,7 @@ Base.:+(::ZeroTangent, x::NotImplemented) = x
 Base.:+(x::NotImplemented, ::NotImplemented) = x
 Base.:*(::NotImplemented, ::ZeroTangent) = ZeroTangent()
 Base.:*(::ZeroTangent, ::NotImplemented) = ZeroTangent()
-for T in (:NoTangent, :One, :AbstractThunk, :Tangent, :Any)
+for T in (:NoTangent, :AbstractThunk, :Tangent, :Any)
     @eval Base.:+(x::NotImplemented, ::$T) = x
     @eval Base.:+(::$T, x::NotImplemented) = x
     @eval Base.:*(x::NotImplemented, ::$T) = x
@@ -58,7 +58,7 @@ Base.:*(x::NotImplemented, ::NotImplemented) = throw(NotImplementedException(x))
 function LinearAlgebra.dot(x::NotImplemented, ::NotImplemented)
     return throw(NotImplementedException(x))
 end
-for T in (:NoTangent, :One, :AbstractThunk, :Tangent, :Any)
+for T in (:NoTangent, :AbstractThunk, :Tangent, :Any)
     @eval Base.:-(x::NotImplemented, ::$T) = throw(NotImplementedException(x))
     @eval Base.:-(::$T, x::NotImplemented) = throw(NotImplementedException(x))
     @eval Base.:*(::$T, x::NotImplemented) = throw(NotImplementedException(x))
@@ -71,7 +71,7 @@ Base.:-(::NoTangent, ::NoTangent) = NoTangent()
 Base.:-(::NoTangent) = NoTangent()
 Base.:*(::NoTangent, ::NoTangent) = NoTangent()
 LinearAlgebra.dot(::NoTangent, ::NoTangent) = NoTangent()
-for T in (:One, :AbstractThunk, :Tangent, :Any)
+for T in (:AbstractThunk, :Tangent, :Any)
     @eval Base.:+(::NoTangent, b::$T) = b
     @eval Base.:+(a::$T, ::NoTangent) = a
     @eval Base.:-(::NoTangent, b::$T) = -b
@@ -111,7 +111,7 @@ Base.:-(::ZeroTangent, ::ZeroTangent) = ZeroTangent()
 Base.:-(::ZeroTangent) = ZeroTangent()
 Base.:*(::ZeroTangent, ::ZeroTangent) = ZeroTangent()
 LinearAlgebra.dot(::ZeroTangent, ::ZeroTangent) = ZeroTangent()
-for T in (:One, :AbstractThunk, :Tangent, :Any)
+for T in (:AbstractThunk, :Tangent, :Any)
     @eval Base.:+(::ZeroTangent, b::$T) = b
     @eval Base.:+(a::$T, ::ZeroTangent) = a
     @eval Base.:-(::ZeroTangent, b::$T) = -b
@@ -127,32 +127,10 @@ end
 Base.real(::ZeroTangent) = ZeroTangent()
 Base.imag(::ZeroTangent) = ZeroTangent()
 
-Base.real(::One) = One()
-Base.imag(::One) = ZeroTangent()
-
 Base.complex(::ZeroTangent) = ZeroTangent()
 Base.complex(::ZeroTangent, ::ZeroTangent) = ZeroTangent()
 Base.complex(::ZeroTangent, i::Real) = complex(oftype(i, 0), i)
 Base.complex(r::Real, ::ZeroTangent) = complex(r)
-
-Base.complex(::One) = One()
-Base.complex(::ZeroTangent, ::One) = im
-Base.complex(::One, ::ZeroTangent) = One()
-
-Base.:+(a::One, b::One) = extern(a) + extern(b)
-Base.:*(::One, ::One) = One()
-for T in (:AbstractThunk, :Tangent, :Any)
-    if T != :Tangent
-        @eval Base.:+(a::One, b::$T) = extern(a) + b
-        @eval Base.:+(a::$T, b::One) = a + extern(b)
-    end
-
-    @eval Base.:*(::One, b::$T) = b
-    @eval Base.:*(a::$T, ::One) = a
-end
-
-LinearAlgebra.dot(::One, x::Number) = x
-LinearAlgebra.dot(x::Number, ::One) = conj(x)  # see definition of Frobenius inner product
 
 Base.:+(a::AbstractThunk, b::AbstractThunk) = unthunk(a) + unthunk(b)
 Base.:*(a::AbstractThunk, b::AbstractThunk) = unthunk(a) * unthunk(b)
