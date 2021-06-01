@@ -11,7 +11,6 @@ export canonicalize, extern, unthunk  # differential operations
 export add!!  # gradient accumulation operations
 # differentials
 export Tangent, NoTangent, InplaceableThunk, One, Thunk, ZeroTangent, AbstractZero, AbstractThunk
-export NO_FIELDS
 
 include("compat.jl")
 include("debug_mode.jl")

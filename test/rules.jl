@@ -85,14 +85,14 @@ _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
     @test cool_pushforward === 1
     rrx, cool_pullback = rrule(cool, 1)
     self, rr1 = cool_pullback(1)
-    @test self === NO_FIELDS
+    @test self === NoTangent()
     @test rrx === 2
     @test rr1 === 1
 
     frx, nice_pushforward = frule((dself, 1), nice, 1)
     @test nice_pushforward === ZeroTangent()
     rrx, nice_pullback = rrule(nice, 1)
-    @test (NO_FIELDS, ZeroTangent()) === nice_pullback(1)
+    @test (NoTangent(), ZeroTangent()) === nice_pullback(1)
 
 
     # Test that these run. Do not care about numerical correctness.
@@ -133,7 +133,7 @@ _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
         Ω_rev, back = rrule(complex_times, x)
         @test Ω_rev == Ω
         ∂self, ∂x = back(Ω̄)
-        @test ∂self == NO_FIELDS
+        @test ∂self == NoTangent()
         @test ∂x ≈ (1 - 2im) * Ω̄
     end
 end

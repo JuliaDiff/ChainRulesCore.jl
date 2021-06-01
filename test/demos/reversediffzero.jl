@@ -111,7 +111,7 @@ end
 function ChainRulesCore.rrule(::typeof(*), x::Number, y::Number)
     function times_pullback(ΔΩ)
         # we will use thunks here to show we handle them fine.
-        return (NO_FIELDS,  @thunk(ΔΩ * y'), @thunk(x' * ΔΩ))
+        return (NoTangent(),  @thunk(ΔΩ * y'), @thunk(x' * ΔΩ))
     end
     return x * y, times_pullback
 end

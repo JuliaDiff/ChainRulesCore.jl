@@ -66,7 +66,7 @@ arguments.
 ```
     function rrule(fill, x, len::Int)
         y = fill(x, len)
-        fill_pullback(ȳ) = (NO_FIELDS, @thunk(sum(Ȳ)), NoTangent())
+        fill_pullback(ȳ) = (NoTangent(), @thunk(sum(Ȳ)), NoTangent())
         return y, fill_pullback
     end
 ```

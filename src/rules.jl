@@ -14,7 +14,7 @@ Examples:
 unary input, unary output scalar function:
 
 ```jldoctest frule
-julia> dself = NO_FIELDS;
+julia> dself = NoTangent();
 
 julia> x = rand()
 0.8236475079774124
@@ -83,7 +83,7 @@ julia> sinx, sin_pullback = rrule(sin, x);
 julia> sinx == sin(x)
 true
 
-julia> sin_pullback(1) == (NO_FIELDS, cos(x))
+julia> sin_pullback(1) == (NoTangent(), cos(x))
 true
 ```
 
@@ -97,7 +97,7 @@ julia> hypotxy, hypot_pullback = rrule(hypot, x, y);
 julia> hypotxy == hypot(x, y)
 true
 
-julia> hypot_pullback(1) == (NO_FIELDS, (x / hypot(x, y)), (y / hypot(x, y)))
+julia> hypot_pullback(1) == (NoTangent(), (x / hypot(x, y)), (y / hypot(x, y)))
 true
 ```
 

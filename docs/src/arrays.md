@@ -355,7 +355,7 @@ function rrule(::typeof(*), A::Matrix{<:RealOrComplex}, B::Matrix{<:RealOrComple
     function times_pullback(ΔΩ)
         ∂A = @thunk(ΔΩ * B')
         ∂B = @thunk(A' * ΔΩ)
-        return (NO_FIELDS, ∂A, ∂B)
+        return (NoTangent(), ∂A, ∂B)
     end
     return A * B, times_pullback
 end
@@ -398,7 +398,7 @@ function rrule(::typeof(inv), A::Matrix{<:RealOrComplex})
     Ω = inv(A)
     function inv_pullback(ΔΩ)
         ∂A = -Ω' * ΔΩ * Ω'
-        return (NO_FIELDS, ∂A)
+        return (NoTangent(), ∂A)
     end
     return Ω, inv_pullback
 end
@@ -497,7 +497,7 @@ function rrule(::typeof(sum), ::typeof(abs2), X::Array{<:RealOrComplex}; dims = 
     function sum_abs2_pullback(ΔΩ)
         ∂abs2 = NoTangent()
         ∂X = @thunk(2 .* real.(ΔΩ) .* X)
-        return (NO_FIELDS, ∂abs2, ∂X)
+        return (NoTangent(), ∂abs2, ∂X)
     end
     return sum(abs2, X; dims = dims), sum_abs2_pullback
 end
@@ -702,7 +702,7 @@ function rrule(::typeof(logabsdet), A::Matrix{<:RealOrComplex})
         imagf = f - real(f)  # 0 for real A and Δs, im * imag(f) for complex A and/or Δs
         g = real(Δl) + imagf
         ∂A = g * inv(F)'  # == g * inv(A)'
-        return (NO_FIELDS, ∂A)
+        return (NoTangent(), ∂A)
     end
     return (Ω, logabsdet_pullback)
 end
@@ -802,7 +802,7 @@ function rrule(::typeof(sylvester), A, B, C)
     X = sylvester(A, B, C)
     function sylvester_pullback(ΔX)
         ∂C = copy(sylvester(B, A, copy(ΔX'))')
-        return NO_FIELDS, @thunk(∂C * X'), @thunk(X' * ∂C), ∂C
+        return NoTangent(), @thunk(∂C * X'), @thunk(X' * ∂C), ∂C
     end
     return X, sylvester_pullback
 end
