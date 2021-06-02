@@ -3,6 +3,43 @@
 [`RuleConfig`](@ref) a method for making rules conditionally defined based on the presence of certain features in the AD system.
 Once key such feature is the ability to perform AD either in forwards or reverse mode or both.
 
+This is done with a kind of trait-like system (not Holy Traits), where the `RuleConfig` has a union of types as its only type-parameter.
+Where each type represents a particular special feature of this AD.
+To indicate that the AD system has special property, it's `RuleConfig` should be defines as:
+```julia
+struct MyADRuleConfig <: RuleConfig{Union{Feature1, Feature2}} end
+```
+And rules that should only be defined when an AD has a particular special property write:
+```julia
+rrule(::RuleConfig{>:Feature1}, f, args...) = # rrule that should only be define for ADs with `Feature1`
+
+frule(::RuleConfig{>:Union{Feature1,Feature2}}, f, args...) = # frule that should only be define for ADs with both `Feature1` and `Feature2`
+```
+
+A prominent use of this is in declaring that the AD system can, or cannot support being called from within the rule definitions.
+## Declaring support for calling back into ADs
+
+To declare support or lack of support for forward and reverse-mode the two pairs of complementary types.
+For reverse mode: [`CanReverseMode`](@ref), [`NoReverseMode`](@ref).
+For forwards mode: [`CanForwardsMode`](@ref), [`NoForwardsMode`](@ref).
+AD systems support any calling back into AD should have one from each set.
+
+If `CanReverseMode` then [`rrule_via_ad`](@ref) must be defined for that RuleConfig subtype.
+Similarly, if `CanForwardsMode` then [`frule_via_ad`](@ref) must be defined for that RuleConfig subtype.
+
+For example:
+```julia
+struct MyReverseOnlyADRuleConfig <: RuleConfig{Union{CanReverseMode, NoForwardsMode}} end
+
+function ChainRulesCore.rrule_via_ad(::MyReverseOnlyADRuleConfig, f, args...)
+    ...
+    return y, pullback
+end
+```
+
+Note that it is not actually required that the same AD is used for forward and reverse.
+For example [Nabla.jl](https://github.com/invenia/Nabla.jl/) is a reverse mode AD.
+It might declare that it `CanForwardsMode`, and then define a wrapper around [ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl) in order to provide that capacity.
 
 ## Writing rules that call back into AD
 
@@ -15,7 +52,7 @@ In that case we know the most efficient way to compute that sub-program is in fo
 Note: the following is not the most efficient rule for map via forward, but attempts to be clearer for demonstration purposes.
 
 ```julia
-function rrule(config::RuleConfig{<:Function}, ::typeof(map), f::Function, x::Array{<:Real})
+function rrule(config::RuleConfig{>:CanFowardsMode}, ::typeof(map), f::Function, x::Array{<:Real})
     y_and_ḟ_and_ẏ = map(x) do xi
         frule_via_ad(config, one(xi), f, xi)
     end
@@ -36,7 +73,6 @@ TODO demo for reverse.
 ## Writing rules that depend on other special requirements of the AD.
 
 As of right now there are no such special properties defined.
-We add this now for future-proofing, as adding more type-parameters later is breaking.
 It is likely that in the future such will be provided for e.g. mutation support.
 
 Such a thing would look like:
@@ -44,7 +80,7 @@ Such a thing would look like:
 struct SupportsMutation end
 
 function rrule(
-    ::RuleConfig{<:Any,<:Any, >:SupportsMutatation}, typeof(push!), x::Vector
+    ::RuleConfig{>:SupportsMutatation}, typeof(push!), x::Vector
 )
     y = push!(x)
 
@@ -59,17 +95,11 @@ end
 ```
 and it would be used in the AD e.g. as follows:
 ```julia
-struct EnzymeRuleConfig <: RuleConfig{Nothing,Nothing, Union{SupportsMutation}}
+struct EnzymeRuleConfig <: RuleConfig{Union{SupportsMutation, CanReverseMode, NoForwardsMode}}
 ```
-Note that in this case the `Union` is redudant since it has a single element.
-It is likely work keeping it, just so as to remember more are added by added them to the `Union`.
-
-
-
-
 
 Note: you can only depend on the presence of a feature, not its absence.
-This means we may need to define features and their compliments, when one is not the obvious default.
+This means we may need to define features and their compliments, when one is not the obvious default (as in the fast of [`CanReverseMode`](@ref)/[`NoReverseMode`](@ref) and [`CanForwardsMode`](@ref)/[`NoForwardsMode`](@ref).).
 
 ## Writing rules that are only for your own AD
 

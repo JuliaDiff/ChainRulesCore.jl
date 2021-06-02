@@ -159,19 +159,65 @@ abstract type RuleConfig{F<:Union{Function,Nothing}, R<:Union{Function,Nothing},
 frule(::RuleConfig, ārgs, f, args...; kwargs...) = frule(ārgs, f, args...; kwargs...))
 rrule(::RuleConfig, f, args...; kwargs...) = rrule(f, args...; kwargs...)
 
-function frule_via_ad(::RuleConfig{F}, ārgs, f, args...; kwargs...) where F <: Function
-    #TODO: Should this pass on the config? I suspect it should so we can use it for avoiding stack-overflows
-    return F.instance(ārgs, f, args...; kwargs...)
-end
-function rrule_via_ad(::RuleConfig{<:Any,R}, f, args...; kwargs...) where R <: Function
-    #TODO: Should this pass on the config? I suspect it should so we can use it for avoiding stack-overflows
-    return R.instance(ārgs, f, args...; kwargs...)
-end
+abstract type ReverseModeCapability end
 
-# TODO: do we want this? Or do we need to avoid ending up in a circumstance where it is needed
-function frule_via_ad(::RuleConfig{Nothing}, ārgs, f, args...; kwargs...) where F<: Function
-    return frule(ārgs, f, args...; kwargs...)
-end
-function rrule_via_ad(::RuleConfig{<:Any,Nothing}, f, args...; kwargs...)
-    return rrule(f, args...; kwargs...)
-end
+"""
+    CanReverseMode
+
+This trait indicates that a `RuleConfig{>:CanReverseMode}` can perform reverse mode AD.
+If it is set then [`rrule_via_ad`](@ref) must be implemented.
+"""
+struct CanReverseMode <: ReverseModeCapability end
+
+"""
+    NoReverseMode
+
+This is the complement to [`CanReverseMode`](@ref). To avoid ambiguities [`RuleConfig`]s
+that do not support performing reverse mode AD should be `RuleConfig{>:NoReverseMode}`.
+"""
+struct NoReverseMode <: ReverseModeCapability end
+
+abstract type ForwardsModeCapability end
+
+"""
+    CanForwardsMode
+
+This trait indicates that a `RuleConfig{>:CanForwardsMode}` can perform forward mode AD.
+If it is set then [`frule_via_ad`](@ref) must be implemented.
+"""
+struct CanForwardsMode <: ForwardsModeCapability end
+
+"""
+    NoForwardsMode
+
+This is the complement to [`CanForwardsMode`](@ref). To avoid ambiguities [`RuleConfig`]s
+that do not support performing forwards mode AD should be `RuleConfig{>:NoForwardsMode}`.
+"""
+struct NoForwardsMode <: ForwardsModeCapability end
+
+
+"""
+    frule_via_ad(::RuleConfig{>:CanForwardMode}, ārgs, f, args...; kwargs...)
+
+This function has the same API as [`frule`](@ref), but operates via performing forwards mode
+automatic differentiation.
+Any `RuleConfig` subtype that supports the [`CanForwardMode`](@ref) special feature must
+provide an implementation of it.
+
+See also: [`rrule_via_ad`](@ref), [`RuleConfig`](@ref) and the documentation on
+[rule configurations and calling back into AD](@ref config)
+"""
+function frule_via_ad end
+
+"""
+    rrule_via_ad(::RuleConfig{>:CanReverseMode}, f, args...; kwargs...)
+
+This function has the same API as [`rrule`](@ref), but operates via performing forwards mode
+automatic differentiation.
+Any `RuleConfig` subtype that supports the [`CanReverseMode`](@ref) special feature must
+provide an implementation of it.
+
+See also: [`frule_via_ad`](@ref), [`RuleConfig`](@ref) and the documentation on
+[rule configurations and calling back into AD](@ref config)
+"""
+function rrule_via_ad end
