@@ -19,15 +19,15 @@ function rrule(config::RuleConfig{<:Function}, ::typeof(map), f::Function, x::Ar
     y_and_ḟ_and_ẏ = map(x) do xi
         frule_via_ad(config, one(xi), f, xi)
     end
-    ḟ_and_ẏ = last.(y_and_ẏ)
+    ḟ_and_ẏ = last.(y_and_ḟ_and_ẏ)
 
-    function pullback_map(x̄)
+    function pullback_map(ȳ)
         ḟ = first.(ḟ_and_ẏ)
         ẏ = last.(ḟ_and_ẏ)
-        return NoTangent(), x̄ * sum(ḟ), x̄ .* ẏ
+        return NoTangent(), ȳ * sum(ḟ), ȳ .* ẏ
     end
 
-    return first.(y_and_ḟ_and_ẏ)
+    return first.(y_and_ḟ_and_ẏ), pullback_map
 end
 ```
 
@@ -68,8 +68,8 @@ It is likely work keeping it, just so as to remember more are added by added the
 
 
 
-Note: you can only depend on the presence of a feature, not it's absence.
-This means we may need to define features and there compliments, when one is not the obvious default.
+Note: you can only depend on the presence of a feature, not its absence.
+This means we may need to define features and their compliments, when one is not the obvious default.
 
 ## Writing rules that are only for your own AD
 

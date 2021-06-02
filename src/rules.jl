@@ -129,10 +129,10 @@ rrule(::Any, ::Vararg{Any}) = nothing
 
 The configuration
  - `F`: **frule-like**. This is singleton `typeof` a function which acts like `frule`, but
-   which functions via invoking an AD system. it must match the [`frule`](@ref) signature.
+   which functions via invoking an AD system. It must match the [`frule`](@ref) signature.
    If you do not have such a function it must be set to `Nothing` instead.
  - `R`: **rrule-like**. This is singleton `typeof` a function which acts like `rrule`, but
-   which functions via invoking an AD system. it must match the [`rrule`](@ref) signature.
+   which functions via invoking an AD system. It must match the [`rrule`](@ref) signature.
    If you do not have such a function it must be set to `Nothing` instead.
  - `T`: **traits**. This should be a `Union` of all special traits needed for rules to be
    allowed to be defined for your AD. If nothing special this should be set to `Union{}`.
@@ -153,7 +153,7 @@ rrule(conf::RuleConfig{Nothing,<:Function}, typeof(map), ::Vector) = ...
 
 For more details see [rule configurations and calling back into AD](@ref config).
 """
-abstract type RuleConfig{F<:Union{Function,Nothing}, R<:Union{Function,Nothing}, T} end
+abstract type RuleConfig{F<:Union{Function,Nothing}, R<:Union{Function,Nothing}, T} where T end
 
 # if no config is present then fallback to config-less rules
 frule(::RuleConfig, ārgs, f, args...; kwargs...) = frule(ārgs, f, args...; kwargs...))
