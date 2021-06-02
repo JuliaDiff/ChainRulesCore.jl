@@ -67,7 +67,6 @@ AD systems making use of `frule`s and `rrule`s should load ChainRules.jl.
 ## Where should I put my rules?
 
 We recommend adding custom rules to your own packages with [ChainRulesCore.jl](https://github.com/JuliaDiff/ChainRulesCore.jl), rather than adding them to ChainRules.jl.
-A few packages - currently SpecialFunctions.jl and NaNMath.jl - have rules in ChainRules.jl as a short-term measure.
 
 ## How do I test my rules?
 
