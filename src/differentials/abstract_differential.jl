@@ -64,6 +64,12 @@ Where it is defined the operation of `extern` for a primal type `P` should be
     `extern` may return an alias (not necessarily a copy) to data
     wrapped by `x`, such that mutating `extern(x)` might mutate `x` itself.
 """
-@inline extern(x) = x
+@inline function extern(x)
+    Base.depwarn(EXTERN_DEPRECATION)
+    return x
+end
+
+const EXTERN_DEPRECATION = "`extern` is deprecated, use `unthunk` or `backing` instead, " *
+    "depending on the use case."
 
 @inline Base.conj(x::AbstractTangent) = x

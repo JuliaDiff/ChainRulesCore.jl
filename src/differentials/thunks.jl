@@ -35,7 +35,7 @@ In contrast to [`extern`](@ref) this is nonrecursive.
 """
 @inline unthunk(x) = x
 
-@inline extern(x::AbstractThunk) = extern(unthunk(x))
+@inline extern(x::AbstractThunk) = (Base.depwarn(EXTERN_DEPRECATION); extern(unthunk(x)))
 
 Base.conj(x::AbstractThunk) = @thunk(conj(unthunk(x)))
 Base.adjoint(x::AbstractThunk) = @thunk(adjoint(unthunk(x)))

@@ -35,7 +35,7 @@ A derivative of `ZeroTangent()` does not propagate through the primal function.
 """
 struct ZeroTangent <: AbstractZero end
 
-extern(x::ZeroTangent) = false  # false is a strong 0. E.g. `false * NaN = 0.0`
+extern(x::ZeroTangent) = (Base.depwarn(EXTERN_DEPRECATION); false)  # false is a strong 0. E.g. `false * NaN = 0.0`
 
 Base.eltype(::Type{ZeroTangent}) = ZeroTangent
 
@@ -74,5 +74,6 @@ arguments.
 struct NoTangent <: AbstractZero end
 
 function extern(x::NoTangent)
+    Base.depwarn(EXTERN_DEPRECATION)
     throw(ArgumentError("Derivative does not exit. Cannot be converted to an external type."))
 end
