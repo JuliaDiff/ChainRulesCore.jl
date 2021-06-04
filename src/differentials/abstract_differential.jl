@@ -65,7 +65,7 @@ Where it is defined the operation of `extern` for a primal type `P` should be
     wrapped by `x`, such that mutating `extern(x)` might mutate `x` itself.
 """
 @inline function extern(x)
-    Base.depwarn(EXTERN_DEPRECATION)
+    Base.depwarn(EXTERN_DEPRECATION, :extern)
     return x
 end
 
