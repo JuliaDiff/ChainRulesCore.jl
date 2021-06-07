@@ -85,6 +85,8 @@ end
 ```
 we can define an `frule`/`rrule` for the `Bar` constructor(s), as well as any `Bar` [functors](https://docs.julialang.org/en/v1/manual/methods/#Function-like-objects).
 
+### Constructors
+
 To define an `rrule` for a constructor for a  _type_ `Bar` we need to be careful to dispatch only on `Type{Bar}`.
 For example, the `rrule` signature for a `Bar` constructor would be like:
 ```julia
@@ -125,7 +127,10 @@ julia> Core.Typeof(AbstractT)
 Type{AbstractT}
 ```
 
-For the functor, use `bar::Bar`, i.e.
+### Functors (callable objects)
+
+In contrast to defining a rule for a constructor, it is possible to define rules for calling an instance of an object.
+In that case, use `bar::Bar`, i.e.
 
 ```julia
 function ChainRulesCore.rrule(bar::Bar, x, y)
@@ -134,7 +139,7 @@ function ChainRulesCore.rrule(bar::Bar, x, y)
     return bar(x, y), Bar_pullback
 end
 ```
-
+to define the rules.
 
 ## Use `@not_implemented` appropriately
 
