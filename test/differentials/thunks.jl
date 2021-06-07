@@ -6,11 +6,6 @@
         @test occursin(r"Thunk\(.*rand.*\)", rep)
     end
 
-    @testset "Externing" begin
-        @test extern(@thunk(3)) == 3
-        @test extern(@thunk(@thunk(3))) == 3
-    end
-
     @testset "unthunk" begin
         @test unthunk(@thunk(3)) == 3
         @test unthunk(@thunk(@thunk(3))) isa Thunk
@@ -25,7 +20,7 @@
         expected_line = (@__LINE__) + 2  # for testing it is at right palce
         try
             x = @thunk(error())
-            extern(x)
+            unthunk(x)
         catch err
             err isa ErrorException || rethrow()
             st = stacktrace(catch_backtrace())

@@ -30,12 +30,8 @@ end
 
 On `AbstractThunk`s this removes 1 layer of thunking.
 On any other type, it is the identity operation.
-
-In contrast to [`extern`](@ref) this is nonrecursive.
 """
 @inline unthunk(x) = x
-
-@inline extern(x::AbstractThunk) = extern(unthunk(x))
 
 Base.conj(x::AbstractThunk) = @thunk(conj(unthunk(x)))
 Base.adjoint(x::AbstractThunk) = @thunk(adjoint(unthunk(x)))
@@ -54,15 +50,10 @@ It wraps a zero argument closure that when invoked returns a differential.
 Calling a thunk, calls the wrapped closure.
 If you are unsure if you have a `Thunk`, call [`unthunk`](@ref) which is a no-op when the
 argument is not a `Thunk`.
-If you need to unthunk recursively, call [`extern`](@ref), which also externs the differial
-that the closure returns.
 
 ```jldoctest
 julia> t = @thunk(@thunk(3))
 Thunk(var"#4#6"())
-
-julia> extern(t)
-3
 
 julia> t()
 Thunk(var"#5#7"())

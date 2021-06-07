@@ -6,7 +6,6 @@
 
     @testset "ZeroTangent" begin
         z = ZeroTangent()
-        @test extern(z) === false
         @test z + z === z
         @test z + 1 === 1
         @test 1 + z === 1
@@ -64,7 +63,6 @@
 
     @testset "NoTangent" begin
         dne = NoTangent()
-        @test_throws Exception extern(dne)
         @test dne + dne == dne
         @test dne + 1 == 1
         @test 1 + dne == 1

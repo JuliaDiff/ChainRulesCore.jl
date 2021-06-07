@@ -49,7 +49,6 @@
 
         # unsupported operations
         E = ChainRulesCore.NotImplementedException
-        @test_throws E extern(ni)
         @test_throws E +ni
         @test_throws E -ni
         @test_throws E ni - rand()
