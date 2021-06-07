@@ -114,9 +114,6 @@ end
 
 Base.conj(comp::Tangent) = map(conj, comp)
 
-extern(comp::Tangent) = (Base.depwarn(EXTERN_DEPRECATION, :extern); return backing(map(extern, comp)))  # gives a NamedTuple or Tuple
-
-
 """
     backing(x)
 

@@ -39,8 +39,6 @@ Base.Broadcast.broadcastable(x::NotImplemented) = Ref(x)
 
 # throw error with debugging information for other standard information
 # (`+`, `-`, `*`, and `dot` are defined in differential_arithmetic.jl)
-extern(x::NotImplemented) = (Base.depwarn(EXTERN_DEPRECATION, :extern); throw(NotImplementedException(x)))
-
 Base.:/(x::NotImplemented, ::Any) = throw(NotImplementedException(x))
 Base.:/(::Any, x::NotImplemented) = throw(NotImplementedException(x))
 Base.:/(x::NotImplemented, ::NotImplemented) = throw(NotImplementedException(x))
