@@ -39,3 +39,8 @@ ChainRulesCore.is_inplaceable_destination
 ChainRulesCore.AbstractTangent
 ChainRulesCore.debug_mode
 ```
+
+## Deprecated
+```@docs
+ChainRulesCore.extern
+```
