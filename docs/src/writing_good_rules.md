@@ -81,7 +81,7 @@ struct Bar
     a::Float64
 end
 
-(bar::Bar)(x, y) = return bar.a + x + y # functor
+(bar::Bar)(x, y) = return bar.a + x + y # functor (i.e. callable object, overloading the call action)
 ```
 we can define an `frule`/`rrule` for the `Bar` constructor(s), as well as any `Bar` [functors](https://docs.julialang.org/en/v1/manual/methods/#Function-like-objects).
 
@@ -89,11 +89,12 @@ To define an `rrule` for a constructor for a  _type_ `Bar` we need to be careful
 For example, the `rrule` signature for a `Bar` constructor would be like:
 ```julia
 function ChainRulesCore.rrule(::Type{Bar}, a)
-    ...
+    Bar_pullback(Δbar) = NoTangent(), Δbar.a
     return Bar(a), Bar_pullback
 end
 ```
 
+Use `Type{<:Bar}` (with the `<:`) for non-concrete types, such that the `rrule` is defined for all subtypes.
 In particular, be careful not to use `typeof(Bar)` here.
 Because `typeof(Bar)` is `DataType`, using this to define an `rrule`/`frule` will define an `rrule`/`frule` for all constructors.
 
@@ -128,7 +129,8 @@ For the functor, use `bar::Bar`, i.e.
 
 ```julia
 function ChainRulesCore.rrule(bar::Bar, x, y)
-    ...
+    # Notice the first return is not `NoTangent()`
+    Bar_pullback(Δy) = Tangent{Bar}(;a=Δy), Δy, Δy
     return bar(x, y), Bar_pullback
 end
 ```
