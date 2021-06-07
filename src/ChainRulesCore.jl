@@ -5,7 +5,11 @@ using SparseArrays: SparseVector, SparseMatrixCSC
 using Compat: hasfield
 
 export frule, rrule  # core function
-export @non_differentiable, @scalar_rule, @thunk, @not_implemented  # definition helper macros
+# rule configurations
+export RuleConfig, CanReverseMode, NoReverseMode, CanForwardsMode, NoForwardsMode
+export frule_via_ad, rrule_via_ad
+# definition helper macros
+export @non_differentiable, @scalar_rule, @thunk, @not_implemented
 export canonicalize, extern, unthunk  # differential operations
 export add!!  # gradient accumulation operations
 # differentials
@@ -23,6 +27,7 @@ include("differentials/notimplemented.jl")
 include("differential_arithmetic.jl")
 include("accumulation.jl")
 
+include("config.jl")
 include("rules.jl")
 include("rule_definition_tools.jl")
 
