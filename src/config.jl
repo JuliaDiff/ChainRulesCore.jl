@@ -14,7 +14,7 @@ For example:
 rrule(::RuleConfig{>:SupportsMutation}, typeof(pop!), ::Vector) = ...
 
 # this definition of map is for any AD that defines a forwards mode
-rrule(conf::RuleConfig{>:HasFowardsMode}, typeof(map), ::Vector) = ...
+rrule(conf::RuleConfig{>:HasForwardsMode}, typeof(map), ::Vector) = ...
 
 # this definition of map is for any AD that only defines a reverse mode.
 # It is not as good as the rrule that can be used if the AD defines a forward-mode as well.
@@ -47,17 +47,17 @@ struct NoReverseMode <: ReverseModeCapability end
 abstract type ForwardsModeCapability end
 
 """
-HasFowardsMode
+HasForwardsMode
 
-This trait indicates that a `RuleConfig{>:HasFowardsMode}` can perform forward mode AD.
+This trait indicates that a `RuleConfig{>:HasForwardsMode}` can perform forward mode AD.
 If it is set then [`frule_via_ad`](@ref) must be implemented.
 """
-struct HasFowardsMode <: ForwardsModeCapability end
+struct HasForwardsMode <: ForwardsModeCapability end
 
 """
 NoForwardsMode
 
-This is the complement to [`HasFowardsMode`](@ref). To avoid ambiguities [`RuleConfig`]s
+This is the complement to [`HasForwardsMode`](@ref). To avoid ambiguities [`RuleConfig`]s
 that do not support performing forwards mode AD should be `RuleConfig{>:NoForwardsMode}`.
 """
 struct NoForwardsMode <: ForwardsModeCapability end

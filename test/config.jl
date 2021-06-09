@@ -1,7 +1,7 @@
 # Define a bunch of configs for testing purposes
 struct MostBoringConfig <: RuleConfig{Union{}} end
 
-struct MockForwardsConfig <: RuleConfig{Union{HasFowardsMode, NoReverseMode}}
+struct MockForwardsConfig <: RuleConfig{Union{HasForwardsMode, NoReverseMode}}
     forward_calls::Vector
 end
 MockForwardsConfig() = MockForwardsConfig([])
@@ -23,7 +23,7 @@ function ChainRulesCore.rrule_via_ad(config::MockReverseConfig, f, args...; kws.
 end
 
 
-struct MockBothConfig <: RuleConfig{Union{HasFowardsMode, HasReverseMode}}
+struct MockBothConfig <: RuleConfig{Union{HasForwardsMode, HasReverseMode}}
     forward_calls::Vector
     reverse_calls::Vector
 end
@@ -76,7 +76,7 @@ end
     @testset "hitting forwards AD" begin
         do_thing_2(f, x) = f(x)
         function ChainRulesCore.frule(
-            config::RuleConfig{>:HasFowardsMode}, (_, df, dx), ::typeof(do_thing_2), f, x
+            config::RuleConfig{>:HasForwardsMode}, (_, df, dx), ::typeof(do_thing_2), f, x
         )
             return frule_via_ad(config, (df, dx), f, x)
         end
@@ -120,7 +120,7 @@ end
         # this is is the complicated case doing something interesting and pseudo-mixed mode
         do_thing_4(f, x) = f(x)
         function ChainRulesCore.rrule(
-            config::RuleConfig{>:HasFowardsMode},
+            config::RuleConfig{>:HasForwardsMode},
             ::typeof(do_thing_4),
             f::Function,
             x::Real,

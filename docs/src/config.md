@@ -22,11 +22,11 @@ A prominent use of this is in declaring that the AD system can, or cannot suppor
 
 To declare support or lack of support for forward and reverse-mode, use the two pairs of complementary types.
 For reverse mode: [`HasReverseMode`](@ref), [`NoReverseMode`](@ref).
-For forwards mode: [`HasFowardsMode`](@ref), [`NoForwardsMode`](@ref).
+For forwards mode: [`HasForwardsMode`](@ref), [`NoForwardsMode`](@ref).
 AD systems that support any calling back into AD should have one from each set.
 
 If an AD `HasReverseMode`, then it must define [`rrule_via_ad`](@ref) for that RuleConfig subtype.
-Similarly, if an AD `HasFowardsMode` then it must define [`frule_via_ad`](@ref) for that RuleConfig subtype.
+Similarly, if an AD `HasForwardsMode` then it must define [`frule_via_ad`](@ref) for that RuleConfig subtype.
 
 For example:
 ```julia
@@ -40,7 +40,7 @@ end
 
 Note that it is not actually required that the same AD is used for forward and reverse.
 For example [Nabla.jl](https://github.com/invenia/Nabla.jl/) is a reverse mode AD.
-It might declare that it `HasFowardsMode`, and then define a wrapper around [ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl) in order to provide that capacity.
+It might declare that it `HasForwardsMode`, and then define a wrapper around [ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl) in order to provide that capacity.
 
 ## Writing rules that call back into AD
 
@@ -53,7 +53,7 @@ In that case we know the most efficient way to compute that sub-program is in fo
 Note: the following is not the most efficient rule for `map` via forward, but attempts to be clearer for demonstration purposes.
 
 ```julia
-function rrule(config::RuleConfig{>:CanFowardsMode}, ::typeof(map), f::Function, x::Array{<:Real})
+function rrule(config::RuleConfig{>:HasForwardsMode}, ::typeof(map), f::Function, x::Array{<:Real})
     # real code would support functors/closures, but in interest of keeping example short we exclude it:
     @assert (fieldcount(typeof(f)) == 0) "Functors/Closures are not supported"
 
@@ -99,7 +99,7 @@ struct EnzymeRuleConfig <: RuleConfig{Union{SupportsMutation, HasReverseMode, No
 ```
 
 Note: you can only depend on the presence of a feature, not its absence.
-This means we may need to define features and their compliments, when one is not the obvious default (as in the fast of [`HasReverseMode`](@ref)/[`NoReverseMode`](@ref) and [`HasFowardsMode`](@ref)/[`NoForwardsMode`](@ref).).
+This means we may need to define features and their compliments, when one is not the obvious default (as in the fast of [`HasReverseMode`](@ref)/[`NoReverseMode`](@ref) and [`HasForwardsMode`](@ref)/[`NoForwardsMode`](@ref).).
 
 ## Writing rules that are only for your own AD
 
