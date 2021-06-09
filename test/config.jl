@@ -125,9 +125,12 @@ end
             f::Function,
             x::Real,
         )
+            # real code would support functors/closures, but in interest of keeping example short we exclude it:
+            @assert (fieldcount(typeof(f)) == 0) "Functors/Closures are not supported"
+
             ẋ = one(x)
-            y, ẏ = frule_via_ad(config, (NoTangent, NoTangent(), ẋ), f, x)
-            pullback_via_forwards_ad(ȳ) = NoTangent(), ẏ*ȳ
+            y, ẏ = frule_via_ad(config, (NoTangent(), ẋ), f, x)
+            pullback_via_forwards_ad(ȳ) = NoTangent(), NoTangent(), ẏ*ȳ
             return y, pullback_via_forwards_ad
         end
         function ChainRulesCore.rrule(
@@ -136,7 +139,9 @@ end
             f,
             x
         )
-            return (NoTangent(), rrule_via_ad(config, f, x)...)
+            y, f_pullback = rrule_via_ad(config, f, x)
+            do_thing_4_pullback(ȳ) = (NoTangent(), f_pullback(ȳ)...)
+            return y, do_thing_4_pullback
         end
 
         @test nothing === rrule(MostBoringConfig(), do_thing_4, identity, 32.1)
