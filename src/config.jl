@@ -11,14 +11,14 @@ allowed to be defined for your AD. If nothing special this should be set to `Uni
 For example:
 ```julia
 # only define rrule for `pop!` on AD systems where mutation is supported.
-rrule(::RuleConfig{<:Any,<:Any,>:SupportsMutation}, typeof(pop!), ::Vector) = ...
+rrule(::RuleConfig{>:SupportsMutation}, typeof(pop!), ::Vector) = ...
 
 # this definition of map is for any AD that defines a forwards mode
-rrule(conf::RuleConfig{<:Function}, typeof(map), ::Vector) = ...
+rrule(conf::RuleConfig{>:CanForwardsMode}, typeof(map), ::Vector) = ...
 
 # this definition of map is for any AD that only defines a reverse mode.
 # It is not as good as the rrule that can be used if the AD defines a forward-mode as well.
-rrule(conf::RuleConfig{Nothing,<:Function}, typeof(map), ::Vector) = ...
+rrule(conf::RuleConfig{>:Union{NoForwardsMode, CanReverseMode}}, typeof(map), ::Vector) = ...
 ```
 
 For more details see [rule configurations and calling back into AD](@ref config).
@@ -64,7 +64,7 @@ struct NoForwardsMode <: ForwardsModeCapability end
 
 
 """
-    frule_via_ad(::RuleConfig{>:CanForwardMode}, ārgs, f, args...; kwargs...)
+    frule_via_ad(::RuleConfig{>:CanForwardMode}, ȧrgs, f, args...; kwargs...)
 
 This function has the same API as [`frule`](@ref), but operates via performing forwards mode
 automatic differentiation.

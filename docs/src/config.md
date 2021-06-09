@@ -1,11 +1,11 @@
 # [Rule configurations and calling back into AD](@id config)
 
-[`RuleConfig`](@ref) a method for making rules conditionally defined based on the presence of certain features in the AD system.
+[`RuleConfig`](@ref) is a method for making rules conditionally defined based on the presence of certain features in the AD system.
 Once key such feature is the ability to perform AD either in forwards or reverse mode or both.
 
-This is done with a kind of trait-like system (not Holy Traits), where the `RuleConfig` has a union of types as its only type-parameter.
+This is done with a trait-like system (not Holy Traits), where the `RuleConfig` has a union of types as its only type-parameter.
 Where each type represents a particular special feature of this AD.
-To indicate that the AD system has special property, it's `RuleConfig` should be defines as:
+To indicate that the AD system has a special property, its `RuleConfig` should be defined as:
 ```julia
 struct MyADRuleConfig <: RuleConfig{Union{Feature1, Feature2}} end
 ```
@@ -17,15 +17,16 @@ frule(::RuleConfig{>:Union{Feature1,Feature2}}, f, args...) = # frule that shoul
 ```
 
 A prominent use of this is in declaring that the AD system can, or cannot support being called from within the rule definitions.
+
 ## Declaring support for calling back into ADs
 
-To declare support or lack of support for forward and reverse-mode the two pairs of complementary types.
+To declare support or lack of support for forward and reverse-mode, use the two pairs of complementary types.
 For reverse mode: [`CanReverseMode`](@ref), [`NoReverseMode`](@ref).
 For forwards mode: [`CanForwardsMode`](@ref), [`NoForwardsMode`](@ref).
-AD systems support any calling back into AD should have one from each set.
+AD systems that support any calling back into AD should have one from each set.
 
-If `CanReverseMode` then [`rrule_via_ad`](@ref) must be defined for that RuleConfig subtype.
-Similarly, if `CanForwardsMode` then [`frule_via_ad`](@ref) must be defined for that RuleConfig subtype.
+If an AD `CanReverseMode`, then it must define [`rrule_via_ad`](@ref) for that RuleConfig subtype.
+Similarly, if an AD `CanForwardsMode` then it must define [`frule_via_ad`](@ref) for that RuleConfig subtype.
 
 For example:
 ```julia
@@ -45,11 +46,11 @@ It might declare that it `CanForwardsMode`, and then define a wrapper around [Fo
 
 To define e.g. rules for higher order functions, it is useful to be able to call back into the AD system to get it to do some work for you.
 
-For example the rule for reverse mode AD for map might like to use forward mode AD if one is available.
+For example the rule for reverse mode AD for `map` might like to use forward mode AD if one is available.
 Particularly for the case where only a single input collection is being mapped over.
 In that case we know the most efficient way to compute that sub-program is in forwards, as each call with-in the map only takes a single input.
 
-Note: the following is not the most efficient rule for map via forward, but attempts to be clearer for demonstration purposes.
+Note: the following is not the most efficient rule for `map` via forward, but attempts to be clearer for demonstration purposes.
 
 ```julia
 function rrule(config::RuleConfig{>:CanFowardsMode}, ::typeof(map), f::Function, x::Array{<:Real})
@@ -111,7 +112,7 @@ But there is no need, as we can dispatch on the `RuleConfig` subtype directly.
 For example in order to avoid mutation in nested AD situations, Zygote might want to have a rule for [`add!!`](@ref) that makes it just do `+`.
 
 ```julia
-struct ZygoteConfig <: RuleConfig{Nothing,Nothing, Union{}} end
+struct ZygoteConfig <: RuleConfig{Union{}} end
 
 rrule(::ZygoteConfig, typeof(ChainRulesCore.add!!), a, b) = a+b, Δ->(NoTangent(), Δ, Δ)
 ```

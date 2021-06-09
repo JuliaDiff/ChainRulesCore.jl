@@ -61,7 +61,7 @@ See also: [`rrule`](@ref), [`@scalar_rule`](@ref), [`RuleConfig`](@ref)
 frule(::Any, ::Any, ::Vararg{Any}; kwargs...) = nothing
 
 # if no config is present then fallback to config-less rules
-frule(::RuleConfig, ārgs, f, args...; kwargs...) = frule(ārgs, f, args...; kwargs...)
+frule(::RuleConfig, ȧrgs, f, args...; kwargs...) = frule(ȧrgs, f, args...; kwargs...)
 
 """
     rrule([::RuleConfig,] f, x...)

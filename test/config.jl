@@ -5,10 +5,10 @@ struct MockForwardsConfig <: RuleConfig{Union{CanForwardsMode, NoReverseMode}}
     forward_calls::Vector
 end
 MockForwardsConfig() = MockForwardsConfig([])
-function ChainRulesCore.frule_via_ad(config::MockForwardsConfig, ārgs, f, args...; kws...)
+function ChainRulesCore.frule_via_ad(config::MockForwardsConfig, ȧrgs, f, args...; kws...)
     # For testing purposes we only support giving right answer for identity functions
     push!(config.forward_calls, (f, args))
-    return f(args...; kws...), ārgs
+    return f(args...; kws...), ȧrgs
 end
 
 struct MockReverseConfig <: RuleConfig{Union{NoForwardsMode, CanReverseMode}}
@@ -28,10 +28,10 @@ struct MockBothConfig <: RuleConfig{Union{CanForwardsMode, CanReverseMode}}
     reverse_calls::Vector
 end
 MockBothConfig() = MockBothConfig([], [])
-function ChainRulesCore.frule_via_ad(config::MockBothConfig, ārgs, f, args...; kws...)
+function ChainRulesCore.frule_via_ad(config::MockBothConfig, ȧrgs, f, args...; kws...)
     # For testing purposes we only support giving right answer for identity functions
     push!(config.forward_calls, (f, args))
-    return f(args...; kws...), ārgs
+    return f(args...; kws...), ȧrgs
 end
 
 function ChainRulesCore.rrule_via_ad(config::MockBothConfig, f, args...; kws...)
