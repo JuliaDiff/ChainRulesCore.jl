@@ -54,18 +54,17 @@ Note: the following is not the most efficient rule for `map` via forward, but at
 
 ```julia
 function rrule(config::RuleConfig{>:CanFowardsMode}, ::typeof(map), f::Function, x::Array{<:Real})
-    y_and_ḟ_and_ẏ = map(x) do xi
-        frule_via_ad(config, one(xi), f, xi)
-    end
-    ḟ_and_ẏ = last.(y_and_ḟ_and_ẏ)
+    # real code would support functors/closures, but in interest of keeping example short we exclude it:
+    @assert (fieldcount(typeof(f)) == 0) "Functors/Closures are not supported"
 
-    function pullback_map(ȳ)
-        ḟ = first.(ḟ_and_ẏ)
-        ẏ = last.(ḟ_and_ẏ)
-        return NoTangent(), ȳ * sum(ḟ), ȳ .* ẏ
+    y_and_ẏ = map(x) do xi
+        frule_via_ad(config, (NoTangent(), one(xi)), f, xi)
     end
+    y = first.(y_and_ẏ)
+    ẏ = last.(y_and_ẏ)
 
-    return first.(y_and_ḟ_and_ẏ), pullback_map
+    pullback_map(ȳ) = NoTangent(), NoTangent(), ȳ .* ẏ
+    return y, pullback_map
 end
 ```
 
