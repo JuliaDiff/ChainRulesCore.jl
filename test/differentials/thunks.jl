@@ -1,6 +1,12 @@
 @testset "Thunk" begin
     @test @thunk(3) isa Thunk
 
+    @testset "==" begin
+        @test @thunk(3.2) == @thunk(3.2)
+        @test @thunk(3.2) == 3.2
+        @test 3.2 == InplaceableThunk(@thunk(3.2), x -> x + 3.2)
+    end
+
     @testset "show" begin
         rep = repr(Thunk(rand))
         @test occursin(r"Thunk\(.*rand.*\)", rep)

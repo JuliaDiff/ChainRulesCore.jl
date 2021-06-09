@@ -13,6 +13,10 @@ end
     return element, (val, new_state)
 end
 
+Base.:(==)(a::AbstractThunk, b::AbstractThunk) = unthunk(a) == unthunk(b)
+Base.:(==)(a::AbstractThunk, b) = unthunk(a) == b
+Base.:(==)(a, b::AbstractThunk) = a == unthunk(b)
+
 """
     @thunk expr
 
