@@ -1,7 +1,7 @@
 # Define a bunch of configs for testing purposes
 struct MostBoringConfig <: RuleConfig{Union{}} end
 
-struct MockForwardsConfig <: RuleConfig{Union{CanForwardsMode, NoReverseMode}}
+struct MockForwardsConfig <: RuleConfig{Union{HasFowardsMode, NoReverseMode}}
     forward_calls::Vector
 end
 MockForwardsConfig() = MockForwardsConfig([])
@@ -11,7 +11,7 @@ function ChainRulesCore.frule_via_ad(config::MockForwardsConfig, ȧrgs, f, args.
     return f(args...; kws...), ȧrgs
 end
 
-struct MockReverseConfig <: RuleConfig{Union{NoForwardsMode, CanReverseMode}}
+struct MockReverseConfig <: RuleConfig{Union{NoForwardsMode, HasReverseMode}}
     reverse_calls::Vector
 end
 MockReverseConfig() = MockReverseConfig([])
@@ -23,7 +23,7 @@ function ChainRulesCore.rrule_via_ad(config::MockReverseConfig, f, args...; kws.
 end
 
 
-struct MockBothConfig <: RuleConfig{Union{CanForwardsMode, CanReverseMode}}
+struct MockBothConfig <: RuleConfig{Union{HasFowardsMode, HasReverseMode}}
     forward_calls::Vector
     reverse_calls::Vector
 end
@@ -76,7 +76,7 @@ end
     @testset "hitting forwards AD" begin
         do_thing_2(f, x) = f(x)
         function ChainRulesCore.frule(
-            config::RuleConfig{>:CanForwardsMode}, (_, df, dx), ::typeof(do_thing_2), f, x
+            config::RuleConfig{>:HasFowardsMode}, (_, df, dx), ::typeof(do_thing_2), f, x
         )
             return frule_via_ad(config, (df, dx), f, x)
         end
@@ -99,7 +99,7 @@ end
     @testset "hitting reverse AD" begin
         do_thing_3(f, x) = f(x)
         function ChainRulesCore.rrule(
-            config::RuleConfig{>:CanReverseMode}, ::typeof(do_thing_3), f, x
+            config::RuleConfig{>:HasReverseMode}, ::typeof(do_thing_3), f, x
         )
             return (NoTangent(), rrule_via_ad(config, f, x)...)
         end
@@ -120,7 +120,7 @@ end
         # this is is the complicated case doing something interesting and pseudo-mixed mode
         do_thing_4(f, x) = f(x)
         function ChainRulesCore.rrule(
-            config::RuleConfig{>:CanForwardsMode},
+            config::RuleConfig{>:HasFowardsMode},
             ::typeof(do_thing_4),
             f::Function,
             x::Real,
@@ -131,7 +131,7 @@ end
             return y, pullback_via_forwards_ad
         end
         function ChainRulesCore.rrule(
-            config::RuleConfig{>:Union{CanReverseMode, NoForwardsMode}},
+            config::RuleConfig{>:Union{HasReverseMode, NoForwardsMode}},
             ::typeof(do_thing_4),
             f,
             x

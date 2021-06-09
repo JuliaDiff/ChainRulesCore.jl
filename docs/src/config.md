@@ -21,16 +21,16 @@ A prominent use of this is in declaring that the AD system can, or cannot suppor
 ## Declaring support for calling back into ADs
 
 To declare support or lack of support for forward and reverse-mode, use the two pairs of complementary types.
-For reverse mode: [`CanReverseMode`](@ref), [`NoReverseMode`](@ref).
-For forwards mode: [`CanForwardsMode`](@ref), [`NoForwardsMode`](@ref).
+For reverse mode: [`HasReverseMode`](@ref), [`NoReverseMode`](@ref).
+For forwards mode: [`HasFowardsMode`](@ref), [`NoForwardsMode`](@ref).
 AD systems that support any calling back into AD should have one from each set.
 
-If an AD `CanReverseMode`, then it must define [`rrule_via_ad`](@ref) for that RuleConfig subtype.
-Similarly, if an AD `CanForwardsMode` then it must define [`frule_via_ad`](@ref) for that RuleConfig subtype.
+If an AD `HasReverseMode`, then it must define [`rrule_via_ad`](@ref) for that RuleConfig subtype.
+Similarly, if an AD `HasFowardsMode` then it must define [`frule_via_ad`](@ref) for that RuleConfig subtype.
 
 For example:
 ```julia
-struct MyReverseOnlyADRuleConfig <: RuleConfig{Union{CanReverseMode, NoForwardsMode}} end
+struct MyReverseOnlyADRuleConfig <: RuleConfig{Union{HasReverseMode, NoForwardsMode}} end
 
 function ChainRulesCore.rrule_via_ad(::MyReverseOnlyADRuleConfig, f, args...)
     ...
@@ -40,7 +40,7 @@ end
 
 Note that it is not actually required that the same AD is used for forward and reverse.
 For example [Nabla.jl](https://github.com/invenia/Nabla.jl/) is a reverse mode AD.
-It might declare that it `CanForwardsMode`, and then define a wrapper around [ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl) in order to provide that capacity.
+It might declare that it `HasFowardsMode`, and then define a wrapper around [ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl) in order to provide that capacity.
 
 ## Writing rules that call back into AD
 
@@ -95,11 +95,11 @@ end
 ```
 and it would be used in the AD e.g. as follows:
 ```julia
-struct EnzymeRuleConfig <: RuleConfig{Union{SupportsMutation, CanReverseMode, NoForwardsMode}}
+struct EnzymeRuleConfig <: RuleConfig{Union{SupportsMutation, HasReverseMode, NoForwardsMode}}
 ```
 
 Note: you can only depend on the presence of a feature, not its absence.
-This means we may need to define features and their compliments, when one is not the obvious default (as in the fast of [`CanReverseMode`](@ref)/[`NoReverseMode`](@ref) and [`CanForwardsMode`](@ref)/[`NoForwardsMode`](@ref).).
+This means we may need to define features and their compliments, when one is not the obvious default (as in the fast of [`HasReverseMode`](@ref)/[`NoReverseMode`](@ref) and [`HasFowardsMode`](@ref)/[`NoForwardsMode`](@ref).).
 
 ## Writing rules that are only for your own AD
 
