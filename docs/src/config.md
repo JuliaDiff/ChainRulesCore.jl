@@ -68,11 +68,10 @@ function rrule(config::RuleConfig{>:HasForwardsMode}, ::typeof(map), f::Function
 end
 ```
 
-TODO demo for reverse.
-
 ## Writing rules that depend on other special requirements of the AD.
 
-As of right now there are no such special properties defined.
+The `>:CanReverseMode` and `>:CanForwardsMode` are two examples of special properties that a `RuleConfig` could allow.
+Others could also exist, but right now they are the only two.
 It is likely that in the future such will be provided for e.g. mutation support.
 
 Such a thing would look like:
@@ -101,6 +100,11 @@ struct EnzymeRuleConfig <: RuleConfig{Union{SupportsMutation, HasReverseMode, No
 Note: you can only depend on the presence of a feature, not its absence.
 This means we may need to define features and their compliments, when one is not the obvious default (as in the fast of [`HasReverseMode`](@ref)/[`NoReverseMode`](@ref) and [`HasForwardsMode`](@ref)/[`NoForwardsMode`](@ref).).
 
+
+Such special properties generally should only be defines in `ChainRulesCore`.
+(Theoretically, they could be defined elsewhere, but the AD and the package containing the rule need to load them, and ChainRulesCore is the place for things like that.)
+
+
 ## Writing rules that are only for your own AD
 
 A special case of the above is writing rules that are defined only for your own AD.
@@ -115,3 +119,5 @@ struct ZygoteConfig <: RuleConfig{Union{}} end
 
 rrule(::ZygoteConfig, typeof(ChainRulesCore.add!!), a, b) = a+b, Δ->(NoTangent(), Δ, Δ)
 ```
+
+As an alternative to rules only for one AD, would be to add new special property definitions to ChainRulesCore (as described above) which would capture what makes that AD special.

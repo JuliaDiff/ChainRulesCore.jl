@@ -47,7 +47,7 @@ makedocs(
     pages=[
         "Introduction" => "index.md",
         "FAQ" => "FAQ.md",
-        "Rule configurations and calling back into AD" => "config.md".
+        "Rule configurations and calling back into AD" => "config.md",
         "Writing Good Rules" => "writing_good_rules.md",
         "Complex Numbers" => "complex.md",
         "Deriving Array Rules" => "arrays.md",

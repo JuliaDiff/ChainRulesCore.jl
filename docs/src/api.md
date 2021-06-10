@@ -34,6 +34,13 @@ add!!
 ChainRulesCore.is_inplaceable_destination
 ```
 
+## RuleConfig
+```@autodocs
+Modules = [ChainRulesCore]
+Pages = ["config.jl"]
+Private = false
+```
+
 ## Internal
 ```@docs
 ChainRulesCore.AbstractTangent
