@@ -156,4 +156,8 @@ end
         @test nothing !== rrule(rconfig, do_thing_4, identity, 32.1)
         @test rconfig.reverse_calls == [(identity, (32.1,))]
     end
+
+    @testset "RuleConfig broadcasts like a scaler" begin
+        @test (MostBoringConfig() .=> (1,2,3)) isa NTuple{3, Pair{MostBoringConfig,Int}}
+    end
 end

@@ -25,6 +25,8 @@ For more details see [rule configurations and calling back into AD](@ref config)
 """
 abstract type RuleConfig{T} end
 
+# Broadcast like a scalar
+Base.Broadcast.broadcastable(config::RuleConfig) = Ref(config)
 
 abstract type ReverseModeCapability end
 
