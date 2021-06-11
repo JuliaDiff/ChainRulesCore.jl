@@ -1,7 +1,7 @@
 # [Rule configurations and calling back into AD](@id config)
 
 [`RuleConfig`](@ref) is a method for making rules conditionally defined based on the presence of certain features in the AD system.
-Once key such feature is the ability to perform AD either in forwards or reverse mode or both.
+One key such feature is the ability to perform AD either in forwards or reverse mode or both.
 
 This is done with a trait-like system (not Holy Traits), where the `RuleConfig` has a union of types as its only type-parameter.
 Where each type represents a particular special feature of this AD.
@@ -70,7 +70,7 @@ end
 
 ## Writing rules that depend on other special requirements of the AD.
 
-The `>:CanReverseMode` and `>:CanForwardsMode` are two examples of special properties that a `RuleConfig` could allow.
+The `>:HasReverseMode` and `>:HasForwardsMode` are two examples of special properties that a `RuleConfig` could allow.
 Others could also exist, but right now they are the only two.
 It is likely that in the future such will be provided for e.g. mutation support.
 
