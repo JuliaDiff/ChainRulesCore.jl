@@ -89,4 +89,38 @@
             @test was_unthunked == 1
         end
     end
+
+    @testset "basic math" begin
+        @test 1 = - @thunk(-1)
+        @test 1 = @thunk(2) - 1
+        @test 1 = 2 - @thunk(1)
+        @test 1.0 = @thunk(1) / 1.0
+        @test 1.0 = 1.0 / @thunk(1)
+
+        @test 1 = real(@thunk(1 + 1im))
+        @test 1 = imag(@thunk(1 + 1im))
+        @test 1 + 1im = Complex(@thunk(1 + 1im))
+        @test 1 + 1im = Complex(@thunk(1), @thunk(1))
+    end
+
+    @testset "Base functions" begin
+        @test Int64 === eltype(@thunk([1, 2]))
+        @test 1.0 convert(Float64, @thunk(1))
+        @test @thunk(1) == convert(Thunk, @thunk(1))
+
+        @test 3 == mapreduce(_ -> 1, +, @thunk([1, 2, 3]))
+        @test 3 == mapreduce((_, _) -> 1, +, [1, 2, 3], @thunk([1, 2, 3]))
+        @test [4, 6] == sum!([1 1], @thunk([1 2; 3 4]))
+
+        @test (2,) = size(@thunk([1, 2]))
+        @test 2 = size(@thunk([1, 2]), 1)
+
+        @test [1, 2] == vec(@thunk([1, 2])) 
+        @test Base.OneTo(3) == axes(@thunk([1, 2, 3]), 1)
+        @test [1; 2; 3] == reshape(@thunk([1, 2, 3]), 1, 3)
+        @test 1.0 == getindex(@thunk([1.0, 2.0]), 1)
+        @test [0.0, 2.0] == setindex!(@thunk([1.0, 2.0]), 0.0, 1)
+        @test [4; 5; 6] == selectdim([1 2 3; 4 5 6], 1, 2)
+
+    end
 end
