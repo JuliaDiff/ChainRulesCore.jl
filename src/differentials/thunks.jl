@@ -8,9 +8,11 @@ Base.Broadcast.broadcastable(x::AbstractThunk) = broadcastable(unthunk(x))
     return element, (val, state)
 end
 
-@inline function Base.iterate(::AbstractThunk, (val, state))
-    element, new_state = iterate(val, state)
-    return element, (val, new_state)
+@inline function Base.iterate(::AbstractThunk, (underlying_object, state))
+    next = iterate(underlying_object, state)
+    next === nothing && return nothing
+    element, new_state = next
+    return element, (underlying_object, new_state)
 end
 
 Base.:(==)(a::AbstractThunk, b::AbstractThunk) = unthunk(a) == unthunk(b)
