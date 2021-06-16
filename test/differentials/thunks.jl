@@ -7,6 +7,14 @@
         @test 3.2 == InplaceableThunk(@thunk(3.2), x -> x + 3.2)
     end
 
+    @testset "iterate" begin
+        a = [1.0, 2.0, 3.0]
+        t = @thunk(a)
+        for (i, j) in zip(a, t)
+            @test i == j
+        end
+    end
+
     @testset "show" begin
         rep = repr(Thunk(rand))
         @test occursin(r"Thunk\(.*rand.*\)", rep)
