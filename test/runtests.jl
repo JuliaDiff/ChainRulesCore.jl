@@ -1,7 +1,8 @@
 using Base.Broadcast: broadcastable
 using BenchmarkTools
 using ChainRulesCore
-using LinearAlgebra: Diagonal, dot, Hermitian, Symmetric
+using LinearAlgebra
+using LinearAlgebra.BLAS
 using StaticArrays
 using SparseArrays
 using Test

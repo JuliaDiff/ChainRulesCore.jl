@@ -91,16 +91,16 @@
     end
 
     @testset "basic math" begin
-        @test 1 = - @thunk(-1)
-        @test 1 = @thunk(2) - 1
-        @test 1 = 2 - @thunk(1)
-        @test 1.0 = @thunk(1) / 1.0
-        @test 1.0 = 1.0 / @thunk(1)
+        @test 1 == - @thunk(-1)
+        @test 1 == @thunk(2) - 1
+        @test 1 == 2 - @thunk(1)
+        @test 1.0 == @thunk(1) / 1.0
+        @test 1.0 == 1.0 / @thunk(1)
 
-        @test 1 = real(@thunk(1 + 1im))
-        @test 1 = imag(@thunk(1 + 1im))
-        @test 1 + 1im = Complex(@thunk(1 + 1im))
-        @test 1 + 1im = Complex(@thunk(1), @thunk(1))
+        @test 1 == real(@thunk(1 + 1im))
+        @test 1 == imag(@thunk(1 + 1im))
+        @test 1 + 1im == Complex(@thunk(1 + 1im))
+        @test 1 + 1im == Complex(@thunk(1), @thunk(1))
     end
 
     @testset "Base functions" begin
@@ -108,19 +108,19 @@
         t = @thunk(v)
 
         @test Int64 === eltype(t)
-        @test 1.0 convert(Float64, @thunk(1))
+        @test 1.0 == convert(Float64, @thunk(1))
         @test @thunk(1) == convert(Thunk, @thunk(1))
 
         @test 3 == mapreduce(_ -> 1, +, t)
         @test 3 == mapreduce((_, _) -> 1, +, v, t)
-        @test [4, 6] == sum!([1 1], @thunk([1 2; 3 4]))
+        @test [4 6] == sum!([1 1], @thunk([1 2; 3 4]))
 
-        @test (3,) = size(t)
-        @test 3 = size(t, 1)
+        @test (3,) == size(t)
+        @test 3 == size(t, 1)
 
         @test v == vec(t) 
         @test Base.OneTo(3) == axes(t, 1)
-        @test [1; 2; 3] == reshape(t, 1, 3)
+        @test [1 2 3] == reshape(t, 1, 3)
         @test 1 == getindex(t, 1)
         @test [0, 2, 3] == setindex!(t, 0.0, 1)
         @test [4; 5; 6] == selectdim([1 2 3; 4 5 6], 1, 2)
@@ -170,8 +170,9 @@
         @test ger!(1.0, v, v, deepcopy(m)) == ger!(1.0, v, tv, deepcopy(m))
         @test gemv!('C', 1.0, m, v, 1.0, deepcopy(v)) == gemv!('C', 1.0, m, tv, 1.0, deepcopy(v))
         @test gemv('N', 1.0, m, v) == gemv('N', 1.0, m, tv)
-        @test scal!(2, 2.0, v, 1) == scal!(2, 2.0, tv, 1)
-        @test LAPACK.trsyl!('C', 'C', m, m, deepcopy(m)) == LAPACK.trsyl!('C', 'C', m, m, @thunk(m))
+
+        @test scal!(2, 2.0, v, 1) == scal!(2, @thunk(2.0), v, 1)
+        @test LAPACK.trsyl!('C', 'C', m, m, deepcopy(m)) == LAPACK.trsyl!('C', 'C', m, m, @thunk(deepcopy(m)))
     end
 end
 
