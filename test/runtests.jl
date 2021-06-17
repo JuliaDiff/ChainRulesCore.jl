@@ -2,7 +2,7 @@ using Base.Broadcast: broadcastable
 using BenchmarkTools
 using ChainRulesCore
 using LinearAlgebra
-using LinearAlgebra.BLAS
+using LinearAlgebra.BLAS: ger!, gemv!, gemv, scal!
 using StaticArrays
 using SparseArrays
 using Test

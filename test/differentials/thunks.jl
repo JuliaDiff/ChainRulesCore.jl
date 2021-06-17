@@ -111,8 +111,10 @@
         @test 1.0 == convert(Float64, @thunk(1))
         @test @thunk(1) == convert(Thunk, @thunk(1))
 
-        @test 3 == mapreduce(_ -> 1, +, t)
-        @test 3 == mapreduce((_, _) -> 1, +, v, t)
+        if VERSION >= v"1.2"
+            @test 3 == mapreduce(_ -> 1, +, t)
+            @test 3 == mapreduce((_, _) -> 1, +, v, t)
+        end
         @test [4 6] == sum!([1 1], @thunk([1 2; 3 4]))
 
         @test (3,) == size(t)
@@ -139,8 +141,10 @@
         @test Symmetric(a) == Symmetric(t)
         @test Hermitian(a) == Hermitian(t)
 
-        @test diagm(0=>v) == diagm(0=>tv)
-        @test diagm(3, 4, 0=>v) == diagm(3, 4, 0=>tv)
+        if VERSION >= v"1.2"
+            @test diagm(0=>v) == diagm(0=>tv)
+            @test diagm(3, 4, 0=>v) == diagm(3, 4, 0=>tv)
+        end
         @test tril(a) == tril(t)
         @test tril(a, 1) == tril(t, 1)
         @test triu(a) == triu(t)
@@ -153,8 +157,10 @@
         @test dot(v, v) == dot(tv, v)
         @test dot(v, v) == dot(tv, tv)
         
-        @test ldiv!(2.0, deepcopy(t)) == ldiv!(2.0, deepcopy(a))
-        @test rdiv!(deepcopy(t), 2.0) == rdiv!(deepcopy(a), 2.0)
+        if VERSION >= v"1.2"
+            @test ldiv!(2.0, deepcopy(t)) == ldiv!(2.0, deepcopy(a))
+            @test rdiv!(deepcopy(t), 2.0) == rdiv!(deepcopy(a), 2.0)
+        end
 
         res = mul!(deepcopy(a), a, a, true, true)
         @test res == mul!(deepcopy(t), a, a, true, true)

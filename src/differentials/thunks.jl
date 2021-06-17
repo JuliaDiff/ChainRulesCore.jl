@@ -79,11 +79,11 @@ LinearAlgebra.mul!(C::AbstractThunk, A, B::AbstractThunk, α, β) = mul!(unthunk
 LinearAlgebra.mul!(C, A::AbstractThunk, B::AbstractThunk, α, β) = mul!(C, unthunk(A), unthunk(B), α, β)
 LinearAlgebra.mul!(C::AbstractThunk, A::AbstractThunk, B::AbstractThunk, α, β) = mul!(unthunk(C), unthunk(A), unthunk(B), α, β)
 
-LinearAlgebra.BLAS.ger!(alpha, x::AbstractThunk, y, A) = ger!(alpha, unthunk(x), y, A)
-LinearAlgebra.BLAS.ger!(alpha, x, y::AbstractThunk, A) = ger!(alpha, x, unthunk(y), A)
-LinearAlgebra.BLAS.gemv!(tA, alpha, A, x::AbstractThunk, beta, y) = gemv!(tA, alpha, A, unthunk(x), beta, y)
-LinearAlgebra.BLAS.gemv(tA, alpha, A, x::AbstractThunk) = gemv(tA, alpha, A, unthunk(x))
-LinearAlgebra.BLAS.scal!(n, a::AbstractThunk, X, incx) = scal!(n, unthunk(a), X, incx)
+LinearAlgebra.BLAS.ger!(alpha, x::AbstractThunk, y, A) = LinearAlgebra.BLAS.ger!(alpha, unthunk(x), y, A)
+LinearAlgebra.BLAS.ger!(alpha, x, y::AbstractThunk, A) = LinearAlgebra.BLAS.ger!(alpha, x, unthunk(y), A)
+LinearAlgebra.BLAS.gemv!(tA, alpha, A, x::AbstractThunk, beta, y) = LinearAlgebra.BLAS.gemv!(tA, alpha, A, unthunk(x), beta, y)
+LinearAlgebra.BLAS.gemv(tA, alpha, A, x::AbstractThunk) = LinearAlgebra.BLAS.gemv(tA, alpha, A, unthunk(x))
+LinearAlgebra.BLAS.scal!(n, a::AbstractThunk, X, incx) = LinearAlgebra.BLAS.scal!(n, unthunk(a), X, incx)
 
 LinearAlgebra.LAPACK.trsyl!(transa, transb, A, B, C::AbstractThunk, isgn=1) = LAPACK.trsyl!(transa, transb, A, B, unthunk(C), isgn)
 
