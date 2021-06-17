@@ -36,7 +36,6 @@ Base.convert(::Type{T}, t::T) where T<:AbstractThunk = t
 
 Base.mapreduce(f, op, a::AbstractThunk; kws...) = mapreduce(f, op, unthunk(a); kws...)
 Base.mapreduce(f, op, itr, a::AbstractThunk; kws...) = mapreduce(f, op, itr, unthunk(a); kws...)
-Base.sum!(r, A::AbstractThunk) = sum!(r, unthunk(A))
 Base.sum!(r, A::AbstractThunk; kws...) = sum!(r, unthunk(A); kws...)
 
 Base.size(a::AbstractThunk) = size(unthunk(a))
