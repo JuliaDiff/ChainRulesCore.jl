@@ -52,10 +52,10 @@ LinearAlgebra.Matrix(a::AbstractThunk) = Matrix(unthunk(a))
 LinearAlgebra.Diagonal(a::AbstractThunk) = Diagonal(unthunk(a))
 LinearAlgebra.LowerTriangular(a::AbstractThunk) = LowerTriangular(unthunk(a))
 LinearAlgebra.UpperTriangular(a::AbstractThunk) = UpperTriangular(unthunk(a))
-LinearAlgebra.Symmetric(a::AbstractThunk, s) = Symmetric(unthunk(a), s)
-LinearAlgebra.Hermitian(a::AbstractThunk, s) = Hermitian(unthunk(a), s)
+LinearAlgebra.Symmetric(a::AbstractThunk, uplo=:U) = Symmetric(unthunk(a), uplo)
+LinearAlgebra.Hermitian(a::AbstractThunk, uplo=:U) = Hermitian(unthunk(a), uplo)
 
-
+LinearAlgebra.diagm(kv::Pair{<:Integer, <:AbstractThunk}...) = diagm((k => unthunk(v) for (k, v) in kv)...)
 LinearAlgebra.diagm(m, n, kv::Pair{<:Integer, <:AbstractThunk}...) = diagm(m, n, (k => unthunk(v) for (k, v) in kv)...)
 LinearAlgebra.tril(a::AbstractThunk) = tril(unthunk(a))
 LinearAlgebra.tril(a::AbstractThunk, k) = tril(unthunk(a), k)
@@ -67,6 +67,7 @@ LinearAlgebra.cross(a, b::AbstractThunk) = cross(a, unthunk(b))
 LinearAlgebra.cross(a::AbstractThunk, b::AbstractThunk) = cross(unthunk(a), unthunk(b))
 LinearAlgebra.dot(a::AbstractThunk, b) = dot(unthunk(a), b)
 LinearAlgebra.dot(a, b::AbstractThunk) = dot(a, unthunk(b))
+LinearAlgebra.dot(a::AbstractThunk, b::AbstractThunk) = dot(unthunk(a), unthunk(b))
 
 LinearAlgebra.ldiv!(a, b::AbstractThunk) = ldiv!(a, unthunk(b))
 LinearAlgebra.rdiv!(a::AbstractThunk, b) = rdiv!(unthunk(a), b)
@@ -76,6 +77,7 @@ LinearAlgebra.mul!(C, A, B::AbstractThunk, α, β) = mul!(C, A, unthunk(B), α, 
 LinearAlgebra.mul!(C::AbstractThunk, A::AbstractThunk, B, α, β) = mul!(unthunk(C), unthunk(A), B, α, β)
 LinearAlgebra.mul!(C::AbstractThunk, A, B::AbstractThunk, α, β) = mul!(unthunk(C), A, unthunk(B), α, β)
 LinearAlgebra.mul!(C, A::AbstractThunk, B::AbstractThunk, α, β) = mul!(C, unthunk(A), unthunk(B), α, β)
+LinearAlgebra.mul!(C::AbstractThunk, A::AbstractThunk, B::AbstractThunk, α, β) = mul!(unthunk(C), unthunk(A), unthunk(B), α, β)
 
 LinearAlgebra.BLAS.ger!(alpha, x::AbstractThunk, y, A) = ger!(alpha, unthunk(x), y, A)
 LinearAlgebra.BLAS.ger!(alpha, x, y::AbstractThunk, A) = ger!(alpha, x, unthunk(y), A)
@@ -83,7 +85,7 @@ LinearAlgebra.BLAS.gemv!(tA, alpha, A, x::AbstractThunk, beta, y) = gemv!(tA, al
 LinearAlgebra.BLAS.gemv(tA, alpha, A, x::AbstractThunk) = gemv(tA, alpha, A, unthunk(x))
 LinearAlgebra.BLAS.scal!(n, a::AbstractThunk, X, incx) = scal!(n, unthunk(a), X, incx)
 
-LinearAlgebra.LAPACK.trsyl!(transa, transb, A, B, C::AbstractThunk, isgn) = LAPACK.trsyl!(transa, transb, A, B, unthunk(C), isgn)
+LinearAlgebra.LAPACK.trsyl!(transa, transb, A, B, C::AbstractThunk, isgn=1) = LAPACK.trsyl!(transa, transb, A, B, unthunk(C), isgn)
 
 """
     @thunk expr

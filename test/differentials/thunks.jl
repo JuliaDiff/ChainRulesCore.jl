@@ -104,23 +104,104 @@
     end
 
     @testset "Base functions" begin
-        @test Int64 === eltype(@thunk([1, 2]))
+        v = [1, 2, 3]
+        t = @thunk(v)
+
+        @test Int64 === eltype(t)
         @test 1.0 convert(Float64, @thunk(1))
         @test @thunk(1) == convert(Thunk, @thunk(1))
 
-        @test 3 == mapreduce(_ -> 1, +, @thunk([1, 2, 3]))
-        @test 3 == mapreduce((_, _) -> 1, +, [1, 2, 3], @thunk([1, 2, 3]))
+        @test 3 == mapreduce(_ -> 1, +, t)
+        @test 3 == mapreduce((_, _) -> 1, +, v, t)
         @test [4, 6] == sum!([1 1], @thunk([1 2; 3 4]))
 
-        @test (2,) = size(@thunk([1, 2]))
-        @test 2 = size(@thunk([1, 2]), 1)
+        @test (3,) = size(t)
+        @test 3 = size(t, 1)
 
-        @test [1, 2] == vec(@thunk([1, 2])) 
-        @test Base.OneTo(3) == axes(@thunk([1, 2, 3]), 1)
-        @test [1; 2; 3] == reshape(@thunk([1, 2, 3]), 1, 3)
-        @test 1.0 == getindex(@thunk([1.0, 2.0]), 1)
-        @test [0.0, 2.0] == setindex!(@thunk([1.0, 2.0]), 0.0, 1)
+        @test v == vec(t) 
+        @test Base.OneTo(3) == axes(t, 1)
+        @test [1; 2; 3] == reshape(t, 1, 3)
+        @test 1 == getindex(t, 1)
+        @test [0, 2, 3] == setindex!(t, 0.0, 1)
         @test [4; 5; 6] == selectdim([1 2 3; 4 5 6], 1, 2)
+    end
 
+    @testset "LinearAlgebra" begin
+        v = [1.0, 2.0, 3.0]
+        tv = @thunk(v)
+        a = [1.0 2.0; 3.0 4.0]
+        t = @thunk(a)
+        @test Array(a) == Array(t)
+        @test Matrix(a) == Matrix(t)
+        @test Diagonal(a) == Diagonal(t)
+        @test LowerTriangular(a) == LowerTriangular(t)
+        @test UpperTriangular(a) == UpperTriangular(t)
+        @test Symmetric(a) == Symmetric(t)
+        @test Hermitian(a) == Hermitian(t)
+
+        @test diagm(0=>v) == diagm(0=>tv)
+        @test diagm(3, 4, 0=>v) == diagm(3, 4, 0=>tv)
+        @test tril(a) == tril(t)
+        @test tril(a, 1) == tril(t, 1)
+        @test triu(a) == triu(t)
+        @test triu(a, 1) == triu(t, 1)
+        @test tr(a) == tr(t)
+        @test cross(v, v) == cross(v, tv)
+        @test cross(v, v) == cross(tv, v)
+        @test cross(v, v) == cross(tv, tv)
+        @test dot(v, v) == dot(v, tv)
+        @test dot(v, v) == dot(tv, v)
+        @test dot(v, v) == dot(tv, tv)
+        
+        @test ldiv!(2.0, deepcopy(t)) == ldiv!(2.0, deepcopy(a))
+        @test rdiv!(deepcopy(t), 2.0) == rdiv!(deepcopy(a), 2.0)
+
+        res = mul!(deepcopy(a), a, a, true, true)
+        @test res == mul!(deepcopy(t), a, a, true, true)
+        @test res == mul!(deepcopy(a), t, a, true, true)
+        @test res == mul!(deepcopy(a), a, t, true, true)
+        @test res == mul!(deepcopy(t), t, a, true, true)
+        @test res == mul!(deepcopy(a), t, t, true, true)
+        @test res == mul!(deepcopy(t), a, t, true, true)
+        @test res == mul!(deepcopy(t), t, t, true, true)
+
+        m = rand(3, 3)
+        @test ger!(1.0, v, v, deepcopy(m)) == ger!(1.0, tv, v, deepcopy(m))
+        @test ger!(1.0, v, v, deepcopy(m)) == ger!(1.0, v, tv, deepcopy(m))
+        @test gemv!('C', 1.0, m, v, 1.0, deepcopy(v)) == gemv!('C', 1.0, m, tv, 1.0, deepcopy(v))
+        @test gemv('N', 1.0, m, v) == gemv('N', 1.0, m, tv)
+        @test scal!(2, 2.0, v, 1) == scal!(2, 2.0, tv, 1)
+        @test LAPACK.trsyl!('C', 'C', m, m, deepcopy(m)) == LAPACK.trsyl!('C', 'C', m, m, @thunk(m))
     end
 end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -23,6 +23,7 @@ include("differentials/abstract_differential.jl")
 include("differentials/abstract_zero.jl")
 include("differentials/thunks.jl")
 include("differentials/composite.jl")
+include("differentials/combinations.jl")
 include("differentials/notimplemented.jl")
 
 include("differential_arithmetic.jl")
