@@ -1,4 +1,6 @@
 @testset "Thunk" begin
+    MutateThunkException = ChainRulesCore.MutateThunkException
+
     @test @thunk(3) isa Thunk
 
     @testset "==" begin
@@ -124,7 +126,7 @@
         @test Base.OneTo(3) == axes(t, 1)
         @test [1 2 3] == reshape(t, 1, 3)
         @test 1 == getindex(t, 1)
-        @test [0, 2, 3] == setindex!(t, 0.0, 1)
+        @test_throws MutateThunkException setindex!(t, 0.0, 1)
         @test [4; 5; 6] == selectdim([1 2 3; 4 5 6], 1, 2)
     end
 
@@ -156,20 +158,20 @@
         @test dot(v, v) == dot(v, tv)
         @test dot(v, v) == dot(tv, v)
         @test dot(v, v) == dot(tv, tv)
-        
+
         if VERSION >= v"1.2"
-            @test ldiv!(2.0, deepcopy(t)) == ldiv!(2.0, deepcopy(a))
-            @test rdiv!(deepcopy(t), 2.0) == rdiv!(deepcopy(a), 2.0)
+            @test_throws MutateThunkException ldiv!(2.0, deepcopy(t)) == ldiv!(2.0, deepcopy(a))
+            @test_throws MutateThunkException rdiv!(deepcopy(t), 2.0) == rdiv!(deepcopy(a), 2.0)
         end
 
         res = mul!(deepcopy(a), a, a, true, true)
-        @test res == mul!(deepcopy(t), a, a, true, true)
+        @test_throws MutateThunkException mul!(deepcopy(t), a, a, true, true)
+        @test_throws MutateThunkException mul!(deepcopy(t), t, a, true, true)
+        @test_throws MutateThunkException mul!(deepcopy(t), a, t, true, true)
+        @test_throws MutateThunkException mul!(deepcopy(t), t, t, true, true)
         @test res == mul!(deepcopy(a), t, a, true, true)
         @test res == mul!(deepcopy(a), a, t, true, true)
-        @test res == mul!(deepcopy(t), t, a, true, true)
         @test res == mul!(deepcopy(a), t, t, true, true)
-        @test res == mul!(deepcopy(t), a, t, true, true)
-        @test res == mul!(deepcopy(t), t, t, true, true)
 
         m = rand(3, 3)
         @test ger!(1.0, v, v, deepcopy(m)) == ger!(1.0, tv, v, deepcopy(m))
@@ -178,6 +180,6 @@
         @test gemv('N', 1.0, m, v) == gemv('N', 1.0, m, tv)
 
         @test scal!(2, 2.0, v, 1) == scal!(2, @thunk(2.0), v, 1)
-        @test LAPACK.trsyl!('C', 'C', m, m, deepcopy(m)) == LAPACK.trsyl!('C', 'C', m, m, @thunk(deepcopy(m)))
+        @test_throws MutateThunkException LAPACK.trsyl!('C', 'C', m, m, @thunk(m))
     end
 end

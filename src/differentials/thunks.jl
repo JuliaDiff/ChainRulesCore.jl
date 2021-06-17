@@ -1,5 +1,13 @@
 abstract type AbstractThunk <: AbstractTangent end
 
+struct MutateThunkException <: Exception end
+
+function Base.showerror(io::IO, e::MutateThunkException)
+    print(io, "Tried to mutate a thunk, this is not supported. `unthunk` it first.")
+    return nothing
+end
+
+
 Base.Broadcast.broadcastable(x::AbstractThunk) = broadcastable(unthunk(x))
 
 @inline function Base.iterate(x::AbstractThunk)
@@ -44,7 +52,7 @@ Base.vec(a::AbstractThunk) = vec(unthunk(a))
 Base.axes(a::AbstractThunk, k) = axes(unthunk(a), k)
 Base.reshape(a::AbstractThunk, args...) = reshape(unthunk(a), args...)
 Base.getindex(a::AbstractThunk, args...) = getindex(unthunk(a), args...)
-Base.setindex!(a::AbstractThunk, value, key...) = setindex!(unthunk(a), value, key...)
+Base.setindex!(a::AbstractThunk, value, key...) = throw(MutateThunkException())
 Base.selectdim(a::AbstractThunk, args...) = selectdim(unthunk(a), args...)
 
 LinearAlgebra.Array(a::AbstractThunk) = Array(unthunk(a))
@@ -69,15 +77,16 @@ LinearAlgebra.dot(a::AbstractThunk, b) = dot(unthunk(a), b)
 LinearAlgebra.dot(a, b::AbstractThunk) = dot(a, unthunk(b))
 LinearAlgebra.dot(a::AbstractThunk, b::AbstractThunk) = dot(unthunk(a), unthunk(b))
 
-LinearAlgebra.ldiv!(a, b::AbstractThunk) = ldiv!(a, unthunk(b))
-LinearAlgebra.rdiv!(a::AbstractThunk, b) = rdiv!(unthunk(a), b)
-LinearAlgebra.mul!(C::AbstractThunk, A, B, α, β) = mul!(unthunk(C), A, B, α, β)
+LinearAlgebra.ldiv!(a, b::AbstractThunk) = throw(MutateThunkException())
+LinearAlgebra.rdiv!(a::AbstractThunk, b) = throw(MutateThunkException())
+
+LinearAlgebra.mul!(C::AbstractThunk, A, B, α, β) = throw(MutateThunkException())
+LinearAlgebra.mul!(C::AbstractThunk, A::AbstractThunk, B, α, β) = throw(MutateThunkException())
+LinearAlgebra.mul!(C::AbstractThunk, A, B::AbstractThunk, α, β) = throw(MutateThunkException())
+LinearAlgebra.mul!(C::AbstractThunk, A::AbstractThunk, B::AbstractThunk, α, β) = throw(MutateThunkException())
 LinearAlgebra.mul!(C, A::AbstractThunk, B, α, β) = mul!(C, unthunk(A), B, α, β)
 LinearAlgebra.mul!(C, A, B::AbstractThunk, α, β) = mul!(C, A, unthunk(B), α, β)
-LinearAlgebra.mul!(C::AbstractThunk, A::AbstractThunk, B, α, β) = mul!(unthunk(C), unthunk(A), B, α, β)
-LinearAlgebra.mul!(C::AbstractThunk, A, B::AbstractThunk, α, β) = mul!(unthunk(C), A, unthunk(B), α, β)
 LinearAlgebra.mul!(C, A::AbstractThunk, B::AbstractThunk, α, β) = mul!(C, unthunk(A), unthunk(B), α, β)
-LinearAlgebra.mul!(C::AbstractThunk, A::AbstractThunk, B::AbstractThunk, α, β) = mul!(unthunk(C), unthunk(A), unthunk(B), α, β)
 
 LinearAlgebra.BLAS.ger!(alpha, x::AbstractThunk, y, A) = LinearAlgebra.BLAS.ger!(alpha, unthunk(x), y, A)
 LinearAlgebra.BLAS.ger!(alpha, x, y::AbstractThunk, A) = LinearAlgebra.BLAS.ger!(alpha, x, unthunk(y), A)
@@ -85,7 +94,7 @@ LinearAlgebra.BLAS.gemv!(tA, alpha, A, x::AbstractThunk, beta, y) = LinearAlgebr
 LinearAlgebra.BLAS.gemv(tA, alpha, A, x::AbstractThunk) = LinearAlgebra.BLAS.gemv(tA, alpha, A, unthunk(x))
 LinearAlgebra.BLAS.scal!(n, a::AbstractThunk, X, incx) = LinearAlgebra.BLAS.scal!(n, unthunk(a), X, incx)
 
-LinearAlgebra.LAPACK.trsyl!(transa, transb, A, B, C::AbstractThunk, isgn=1) = LAPACK.trsyl!(transa, transb, A, B, unthunk(C), isgn)
+LinearAlgebra.LAPACK.trsyl!(transa, transb, A, B, C::AbstractThunk, isgn=1) = throw(MutateThunkException())
 
 """
     @thunk expr
