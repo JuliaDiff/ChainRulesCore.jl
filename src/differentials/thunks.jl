@@ -7,7 +7,6 @@ function Base.showerror(io::IO, e::MutateThunkException)
     return nothing
 end
 
-
 Base.Broadcast.broadcastable(x::AbstractThunk) = broadcastable(unthunk(x))
 
 @inline function Base.iterate(x::AbstractThunk)
@@ -27,7 +26,7 @@ Base.:(==)(a::AbstractThunk, b::AbstractThunk) = unthunk(a) == unthunk(b)
 Base.:(==)(a::AbstractThunk, b) = unthunk(a) == b
 Base.:(==)(a, b::AbstractThunk) = a == unthunk(b)
 
-Base.:(-)(a::AbstractThunk) = - unthunk(a)
+Base.:(-)(a::AbstractThunk) = -unthunk(a)
 Base.:(-)(a::AbstractThunk, b) = unthunk(a) - b
 Base.:(-)(a, b::AbstractThunk) = a - unthunk(b)
 Base.:(/)(a::AbstractThunk, b) = unthunk(a) / b
@@ -39,7 +38,9 @@ Base.Complex(a::AbstractThunk) = Complex(unthunk(a))
 Base.Complex(a::AbstractThunk, b::AbstractThunk) = Complex(unthunk(a), unthunk(b))
 
 Base.mapreduce(f, op, a::AbstractThunk; kws...) = mapreduce(f, op, unthunk(a); kws...)
-Base.mapreduce(f, op, itr, a::AbstractThunk; kws...) = mapreduce(f, op, itr, unthunk(a); kws...)
+function Base.mapreduce(f, op, itr, a::AbstractThunk; kws...)
+    return mapreduce(f, op, itr, unthunk(a); kws...)
+end
 Base.sum!(r, A::AbstractThunk; kws...) = sum!(r, unthunk(A); kws...)
 
 Base.vec(a::AbstractThunk) = vec(unthunk(a))
@@ -56,8 +57,12 @@ LinearAlgebra.UpperTriangular(a::AbstractThunk) = UpperTriangular(unthunk(a))
 LinearAlgebra.Symmetric(a::AbstractThunk, uplo=:U) = Symmetric(unthunk(a), uplo)
 LinearAlgebra.Hermitian(a::AbstractThunk, uplo=:U) = Hermitian(unthunk(a), uplo)
 
-LinearAlgebra.diagm(kv::Pair{<:Integer, <:AbstractThunk}...) = diagm((k => unthunk(v) for (k, v) in kv)...)
-LinearAlgebra.diagm(m, n, kv::Pair{<:Integer, <:AbstractThunk}...) = diagm(m, n, (k => unthunk(v) for (k, v) in kv)...)
+function LinearAlgebra.diagm(kv::Pair{<:Integer,<:AbstractThunk}...)
+    return diagm((k => unthunk(v) for (k, v) in kv)...)
+end
+function LinearAlgebra.diagm(m, n, kv::Pair{<:Integer,<:AbstractThunk}...)
+    return diagm(m, n, (k => unthunk(v) for (k, v) in kv)...)
+end
 LinearAlgebra.tril(a::AbstractThunk) = tril(unthunk(a))
 LinearAlgebra.tril(a::AbstractThunk, k) = tril(unthunk(a), k)
 LinearAlgebra.triu(a::AbstractThunk) = triu(unthunk(a))
@@ -74,20 +79,40 @@ LinearAlgebra.ldiv!(a, b::AbstractThunk) = throw(MutateThunkException())
 LinearAlgebra.rdiv!(a::AbstractThunk, b) = throw(MutateThunkException())
 
 LinearAlgebra.mul!(C::AbstractThunk, A, B, α, β) = throw(MutateThunkException())
-LinearAlgebra.mul!(C::AbstractThunk, A::AbstractThunk, B, α, β) = throw(MutateThunkException())
-LinearAlgebra.mul!(C::AbstractThunk, A, B::AbstractThunk, α, β) = throw(MutateThunkException())
-LinearAlgebra.mul!(C::AbstractThunk, A::AbstractThunk, B::AbstractThunk, α, β) = throw(MutateThunkException())
+function LinearAlgebra.mul!(C::AbstractThunk, A::AbstractThunk, B, α, β)
+    return throw(MutateThunkException())
+end
+function LinearAlgebra.mul!(C::AbstractThunk, A, B::AbstractThunk, α, β)
+    return throw(MutateThunkException())
+end
+function LinearAlgebra.mul!(C::AbstractThunk, A::AbstractThunk, B::AbstractThunk, α, β)
+    return throw(MutateThunkException())
+end
 LinearAlgebra.mul!(C, A::AbstractThunk, B, α, β) = mul!(C, unthunk(A), B, α, β)
 LinearAlgebra.mul!(C, A, B::AbstractThunk, α, β) = mul!(C, A, unthunk(B), α, β)
-LinearAlgebra.mul!(C, A::AbstractThunk, B::AbstractThunk, α, β) = mul!(C, unthunk(A), unthunk(B), α, β)
+function LinearAlgebra.mul!(C, A::AbstractThunk, B::AbstractThunk, α, β)
+    return mul!(C, unthunk(A), unthunk(B), α, β)
+end
 
-LinearAlgebra.BLAS.ger!(alpha, x::AbstractThunk, y, A) = LinearAlgebra.BLAS.ger!(alpha, unthunk(x), y, A)
-LinearAlgebra.BLAS.ger!(alpha, x, y::AbstractThunk, A) = LinearAlgebra.BLAS.ger!(alpha, x, unthunk(y), A)
-LinearAlgebra.BLAS.gemv!(tA, alpha, A, x::AbstractThunk, beta, y) = LinearAlgebra.BLAS.gemv!(tA, alpha, A, unthunk(x), beta, y)
-LinearAlgebra.BLAS.gemv(tA, alpha, A, x::AbstractThunk) = LinearAlgebra.BLAS.gemv(tA, alpha, A, unthunk(x))
-LinearAlgebra.BLAS.scal!(n, a::AbstractThunk, X, incx) = LinearAlgebra.BLAS.scal!(n, unthunk(a), X, incx)
+function LinearAlgebra.BLAS.ger!(alpha, x::AbstractThunk, y, A)
+    return LinearAlgebra.BLAS.ger!(alpha, unthunk(x), y, A)
+end
+function LinearAlgebra.BLAS.ger!(alpha, x, y::AbstractThunk, A)
+    return LinearAlgebra.BLAS.ger!(alpha, x, unthunk(y), A)
+end
+function LinearAlgebra.BLAS.gemv!(tA, alpha, A, x::AbstractThunk, beta, y)
+    return LinearAlgebra.BLAS.gemv!(tA, alpha, A, unthunk(x), beta, y)
+end
+function LinearAlgebra.BLAS.gemv(tA, alpha, A, x::AbstractThunk)
+    return LinearAlgebra.BLAS.gemv(tA, alpha, A, unthunk(x))
+end
+function LinearAlgebra.BLAS.scal!(n, a::AbstractThunk, X, incx)
+    return LinearAlgebra.BLAS.scal!(n, unthunk(a), X, incx)
+end
 
-LinearAlgebra.LAPACK.trsyl!(transa, transb, A, B, C::AbstractThunk, isgn=1) = throw(MutateThunkException())
+function LinearAlgebra.LAPACK.trsyl!(transa, transb, A, B, C::AbstractThunk, isgn=1)
+    return throw(MutateThunkException())
+end
 
 """
     @thunk expr
@@ -179,7 +204,7 @@ but it should do this more efficently than simply doing this directly.
 Most operations on an `InplaceableThunk` treat it just like a normal `Thunk`;
 and destroy its inplacability.
 """
-struct InplaceableThunk{T<:Thunk, F} <: AbstractThunk
+struct InplaceableThunk{T<:Thunk,F} <: AbstractThunk
     val::T
     add!::F
 end
@@ -188,5 +213,5 @@ unthunk(x::InplaceableThunk) = unthunk(x.val)
 (x::InplaceableThunk)() = unthunk(x)
 
 function Base.show(io::IO, x::InplaceableThunk)
-    print(io, "InplaceableThunk($(repr(x.val)), $(repr(x.add!)))")
+    return print(io, "InplaceableThunk($(repr(x.val)), $(repr(x.add!)))")
 end
