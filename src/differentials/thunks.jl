@@ -38,7 +38,6 @@ Base.imag(a::AbstractThunk) = imag(unthunk(a))
 Base.Complex(a::AbstractThunk) = Complex(unthunk(a))
 Base.Complex(a::AbstractThunk, b::AbstractThunk) = Complex(unthunk(a), unthunk(b))
 
-Base.eltype(a::AbstractThunk) = eltype(unthunk(a))
 Base.convert(T, a::AbstractThunk) = convert(T, unthunk(a))
 Base.convert(::Type{T}, t::T) where T<:AbstractThunk = t
 
@@ -46,10 +45,7 @@ Base.mapreduce(f, op, a::AbstractThunk; kws...) = mapreduce(f, op, unthunk(a); k
 Base.mapreduce(f, op, itr, a::AbstractThunk; kws...) = mapreduce(f, op, itr, unthunk(a); kws...)
 Base.sum!(r, A::AbstractThunk; kws...) = sum!(r, unthunk(A); kws...)
 
-Base.size(a::AbstractThunk) = size(unthunk(a))
-Base.size(a::AbstractThunk, dim) = size(unthunk(a), dim)
 Base.vec(a::AbstractThunk) = vec(unthunk(a))
-Base.axes(a::AbstractThunk, k) = axes(unthunk(a), k)
 Base.reshape(a::AbstractThunk, args...) = reshape(unthunk(a), args...)
 Base.getindex(a::AbstractThunk, args...) = getindex(unthunk(a), args...)
 Base.setindex!(a::AbstractThunk, value, key...) = throw(MutateThunkException())

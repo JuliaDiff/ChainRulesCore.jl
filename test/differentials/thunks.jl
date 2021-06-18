@@ -109,7 +109,6 @@
         v = [1, 2, 3]
         t = @thunk(v)
 
-        @test eltype(v) === eltype(t)
         @test 1.0 == convert(Float64, @thunk(1))
         @test @thunk(1) == convert(Thunk, @thunk(1))
 
@@ -119,11 +118,7 @@
         end
         @test [4 6] == sum!([1 1], @thunk([1 2; 3 4]))
 
-        @test (3,) == size(t)
-        @test 3 == size(t, 1)
-
         @test v == vec(t) 
-        @test Base.OneTo(3) == axes(t, 1)
         @test [1 2 3] == reshape(t, 1, 3)
         @test 1 == getindex(t, 1)
         @test_throws MutateThunkException setindex!(t, 0.0, 1)
