@@ -137,5 +137,5 @@ rrule(::RuleConfig, args...) = rrule(args...)
 const rrule_kwfunc = Core.kwftype(typeof(rrule)).instance
 (::typeof(rrule_kwfunc))(::Any, ::typeof(rrule), ::Any, ::Vararg{Any}) = nothing
 function (::typeof(rrule_kwfunc))(kws::Any, ::typeof(rrule), ::RuleConfig, args...)
-    return (rule_kwfunc(kws, rrule, args...)
+    return rrule_kwfunc(kws, rrule, args...)
 end
