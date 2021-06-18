@@ -109,9 +109,6 @@
         v = [1, 2, 3]
         t = @thunk(v)
 
-        @test 1.0 == convert(Float64, @thunk(1))
-        @test @thunk(1) == convert(Thunk, @thunk(1))
-
         if VERSION >= v"1.2"
             @test 3 == mapreduce(_ -> 1, +, t)
             @test 3 == mapreduce((_, _) -> 1, +, v, t)

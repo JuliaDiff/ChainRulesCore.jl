@@ -38,9 +38,6 @@ Base.imag(a::AbstractThunk) = imag(unthunk(a))
 Base.Complex(a::AbstractThunk) = Complex(unthunk(a))
 Base.Complex(a::AbstractThunk, b::AbstractThunk) = Complex(unthunk(a), unthunk(b))
 
-Base.convert(T, a::AbstractThunk) = convert(T, unthunk(a))
-Base.convert(::Type{T}, t::T) where T<:AbstractThunk = t
-
 Base.mapreduce(f, op, a::AbstractThunk; kws...) = mapreduce(f, op, unthunk(a); kws...)
 Base.mapreduce(f, op, itr, a::AbstractThunk; kws...) = mapreduce(f, op, itr, unthunk(a); kws...)
 Base.sum!(r, A::AbstractThunk; kws...) = sum!(r, unthunk(A); kws...)
