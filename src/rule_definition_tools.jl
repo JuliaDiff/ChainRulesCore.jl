@@ -342,14 +342,16 @@ end
 
 function _nondiff_frule_expr(__source__, primal_sig_parts, primal_invoke)
     @gensym kwargs
-    # `::Any` instead of `_`: https://github.com/JuliaLang/julia/issues/32727
     return @strip_linenos quote
-        function ChainRulesCore.frule(
-            @nospecialize(::Any), $(map(esc, primal_sig_parts)...); $(esc(kwargs))...
-        )
+        # Manually defined kw version to save compiler work. See explanation in rules.jl
+        function (::Core.kwftype(typeof(ChainRulesCore.frule)))(@nospecialize($kwargs::Any),
+                frule::typeof(ChainRulesCore.frule), @nospecialize(::Any), $(map(esc, primal_sig_parts)...))
+            return ($(esc(_with_kwargs_expr(primal_invoke, kwargs))), NoTangent())
+        end
+        function ChainRulesCore.frule(@nospecialize(::Any), $(map(esc, primal_sig_parts)...))
             $(__source__)
             # Julia functions always only have 1 output, so return a single NoTangent()
-            return ($(esc(_with_kwargs_expr(primal_invoke, kwargs))), NoTangent())
+            return ($(esc(primal_invoke)), NoTangent())
         end
     end
 end
