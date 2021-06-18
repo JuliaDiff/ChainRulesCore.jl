@@ -109,7 +109,7 @@
         v = [1, 2, 3]
         t = @thunk(v)
 
-        @test Int64 === eltype(t)
+        @test eltype(v) === eltype(t)
         @test 1.0 == convert(Float64, @thunk(1))
         @test @thunk(1) == convert(Thunk, @thunk(1))
 
