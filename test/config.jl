@@ -161,3 +161,19 @@ end
         @test (MostBoringConfig() .=> (1,2,3)) isa NTuple{3, Pair{MostBoringConfig,Int}}
     end
 end
+
+@testset "fallbacks" begin
+    # Test that incorrect use of the fallback rules correctly throws MethodError
+    @test_throws MethodError frule()
+    @test_throws MethodError frule(;kw="hello")
+    @test_throws MethodError frule(sin)
+    @test_throws MethodError frule(sin;kw="hello")
+    @test_throws MethodError frule(MostBoringConfig())
+    @test_throws MethodError frule(MostBoringConfig(); kw="hello")
+    @test_throws MethodError frule(MostBoringConfig(), sin)
+    @test_throws MethodError frule(MostBoringConfig(), sin; kw="hello")
+    @test_throws MethodError rrule()
+    @test_throws MethodError rrule(;kw="hello")
+    @test_throws MethodError rrule(MostBoringConfig())
+    @test_throws MethodError rrule(MostBoringConfig();kw="hello")
+end
