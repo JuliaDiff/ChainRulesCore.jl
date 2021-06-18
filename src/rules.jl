@@ -74,8 +74,9 @@ frule(::RuleConfig, args...) = frule(args...)
 # explicitly empty body to save the compiler that work.
 const frule_kwfunc = Core.kwftype(typeof(frule)).instance
 (::typeof(frule_kwfunc))(::Any, ::typeof(frule), ȧrgs, f, ::Vararg{Any}) = nothing
-(::typeof(frule_kwfunc))(kws::Any, ::typeof(frule), ::RuleConfig, args...) =
-    (frule_kwfunc)(kws, frule, args...)
+function (::typeof(frule_kwfunc))(kws::Any, ::typeof(frule), ::RuleConfig, args...)
+    return frule_kwfunc(kws, frule, args...)
+end
 
 """
     rrule([::RuleConfig,] f, x...)
@@ -135,5 +136,6 @@ rrule(::RuleConfig, args...) = rrule(args...)
 # Manual fallback for keyword arguments. See above
 const rrule_kwfunc = Core.kwftype(typeof(rrule)).instance
 (::typeof(rrule_kwfunc))(::Any, ::typeof(rrule), ::Any, ::Vararg{Any}) = nothing
-(::typeof(rrule_kwfunc))(kws::Any, ::typeof(rrule), ::RuleConfig, args...) =
-    (rrule_kwfunc)(kws, rrule, args...)
+function (::typeof(rrule_kwfunc))(kws::Any, ::typeof(rrule), ::RuleConfig, args...)
+    return (rule_kwfunc(kws, rrule, args...)
+end
