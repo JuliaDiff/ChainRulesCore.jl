@@ -22,3 +22,9 @@ end
     E = ChainRulesCore.NotImplementedException
     @test_throws E extern(ni)
 end
+
+
+@testset "Deprecated: calling thunks should call inner function" begin
+    @test_deprecated (@thunk(3))() == 3
+    @test_deprecated (@thunk(@thunk(3)))() isa Thunk
+end

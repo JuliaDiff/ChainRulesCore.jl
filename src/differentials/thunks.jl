@@ -148,8 +148,7 @@ A thunk is a deferred computation.
 It wraps a zero argument closure that when invoked returns a differential.
 `@thunk(v)` is a macro that expands into `Thunk(()->v)`.
 
-Calling a thunk, calls the wrapped closure.
-If you are unsure if you have a `Thunk`, call [`unthunk`](@ref) which is a no-op when the
+To evaluate the wrapped closure, call [`unthunk`](@ref) which is a no-op when the
 argument is not a `Thunk`.
 
 ```jldoctest
@@ -159,7 +158,7 @@ Thunk(var"#4#6"())
 julia> t()
 Thunk(var"#5#7"())
 
-julia> t()()
+julia> unthunk(t())
 3
 ```
 
@@ -187,8 +186,7 @@ struct Thunk{F} <: AbstractThunk
     f::F
 end
 
-(x::Thunk)() = x.f()
-@inline unthunk(x::Thunk) = x()
+@inline unthunk(x::Thunk) = x.f()
 
 Base.show(io::IO, x::Thunk) = print(io, "Thunk($(repr(x.f)))")
 
@@ -210,7 +208,6 @@ struct InplaceableThunk{T<:Thunk,F} <: AbstractThunk
 end
 
 unthunk(x::InplaceableThunk) = unthunk(x.val)
-(x::InplaceableThunk)() = unthunk(x)
 
 function Base.show(io::IO, x::InplaceableThunk)
     return print(io, "InplaceableThunk($(repr(x.val)), $(repr(x.add!)))")
