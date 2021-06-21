@@ -48,6 +48,9 @@ extern(x::NotImplemented) = (Base.depwarn(EXTERN_DEPRECATION, :extern); throw(No
 
 @inline extern(x::AbstractThunk) = (Base.depwarn(EXTERN_DEPRECATION, :extern); return extern(unthunk(x)))
 
-
-
-
+for T in (:Thunk, :InplaceableThunk)
+    @eval function (x::$T)()
+        Base.depwarn("`(x::" * string($T) * ")()` is deprecated, use `unthunk(x)`", Symbol(:call_, $(T))) 
+        return unthunk(x)
+    end    
+end

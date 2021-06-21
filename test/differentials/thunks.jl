@@ -27,11 +27,6 @@
         @test unthunk(@thunk(@thunk(3))) isa Thunk
     end
 
-    @testset "calling thunks should call inner function" begin
-        @test (@thunk(3))() == 3
-        @test (@thunk(@thunk(3)))() isa Thunk
-    end
-
     @testset "erroring thunks should include the source in the backtrack" begin
         expected_line = (@__LINE__) + 2  # for testing it is at right palce
         try
