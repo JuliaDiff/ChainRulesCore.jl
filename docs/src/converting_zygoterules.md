@@ -38,6 +38,9 @@ end
 No magic macro here, `rrule` is the function that it is.
 The function it is the rule for is the first argument, or second argument if you need to take a `[RuleConfig`](@ref).
 
+Note that when writing the rule for constructor you will need to use `::Type{Foo}`, not `typeof(Foo)`.
+See docs on [Constructors](@ref).
+
 ## Include the derivative with respect to the function object itself
 The `ZygoteRules.@adjoint` macro automagically[^1] inserts a extra `nothing` in the return for the function it generates to represent the derivative of output with respect to the function object.
 ChainRules as a philosophy avoids magic as much as possible, and thus require you to return it explicitly.
