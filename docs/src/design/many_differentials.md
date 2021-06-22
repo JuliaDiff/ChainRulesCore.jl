@@ -1,4 +1,4 @@
-# Design Notes: The many-to-many relationship between differential types and primal types.
+# [Design Notes: The many-to-many relationship between differential types and primal types](@id manytypes)
 
 ChainRules has a system where one primal type (the type having its derivative taken) can have multiple possible differential types (the type of the derivative); and where one differential type can correspond to multiple primal types.
 This is in-contrast to the Swift AD efforts, which has one differential type per primal type (Swift uses the term associated tangent type, rather than differential type).
