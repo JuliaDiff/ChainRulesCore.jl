@@ -40,16 +40,16 @@ function project(::Type{<:Diagonal{<:Any, V}}, x::Diagonal, dx::AbstractMatrix) 
     return Diagonal(project(V, diag(x), diag(dx)))
 end
 
-function project(::Type{<:Diagonal{<:Any, V}}, x::Diagonal, dx::Composite) where {V}
+function project(::Type{<:Diagonal{<:Any, V}}, x::Diagonal, dx::Tangent) where {V}
     return Diagonal(project(V, diag(x), dx.diag))
 end
 
-function project(::Type{<:Composite}, x::Diagonal, dx::Diagonal)
-    return Composite{typeof(x)}(diag=diag(dx))
+function project(::Type{<:Tangent}, x::Diagonal, dx::Diagonal)
+    return Tangent{typeof(x)}(diag=diag(dx))
 end
 
 
 
 # One use for this functionality is to make it easy to define addition between two different
 # representations of the same tangent. This also makes it clear that the 
-Base.:(+)(x::Composite{<:Diagonal}, y::Diagonal) = x + project(typeof(x), x, y)
+Base.:(+)(x::Tangent{<:Diagonal}, y::Diagonal) = x + project(typeof(x), x, y)
