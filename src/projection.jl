@@ -14,47 +14,49 @@ function project end
 
 project(x, dx) = project(typeof(x), x, dx)
 
-# Number-types
-project(::Type{T}, x::T, dx::T) where {T<:Real} = dx
+# identity
+project(::Type{T}, x::T, dx::T) where T = dx
 
-project(::Type{T}, x::T, dx::Complex) where {T<:Real} = real(dx)
+### AbstractZero
+project(::Type{T}, x::T, dx::AbstractZero) where T = zero(x)
 
-project(::Type{T}, x::T, dx::AbstractZero) where {T<:Real} = zero(x)
+### AbstractThunk
+project(::Type{T}, x::T, dx::AbstractThunk) where T = project(x, unthunk(dx))
 
-project(::Type{T}, x::T, dx::AbstractThunk) where {T<:Real} = project(x, unthunk(dx))
 
+### Number-types
+project(::Type{T}, x::T, dx::T2) where {T<:Number, T2<:Number} = T(dx)
+project(::Type{T}, x::T, dx::Complex) where {T<:Real} = T(real(dx))
 
 
 # Arrays
 project(::Type{Array{T, N}}, x::Array{T, N}, dx::Array{T, N}) where {T<:Real, N} = dx
 
+# for project([Foo(0.0), Foo(0.0)], [ZeroTangent(), ZeroTangent()])
 project(::Type{<:Array{T}}, x::Array, dx::Array) where {T} = project.(Ref(T), x, dx)
 
+# for project(rand(2, 2), Diagonal(rand(2)))
 function project(::Type{T}, x::Array, dx::AbstractArray) where {T<:Array}
     return project(T, x, collect(dx))
 end
 
+# for project([Foo(0.0), Foo(0.0)], ZeroTangent())
 function project(::Type{<:Array{T}}, x::Array, dx::AbstractZero) where {T}
     return project.(Ref(T), x, Ref(dx))
 end
 
 
-
-# Diagonal
+## Diagonal
 function project(::Type{<:Diagonal{<:Any, V}}, x::Diagonal, dx::AbstractMatrix) where {V}
     return Diagonal(project(V, diag(x), diag(dx)))
 end
-
 function project(::Type{<:Diagonal{<:Any, V}}, x::Diagonal, dx::Tangent) where {V}
     return Diagonal(project(V, diag(x), dx.diag))
+end
+function project(::Type{<:Diagonal{<:Any, V}}, x::Diagonal, dx::AbstractZero) where {V}
+    return Diagonal(project(V, diag(x), dx))
 end
 
 function project(::Type{<:Tangent}, x::Diagonal, dx::Diagonal)
     return Tangent{typeof(x)}(diag=diag(dx))
 end
-
-
-
-# One use for this functionality is to make it easy to define addition between two different
-# representations of the same tangent. This also makes it clear that the 
-Base.:(+)(x::Tangent{<:Diagonal}, y::Diagonal) = x + project(typeof(x), x, y)
