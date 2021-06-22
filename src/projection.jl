@@ -1,15 +1,18 @@
 using LinearAlgebra: Diagonal, diag
 
 """
-    project(T::Type, x, dx)
+    project([T::Type], x, dx)
 
-"project" `dx` onto type `T` such that it is the same size as `x`.
+"project" `dx` onto type `T` such that it is the same size as `x`. If `T` is not provided,
+it is assumed to be the type of `x`.
 
 It's necessary to have `x` to ensure that it's possible to project e.g. `AbstractZero`s
 onto `Array`s -- this wouldn't be possible with type information alone because the neither
 `AbstractZero`s nor `T` know what size of `Array` to produce.
 """
 function project end
+
+project(x, dx) = project(typeof(x), x, dx)
 
 # Number-types
 project(::Type{T}, x::T, dx::T) where {T<:Real} = dx
