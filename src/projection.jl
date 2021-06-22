@@ -17,6 +17,8 @@ project(x, dx) = project(typeof(x), x, dx)
 # Number-types
 project(::Type{T}, x::T, dx::T) where {T<:Real} = dx
 
+project(::Type{T}, x::T, dx::Complex) where {T<:Real} = real(dx)
+
 project(::Type{T}, x::T, dx::AbstractZero) where {T<:Real} = zero(x)
 
 project(::Type{T}, x::T, dx::AbstractThunk) where {T<:Real} = project(x, unthunk(dx))
