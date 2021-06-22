@@ -1,14 +1,14 @@
-struct Foo
+struct Fred
     a::Float64
 end
 
-Base.zero(::Foo) = Foo(0.0)
-Base.zero(::Type{Foo}) = "F0"
+Base.zero(::Fred) = Fred(0.0)
+Base.zero(::Type{Fred}) = "F0"
 
 @testset "projection" begin
 
     #identity
-    @test Foo(1.2) == project(Foo(-0.2), Foo(1.2))
+    @test Fred(1.2) == project(Fred(-0.2), Fred(1.2))
     @test 3.2 == project(1.0, 3.2)
     @test 2.0 + 0.0im == project(1.0im, 2.0)
 
@@ -25,20 +25,20 @@ Base.zero(::Type{Foo}) = "F0"
         end
 
         @testset "to structs" begin
-            @test Foo(0.0) == project(Foo(3.2), ZeroTangent())
+            @test Fred(0.0) == project(Fred(3.2), ZeroTangent())
         end
 
         @testset "to arrays of structs" begin
-            @test [Foo(0.0), Foo(0.0)] == project([Foo(0.0), Foo(0.0)], ZeroTangent())
-            @test Diagonal([Foo(0.0), Foo(0.0)]) == project(Diagonal([Foo(3.2,), Foo(4.2)]), ZeroTangent())
+            @test [Fred(0.0), Fred(0.0)] == project([Fred(0.0), Fred(0.0)], ZeroTangent())
+            @test Diagonal([Fred(0.0), Fred(0.0)]) == project(Diagonal([Fred(3.2,), Fred(4.2)]), ZeroTangent())
         end
     end
 
     @testset "From AbstractThunk" begin
         @test 3.2 == project(1.0, @thunk(3.2))
-        @test Foo(3.2) == project(Foo(-0.2), @thunk(Foo(3.2)))
+        @test Fred(3.2) == project(Fred(-0.2), @thunk(Fred(3.2)))
         @test zeros(2) == project([1.0, 2.0], @thunk(ZeroTangent()))
-        @test Diagonal([Foo(0.0), Foo(0.0)]) == project(Diagonal([Foo(3.2,), Foo(4.2)]), @thunk(ZeroTangent()))
+        @test Diagonal([Fred(0.0), Fred(0.0)]) == project(Diagonal([Fred(3.2,), Fred(4.2)]), @thunk(ZeroTangent()))
     end
 
     @testset "To number types" begin
@@ -63,7 +63,7 @@ Base.zero(::Type{Foo}) = "F0"
         @test [1.0 0; 0 4] == project(zeros(2, 2), Diagonal([1.0, 4]))
 
         # from an array of specials
-        @test [Foo(0.0), Foo(0.0)] == project([Foo(0.0), Foo(0.0)], [ZeroTangent(), ZeroTangent()])
+        @test [Fred(0.0), Fred(0.0)] == project([Fred(0.0), Fred(0.0)], [ZeroTangent(), ZeroTangent()])
     end
 
     @testset "Diagonal" begin
@@ -73,8 +73,8 @@ Base.zero(::Type{Foo}) = "F0"
         @test d == project(d, t)
         @test project(Tangent, d, d) isa Tangent
 
-        @test Diagonal([Foo(0.0), Foo(0.0)]) == project(Diagonal([Foo(3.2,), Foo(4.2)]), Diagonal([ZeroTangent(), ZeroTangent()]))
-        @test Diagonal([Foo(0.0), Foo(0.0)]) == project(Diagonal([Foo(3.2,), Foo(4.2)]), @thunk(ZeroTangent()))
+        @test Diagonal([Fred(0.0), Fred(0.0)]) == project(Diagonal([Fred(3.2,), Fred(4.2)]), Diagonal([ZeroTangent(), ZeroTangent()]))
+        @test Diagonal([Fred(0.0), Fred(0.0)]) == project(Diagonal([Fred(3.2,), Fred(4.2)]), @thunk(ZeroTangent()))
     end
 
     # how to project to Upper/Lower Symmetric
