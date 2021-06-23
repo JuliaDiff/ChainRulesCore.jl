@@ -193,7 +193,7 @@ end
 
 Base.show(io::IO, x::Thunk) = print(io, "Thunk($(repr(x.f)))")
 
-Base.convert(::Type{<:Thunk}, a::T) where T = @thunk(a)
+Base.convert(::Type{<:Thunk}, a::AbstractZero) = @thunk(a)
 
 
 """
