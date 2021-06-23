@@ -1,62 +1,66 @@
 using LinearAlgebra: Diagonal, diag
 
 """
-    project([T::Type], x, dx)
+    projector([T::Type], x, dx)
 
-"project" `dx` onto type `T` such that it is the same size as `x`. If `T` is not provided,
+"projector" `dx` onto type `T` such that it is the same size as `x`. If `T` is not provided,
 it is assumed to be the type of `x`.
 
-It's necessary to have `x` to ensure that it's possible to project e.g. `AbstractZero`s
+It's necessary to have `x` to ensure that it's possible to projector e.g. `AbstractZero`s
 onto `Array`s -- this wouldn't be possible with type information alone because the neither
 `AbstractZero`s nor `T` know what size of `Array` to produce.
-"""
-function project end
+""" # TODO change docstring to reflect projecor returns a closure
+function projector end
 
-project(x, dx) = project(typeof(x), x, dx)
+projector(x, dx) = projector(typeof(x), x, dx)
 
 # identity
-project(::Type{T}, x::T, dx::T) where T = dx
+projector(::Type{T}, x::T, dx::T) where T = identity
 
 ### AbstractZero
-project(::Type{T}, x::T, dx::AbstractZero) where T = zero(x)
+projector(::Type{T}, x::T, dx::AbstractZero) where T = _ -> zero(x)
 
 ### AbstractThunk
-project(::Type{T}, x::T, dx::AbstractThunk) where T = project(x, unthunk(dx))
+projector(::Type{T}, x::T, dx::AbstractThunk) where T = projector(x, unthunk(dx))
 
 
 ### Number-types
-project(::Type{T}, x::T, dx::T2) where {T<:Number, T2<:Number} = T(dx)
-project(::Type{T}, x::T, dx::Complex) where {T<:Real} = T(real(dx))
+projector(::Type{T}, x::T, dx::T2) where {T<:Number, T2<:Number} = dx -> T(dx)
+projector(::Type{T}, x::T, dx::Complex) where {T<:Real} = dx -> T(real(dx))
 
 
 # Arrays
-project(::Type{Array{T, N}}, x::Array{T, N}, dx::Array{T, N}) where {T<:Real, N} = dx
+projector(::Type{Array{T, N}}, x::Array{T, N}, dx::Array{T, N}) where {T<:Real, N} = identity
 
-# for project([Foo(0.0), Foo(0.0)], [ZeroTangent(), ZeroTangent()])
-project(::Type{<:Array{T}}, x::Array, dx::Array) where {T} = project.(Ref(T), x, dx)
+# for projector([Foo(0.0), Foo(0.0)], [ZeroTangent(), ZeroTangent()])
+projector(::Type{<:Array{T}}, x::Array, dx::Array) where {T} = projector.(Ref(T), x, dx) # TODO
 
-# for project(rand(2, 2), Diagonal(rand(2)))
-function project(::Type{T}, x::Array, dx::AbstractArray) where {T<:Array}
-    return project(T, x, collect(dx))
+# for projector(rand(2, 2), Diagonal(rand(2)))
+function projector(::Type{T}, x::Array, dx::AbstractArray) where {T<:Array}
+    return projector(T, x, collect(dx))
 end
 
-# for project([Foo(0.0), Foo(0.0)], ZeroTangent())
-function project(::Type{<:Array{T}}, x::Array, dx::AbstractZero) where {T}
-    return project.(Ref(T), x, Ref(dx))
+# for projector([Foo(0.0), Foo(0.0)], ZeroTangent())
+function projector(::Type{<:Array{T}}, x::Array, dx::AbstractZero) where {T}
+    return projector.(Ref(T), x, Ref(dx)) # TODO
 end
 
 
 ## Diagonal
-function project(::Type{<:Diagonal{<:Any, V}}, x::Diagonal, dx::AbstractMatrix) where {V}
-    return Diagonal(project(V, diag(x), diag(dx)))
+function projector(::Type{<:Diagonal{<:Any, V}}, x::Diagonal, dx::AbstractMatrix) where {V}
+    d = diag(x)
+    return dx -> Diagonal(projector(V, d, diag(dx)))
 end
-function project(::Type{<:Diagonal{<:Any, V}}, x::Diagonal, dx::Tangent) where {V}
-    return Diagonal(project(V, diag(x), dx.diag))
+function projector(::Type{<:Diagonal{<:Any, V}}, x::Diagonal, dx::Tangent) where {V}
+    d = diag(x)
+    return dx -> Diagonal(projector(V, d, dx.diag))
 end
-function project(::Type{<:Diagonal{<:Any, V}}, x::Diagonal, dx::AbstractZero) where {V}
-    return Diagonal(project(V, diag(x), dx))
+function projector(::Type{<:Diagonal{<:Any, V}}, x::Diagonal, dx::AbstractZero) where {V}
+    d = diag(x)
+    return dx -> Diagonal(projector(V, d, dx))
 end
 
-function project(::Type{<:Tangent}, x::Diagonal, dx::Diagonal)
-    return Tangent{typeof(x)}(diag=diag(dx))
+function projector(::Type{<:Tangent}, x::Diagonal, dx::Diagonal)
+    T = typeof(x)
+    return dx -> Tangent{T}(diag=diag(dx))
 end
