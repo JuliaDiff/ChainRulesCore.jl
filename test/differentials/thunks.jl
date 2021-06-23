@@ -22,6 +22,10 @@
         @test occursin(r"Thunk\(.*rand.*\)", rep)
     end
 
+    @testset "convert" begin
+        @test convert(Thunk, ZeroTangent()) isa Thunk
+    end
+
     @testset "unthunk" begin
         @test unthunk(@thunk(3)) == 3
         @test unthunk(@thunk(@thunk(3))) isa Thunk
@@ -110,6 +114,7 @@
         @test 10 == sum(@thunk([1 2; 3 4]))
         @test [4 6] == sum!([1 1], @thunk([1 2; 3 4]))
 
+        @test fill(3.2, 3) == fill(@thunk(3.2), 3)
         @test v == vec(t)
         @test [1 2 3] == reshape(t, 1, 3)
         @test 1 == getindex(t, 1)
@@ -152,6 +157,8 @@
             @test_throws MutateThunkException rdiv!(deepcopy(t), 2.0) ==
                                               rdiv!(deepcopy(a), 2.0)
         end
+
+        @test mul!(deepcopy(a), a, a) == mul!(deepcopy(a), t, a)
 
         res = mul!(deepcopy(a), a, a, true, true)
         @test_throws MutateThunkException mul!(deepcopy(t), a, a, true, true)

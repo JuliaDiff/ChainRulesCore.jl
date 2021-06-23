@@ -44,6 +44,7 @@ end
 Base.sum(a::AbstractThunk; kws...) = sum(unthunk(a); kws...)
 Base.sum!(r, A::AbstractThunk; kws...) = sum!(r, unthunk(A); kws...)
 
+Base.fill(a::AbstractThunk, b::Integer) = fill(unthunk(a), b)
 Base.vec(a::AbstractThunk) = vec(unthunk(a))
 Base.reshape(a::AbstractThunk, args...) = reshape(unthunk(a), args...)
 Base.getindex(a::AbstractThunk, args...) = getindex(unthunk(a), args...)
@@ -191,6 +192,9 @@ end
 @inline unthunk(x::Thunk) = x.f()
 
 Base.show(io::IO, x::Thunk) = print(io, "Thunk($(repr(x.f)))")
+
+Base.convert(::Type{<:Thunk}, a::T) where T = @thunk(a)
+
 
 """
     InplaceableThunk(val::Thunk, add!::Function)
