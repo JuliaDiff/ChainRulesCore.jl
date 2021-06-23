@@ -107,6 +107,7 @@
             @test 3 == mapreduce(_ -> 1, +, t)
             @test 3 == mapreduce((_, _) -> 1, +, v, t)
         end
+        @test 10 == sum(@thunk([1 2; 3 4]))
         @test [4 6] == sum!([1 1], @thunk([1 2; 3 4]))
 
         @test v == vec(t)

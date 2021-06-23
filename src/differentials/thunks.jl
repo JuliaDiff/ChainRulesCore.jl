@@ -41,6 +41,7 @@ Base.mapreduce(f, op, a::AbstractThunk; kws...) = mapreduce(f, op, unthunk(a); k
 function Base.mapreduce(f, op, itr, a::AbstractThunk; kws...)
     return mapreduce(f, op, itr, unthunk(a); kws...)
 end
+Base.sum(a::AbstractThunk; kws...) = sum(unthunk(a); kws...)
 Base.sum!(r, A::AbstractThunk; kws...) = sum!(r, unthunk(A); kws...)
 
 Base.vec(a::AbstractThunk) = vec(unthunk(a))
@@ -78,6 +79,7 @@ LinearAlgebra.dot(a::AbstractThunk, b::AbstractThunk) = dot(unthunk(a), unthunk(
 LinearAlgebra.ldiv!(a, b::AbstractThunk) = throw(MutateThunkException())
 LinearAlgebra.rdiv!(a::AbstractThunk, b) = throw(MutateThunkException())
 
+LinearAlgebra.mul!(A, B::AbstractThunk, C) = mul!(A, unthunk(B), C)
 LinearAlgebra.mul!(C::AbstractThunk, A, B, α, β) = throw(MutateThunkException())
 function LinearAlgebra.mul!(C::AbstractThunk, A::AbstractThunk, B, α, β)
     return throw(MutateThunkException())
