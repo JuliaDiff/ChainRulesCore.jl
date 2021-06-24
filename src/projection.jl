@@ -39,11 +39,11 @@ end
 
 # Arrays
 function projector(::Type{Array{T, N}}, x::Array{T, N}) where {T, N}
-    element = zero(eltype(x))
     sizex = size(x)
+    projT = projector(zero(T))
     project(dx::Array{T, N}) = dx # identity
     project(dx::AbstractArray) = project(collect(dx)) # from Diagonal
-    project(dx::Array) = projector(element).(dx) # from different element type
+    project(dx::Array) = projT.(dx) # from different element type
     project(dx::AbstractZero) = zeros(T, sizex...)
     project(dx::AbstractThunk) = project(unthunk(dx))
     return project
