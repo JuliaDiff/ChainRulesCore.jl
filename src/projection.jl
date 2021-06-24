@@ -3,13 +3,13 @@ using LinearAlgebra: Diagonal, diag
 """
     projector([T::Type], x)
 
-"project" `dx` onto type `T` such that it is the same size as `x`. If `T` is not provided,
-it is assumed to be the type of `x`.
+Returns a `project(dx)` closure which maps `dx` onto type `T`, such that it is the
+same size as `x`. If `T` is not provided, it is assumed to be the type of `x`.
 
-It's necessary to have `x` to ensure that it's possible to projector e.g. `AbstractZero`s
+It's necessary to have `x` to ensure that it's possible to project e.g. `AbstractZero`s
 onto `Array`s -- this wouldn't be possible with type information alone because the neither
 `AbstractZero`s nor `T` know what size of `Array` to produce.
-""" # TODO change docstring to reflect projecor returns a closure
+"""
 function projector end
 
 projector(x) = projector(typeof(x), x)
