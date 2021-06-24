@@ -27,6 +27,7 @@ Base.:/(z::AbstractZero, ::Any) = z
 Base.convert(::Type{T}, x::AbstractZero) where T <: Number = zero(T)
 
 Base.getindex(z::AbstractZero, k) = z
+Base.getproperty(z::AbstractZero, f::Symbol) = z
 
 """
     ZeroTangent() <: AbstractZero

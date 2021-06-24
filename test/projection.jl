@@ -3,78 +3,103 @@ struct Fred
 end
 
 Base.zero(::Fred) = Fred(0.0)
-Base.zero(::Type{Fred}) = "F0"
+Base.zero(::Type{Fred}) = Fred(0.0)
 
 @testset "projection" begin
-
-    #identity
-    @test Fred(1.2) == project(Fred(-0.2), Fred(1.2))
-    @test 3.2 == project(1.0, 3.2)
-    @test 2.0 + 0.0im == project(1.0im, 2.0)
-
-    @testset "From AbstractZero" begin
-        @testset "to numbers" begin
-            @test 0.0 == project(1.1, ZeroTangent())
-            @test 0.0f0 == project(1.1f0, ZeroTangent())
-        end
-
-        @testset "to arrays (dense and structured)" begin
-            @test zeros(2, 2) == project([1.0 2; 3 4], ZeroTangent())
-            @test Diagonal(zeros(2)) == project(Diagonal([1.0, 4]), ZeroTangent())
-            @test Diagonal(zeros(ComplexF64, 2)) == project(Diagonal([1.0 + 0im, 4]), ZeroTangent())
-        end
-
-        @testset "to structs" begin
-            @test Fred(0.0) == project(Fred(3.2), ZeroTangent())
-        end
-
-        @testset "to arrays of structs" begin
-            @test [Fred(0.0), Fred(0.0)] == project([Fred(0.0), Fred(0.0)], ZeroTangent())
-            @test Diagonal([Fred(0.0), Fred(0.0)]) == project(Diagonal([Fred(3.2,), Fred(4.2)]), ZeroTangent())
-        end
+    @testset "fallback" begin
+        @test Fred(1.2) == projector(Fred(3.2))(Fred(1.2))
+        @test Fred(0.0) == projector(Fred(3.2))(ZeroTangent())
+        @test Fred(3.2) == projector(Fred(-0.2))(@thunk(Fred(3.2)))
     end
 
-    @testset "From AbstractThunk" begin
-        @test 3.2 == project(1.0, @thunk(3.2))
-        @test Fred(3.2) == project(Fred(-0.2), @thunk(Fred(3.2)))
-        @test zeros(2) == project([1.0, 2.0], @thunk(ZeroTangent()))
-        @test Diagonal([Fred(0.0), Fred(0.0)]) == project(Diagonal([Fred(3.2,), Fred(4.2)]), @thunk(ZeroTangent()))
+    @testset "to Real" begin
+        # Float64
+        @test 3.2 == projector(1.0)(3.2)
+        @test 0.0 == projector(1.1)(ZeroTangent())
+        @test 3.2 == projector(1.0)(@thunk(3.2))
+
+        # down
+        @test 3.2 == projector(1.0)(3.2 + 3im)
+        @test 3.2f0 == projector(1.0f0)(3.2)
+        @test 3.2f0 == projector(1.0f0)(3.2 - 3im)
+
+        # up
+        @test 2.0 == projector(2.0)(2.0f0)
     end
 
-    @testset "To number types" begin
-        @testset "to subset" begin
-            @test 3.2 == project(1.0, 3.2 + 3im)
-            @test 3.2f0 == project(1.0f0, 3.2)
-            @test 3.2f0 == project(1.0f0, 3.2 - 3im)
-        end
+    @testset "to Number" begin
+        # Complex
+        @test 2.0 + 0.0im == projector(1.0im)(2.0 + 0.0im)
 
-        @testset "to superset" begin
-            @test 2.0 + 0.0im == project(2.0 + 1.0im, 2.0)
-            @test 2.0 == project(2.0, 2.0f0)
-        end
+        # down
+        @test 2.0 + 0.0im == projector(1.0im)(2.0)
+        @test 0.0 + 0.0im == projector(1.0im)(ZeroTangent())
+        @test 0.0 + 0.0im == projector(1.0im)(@thunk(ZeroTangent()))
+
+        # up
+        @test 2.0 + 0.0im == projector(2.0 + 1.0im)(2.0)
     end
 
-    @testset "To Arrays" begin
-        # change eltype
-        @test [1.0 2.0; 3.0 4.0] == project(zeros(2, 2), [1.0 2.0; 3.0 4.0])
-        @test [1.0f0 2; 3 4] == project(zeros(Float32, 2, 2), [1.0 2; 3 4])
+    @testset "to Array" begin
+        # to an array of numbers
+        @test [1.0 2.0; 3.0 4.0] == projector(zeros(2, 2))([1.0 2.0; 3.0 4.0])
+        @test zeros(2, 2) == projector([1.0 2; 3 4])(ZeroTangent())
+        @test zeros(2) == projector([1.0, 2.0])(@thunk(ZeroTangent()))
+        @test [1.0f0 2; 3 4] == projector(zeros(Float32, 2, 2))([1.0 2; 3 4])
+        @test [1.0 0; 0 4] == projector(zeros(2, 2))(Diagonal([1.0, 4]))
 
-        # from a structured array
-        @test [1.0 0; 0 4] == project(zeros(2, 2), Diagonal([1.0, 4]))
-
-        # from an array of specials
-        @test [Fred(0.0), Fred(0.0)] == project([Fred(0.0), Fred(0.0)], [ZeroTangent(), ZeroTangent()])
+        # to a array of structs
+        @test [Fred(0.0), Fred(0.0)] == projector([Fred(0.0), Fred(0.0)])([Fred(0.0), Fred(0.0)])
+        @test [Fred(0.0), Fred(0.0)] == projector([Fred(0.0), Fred(0.0)])([ZeroTangent(), ZeroTangent()])
+        @test [Fred(0.0), Fred(3.2)] == projector([Fred(0.0), Fred(0.0)])([ZeroTangent(), @thunk(Fred(3.2))])
+        @test [Fred(0.0), Fred(0.0)] == projector([Fred(1.0), Fred(2.0)])(ZeroTangent())
+        @test [Fred(0.0), Fred(0.0)] == projector([Fred(0.0), Fred(0.0)])(@thunk(ZeroTangent()))
+        diagfreds = [Fred(1.0) Fred(0.0); Fred(0.0) Fred(4.0)]
+        @test diagfreds == projector(diagfreds)(Diagonal([Fred(1.0), Fred(4.0)]))
     end
 
-    @testset "Diagonal" begin
-        d = Diagonal([1.0, 4.0])
-        t = Tangent{Diagonal}(;diag=[1.0, 4.0])
-        @test d == project(d, [1.0 2; 3 4])
-        @test d == project(d, t)
-        @test project(Tangent, d, d) isa Tangent
+    @testset "to Diagonal" begin
+        d_F64 = Diagonal([0.0, 0.0])
+        d_F32 = Diagonal([0.0f0, 0.0f0])
+        d_C64 = Diagonal([0.0 + 0im, 0.0])
+        d_Fred = Diagonal([Fred(0.0), Fred(0.0)])
 
-        @test Diagonal([Fred(0.0), Fred(0.0)]) == project(Diagonal([Fred(3.2,), Fred(4.2)]), Diagonal([ZeroTangent(), ZeroTangent()]))
-        @test Diagonal([Fred(0.0), Fred(0.0)]) == project(Diagonal([Fred(3.2,), Fred(4.2)]), @thunk(ZeroTangent()))
+        # from Matrix
+        @test d_F64 == projector(d_F64)(zeros(2, 2))
+        @test d_F64 == projector(d_F64)(zeros(Float32, 2, 2))
+        @test d_F64 == projector(d_F64)(zeros(ComplexF64, 2, 2))
+
+        # from Diagonal of Numbers
+        @test d_F64 == projector(d_F64)(d_F64)
+        @test d_F64 == projector(d_F64)(d_F32)
+        @test d_F64 == projector(d_F64)(d_C64)
+
+        # from Diagonal of AbstractTangent
+        @test d_F64 == projector(d_F64)(ZeroTangent())
+        @test d_C64 == projector(d_C64)(ZeroTangent())
+        @test d_F64 == projector(d_F64)(@thunk(ZeroTangent()))
+        @test d_F64 == projector(d_F64)(Diagonal([ZeroTangent(), ZeroTangent()]))
+        @test d_F64 == projector(d_F64)(Diagonal([ZeroTangent(), @thunk(ZeroTangent())]))
+
+        # from Diagonal of structs
+        @test d_Fred == projector(d_Fred)(ZeroTangent())
+        @test d_Fred == projector(d_Fred)(@thunk(ZeroTangent()))
+        @test d_Fred == projector(d_Fred)(Diagonal([ZeroTangent(), ZeroTangent()]))
+
+        # from Tangent
+        @test d_F64 == projector(d_F64)(Tangent{Diagonal}(;diag=[0.0, 0.0]))
+        @test d_F64 == projector(d_F64)(Tangent{Diagonal}(;diag=[0.0f0, 0.0f0]))
+        @test d_F64 == projector(d_F64)(Tangent{Diagonal}(;diag=[ZeroTangent(), @thunk(ZeroTangent())]))
+    end
+
+    @testset "to Tangent" begin
+        @test Tangent{Fred}(; a = 3.2,) == projector(Tangent, Fred(3.2))(Fred(3.2))
+        @test Tangent{Fred}(; a = ZeroTangent(),) == projector(Tangent, Fred(3.2))(ZeroTangent())
+        @test Tangent{Fred}(; a = ZeroTangent(),) == projector(Tangent, Fred(3.2))(@thunk(ZeroTangent()))
+
+        @test projector(Tangent, Diagonal(zeros(2)))(Diagonal([1.0f0, 2.0f0])) isa Tangent
+        @test projector(Tangent, Diagonal(zeros(2)))(ZeroTangent()) isa Tangent
+        @test projector(Tangent, Diagonal(zeros(2)))(@thunk(ZeroTangent())) isa Tangent
     end
 
     # how to project to Upper/Lower Symmetric

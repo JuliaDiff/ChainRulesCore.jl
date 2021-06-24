@@ -37,6 +37,8 @@ Base.imag(a::AbstractThunk) = imag(unthunk(a))
 Base.Complex(a::AbstractThunk) = Complex(unthunk(a))
 Base.Complex(a::AbstractThunk, b::AbstractThunk) = Complex(unthunk(a), unthunk(b))
 
+Base.getproperty(a::AbstractThunk, f::Symbol) = f === :f ? getfield(a, f) : getproperty(unthunk(a), f)
+
 Base.mapreduce(f, op, a::AbstractThunk; kws...) = mapreduce(f, op, unthunk(a); kws...)
 function Base.mapreduce(f, op, itr, a::AbstractThunk; kws...)
     return mapreduce(f, op, itr, unthunk(a); kws...)
