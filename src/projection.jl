@@ -14,9 +14,9 @@ function projector end
 
 projector(x) = projector(typeof(x), x)
 
-# fallback
+# fallback (structs)
 function projector(::Type{T}, x::T) where T
-    println("to Any")
+    println("to Any, T=$T")
     project(dx::T) = dx
     project(dx::AbstractZero) = zero(x)
     project(dx::AbstractThunk) = project(unthunk(dx))
@@ -71,3 +71,14 @@ function projector(::Type{<:Diagonal{<:Any, V}}, x::Diagonal) where {V}
     return project
 end
 
+# Symmetric
+function projector(::Type{<:Symmetric{<:Any, M}}, x::Symmetric) where {M}
+    println("to Symetric")
+    projM = projector(M, parent(x))
+    uplo = Symbol(x.uplo)
+    project(dx::AbstractMatrix) = Symmetric(projM(dx), uplo)
+    project(dx::Tangent) = Symmetric(projM(dx.data), uplo)
+    project(dx::AbstractZero) = Symmetric(projM(dx), uplo)
+    project(dx::AbstractThunk) = project(unthunk(dx))
+    return project
+end

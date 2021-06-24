@@ -58,6 +58,16 @@ Base.zero(::Type{Fred}) = Fred(0.0)
         @test diagfreds == projector(diagfreds)(Diagonal([Fred(1.0), Fred(4.0)]))
     end
 
+    @testset "to Tangent" begin
+        @test Tangent{Fred}(; a = 3.2,) == projector(Tangent, Fred(3.2))(Fred(3.2))
+        @test Tangent{Fred}(; a = ZeroTangent(),) == projector(Tangent, Fred(3.2))(ZeroTangent())
+        @test Tangent{Fred}(; a = ZeroTangent(),) == projector(Tangent, Fred(3.2))(@thunk(ZeroTangent()))
+
+        @test projector(Tangent, Diagonal(zeros(2)))(Diagonal([1.0f0, 2.0f0])) isa Tangent
+        @test projector(Tangent, Diagonal(zeros(2)))(ZeroTangent()) isa Tangent
+        @test projector(Tangent, Diagonal(zeros(2)))(@thunk(ZeroTangent())) isa Tangent
+    end
+
     @testset "to Diagonal" begin
         d_F64 = Diagonal([0.0, 0.0])
         d_F32 = Diagonal([0.0f0, 0.0f0])
@@ -92,15 +102,13 @@ Base.zero(::Type{Fred}) = Fred(0.0)
         @test d_F64 == projector(d_F64)(Tangent{Diagonal}(;diag=[ZeroTangent(), @thunk(ZeroTangent())]))
     end
 
-    @testset "to Tangent" begin
-        @test Tangent{Fred}(; a = 3.2,) == projector(Tangent, Fred(3.2))(Fred(3.2))
-        @test Tangent{Fred}(; a = ZeroTangent(),) == projector(Tangent, Fred(3.2))(ZeroTangent())
-        @test Tangent{Fred}(; a = ZeroTangent(),) == projector(Tangent, Fred(3.2))(@thunk(ZeroTangent()))
+    @testset "to Symmetric" begin
+        data = [1.0 2; 3 4]
+        @test Symmetric(data) == projector(Symmetric(data))(data)
+        @test Symmetric(data, :L) == projector(Symmetric(data, :L))(data)
+        @test Symmetric(Diagonal(data)) == projector(Symmetric(data))(Diagonal(diag(data)))
 
-        @test projector(Tangent, Diagonal(zeros(2)))(Diagonal([1.0f0, 2.0f0])) isa Tangent
-        @test projector(Tangent, Diagonal(zeros(2)))(ZeroTangent()) isa Tangent
-        @test projector(Tangent, Diagonal(zeros(2)))(@thunk(ZeroTangent())) isa Tangent
+        @test Symmetric(zeros(2, 2)) == projector(Symmetric(data))(ZeroTangent())
+        @test Symmetric(zeros(2, 2)) == projector(Symmetric(data))(@thunk(ZeroTangent()))
     end
-
-    # how to project to Upper/Lower Symmetric
 end
