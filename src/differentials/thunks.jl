@@ -37,8 +37,6 @@ Base.imag(a::AbstractThunk) = imag(unthunk(a))
 Base.Complex(a::AbstractThunk) = Complex(unthunk(a))
 Base.Complex(a::AbstractThunk, b::AbstractThunk) = Complex(unthunk(a), unthunk(b))
 
-Base.getproperty(a::AbstractThunk, f::Symbol) = f === :f ? getfield(a, f) : getproperty(unthunk(a), f)
-
 Base.mapreduce(f, op, a::AbstractThunk; kws...) = mapreduce(f, op, unthunk(a); kws...)
 function Base.mapreduce(f, op, itr, a::AbstractThunk; kws...)
     return mapreduce(f, op, itr, unthunk(a); kws...)
@@ -190,6 +188,8 @@ end
 
 @inline unthunk(x::Thunk) = x.f()
 
+Base.getproperty(a::Thunk, f::Symbol) = f === :f ? getfield(a, f) : getproperty(unthunk(a), f)
+
 Base.show(io::IO, x::Thunk) = print(io, "Thunk($(repr(x.f)))")
 
 """
@@ -210,6 +210,8 @@ struct InplaceableThunk{T<:Thunk,F} <: AbstractThunk
 end
 
 unthunk(x::InplaceableThunk) = unthunk(x.val)
+
+Base.getproperty(a::InplaceableThunk, f::Symbol) = f in (:val, :add!) ? getfield(a, f) : getproperty(unthunk(a), f)
 
 function Base.show(io::IO, x::InplaceableThunk)
     return print(io, "InplaceableThunk($(repr(x.val)), $(repr(x.add!)))")
