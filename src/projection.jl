@@ -44,29 +44,29 @@ end
 function projector(::Type{Array{T, N}}, x::Array{T, N}) where {T, N}
     println("to Array")
     element = zero(eltype(x))
+    sizex = size(x)
     project(dx::Array{T, N}) = dx # identity
     project(dx::AbstractArray) = project(collect(dx)) # from Diagonal
     project(dx::Array) = projector(element).(dx) # from different element type
-    project(dx::AbstractZero) = zero(x)
+    project(dx::AbstractZero) = zeros(T, sizex...)
     project(dx::AbstractThunk) = project(unthunk(dx))
     return project
 end
 
 # Tangent
-function projector(::Type{<:Tangent}, x)
+function projector(::Type{<:Tangent}, x::T) where {T}
     println("to Tangent")
-    keys = fieldnames(typeof(x))
-    project(dx) = Tangent{typeof(x)}(; ((k, getproperty(dx, k)) for k in keys)...)
+    project(dx) = Tangent{T}(; ((k, getproperty(dx, k)) for k in fieldnames(T))...)
     return project
 end
 
 # Diagonal
 function projector(::Type{<:Diagonal{<:Any, V}}, x::Diagonal) where {V}
     println("to Diagonal")
-    d = diag(x)
-    project(dx::AbstractMatrix) = Diagonal(projector(V, d)(diag(dx)))
-    project(dx::Tangent) = Diagonal(projector(V, d)(dx.diag))
-    project(dx::AbstractZero) = Diagonal(projector(V, d)(dx))
+    projV = projector(V, diag(x))
+    project(dx::AbstractMatrix) = Diagonal(projV(diag(dx)))
+    project(dx::Tangent) = Diagonal(projV(dx.diag))
+    project(dx::AbstractZero) = Diagonal(projV(dx))
     project(dx::AbstractThunk) = project(unthunk(dx))
     return project
 end
