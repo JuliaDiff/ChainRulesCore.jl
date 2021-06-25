@@ -188,8 +188,6 @@ end
 
 @inline unthunk(x::Thunk) = x.f()
 
-Base.getproperty(a::Thunk, f::Symbol) = f === :f ? getfield(a, f) : getproperty(unthunk(a), f)
-
 Base.show(io::IO, x::Thunk) = print(io, "Thunk($(repr(x.f)))")
 
 """
@@ -210,8 +208,6 @@ struct InplaceableThunk{T<:Thunk,F} <: AbstractThunk
 end
 
 unthunk(x::InplaceableThunk) = unthunk(x.val)
-
-Base.getproperty(a::InplaceableThunk, f::Symbol) = f in (:val, :add!) ? getfield(a, f) : getproperty(unthunk(a), f)
 
 function Base.show(io::IO, x::InplaceableThunk)
     return print(io, "InplaceableThunk($(repr(x.val)), $(repr(x.add!)))")
