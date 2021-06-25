@@ -1,15 +1,38 @@
 struct Fred
     a::Float64
 end
-
 Base.zero(::Fred) = Fred(0.0)
 Base.zero(::Type{Fred}) = Fred(0.0)
+
+struct Freddy{T, N}
+    a::Array{T, N}
+end
+Base.:(==)(a::Freddy, b::Freddy) = a.a == b.a
+
+struct Mary
+    a::Fred
+end
+#Base.zero(::Mary) = Mary(zero(Fred))
+#Base.zero(::Type{Mary}) = Mary(zero(Fred))
 
 @testset "projection" begin
     @testset "fallback" begin
         @test Fred(1.2) == project(Fred, Fred(1.2))
         @test Fred(0.0) == project(Fred, ZeroTangent())
         @test Fred(3.2) == project(Fred, @thunk(Fred(3.2)))
+        @test Fred(1.2) == project(Fred, Tangent{Fred}(;a=1.2); info=preproject(Fred(1.0)))
+
+        # struct with complicated field
+        x = Freddy(zeros(2,2))
+        dx = Tangent{Freddy}(; a=ZeroTangent())
+        @test x == project(typeof(x), dx; info=preproject(x))
+
+        # nested structs
+        f = Fred(0.0)
+        tf = Tangent{Fred}(;a=ZeroTangent())
+        m = Mary(f)
+        dm = Tangent{Mary}(;a=tf)
+        @test m == project(typeof(m), dm; info=preproject(m))
     end
 
     @testset "to Real" begin
