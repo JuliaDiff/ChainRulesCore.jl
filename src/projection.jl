@@ -1,20 +1,29 @@
 using LinearAlgebra: Diagonal, diag
 
-"""
-    project([T::Type], dx; info)
-
-Returns a `project(dx)` closure which maps `dx` onto type `T`, such that it is the
-same size as `x`. If `T` is not provided, it is assumed to be the type of `x`.
-
-It's necessary to have `x` to ensure that it's possible to project e.g. `AbstractZero`s
-onto `Array`s -- this wouldn't be possible with type information alone because the neither
-`AbstractZero`s nor `T` know what size of `Array` to produce.
-""" # TODO docstring
-function project end
 
 """
-""" # TODO add docstring
+    preproject(x)
+
+Returns a NamedTuple containing information needed to [`project`](@ref) a differential `dx`
+onto the type `T` for a primal `x`. For example, when projecting `dx=ZeroTangent()` on an
+array `T=Array{T, N}`, the size of `x` is not available from `T`.
+"""
 function preproject end
+
+preproject(x::Array) = (; size=size(x), eltype=eltype(x))
+
+preproject(x::Diagonal{<:Any, V}) where {V} = (; Vinfo=preproject(diag(x)))
+
+preproject(x::Symmetric{<:Any, M}) where {M} = (; uplo=Symbol(x.uplo), Minfo=preproject(parent(x)))
+
+"""
+    project(T::Type, dx; [info])
+
+Projects the differential `dx` for primal `x` onto type `T`. The kwarg `info` contains
+information about the primal `x` that is needed to project onto `T`, e.g. the size of an
+array. It is obtained from `preproject(x)`.
+"""
+function project end
 
 # fallback (structs)
 project(::Type{T}, dx::T) where T = dx
@@ -37,8 +46,6 @@ project(::Type{T}, dx::AbstractZero) where {T<:Number} = zero(T)
 project(::Type{T}, dx::AbstractThunk) where {T<:Number} = project(T, unthunk(dx))
 
 # Arrays
-preproject(x::Array) = (; size=size(x), eltype=eltype(x))
-
 project(AT::Type{Array{T, N}}, dx::Array{T, N}; info) where {T, N} = dx
 project(AT::Type{Array{T, N}}, dx::AbstractArray; info) where {T, N} = project(AT, collect(dx); info=info)
 project(AT::Type{Array{T, N}}, dx::Array; info) where {T, N} = project.(T, dx)
@@ -46,16 +53,12 @@ project(AT::Type{Array{T, N}}, dx::AbstractZero; info) where {T, N} = zeros(T, i
 project(AT::Type{Array{T, N}}, dx::AbstractThunk; info) where {T, N} = project(AT, unthunk(dx); info=info)
 
 # Diagonal
-preproject(x::Diagonal{<:Any, V}) where {V} = (; Vinfo=preproject(diag(x)))
-
 project(DT::Type{<:Diagonal{<:Any, V}}, dx::AbstractMatrix; info) where {V} = Diagonal(project(V, diag(dx); info=info.Vinfo))
 project(DT::Type{<:Diagonal{<:Any, V}}, dx::Tangent; info) where {V} = Diagonal(project(V, dx.diag; info=info.Vinfo))
 project(DT::Type{<:Diagonal{<:Any, V}}, dx::AbstractZero; info) where {V} = Diagonal(project(V, dx; info=info.Vinfo))
 project(DT::Type{<:Diagonal{<:Any, V}}, dx::AbstractThunk; info) where {V} = project(DT, unthunk(dx); info=info)
 
 # Symmetric
-preproject(x::Symmetric{<:Any, M}) where {M} = (; uplo=Symbol(x.uplo), Minfo=preproject(parent(x)))
-
 project(ST::Type{<:Symmetric{<:Any, M}}, dx::AbstractMatrix; info) where {M} = Symmetric(project(M, dx; info=info.Minfo), info.uplo)
 project(ST::Type{<:Symmetric{<:Any, M}}, dx::Tangent; info) where {M} = Symmetric(project(M, dx.data; info=info.Minfo), info.uplo)
 project(ST::Type{<:Symmetric{<:Any, M}}, dx::AbstractZero; info) where {M} = Symmetric(project(M, dx; info=info.Minfo), info.uplo)
