@@ -45,12 +45,6 @@ project(AT::Type{Array{T, N}}, dx::Array; info) where {T, N} = project.(T, dx)
 project(AT::Type{Array{T, N}}, dx::AbstractZero; info) where {T, N} = zeros(T, info.size...)
 project(AT::Type{Array{T, N}}, dx::AbstractThunk; info) where {T, N} = project(AT, unthunk(dx); info=info)
 
-# Tangent # TODO: do we need this?
-#function projector(::Type{<:Tangent}, x::T) where {T}
-#    project(dx) = Tangent{T}(; ((k, getfield(dx, k)) for k in fieldnames(T))...)
-#    return project
-#end
-
 # Diagonal
 preproject(x::Diagonal{<:Any, V}) where {V} = (; Vinfo=preproject(diag(x)))
 

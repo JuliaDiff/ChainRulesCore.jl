@@ -67,16 +67,6 @@ Base.zero(::Type{Fred}) = Fred(0.0)
         @test x == project(typeof(x), Diagonal([Fred(1.0), Fred(4.0)]); info=preproject(x))
     end
 
-    #@testset "to Tangent" begin
-    #    @test Tangent{Fred}(; a = 3.2,) == project(Tangent, Fred(3.2), Fred(3.2))
-    #    @test Tangent{Fred}(; a = ZeroTangent(),) == project(Tangent, Fred(3.2), ZeroTangent())
-    #    @test Tangent{Fred}(; a = ZeroTangent(),) == project(Tangent, Fred(3.2), @thunk(ZeroTangent()))
-
-    #    @test project(Tangent, Diagonal(zeros(2)), Diagonal([1.0f0, 2.0f0])) isa Tangent
-    #    @test project(Tangent, Diagonal(zeros(2)), ZeroTangent()) isa Tangent
-    #    @test project(Tangent, Diagonal(zeros(2)), @thunk(ZeroTangent())) isa Tangent
-    #end
-
     @testset "to Diagonal" begin
         d_F64 = Diagonal([0.0, 0.0])
         d_F32 = Diagonal([0.0f0, 0.0f0])
@@ -113,6 +103,7 @@ Base.zero(::Type{Fred}) = Fred(0.0)
 
     @testset "to Symmetric" begin
         data = [1.0 2; 3 4]
+
         x = Symmetric(data)
         @test x == project(typeof(x), data; info=preproject(x))
 
