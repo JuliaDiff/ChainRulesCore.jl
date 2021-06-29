@@ -1,76 +1,92 @@
 using LinearAlgebra: Diagonal, diag
 
+struct ProjectTo{P, D<:NamedTuple}
+    info::D
+end
+ProjectTo{P}(info::D) where {P,D<:NamedTuple} = ProjectTo{P,D}(info)
+ProjectTo{P}(; kwargs...) where {P} = ProjectTo{P}(NamedTuple(kwargs))
 
-"""
-    preproject(x)
+backing(project::ProjectTo) = getfield(project, :info)
+Base.getproperty(p::ProjectTo, name::Symbol) = getproperty(backing(p), name)
+Base.propertynames(p::ProjectTo) = propertynames(backing(p))
 
-Returns a NamedTuple containing information needed to [`project`](@ref) a differential `dx`
-onto the type `T` for a primal `x`. For example, when projecting `dx=ZeroTangent()` on an
-array `T=Array{T, N}`, the size of `x` is not available from `T`.
-"""
-function preproject end
-
-function preproject(x::T) where {T}
-    fnames = fieldnames(T)
-    values = [getproperty(x, fn) for fn in fnames]
-    types = typeof.(values)
-    infos = preproject.(values)
-    return (; zip(fnames, collect(zip(types, infos)))...)
+function Base.show(io::IO, project::ProjectTo{T}) where T
+    print(io, "ProjectTo{")
+    show(io, T)
+    print(io, "}")
+    if isempty(backing(project))
+        print(io, "()")
+    else
+        show(io, backing(project))
+    end
 end
 
-preproject(x::Array) = (; size=size(x), eltype=eltype(x))
-
-preproject(x::Diagonal{<:Any, V}) where {V} = (; Vinfo=preproject(diag(x)))
-
-preproject(x::Symmetric{<:Any, M}) where {M} = (; uplo=Symbol(x.uplo), Minfo=preproject(parent(x)))
 
 """
-    project(T::Type, dx; info)
+    ProjectTo(x)
 
-Projects the differential `dx` for primal `x` onto type `T`. The kwarg `info` contains
-information about the primal `x` that is needed to project onto `T`, e.g. the size of an
-array. It is obtained from `preproject(x)`.
+Returns a `ProjectTo{P,...}` functor able to project a differential `dx` onto the type `T`
+for a primal `x`.
+This functor encloses over what ever is needed to be able to be able to do that projection.
+For example, when projecting `dx=ZeroTangent()` on an array `P=Array{T, N}`, the size of `x`
+is not available from `P`, so it is stored in the functor.
 """
-function project end
+function ProjectTo end
+
+"""
+    (::ProjectTo{T})(dx)
+
+Projects the differential `dx` on the onto type `T`.
+`ProjectTo{T}` is a functor that knows how to perform this projection.
+"""
+function (::ProjectTo) end
+
+# Generic
+(project::ProjectTo)(dx::AbstractThunk) = project(unthunk(dx))
+(::ProjectTo{T})(dx::T) where {T}  = dx  # not always true, but we can special case for when it isn't
+(::ProjectTo{T})(dx::AbstractZero) where {T} = zero(T)
 
 # fallback (structs)
-project(::Type{T}, dx::T; info=nothing) where T = dx
-project(::Type{T}, dx::AbstractZero; info=nothing) where T = zero(T)
-project(::Type{T}, dx::AbstractThunk; info=nothing) where T = project(T, unthunk(dx))
-function project(::Type{T}, dx::Tangent; info) where {T}
-    fnames = fieldnames(T)
-    fdxs = [getproperty(dx, fn) for fn in fnames]
-    ftypes = [first(i) for i in info]
-    finfos = [last(i) for i in info]
-    proj_values = [project(t, dx; info=i) for (t, dx, i) in zip(ftypes, fdxs, finfos)]
-    return T((; zip(fnames, proj_values)...)...)
+function ProjectTo(x::T) where {T}
+    # Generic fallback for structs, recursively make `ProjectTo`s all their fields
+    fields_nt::NamedTuple = backing(x)
+    return ProjectTo{T}(map(ProjectTo, fields_nt))
+end
+function (project::ProjectTo{T})(dx::Tangent) where {T}
+    sub_projects = backing(project)
+    sub_dxs = backing(dx)
+    _call(f, x) = f(x)
+    return construct(T, map(_call, sub_projects, sub_dxs))
 end
 
-# Real
-project(::Type{T}, dx::Real; info=nothing) where {T<:Real} = T(dx)
-project(::Type{T}, dx::Number; info=nothing) where {T<:Real} = T(real(dx))
-project(::Type{T}, dx::AbstractZero; info=nothing) where {T<:Real} = zero(T)
-project(::Type{T}, dx::AbstractThunk; info=nothing) where {T<:Real} = project(T, unthunk(dx))
-# Number
-project(::Type{T}, dx::Number; info=nothing) where {T<:Number} = T(dx)
-project(::Type{T}, dx::AbstractZero; info=nothing) where {T<:Number} = zero(T)
-project(::Type{T}, dx::AbstractThunk; info=nothing) where {T<:Number} = project(T, unthunk(dx))
+# Arrays 
+ProjectTo(xs::T) where {T<:Array} = ProjectTo{T}(; elements=map(ProjectTo, xs))
+function (project::ProjectTo{T})(dx::Array) where {T<:Array}
+    _call(f, x) = f(x)
+    return T(map(_call, project.elements, dx))
+end
+(project::ProjectTo{<:Array{T}})(dx::AbstractZero) where {T} = zeros(T, size(project.elements))
+(project::ProjectTo{<:Array})(dx::AbstractArray) = project(collect(dx))
 
-# Arrays
-project(AT::Type{Array{T, N}}, dx::Array{T, N}; info=nothing) where {T, N} = dx
-project(AT::Type{Array{T, N}}, dx::AbstractArray; info) where {T, N} = project(AT, collect(dx); info=info)
-project(AT::Type{Array{T, N}}, dx::Array; info=nothing) where {T, N} = project.(T, dx)
-project(AT::Type{Array{T, N}}, dx::AbstractZero; info) where {T, N} = zeros(T, info.size...)
-project(AT::Type{Array{T, N}}, dx::AbstractThunk; info) where {T, N} = project(AT, unthunk(dx); info=info)
+# Arrays{<:Number}: optimized case so we don't need a projector per element
+ProjectTo(x::T) where {T<:Array{<:Number}} = ProjectTo{T}(; size=size(x))
+(project::ProjectTo{<:Array{T}})(dx::Array) where {T<:Number} = ProjectTo(T).(dx)
+(project::ProjectTo{<:Array{T}})(dx::AbstractZero) where {T<:Number} = zeros(T, project.size)
 
 # Diagonal
-project(DT::Type{<:Diagonal{<:Any, V}}, dx::AbstractMatrix; info) where {V} = Diagonal(project(V, diag(dx); info=info.Vinfo))
-project(DT::Type{<:Diagonal{<:Any, V}}, dx::Tangent; info) where {V} = Diagonal(project(V, dx.diag; info=info.Vinfo))
-project(DT::Type{<:Diagonal{<:Any, V}}, dx::AbstractZero; info) where {V} = Diagonal(project(V, dx; info=info.Vinfo))
-project(DT::Type{<:Diagonal{<:Any, V}}, dx::AbstractThunk; info) where {V} = project(DT, unthunk(dx); info=info)
+ProjectTo(x::T) where {T<:Diagonal} = ProjectTo{T}(; diag=ProjectTo(diag(x)))
+(project::ProjectTo{T})(dx::AbstractMatrix) where {T<:Diagonal} = T(project.diag(diag(dx)))
+(project::ProjectTo{T})(dx::AbstractZero) where {T<:Diagonal} = T(project.diag(dx))
 
 # Symmetric
-project(ST::Type{<:Symmetric{<:Any, M}}, dx::AbstractMatrix; info) where {M} = Symmetric(project(M, dx; info=info.Minfo), info.uplo)
-project(ST::Type{<:Symmetric{<:Any, M}}, dx::Tangent; info) where {M} = Symmetric(project(M, dx.data; info=info.Minfo), info.uplo)
-project(ST::Type{<:Symmetric{<:Any, M}}, dx::AbstractZero; info) where {M} = Symmetric(project(M, dx; info=info.Minfo), info.uplo)
-project(ST::Type{<:Symmetric{<:Any, M}}, dx::AbstractThunk; info) where {M} = project(ST, unthunk(dx); info=info)
+ProjectTo(x::T) where {T<:Symmetric} = ProjectTo{T}(; uplo=Symbol(x.uplo), parent=ProjectTo(parent(x)))
+(project::ProjectTo{<:Symmetric})(dx::AbstractMatrix) = Symmetric(project.parent(dx), project.uplo)
+(project::ProjectTo{<:Symmetric})(dx::AbstractZero) = Symmetric(project.parent(dx), project.uplo)
+
+# Number 
+ProjectTo(::T) where {T<:Number} = ProjectTo(T)
+# As a special convience for `Number` subtypes we allow `ProjectTo` to be constructed from
+# the type only. TODO: do we really want to allow this?
+ProjectTo(::Type{T}) where {T<:Number} = ProjectTo{T}()
+(::ProjectTo{<:T})(dx::Number) where {T<:Number} = convert(T, dx)
+(::ProjectTo{<:T})(dx::Number) where {T<:Real} = convert(T, real(dx))
