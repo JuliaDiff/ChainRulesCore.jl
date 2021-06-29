@@ -65,7 +65,9 @@ function (project::ProjectTo{T})(dx::Array) where {T<:Array}
     _call(f, x) = f(x)
     return T(map(_call, project.elements, dx))
 end
-(project::ProjectTo{<:Array{T}})(dx::AbstractZero) where {T} = zeros(T, size(project.elements))
+function (project::ProjectTo{T})(dx::AbstractZero) where {T<:Array}
+    return T(map(proj->proj(dx), project.elements))
+end
 (project::ProjectTo{<:Array})(dx::AbstractArray) = project(collect(dx))
 
 # Arrays{<:Number}: optimized case so we don't need a projector per element

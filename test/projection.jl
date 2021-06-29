@@ -101,6 +101,27 @@ end
         @test x == ProjectTo(x)(Diagonal([Fred(1.0), Fred(4.0)]))
     end
 
+    @testset "To Array of Arrays" begin
+        # inner arrays have same type but different sizes
+        x = [[1.0, 2.0, 3.0], [4.0, 5.0]]
+        @test x == ProjectTo(x)(x)
+        @test x == ProjectTo(x)([[1.0 + 2im, 2.0, 3.0], [4.0 + 2im, 5.0]])
+
+        # This makes sure we don't fall for https://github.com/JuliaLang/julia/issues/38064
+        @test [[0.0, 0.0, 0.0], [0.0, 0.0]] == ProjectTo(x)(ZeroTangent())
+    end
+
+    @testset "Array{Any} with really messy contents" begin
+        # inner arrays have same type but different sizes
+        x = [[1.0, 2.0, 3.0], [4.0+im 5.0], [[[Fred(1)]]]]
+        @test x == ProjectTo(x)(x)
+        @test x == ProjectTo(x)([[1.0+im, 2.0, 3.0], [4.0+im 5.0], [[[Fred(1)]]]])
+        # using a different type for the 2nd element (Adjoint)
+        @test x == ProjectTo(x)([[1.0+im, 2.0, 3.0], [4.0-im, 5.0]', [[[Fred(1)]]]])
+
+        @test [[0.0, 0.0, 0.0], [0.0im 0.0], [[[Fred(0)]]]] == ProjectTo(x)(ZeroTangent())
+    end
+
     @testset "to Diagonal" begin
         d_F64 = Diagonal([0.0, 0.0])
         d_F32 = Diagonal([0.0f0, 0.0f0])
