@@ -1,4 +1,4 @@
-# How do chain rules work for complex functions?
+# [How do chain rules work for complex functions?](@id complexfunctions)
 
 ChainRules follows the convention that `frule` applied to a function ``f(x + i y) = u(x,y) + i v(x,y)`` with perturbation ``\Delta x + i \Delta y`` returns the value and
 ```math

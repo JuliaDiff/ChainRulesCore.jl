@@ -40,7 +40,7 @@ To the best of our knowledge no Julia AD system, with support for the definition
 At some point in the future ChainRules may support these. Maybe.
 
 
-## What is the difference between `ZeroTangent` and `NoTangent` ?
+## [What is the difference between `ZeroTangent` and `NoTangent` ?](@id faq_abstract_zero)
 `ZeroTangent` and `NoTangent` act almost exactly the same in practice: they result in no change whenever added to anything.
 Odds are if you write a rule that returns the wrong one everything will just work fine.
 We provide both to allow for clearer writing of rules, and easier debugging.

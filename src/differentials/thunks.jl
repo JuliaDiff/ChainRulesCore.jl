@@ -41,8 +41,10 @@ Base.mapreduce(f, op, a::AbstractThunk; kws...) = mapreduce(f, op, unthunk(a); k
 function Base.mapreduce(f, op, itr, a::AbstractThunk; kws...)
     return mapreduce(f, op, itr, unthunk(a); kws...)
 end
+Base.sum(a::AbstractThunk; kws...) = sum(unthunk(a); kws...)
 Base.sum!(r, A::AbstractThunk; kws...) = sum!(r, unthunk(A); kws...)
 
+Base.fill(a::AbstractThunk, b::Integer) = fill(unthunk(a), b)
 Base.vec(a::AbstractThunk) = vec(unthunk(a))
 Base.reshape(a::AbstractThunk, args...) = reshape(unthunk(a), args...)
 Base.getindex(a::AbstractThunk, args...) = getindex(unthunk(a), args...)
@@ -78,6 +80,7 @@ LinearAlgebra.dot(a::AbstractThunk, b::AbstractThunk) = dot(unthunk(a), unthunk(
 LinearAlgebra.ldiv!(a, b::AbstractThunk) = throw(MutateThunkException())
 LinearAlgebra.rdiv!(a::AbstractThunk, b) = throw(MutateThunkException())
 
+LinearAlgebra.mul!(A, B::AbstractThunk, C) = mul!(A, unthunk(B), C)
 LinearAlgebra.mul!(C::AbstractThunk, A, B, α, β) = throw(MutateThunkException())
 function LinearAlgebra.mul!(C::AbstractThunk, A::AbstractThunk, B, α, β)
     return throw(MutateThunkException())
@@ -189,6 +192,9 @@ end
 @inline unthunk(x::Thunk) = x.f()
 
 Base.show(io::IO, x::Thunk) = print(io, "Thunk($(repr(x.f)))")
+
+Base.convert(::Type{<:Thunk}, a::AbstractZero) = @thunk(a)
+
 
 """
     InplaceableThunk(val::Thunk, add!::Function)
