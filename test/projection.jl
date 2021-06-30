@@ -170,10 +170,36 @@ end
         @test x == ProjectTo(x)(@thunk(ZeroTangent()))
     end
 
-    @testset "to Transpose" begin # TODO: this one, plus Adjoint, and SubArray
+    @testset "to Transpose" begin
         x = rand(3, 4)
         t = transpose(x)
-        
-        #@test x == ProjectTo(t)(rand(4, 3))
+        mt = collect(t)
+        a = adjoint(x)
+        ma = collect(a)
+
+        @test t == ProjectTo(t)(mt)
+        @test t == ProjectTo(t)(ma)
+        @test zeros(4, 3) == ProjectTo(t)(ZeroTangent())
+        @test zeros(4, 3) == ProjectTo(t)(Tangent{Transpose}(; parent=ZeroTangent()))
+    end
+
+    @testset "to Adjoint" begin
+        x = rand(3, 4)
+        a = adjoint(x)
+        ma = collect(a)
+
+        @test a == ProjectTo(a)(ma)
+        @test zeros(4, 3) == ProjectTo(a)(ZeroTangent())
+        @test zeros(4, 3) == ProjectTo(a)(Tangent{Adjoint}(; parent=ZeroTangent()))
+    end
+
+    @testset "to SubArray" begin
+        x = rand(3, 4)
+        sa = view(x, :, 1:2)
+        m = collect(sa)
+
+        @test m == ProjectTo(sa)(m)
+        @test zeros(3, 2) == ProjectTo(sa)(ZeroTangent())
+        @test_broken zeros(3, 2) == ProjectTo(sa)(Tangent{SubArray}(; parent=ZeroTangent())) # what do we want to do with SubArray?
     end
 end

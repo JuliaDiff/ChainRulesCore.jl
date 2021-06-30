@@ -49,7 +49,9 @@ function ProjectTo(x::T) where {T}
 end
 function (project::ProjectTo{T})(dx::Tangent) where {T}
     sub_projects = backing(project)
+    #@show sub_projects
     sub_dxs = backing(dx)
+    #@show sub_dxs
     _call(f, x) = f(x)
     return construct(T, map(_call, sub_projects, sub_dxs))
 end
@@ -65,41 +67,42 @@ ProjectTo(::T) where {T<:Number} = ProjectTo{T}()
 (::ProjectTo{T})(dx::Number) where {T<:Real} = convert(T, real(dx))
 
 # Arrays 
-ProjectTo(xs::T) where {T<:Array} = ProjectTo{T}(; to_elements=map(ProjectTo, xs))
+ProjectTo(xs::T) where {T<:Array} = ProjectTo{T}(; elements=map(ProjectTo, xs))
 function (project::ProjectTo{T})(dx::Array) where {T<:Array}
     _call(f, x) = f(x)
-    return T(map(_call, project.to_elements, dx))
+    return T(map(_call, project.elements, dx))
 end
 function (project::ProjectTo{T})(dx::AbstractZero) where {T<:Array}
-    return T(map(proj->proj(dx), project.to_elements))
+    return T(map(proj->proj(dx), project.elements))
 end
 (project::ProjectTo{<:Array})(dx::AbstractArray) = project(collect(dx))
 
 # Arrays{<:Number}: optimized case so we don't need a projector per element
-ProjectTo(x::T) where {T<:Array{<:Number}} = ProjectTo{T}(; to_element=ProjectTo(zero(eltype(x))), size=size(x)) # TODO: how to do nested where?
-(project::ProjectTo{<:Array{T}})(dx::Array) where {T<:Number} = project.to_element.(dx)
+ProjectTo(x::T) where {T<:Array{<:Number}} = ProjectTo{T}(; element=ProjectTo(zero(eltype(x))), size=size(x)) # TODO: how to do nested where?
+(project::ProjectTo{<:Array{T}})(dx::Array) where {T<:Number} = project.element.(dx)
 (project::ProjectTo{<:Array{T}})(dx::AbstractZero) where {T<:Number} = zeros(T, project.size)
 
 # Diagonal
-ProjectTo(x::T) where {T<:Diagonal} = ProjectTo{T}(; to_diag=ProjectTo(diag(x)))
-(project::ProjectTo{T})(dx::AbstractMatrix) where {T<:Diagonal} = T(project.to_diag(diag(dx)))
-(project::ProjectTo{T})(dx::AbstractZero) where {T<:Diagonal} = T(project.to_diag(dx))
-(project::ProjectTo{T})(dx::Tangent) where {T<:Diagonal} = T(project.to_diag(dx.diag))
+ProjectTo(x::T) where {T<:Diagonal} = ProjectTo{T}(; diag=ProjectTo(diag(x)))
+(project::ProjectTo{T})(dx::AbstractMatrix) where {T<:Diagonal} = T(project.diag(diag(dx)))
+(project::ProjectTo{T})(dx::AbstractZero) where {T<:Diagonal} = T(project.diag(dx))
 
 # Symmetric
-ProjectTo(x::T) where {T<:Symmetric} = ProjectTo{T}(; uplo=Symbol(x.uplo), to_parent=ProjectTo(parent(x)))
-(project::ProjectTo{<:Symmetric})(dx::AbstractMatrix) = Symmetric(project.to_parent(dx), project.uplo)
-(project::ProjectTo{<:Symmetric})(dx::AbstractZero) = Symmetric(project.to_parent(dx), project.uplo)
-(project::ProjectTo{<:Symmetric})(dx::Tangent) = Symmetric(project.to_parent(dx.data), project.uplo)
+ProjectTo(x::T) where {T<:Symmetric} = ProjectTo{T}(; uplo=Symbol(x.uplo), parent=ProjectTo(parent(x)))
+(project::ProjectTo{<:Symmetric})(dx::AbstractMatrix) = Symmetric(project.parent(dx), project.uplo)
+(project::ProjectTo{<:Symmetric})(dx::AbstractZero) = Symmetric(project.parent(dx), project.uplo)
+(project::ProjectTo{<:Symmetric})(dx::Tangent) = Symmetric(project.parent(dx.data), project.uplo)
 
 # Transpose
-ProjectTo(x::T) where {T<:Transpose} = ProjectTo{T}(; to_parent=ProjectTo(parent(x)))
-(project::ProjectTo{<:Transpose})(dx::AbstractMatrix) = transpose(project.to_parent(transpose(dx)))
-(project::ProjectTo{<:Transpose})(dx::Adjoint) = transpose(project.to_parent(parent(dx)))
+ProjectTo(x::T) where {T<:Transpose} = ProjectTo{T}(; parent=ProjectTo(parent(x)))
+(project::ProjectTo{<:Transpose})(dx::AbstractMatrix) = transpose(project.parent(transpose(dx)))
+(project::ProjectTo{<:Transpose})(dx::Adjoint) = transpose(project.parent(parent(dx)))
+(project::ProjectTo{<:Transpose})(dx::AbstractZero) = transpose(project.parent(dx))
 
 # Adjoint
-ProjectTo(x::T) where {T<:Adjoint} = ProjectTo{T}(; to_parent=ProjectTo(parent(x)))
-(project::ProjectTo{<:Adjoint})(dx::AbstractMatrix) = adjoint(project.to_parent(adjoint(dx)))
+ProjectTo(x::T) where {T<:Adjoint} = ProjectTo{T}(; parent=ProjectTo(parent(x)))
+(project::ProjectTo{<:Adjoint})(dx::AbstractMatrix) = adjoint(project.parent(adjoint(dx)))
+(project::ProjectTo{<:Adjoint})(dx::ZeroTangent) = adjoint(project.parent(dx))
 
 # SubArray
 ProjectTo(x::T) where {T<:SubArray} = ProjectTo(collect(x)) # TODO: is this what we want?
