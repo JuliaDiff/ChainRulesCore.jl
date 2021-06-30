@@ -41,37 +41,31 @@ end
     end
 
     @testset "to Real" begin
-        # to type as shorthand for passing primal
-        @test ProjectTo(Float64) == ProjectTo(1.2)
-
         # Float64
-        @test 3.2 == ProjectTo(Float64)(3.2)
-        @test 0.0 == ProjectTo(Float64)(ZeroTangent())
-        @test 3.2 == ProjectTo(Float64)(@thunk(3.2))
+        @test 3.2 == ProjectTo(1.0)(3.2)
+        @test 0.0 == ProjectTo(1.0)(ZeroTangent())
+        @test 3.2 == ProjectTo(1.0)(@thunk(3.2))
 
         # down
-        @test 3.2 == ProjectTo(Float64)(3.2 + 3im)
-        @test 3.2f0 == ProjectTo(Float32)(3.2)
-        @test 3.2f0 == ProjectTo(Float32)(3.2 - 3im)
+        @test 3.2 == ProjectTo(1.0)(3.2 + 3im)
+        @test 3.2f0 == ProjectTo(1.0f0)(3.2)
+        @test 3.2f0 == ProjectTo(1.0f0)(3.2 - 3im)
 
         # up
-        @test 2.0 == ProjectTo(Float64)(2.0f0)
+        @test 2.0 == ProjectTo(1.0)(2.0f0)
     end
 
     @testset "to Number" begin
-        # To type, as short-hand for passing primal
-        @test ProjectTo(ComplexF64) == ProjectTo(1.0 + 2.0im)
-
         # Complex
-        @test 2.0 + 4.0im == ProjectTo(ComplexF64)(2.0 + 4.0im)
+        @test 2.0 + 4.0im == ProjectTo(1.0im)(2.0 + 4.0im)
 
         # down
-        @test 2.0 + 0.0im == ProjectTo(ComplexF64)(2.0)
-        @test 0.0 + 0.0im == ProjectTo(ComplexF64)(ZeroTangent())
-        @test 0.0 + 0.0im == ProjectTo(ComplexF64)(@thunk(ZeroTangent()))
+        @test 2.0 + 0.0im == ProjectTo(1.0im)(2.0)
+        @test 0.0 + 0.0im == ProjectTo(1.0im)(ZeroTangent())
+        @test 0.0 + 0.0im == ProjectTo(1.0im)(@thunk(ZeroTangent()))
 
         # up
-        @test 2.0 + 0.0im == ProjectTo(ComplexF64)(2.0)
+        @test 2.0 + 0.0im == ProjectTo(1.0im)(2.0)
     end
 
     @testset "to Array" begin

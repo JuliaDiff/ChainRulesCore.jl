@@ -41,11 +41,6 @@ Projects the differential `dx` on the onto type `T`.
 """
 function (::ProjectTo) end
 
-# Generic
-(project::ProjectTo)(dx::AbstractThunk) = project(unthunk(dx))
-(::ProjectTo{T})(dx::T) where {T}  = dx  # not always true, but we can special case for when it isn't
-(::ProjectTo{T})(dx::AbstractZero) where {T} = zero(T)
-
 # fallback (structs)
 function ProjectTo(x::T) where {T}
     # Generic fallback for structs, recursively make `ProjectTo`s all their fields
@@ -58,6 +53,16 @@ function (project::ProjectTo{T})(dx::Tangent) where {T}
     _call(f, x) = f(x)
     return construct(T, map(_call, sub_projects, sub_dxs))
 end
+
+# Generic
+(project::ProjectTo)(dx::AbstractThunk) = project(unthunk(dx))
+(::ProjectTo{T})(dx::T) where {T}  = dx  # not always true, but we can special case for when it isn't
+(::ProjectTo{T})(dx::AbstractZero) where {T} = zero(T)
+
+# Number
+ProjectTo(::T) where {T<:Number} = ProjectTo{T}()
+(::ProjectTo{T})(dx::Number) where {T<:Number} = convert(T, dx)
+(::ProjectTo{T})(dx::Number) where {T<:Real} = convert(T, real(dx))
 
 # Arrays 
 ProjectTo(xs::T) where {T<:Array} = ProjectTo{T}(; elements=map(ProjectTo, xs))
@@ -72,7 +77,7 @@ end
 
 # Arrays{<:Number}: optimized case so we don't need a projector per element
 ProjectTo(x::T) where {T<:Array{<:Number}} = ProjectTo{T}(; size=size(x))
-(project::ProjectTo{<:Array{T}})(dx::Array) where {T<:Number} = ProjectTo(T).(dx)
+(project::ProjectTo{<:Array{T}})(dx::Array) where {T<:Number} = ProjectTo(zero(T)).(dx)
 (project::ProjectTo{<:Array{T}})(dx::AbstractZero) where {T<:Number} = zeros(T, project.size)
 
 # Diagonal
@@ -85,10 +90,3 @@ ProjectTo(x::T) where {T<:Symmetric} = ProjectTo{T}(; uplo=Symbol(x.uplo), paren
 (project::ProjectTo{<:Symmetric})(dx::AbstractMatrix) = Symmetric(project.parent(dx), project.uplo)
 (project::ProjectTo{<:Symmetric})(dx::AbstractZero) = Symmetric(project.parent(dx), project.uplo)
 
-# Number 
-ProjectTo(::T) where {T<:Number} = ProjectTo(T)
-# As a special convience for `Number` subtypes we allow `ProjectTo` to be constructed from
-# the type only. TODO: do we really want to allow this?
-ProjectTo(::Type{T}) where {T<:Number} = ProjectTo{T}()
-(::ProjectTo{<:T})(dx::Number) where {T<:Number} = convert(T, dx)
-(::ProjectTo{<:T})(dx::Number) where {T<:Real} = convert(T, real(dx))
