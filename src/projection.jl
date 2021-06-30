@@ -1,5 +1,3 @@
-using LinearAlgebra: Diagonal, diag
-
 struct ProjectTo{P, D<:NamedTuple}
     info::D
 end
@@ -60,9 +58,10 @@ function (project::ProjectTo{T})(dx::Tangent) where {T}
     return construct(T, map(_call, sub_projects, sub_dxs))
 end
 
-# Tuple
-ProjectTo(x::T) where {T<:Tuple} = ProjectTo{T}()
-(::ProjectTo{T})(dx::T) where {T<:Tuple} = dx
+# does not work for Tuples and NamedTuples
+function ProjectTo(x::T) where {T<:Union{<:Tuple, NamedTuple}}
+    throw(ArgumentError("The `x` in `ProjectTo(x)` must be a valid differential, not $x"))
+end
 
 # Generic
 (project::ProjectTo)(dx::AbstractThunk) = project(unthunk(dx))
@@ -114,10 +113,6 @@ ProjectTo(x::T) where {T<:Adjoint} = ProjectTo{T}(; parent=ProjectTo(parent(x)))
 
 # SubArray
 ProjectTo(x::T) where {T<:SubArray} = ProjectTo(collect(x)) # TODO: is this what we want?
-
-# TODO: ProjectTo Tuple and NamedTuple. Does this even make sense? How about the structs
-# with Tuple or NamedTuple fields?
-
 
 
 
