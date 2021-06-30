@@ -155,6 +155,7 @@ end
 
         x = Symmetric(data)
         @test x == ProjectTo(x)(data)
+        @test x == ProjectTo(x)(Tangent{typeof(x)}(; data=data, uplo=NoTangent()))
 
         x = Symmetric(data, :L)
         @test x == ProjectTo(x)(data)
@@ -167,5 +168,12 @@ end
         x = Symmetric(data)
         @test x == ProjectTo(x)(ZeroTangent())
         @test x == ProjectTo(x)(@thunk(ZeroTangent()))
+    end
+
+    @testset "to Transpose" begin # TODO: this one, plus Adjoint, and SubArray
+        x = rand(3, 4)
+        t = transpose(x)
+        
+        #@test x == ProjectTo(t)(rand(4, 3))
     end
 end
