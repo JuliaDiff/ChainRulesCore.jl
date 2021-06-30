@@ -103,7 +103,7 @@ ProjectTo(x::T) where {T<:Symmetric} = ProjectTo{T}(; uplo=Symbol(x.uplo), paren
 # Transpose
 ProjectTo(x::T) where {T<:Transpose} = ProjectTo{T}(; parent=ProjectTo(parent(x)))
 (project::ProjectTo{<:Transpose})(dx::AbstractMatrix) = transpose(project.parent(transpose(dx)))
-(project::ProjectTo{<:Transpose})(dx::Adjoint) = transpose(project.parent(parent(dx)))
+(project::ProjectTo{<:Transpose})(dx::Adjoint) = transpose(project.parent(conj(parent(dx))))
 (project::ProjectTo{<:Transpose})(dx::AbstractZero) = transpose(project.parent(dx))
 
 # Adjoint

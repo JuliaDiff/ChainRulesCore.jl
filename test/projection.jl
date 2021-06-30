@@ -207,6 +207,6 @@ end
 
         @test m == ProjectTo(sa)(m)
         @test zeros(3, 2) == ProjectTo(sa)(ZeroTangent())
-        @test_broken zeros(3, 2) == ProjectTo(sa)(Tangent{SubArray}(; parent=ZeroTangent())) # what do we want to do with SubArray?
+        @test_broken zeros(3, 2) == ProjectTo(sa)(Tangent{SubArray}(; parent=ZeroTangent())) # TODO: what do we want to do with SubArray?
     end
 end
