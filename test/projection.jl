@@ -12,8 +12,11 @@ Base.:(==)(a::Freddy, b::Freddy) = a.a == b.a
 struct Mary
     a::Fred
 end
-#Base.zero(::Mary) = Mary(zero(Fred))
-#Base.zero(::Type{Mary}) = Mary(zero(Fred))
+
+struct TwoFields
+    a::Float64
+    c::Float64
+end
 
 @testset "projection" begin
     @testset "display" begin
@@ -38,6 +41,10 @@ end
         m = Mary(f)
         dm = Tangent{Mary}(;a=tf)
         @test m == ProjectTo(m)(dm)
+
+        # two fields
+        tf = TwoFields(3.0, 0.0)
+        @test tf == ProjectTo(tf)(Tangent{TwoFields}(; a=3.0))
     end
 
     @testset "to Real" begin

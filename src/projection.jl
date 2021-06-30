@@ -44,17 +44,25 @@ function (::ProjectTo) end
 # fallback (structs)
 function ProjectTo(x::T) where {T}
     # Generic fallback for structs, recursively make `ProjectTo`s all their fields
+    #println()
+    #@show x
+    #@show T
     fields_nt::NamedTuple = backing(x)
+    #@show fields_nt
     return ProjectTo{T}(map(ProjectTo, fields_nt))
 end
 function (project::ProjectTo{T})(dx::Tangent) where {T}
     sub_projects = backing(project)
     #@show sub_projects
-    sub_dxs = backing(dx)
+    sub_dxs = backing(canonicalize(dx))
     #@show sub_dxs
     _call(f, x) = f(x)
     return construct(T, map(_call, sub_projects, sub_dxs))
 end
+
+# Tuple
+ProjectTo(x::T) where {T<:Tuple} = ProjectTo{T}()
+(::ProjectTo{T})(dx::T) where {T<:Tuple} = dx
 
 # Generic
 (project::ProjectTo)(dx::AbstractThunk) = project(unthunk(dx))
