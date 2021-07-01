@@ -58,7 +58,7 @@ function (project::ProjectTo{T})(dx::Tangent) where {T}
     return construct(T, map(_call, sub_projects, sub_dxs))
 end
 
-# does not work for Tuples and NamedTuples
+# should not work for Tuples and NamedTuples, as not valid tangent types
 function ProjectTo(x::T) where {T<:Union{<:Tuple, NamedTuple}}
     throw(ArgumentError("The `x` in `ProjectTo(x)` must be a valid differential, not $x"))
 end

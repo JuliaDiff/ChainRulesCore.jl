@@ -180,20 +180,20 @@ end
     end
 
     @testset "to Transpose" begin
-        x = rand(3, 4)
+        x = rand(ComplexF64, 3, 4)
         t = transpose(x)
         mt = collect(t)
         a = adjoint(x)
         ma = collect(a)
 
         @test t == ProjectTo(t)(mt)
-        @test t == ProjectTo(t)(ma)
+        @test conj(t) == ProjectTo(t)(ma)
         @test zeros(4, 3) == ProjectTo(t)(ZeroTangent())
         @test zeros(4, 3) == ProjectTo(t)(Tangent{Transpose}(; parent=ZeroTangent()))
     end
 
     @testset "to Adjoint" begin
-        x = rand(3, 4)
+        x = rand(ComplexF64, 3, 4)
         a = adjoint(x)
         ma = collect(a)
 
