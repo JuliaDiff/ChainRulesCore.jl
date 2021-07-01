@@ -85,7 +85,7 @@ end
 (project::ProjectTo{<:Array})(dx::AbstractArray) = project(collect(dx))
 
 # Arrays{<:Number}: optimized case so we don't need a projector per element
-ProjectTo(x::T) where {T<:Array{<:Number}} = ProjectTo{T}(; element=ProjectTo(zero(eltype(x))), size=size(x)) # TODO: how to do nested where?
+ProjectTo(x::T) where {E<:Number, T<:Array{E}} = ProjectTo{T}(; element=ProjectTo(zero(E)), size=size(x))
 (project::ProjectTo{<:Array{T}})(dx::Array) where {T<:Number} = project.element.(dx)
 (project::ProjectTo{<:Array{T}})(dx::AbstractZero) where {T<:Number} = zeros(T, project.size)
 
