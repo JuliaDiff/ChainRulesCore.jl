@@ -88,6 +88,7 @@ end
 ProjectTo(x::T) where {E<:Number, T<:Array{E}} = ProjectTo{T}(; element=ProjectTo(zero(E)), size=size(x))
 (project::ProjectTo{<:Array{T}})(dx::Array) where {T<:Number} = project.element.(dx)
 (project::ProjectTo{<:Array{T}})(dx::AbstractZero) where {T<:Number} = zeros(T, project.size)
+(project::ProjectTo{<:Array{T}})(dx::Tangent{<:SubArray}) where {T<:Number} = project(dx.parent)
 
 # Diagonal
 ProjectTo(x::T) where {T<:Diagonal} = ProjectTo{T}(; diag=ProjectTo(diag(x)))
@@ -112,7 +113,7 @@ ProjectTo(x::T) where {T<:Adjoint} = ProjectTo{T}(; parent=ProjectTo(parent(x)))
 (project::ProjectTo{<:Adjoint})(dx::ZeroTangent) = adjoint(project.parent(dx))
 
 # SubArray
-ProjectTo(x::T) where {T<:SubArray} = ProjectTo(collect(x)) # TODO: is this what we want?
+ProjectTo(x::T) where {T<:SubArray} = ProjectTo(copy(x)) # don't project on to a view, but onto matching copy
 
 
 

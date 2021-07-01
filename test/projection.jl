@@ -207,8 +207,9 @@ end
         sa = view(x, :, 1:2)
         m = collect(sa)
 
-        @test m == ProjectTo(sa)(m)
-        @test zeros(3, 2) == ProjectTo(sa)(ZeroTangent())
-        @test_broken zeros(3, 2) == ProjectTo(sa)(Tangent{SubArray}(; parent=ZeroTangent())) # TODO: what do we want to do with SubArray?
+        # make sure it converts the view to the parent type
+        @test ProjectTo(sa)(m) isa Matrix
+        @test ProjectTo(sa)(ZeroTangent())
+        @test ProjectTo(sa)(Tangent{SubArray}(; parent=ZeroTangent())) isa Matrix
     end
 end
