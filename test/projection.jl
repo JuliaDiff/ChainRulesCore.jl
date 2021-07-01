@@ -15,7 +15,7 @@ end
 
 struct TwoFields
     a::Float64
-    c::Float64
+    b::Float64
 end
 
 @testset "projection" begin
@@ -43,8 +43,10 @@ end
         @test m == ProjectTo(m)(dm)
 
         # two fields
-        tf = TwoFields(3.0, 0.0)
-        @test tf == ProjectTo(tf)(Tangent{TwoFields}(; a=3.0))
+        tfa = TwoFields(3.0, 0.0)
+        tfb = TwoFields(0.0, 3.0)
+        @test tfa == ProjectTo(tfa)(Tangent{TwoFields}(; a=3.0))
+        @test tfb == ProjectTo(tfb)(Tangent{TwoFields}(; b=3.0))
     end
 
     @testset "to Real" begin
