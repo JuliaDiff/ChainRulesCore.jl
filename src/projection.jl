@@ -98,6 +98,14 @@ for SymHerm = (:Symmetric, :Hermitian)
         (project::ProjectTo{<:$SymHerm})(dx::Tangent) = $SymHerm(project.parent(dx.data), project.uplo)
     end
 end
+for UL = (:UpperTriangular, :LowerTriangular)
+    @eval begin
+        ProjectTo(x::T) where {T<:$UL} = ProjectTo{T}(; parent=ProjectTo(parent(x)))
+        (project::ProjectTo{<:$UL})(dx::AbstractMatrix) = $UL(project.parent(dx))
+        (project::ProjectTo{<:$UL})(dx::AbstractZero) = $UL(project.parent(dx))
+        (project::ProjectTo{<:$UL})(dx::Tangent) = $UL(project.parent(dx.data))
+    end
+end
 
 # Transpose
 ProjectTo(x::T) where {T<:Transpose} = ProjectTo{T}(; parent=ProjectTo(parent(x)))

@@ -179,6 +179,20 @@ end
         @test x == ProjectTo(x)(@thunk(ZeroTangent()))
     end
 
+    @testset "to $UL" for UL in (UpperTriangular, LowerTriangular)
+        data = [1.0+1im 2-2im; 3 4]
+
+        x = UL(data)
+        @test x == ProjectTo(x)(data)
+        @test x == ProjectTo(x)(Tangent{typeof(x)}(; data=data))
+
+        data = [0.0+0im 0; 0 0]
+        x = UL(data)
+        @test x == ProjectTo(x)(Diagonal(zeros(2)))
+        @test x == ProjectTo(x)(ZeroTangent())
+        @test x == ProjectTo(x)(@thunk(ZeroTangent()))
+    end
+
     @testset "to Transpose" begin
         x = rand(ComplexF64, 3, 4)
         t = transpose(x)
