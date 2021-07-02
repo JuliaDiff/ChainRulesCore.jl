@@ -216,6 +216,15 @@ end
         @test zeros(4, 3) == ProjectTo(a)(Tangent{Adjoint}(; parent=ZeroTangent()))
     end
 
+    @testset "to PermutedDimsArray" begin
+        a = zeros(3, 5, 4)
+        b = PermutedDimsArray(a, (2, 1, 3))
+        bc = collect(b)
+
+        @test b == ProjectTo(b)(bc)
+        @test b == ProjectTo(b)(ZeroTangent())
+    end
+
     @testset "to SubArray" begin
         x = rand(3, 4)
         sa = view(x, :, 1:2)

@@ -89,7 +89,7 @@ ProjectTo(x::T) where {T<:Diagonal} = ProjectTo{T}(; diag=ProjectTo(diag(x)))
 (project::ProjectTo{T})(dx::AbstractMatrix) where {T<:Diagonal} = T(project.diag(diag(dx)))
 (project::ProjectTo{T})(dx::AbstractZero) where {T<:Diagonal} = T(project.diag(dx))
 
-# Symmetric and Hermitian
+# :data, :uplo fields
 for SymHerm = (:Symmetric, :Hermitian)
     @eval begin
         ProjectTo(x::T) where {T<:$SymHerm} = ProjectTo{T}(; uplo=Symbol(x.uplo), parent=ProjectTo(parent(x)))
@@ -98,6 +98,8 @@ for SymHerm = (:Symmetric, :Hermitian)
         (project::ProjectTo{<:$SymHerm})(dx::Tangent) = $SymHerm(project.parent(dx.data), project.uplo)
     end
 end
+
+# :data field
 for UL = (:UpperTriangular, :LowerTriangular)
     @eval begin
         ProjectTo(x::T) where {T<:$UL} = ProjectTo{T}(; parent=ProjectTo(parent(x)))
@@ -110,13 +112,17 @@ end
 # Transpose
 ProjectTo(x::T) where {T<:Transpose} = ProjectTo{T}(; parent=ProjectTo(parent(x)))
 (project::ProjectTo{<:Transpose})(dx::AbstractMatrix) = transpose(project.parent(transpose(dx)))
-(project::ProjectTo{<:Transpose})(dx::Adjoint) = transpose(project.parent(conj(parent(dx))))
 (project::ProjectTo{<:Transpose})(dx::AbstractZero) = transpose(project.parent(dx))
 
 # Adjoint
 ProjectTo(x::T) where {T<:Adjoint} = ProjectTo{T}(; parent=ProjectTo(parent(x)))
 (project::ProjectTo{<:Adjoint})(dx::AbstractMatrix) = adjoint(project.parent(adjoint(dx)))
-(project::ProjectTo{<:Adjoint})(dx::ZeroTangent) = adjoint(project.parent(dx))
+(project::ProjectTo{<:Adjoint})(dx::AbstractZero) = adjoint(project.parent(dx))
+
+# PermutedDimsArray
+ProjectTo(x::P) where {P<:PermutedDimsArray} = ProjectTo{P}(; parent=ProjectTo(parent(x)))
+(project::ProjectTo{<:PermutedDimsArray{T,N,perm,iperm,AA}})(dx::AbstractArray) where {T, N, perm, iperm, AA} = PermutedDimsArray{T,N,perm,iperm,AA}(permutedims(project.parent(dx), perm))
+(project::ProjectTo{<:PermutedDimsArray{T,N,perm,iperm,AA}})(dx::AbstractZero) where {T, N, perm, iperm, AA} = PermutedDimsArray{T,N,perm,iperm,AA}(project.parent(dx))
 
 # SubArray
 ProjectTo(x::T) where {T<:SubArray} = ProjectTo(copy(x)) # don't project on to a view, but onto matching copy
