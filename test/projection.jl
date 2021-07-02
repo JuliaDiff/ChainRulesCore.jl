@@ -232,7 +232,7 @@ end
 
         # make sure it converts the view to the parent type
         @test ProjectTo(sa)(m) isa Matrix
-        @test ProjectTo(sa)(ZeroTangent())
+        @test zeros(3, 2) == ProjectTo(sa)(ZeroTangent())
         @test ProjectTo(sa)(Tangent{SubArray}(; parent=ZeroTangent())) isa Matrix
     end
 end
