@@ -159,22 +159,22 @@ end
         @test d_F64 == ProjectTo(d_F64)(Tangent{Diagonal}(;diag=[ZeroTangent(), @thunk(ZeroTangent())]))
     end
 
-    @testset "to Symmetric" begin
-        data = [1.0 2; 3 4]
+    @testset "to $SymHerm" for SymHerm in (Symmetric, Hermitian)
+        data = [1.0+1im 2-2im; 3 4]
 
-        x = Symmetric(data)
+        x = SymHerm(data)
         @test x == ProjectTo(x)(data)
         @test x == ProjectTo(x)(Tangent{typeof(x)}(; data=data, uplo=NoTangent()))
 
-        x = Symmetric(data, :L)
+        x = SymHerm(data, :L)
         @test x == ProjectTo(x)(data)
 
-        data = [1.0 0; 0 4]
-        x = Symmetric(data)
-        @test x == ProjectTo(x)(Diagonal([1.0, 4.0]))
+        data = [1.0-2im 0; 0 4]
+        x = SymHerm(data)
+        @test x == ProjectTo(x)(Diagonal([1.0-2im, 4.0]))
 
-        data = [0.0 0; 0 0]
-        x = Symmetric(data)
+        data = [0.0+0im 0; 0 0]
+        x = SymHerm(data)
         @test x == ProjectTo(x)(ZeroTangent())
         @test x == ProjectTo(x)(@thunk(ZeroTangent()))
     end

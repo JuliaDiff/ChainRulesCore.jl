@@ -95,11 +95,15 @@ ProjectTo(x::T) where {T<:Diagonal} = ProjectTo{T}(; diag=ProjectTo(diag(x)))
 (project::ProjectTo{T})(dx::AbstractMatrix) where {T<:Diagonal} = T(project.diag(diag(dx)))
 (project::ProjectTo{T})(dx::AbstractZero) where {T<:Diagonal} = T(project.diag(dx))
 
-# Symmetric
-ProjectTo(x::T) where {T<:Symmetric} = ProjectTo{T}(; uplo=Symbol(x.uplo), parent=ProjectTo(parent(x)))
-(project::ProjectTo{<:Symmetric})(dx::AbstractMatrix) = Symmetric(project.parent(dx), project.uplo)
-(project::ProjectTo{<:Symmetric})(dx::AbstractZero) = Symmetric(project.parent(dx), project.uplo)
-(project::ProjectTo{<:Symmetric})(dx::Tangent) = Symmetric(project.parent(dx.data), project.uplo)
+# Symmetric and Hermitian
+for SymHerm = (:Symmetric, :Hermitian)
+    @eval begin
+        ProjectTo(x::T) where {T<:$SymHerm} = ProjectTo{T}(; uplo=Symbol(x.uplo), parent=ProjectTo(parent(x)))
+        (project::ProjectTo{<:$SymHerm})(dx::AbstractMatrix) = $SymHerm(project.parent(dx), project.uplo)
+        (project::ProjectTo{<:$SymHerm})(dx::AbstractZero) = $SymHerm(project.parent(dx), project.uplo)
+        (project::ProjectTo{<:$SymHerm})(dx::Tangent) = $SymHerm(project.parent(dx.data), project.uplo)
+    end
+end
 
 # Transpose
 ProjectTo(x::T) where {T<:Transpose} = ProjectTo{T}(; parent=ProjectTo(parent(x)))
