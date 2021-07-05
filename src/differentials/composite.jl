@@ -60,8 +60,12 @@ function Base.show(io::IO, comp::Tangent{P}) where P
     print(io, "Tangent{")
     show(io, P)
     print(io, "}")
-    # allow Tuple or NamedTuple `show` to do the rendering of brackets etc
-    show(io, backing(comp))
+    if isempty(backing(comp))
+        print(io, "()")  # so it doesn't show `NamedTuple()`
+    else
+        # allow Tuple or NamedTuple `show` to do the rendering of brackets etc
+        show(io, backing(comp))
+    end
 end
 
 Base.convert(::Type{<:NamedTuple}, comp::Tangent{<:Any, <:NamedTuple}) = backing(comp)

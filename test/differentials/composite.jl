@@ -325,6 +325,8 @@ end
             r"^Tangent{Tuple{Int64,\s?Int64}}\(1,\s?2\)$",
             repr(Tangent{Tuple{Int64,Int64}}(1, 2)),
         )
+
+        @test repr(Tangent{Foo}()) == "Tangent{Foo}()"
     end
 
     @testset "internals" begin
