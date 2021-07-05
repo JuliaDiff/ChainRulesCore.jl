@@ -11,7 +11,7 @@ is not available from `P`, so it is stored in the functor.
 
 Projects the differential `dx` on the onto type `P`.
 """
-struct ProjectTo{P, D<:NamedTuple}
+struct ProjectTo{P,D<:NamedTuple}
     info::D
 end
 ProjectTo{P}(info::D) where {P,D<:NamedTuple} = ProjectTo{P,D}(info)
@@ -21,7 +21,7 @@ backing(project::ProjectTo) = getfield(project, :info)
 Base.getproperty(p::ProjectTo, name::Symbol) = getproperty(backing(p), name)
 Base.propertynames(p::ProjectTo) = propertynames(backing(p))
 
-function Base.show(io::IO, project::ProjectTo{T}) where T
+function Base.show(io::IO, project::ProjectTo{T}) where {T}
     print(io, "ProjectTo{")
     show(io, T)
     print(io, "}")
@@ -46,13 +46,15 @@ function (project::ProjectTo{T})(dx::Tangent) where {T}
 end
 
 # should not work for Tuples and NamedTuples, as not valid tangent types
-function ProjectTo(x::T) where {T<:Union{<:Tuple, NamedTuple}}
-    throw(ArgumentError("The `x` in `ProjectTo(x)` must be a valid differential, not $x"))
+function ProjectTo(x::T) where {T<:Union{<:Tuple,NamedTuple}}
+    return throw(
+        ArgumentError("The `x` in `ProjectTo(x)` must be a valid differential, not $x")
+    )
 end
 
 # Generic
 (project::ProjectTo)(dx::AbstractThunk) = project(unthunk(dx))
-(::ProjectTo{T})(dx::T) where {T}  = dx  # not always true, but we can special case for when it isn't
+(::ProjectTo{T})(dx::T) where {T} = dx  # not always true, but we can special case for when it isn't
 (::ProjectTo{T})(dx::AbstractZero) where {T} = zero(T)
 
 # Number
@@ -67,15 +69,21 @@ function (project::ProjectTo{T})(dx::Array) where {T<:Array}
     return T(map(_call, project.elements, dx))
 end
 function (project::ProjectTo{T})(dx::AbstractZero) where {T<:Array}
-    return T(map(proj->proj(dx), project.elements))
+    return T(map(proj -> proj(dx), project.elements))
 end
 (project::ProjectTo{<:Array})(dx::AbstractArray) = project(collect(dx))
 
 # Arrays{<:Number}: optimized case so we don't need a projector per element
-ProjectTo(x::T) where {E<:Number, T<:Array{E}} = ProjectTo{T}(; element=ProjectTo(zero(E)), size=size(x))
+function ProjectTo(x::T) where {E<:Number,T<:Array{E}}
+    return ProjectTo{T}(; element=ProjectTo(zero(E)), size=size(x))
+end
 (project::ProjectTo{<:Array{T}})(dx::Array) where {T<:Number} = project.element.(dx)
-(project::ProjectTo{<:Array{T}})(dx::AbstractZero) where {T<:Number} = zeros(T, project.size)
-(project::ProjectTo{<:Array{T}})(dx::Tangent{<:SubArray}) where {T<:Number} = project(dx.parent)
+function (project::ProjectTo{<:Array{T}})(dx::AbstractZero) where {T<:Number}
+    return zeros(T, project.size)
+end
+function (project::ProjectTo{<:Array{T}})(dx::Tangent{<:SubArray}) where {T<:Number}
+    return project(dx.parent)
+end
 
 # Diagonal
 ProjectTo(x::T) where {T<:Diagonal} = ProjectTo{T}(; diag=ProjectTo(diag(x)))
@@ -83,17 +91,25 @@ ProjectTo(x::T) where {T<:Diagonal} = ProjectTo{T}(; diag=ProjectTo(diag(x)))
 (project::ProjectTo{T})(dx::AbstractZero) where {T<:Diagonal} = T(project.diag(dx))
 
 # :data, :uplo fields
-for SymHerm = (:Symmetric, :Hermitian)
+for SymHerm in (:Symmetric, :Hermitian)
     @eval begin
-        ProjectTo(x::T) where {T<:$SymHerm} = ProjectTo{T}(; uplo=Symbol(x.uplo), parent=ProjectTo(parent(x)))
-        (project::ProjectTo{<:$SymHerm})(dx::AbstractMatrix) = $SymHerm(project.parent(dx), project.uplo)
-        (project::ProjectTo{<:$SymHerm})(dx::AbstractZero) = $SymHerm(project.parent(dx), project.uplo)
-        (project::ProjectTo{<:$SymHerm})(dx::Tangent) = $SymHerm(project.parent(dx.data), project.uplo)
+        function ProjectTo(x::T) where {T<:$SymHerm}
+            return ProjectTo{T}(; uplo=Symbol(x.uplo), parent=ProjectTo(parent(x)))
+        end
+        function (project::ProjectTo{<:$SymHerm})(dx::AbstractMatrix)
+            return $SymHerm(project.parent(dx), project.uplo)
+        end
+        function (project::ProjectTo{<:$SymHerm})(dx::AbstractZero)
+            return $SymHerm(project.parent(dx), project.uplo)
+        end
+        function (project::ProjectTo{<:$SymHerm})(dx::Tangent)
+            return $SymHerm(project.parent(dx.data), project.uplo)
+        end
     end
 end
 
 # :data field
-for UL = (:UpperTriangular, :LowerTriangular)
+for UL in (:UpperTriangular, :LowerTriangular)
     @eval begin
         ProjectTo(x::T) where {T<:$UL} = ProjectTo{T}(; parent=ProjectTo(parent(x)))
         (project::ProjectTo{<:$UL})(dx::AbstractMatrix) = $UL(project.parent(dx))
@@ -104,7 +120,9 @@ end
 
 # Transpose
 ProjectTo(x::T) where {T<:Transpose} = ProjectTo{T}(; parent=ProjectTo(parent(x)))
-(project::ProjectTo{<:Transpose})(dx::AbstractMatrix) = transpose(project.parent(transpose(dx)))
+function (project::ProjectTo{<:Transpose})(dx::AbstractMatrix)
+    return transpose(project.parent(transpose(dx)))
+end
 (project::ProjectTo{<:Transpose})(dx::AbstractZero) = transpose(project.parent(dx))
 
 # Adjoint
@@ -114,20 +132,16 @@ ProjectTo(x::T) where {T<:Adjoint} = ProjectTo{T}(; parent=ProjectTo(parent(x)))
 
 # PermutedDimsArray
 ProjectTo(x::P) where {P<:PermutedDimsArray} = ProjectTo{P}(; parent=ProjectTo(parent(x)))
-(project::ProjectTo{<:PermutedDimsArray{T,N,perm,iperm,AA}})(dx::AbstractArray) where {T, N, perm, iperm, AA} = PermutedDimsArray{T,N,perm,iperm,AA}(permutedims(project.parent(dx), perm))
-(project::ProjectTo{<:PermutedDimsArray{T,N,perm,iperm,AA}})(dx::AbstractZero) where {T, N, perm, iperm, AA} = PermutedDimsArray{T,N,perm,iperm,AA}(project.parent(dx))
+function (project::ProjectTo{<:PermutedDimsArray{T,N,perm,iperm,AA}})(
+    dx::AbstractArray
+) where {T,N,perm,iperm,AA}
+    return PermutedDimsArray{T,N,perm,iperm,AA}(permutedims(project.parent(dx), perm))
+end
+function (project::ProjectTo{<:PermutedDimsArray{T,N,perm,iperm,AA}})(
+    dx::AbstractZero
+) where {T,N,perm,iperm,AA}
+    return PermutedDimsArray{T,N,perm,iperm,AA}(project.parent(dx))
+end
 
 # SubArray
 ProjectTo(x::T) where {T<:SubArray} = ProjectTo(copy(x)) # don't project on to a view, but onto matching copy
-
-
-
-
-
-
-
-
-
-
-
-

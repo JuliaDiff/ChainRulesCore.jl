@@ -4,8 +4,8 @@ end
 Base.zero(::Fred) = Fred(0.0)
 Base.zero(::Type{Fred}) = Fred(0.0)
 
-struct Freddy{T, N}
-    a::Array{T, N}
+struct Freddy{T,N}
+    a::Array{T,N}
 end
 Base.:(==)(a::Freddy, b::Freddy) = a.a == b.a
 
@@ -28,18 +28,18 @@ end
         @test Fred(1.2) == ProjectTo(Fred(1.1))(Fred(1.2))
         @test Fred(0.0) == ProjectTo(Fred(1.1))(ZeroTangent())
         @test Fred(3.2) == ProjectTo(Fred(1.1))(@thunk(Fred(3.2)))
-        @test Fred(1.2) == ProjectTo(Fred(1.1))(Tangent{Fred}(;a=1.2))
+        @test Fred(1.2) == ProjectTo(Fred(1.1))(Tangent{Fred}(; a=1.2))
 
         # struct with complicated field
-        x = Freddy(zeros(2,2))
+        x = Freddy(zeros(2, 2))
         dx = Tangent{Freddy}(; a=ZeroTangent())
         @test x == ProjectTo(x)(dx)
 
         # nested structs
         f = Fred(0.0)
-        tf = Tangent{Fred}(;a=ZeroTangent())
+        tf = Tangent{Fred}(; a=ZeroTangent())
         m = Mary(f)
-        dm = Tangent{Mary}(;a=tf)
+        dm = Tangent{Mary}(; a=tf)
         @test m == ProjectTo(m)(dm)
 
         # two fields
@@ -116,11 +116,11 @@ end
 
     @testset "Array{Any} with really messy contents" begin
         # inner arrays have same type but different sizes
-        x = [[1.0, 2.0, 3.0], [4.0+im 5.0], [[[Fred(1)]]]]
+        x = [[1.0, 2.0, 3.0], [4.0 + im 5.0], [[[Fred(1)]]]]
         @test x == ProjectTo(x)(x)
-        @test x == ProjectTo(x)([[1.0+im, 2.0, 3.0], [4.0+im 5.0], [[[Fred(1)]]]])
+        @test x == ProjectTo(x)([[1.0 + im, 2.0, 3.0], [4.0 + im 5.0], [[[Fred(1)]]]])
         # using a different type for the 2nd element (Adjoint)
-        @test x == ProjectTo(x)([[1.0+im, 2.0, 3.0], [4.0-im, 5.0]', [[[Fred(1)]]]])
+        @test x == ProjectTo(x)([[1.0 + im, 2.0, 3.0], [4.0 - im, 5.0]', [[[Fred(1)]]]])
 
         @test [[0.0, 0.0, 0.0], [0.0im 0.0], [[[Fred(0)]]]] == ProjectTo(x)(ZeroTangent())
     end
@@ -154,9 +154,11 @@ end
         @test d_Fred == ProjectTo(d_Fred)(Diagonal([ZeroTangent(), ZeroTangent()]))
 
         # from Tangent
-        @test d_F64 == ProjectTo(d_F64)(Tangent{Diagonal}(;diag=[0.0, 0.0]))
-        @test d_F64 == ProjectTo(d_F64)(Tangent{Diagonal}(;diag=[0.0f0, 0.0f0]))
-        @test d_F64 == ProjectTo(d_F64)(Tangent{Diagonal}(;diag=[ZeroTangent(), @thunk(ZeroTangent())]))
+        @test d_F64 == ProjectTo(d_F64)(Tangent{Diagonal}(; diag=[0.0, 0.0]))
+        @test d_F64 == ProjectTo(d_F64)(Tangent{Diagonal}(; diag=[0.0f0, 0.0f0]))
+        @test d_F64 == ProjectTo(d_F64)(
+            Tangent{Diagonal}(; diag=[ZeroTangent(), @thunk(ZeroTangent())])
+        )
     end
 
     @testset "to $SymHerm" for SymHerm in (Symmetric, Hermitian)
@@ -171,7 +173,7 @@ end
 
         data = [1.0-2im 0; 0 4]
         x = SymHerm(data)
-        @test x == ProjectTo(x)(Diagonal([1.0-2im, 4.0]))
+        @test x == ProjectTo(x)(Diagonal([1.0 - 2im, 4.0]))
 
         data = [0.0+0im 0; 0 0]
         x = SymHerm(data)
