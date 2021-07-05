@@ -1,3 +1,16 @@
+"""
+    ProjectTo(x)
+
+Returns a `ProjectTo{P,...}` functor able to project a differential `dx` onto the type `P`
+for a primal `x`.
+This functor encloses over what ever is needed to be able to be able to do that projection.
+For example, when projecting `dx=ZeroTangent()` on an array `P=Array{T, N}`, the size of `x`
+is not available from `P`, so it is stored in the functor.
+
+    (::ProjectTo{P})(dx)
+
+Projects the differential `dx` on the onto type `P`.
+"""
 struct ProjectTo{P, D<:NamedTuple}
     info::D
 end
@@ -18,26 +31,6 @@ function Base.show(io::IO, project::ProjectTo{T}) where T
         show(io, backing(project))
     end
 end
-
-
-"""
-    ProjectTo(x)
-
-Returns a `ProjectTo{P,...}` functor able to project a differential `dx` onto the type `T`
-for a primal `x`.
-This functor encloses over what ever is needed to be able to be able to do that projection.
-For example, when projecting `dx=ZeroTangent()` on an array `P=Array{T, N}`, the size of `x`
-is not available from `P`, so it is stored in the functor.
-"""
-function ProjectTo end
-
-"""
-    (::ProjectTo{T})(dx)
-
-Projects the differential `dx` on the onto type `T`.
-`ProjectTo{T}` is a functor that knows how to perform this projection.
-"""
-function (::ProjectTo) end
 
 # fallback (structs)
 function ProjectTo(x::T) where {T}
