@@ -137,10 +137,8 @@ function (project::ProjectTo{<:PermutedDimsArray{T,N,perm,iperm,AA}})(
 ) where {T,N,perm,iperm,AA}
     return PermutedDimsArray{T,N,perm,iperm,AA}(permutedims(project.parent(dx), perm))
 end
-function (project::ProjectTo{<:PermutedDimsArray{T,N,perm,iperm,AA}})(
-    dx::AbstractZero
-) where {T,N,perm,iperm,AA}
-    return PermutedDimsArray{T,N,perm,iperm,AA}(project.parent(dx))
+function (project::ProjectTo{P})(dx::AbstractZero) where {P<:PermutedDimsArray}
+    return P(project.parent(dx))
 end
 
 # SubArray
