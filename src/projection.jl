@@ -142,3 +142,68 @@ end
 
 # SubArray
 ProjectTo(x::T) where {T<:SubArray} = ProjectTo(copy(x))  # don't project on to a view, but onto matching copy
+
+
+###############################################################################
+# subspaces:
+# (Technically submodules but the terms means something else)
+# If something is a subspace of the space we are projecting to then the projection
+# can be simplified to be an identity operation.
+
+using LinearAlgebra: Adjoint, Transpose
+
+⪯(::Type, ::Type) where T = false
+
+# Not always true (e.g. not true for SparseCSC, but will add exception as needed)
+⪯(::Type{T}, ::Type{T}) where T = true
+
+⪯(::Type{<:Real}, ::Type{Real}) where T = true
+# For our purposes a Float64 is good enough to represent any Real
+⪯(::Type{<:Real}, ::Type{Float64}) where T = true
+
+# Things are subspaces of themselves
+for XArray in (:Array, :Diagonal, :Symmetric, :Hermitian, :UpperTriangular, :LowerTriangular, :Adjoint, :Transpose)
+    @eval ⪯(::Type{<:$XArray{S}}, ::Type{<:$XArray{T}}) where {S,T} = S ⪯ T
+end
+
+# Array has no structure, so it everything is a subspace of it
+⪯(::Type{<:AbstractArray{S,N}}, ::Type{<:Array{T,N}}) where {N,S,T} = S ⪯ T
+
+# Some other things have no structure either, so we can mark Array as a subspace of them also, so they are equal spaces
+⪯(A::Type{<:Array{S,2}}, ::Type{<:Adjoint{T,M}}) where {M,S<:Real,T<:Real} = S ⪯ T && A ⪯ M
+⪯(A::Type{<:Array{S,2}}, ::Type{<:Transpose{T,M}}) where {M,S<:Real,T<:Real} = S ⪯ T && A ⪯ M
+⪯(A::Type{<:Array{S,N}}, ::Type{<:PermutedDimsArray{T,N,<:Any,<:Any,M}}) where {N,M,S<:Real,T<:Real} = S ⪯ T && A ⪯ M
+⪯(A::Type{<:Array{S,2}}, ::Type{<:Adjoint{T,<:Vector}}) where {M,S<:Real,T<:Real} = S ⪯ T
+⪯(A::Type{<:Array{S,2}}, ::Type{<:Transpose{T,<:Vector}}) where {M,S<:Real,T<:Real} = S ⪯ T
+
+
+# For Reals Symmetric==Hermitian and Adjoint==Transpose
+⪯(::Type{<:Symmetric{S}}, ::Type{<:Hermitian{T}}) where {S<:Real,T<:Real} = S ⪯ T
+⪯(::Type{<:Hermitian{S}}, ::Type{<:Symmetric{T}}) where {S<:Real,T<:Real} = S ⪯ T
+⪯(::Type{<:Adjoint{S}}, ::Type{<:Transpose{T}}) where {S<:Real,T<:Real} = S ⪯ T
+⪯(::Type{<:Transpose{S}}, ::Type{<:Adjoint{T}}) where {S<:Real,T<:Real} = S ⪯ T
+
+# Diagonal is subpace of many things
+for XArray in (:Symmetric, :Hermitian, :UpperTriangular, :LowerTriangular)
+    @eval ⪯(::Type{<:Diagonal{S}}, ::Type{<:$XArray{T}}) where {S,T} = S ⪯ T
+end
+
+
+# Now we are going to use these subspace relationships to unroll out some special cases
+# so that we can do them faster
+AdjointVec{T} = Adjoint{T, <:Vector}
+TransposeVec{T} = Transpose{T, <:Vector}
+AdjointMat{T} = Adjoint{T, <:Matrix}
+TransposeMat{T} = Transpose{T, <:Matrix}
+XMatrix = [Matrix, Diagonal, Symmetric, Hermitian, UpperTriangular, LowerTriangular, AdjointVec, TransposeVec, AdjointMat, TransposeMat]
+Elements = (Real, Number, Any)
+for XArray in XMatrix, T in Elements
+    if Matrix{<:Real} ⪯ XArray{<:T} && XArray{<:T} ⪯ Matrix{<:Real}  # same space as a Matrix
+        @eval ProjectTo(x::$(XArray{<:T})) = ProjectTo{Matrix{eltype(x)}}(; element=ProjectTo(zero(eltype(x))), size=size(x))
+    end
+    for YArray in XMatrix, S in Elements
+        if XArray{<:T} ⪯ YArray{<:S}
+            @eval (::ProjectTo($(YArray{<:S})))(dx::$(XArray{<:T})) = dx
+        end
+    end
+end
