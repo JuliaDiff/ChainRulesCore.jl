@@ -1,15 +1,14 @@
 """
-    ProjectTo(x)
+    ProjectTo(x::T)
 
-Returns a `ProjectTo{P,...}` functor able to project a differential `dx` onto the type `P`
-for a primal `x`.
+Returns a `ProjectTo{T,...}` functor able to project a differential `dx` onto the same tangent space as `x`.
 This functor encloses over what ever is needed to be able to be able to do that projection.
 For example, when projecting `dx=ZeroTangent()` on an array `P=Array{T, N}`, the size of `x`
 is not available from `P`, so it is stored in the functor.
 
-    (::ProjectTo{P})(dx)
+    (::ProjectTo{T})(dx)
 
-Projects the differential `dx` on the onto type `P`.
+Projects the differential `dx` on the onto the tangent space used to create the `ProjectTo`.
 """
 struct ProjectTo{P,D<:NamedTuple}
     info::D
@@ -142,4 +141,4 @@ function (project::ProjectTo{P})(dx::AbstractZero) where {P<:PermutedDimsArray}
 end
 
 # SubArray
-ProjectTo(x::T) where {T<:SubArray} = ProjectTo(copy(x)) # don't project on to a view, but onto matching copy
+ProjectTo(x::T) where {T<:SubArray} = ProjectTo(copy(x))  # don't project on to a view, but onto matching copy
