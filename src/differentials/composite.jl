@@ -133,6 +133,7 @@ backing(x::NamedTuple) = x
 backing(x::Dict) = x
 backing(x::Tangent) = getfield(x, :backing)
 
+# For generic structs
 function backing(x::T)::NamedTuple where T
     # note: all computation outside the if @generated happens at runtime.
     # so the first 4 lines of the branchs look the same, but can not be moved out.

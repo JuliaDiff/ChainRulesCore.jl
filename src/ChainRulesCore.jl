@@ -10,7 +10,7 @@ export RuleConfig, HasReverseMode, NoReverseMode, HasForwardsMode, NoForwardsMod
 export frule_via_ad, rrule_via_ad
 # definition helper macros
 export @non_differentiable, @scalar_rule, @thunk, @not_implemented
-export canonicalize, extern, unthunk  # differential operations
+export ProjectTo, canonicalize, extern, unthunk  # differential operations
 export add!!  # gradient accumulation operations
 # differentials
 export Tangent, NoTangent, InplaceableThunk, Thunk, ZeroTangent, AbstractZero, AbstractThunk
@@ -26,6 +26,7 @@ include("differentials/notimplemented.jl")
 
 include("differential_arithmetic.jl")
 include("accumulation.jl")
+include("projection.jl")
 
 include("config.jl")
 include("rules.jl")
