@@ -4,6 +4,7 @@
 Projects the differential `dx` onto a specific cotangent space.
 This guaranees `p(dx)::T`, except for `dx::AbstractZero`,
 but may store additional properties as a NamedTuple. 
+When called on `dx::Thunk`, the projection is inserted into the thunk.
 """
 struct ProjectTo{P,D<:NamedTuple}
     info::D
@@ -12,9 +13,9 @@ ProjectTo{P}(info::D) where {P,D<:NamedTuple} = ProjectTo{P,D}(info)
 ProjectTo{P}(; kwargs...) where {P} = ProjectTo{P}(NamedTuple(kwargs))
 
 """
-    ProjectTo(x::T)
+    ProjectTo(x)
 
-Returns a `ProjectTo{T,...}` functor which projects a differential `dx` onto the
+Returns a `ProjectTo{T}` functor which projects a differential `dx` onto the
 relevant cotangent space for `x`.
 
 # Examples
@@ -114,7 +115,8 @@ end
 
 # Thunks
 (project::ProjectTo)(dx::Thunk) = Thunk(project ∘ dx.f)
-# (project::ProjectTo)(dx::AbstractThunk) = throw(ArgumentError("ProjectTo should never see a thunk")) # otherwise we are unthunking twice?
+(project::ProjectTo)(dx::InplaceableThunk) = Thunk(project ∘ dx.val.f) # can't update in-place part
+(project::ProjectTo)(dx::AbstractThunk) = project(unthunk(dx))
 
 # Non-differentiable
 for T in (:Bool, :Symbol, :Char, :String, :Val)
@@ -168,6 +170,8 @@ end
 (project::ProjectTo{<:Adjoint})(dx::Transpose) = adjoint(conj(project.parent(parent(dx)))) # might copy twice?
 (project::ProjectTo{<:Adjoint})(dx::AbstractArray) = adjoint(conj(project.parent(vec(dx)))) # not happy!
 
+ProjectTo(x::LinearAlgebra.TransposeAbsVec{T}) where {T<:Number} = error("not yet defined")
+
 # Diagonal
 function ProjectTo(x::Diagonal)
     sub = ProjectTo(diag(x))
@@ -183,7 +187,7 @@ for (SymHerm, chk, fun) in ((:Symmetric, :issymmetric, :transpose), (:Hermitian,
             sub = ProjectTo(parent(x))
             return ProjectTo{$SymHerm{eltype(eltype(sub)), eltype(sub)}}(; uplo=LinearAlgebra.sym_uplo(x.uplo), parent=sub)
         end
-        function (project::ProjectTo{<:$SymHerm})(dx::AbstractMatrix)
+        function (project::ProjectTo{<:$SymHerm})(dx::AbstractArray)
             dy = project.parent(dx)
             dz = $chk(dy) ? dy : (dy .+ $fun(dy)) ./ 2
             return $SymHerm(project.parent(dz), project.uplo)
@@ -198,7 +202,7 @@ for (SymHerm, chk, fun) in ((:Symmetric, :issymmetric, :transpose), (:Hermitian,
 end
 
 # Triangular
-for UL in (:UpperTriangular, :LowerTriangular)
+for UL in (:UpperTriangular, :LowerTriangular, :UnitUpperTriangular, :UnitLowerTriangular)
     @eval begin
         function ProjectTo(x::$UL)
             sub = ProjectTo(parent(x))
@@ -213,3 +217,45 @@ end
 
 # # SubArray
 # ProjectTo(x::T) where {T<:SubArray} = ProjectTo(copy(x))  # don't project on to a view, but onto matching copy
+
+
+export proj_rrule
+"""
+    proj_rrule(f, args...)
+
+This calls the corresponding `rrule`, but automatically
+applies ProjectTo to all arguments.
+
+```jldoctest
+julia> using ChainRules
+
+julia> x, y = Diagonal(rand(3)), rand(3,3);
+
+julia> z, bk = rrule(*, x, y);
+
+julia> bk(z .* 100)[2] |> unthunk
+3×3 Matrix{Float64}:
+  8.04749   20.4969   16.3239
+ 39.2846   184.577   128.653
+ 11.1317    45.7744   32.7681
+
+julia> z, bk = proj_rrule(*, x, y);
+
+julia> bk(z .* 100)[2] |> unthunk
+3×3 Diagonal{Float64, Vector{Float64}}:
+ 8.04749     ⋅       ⋅ 
+  ⋅       184.577    ⋅ 
+  ⋅          ⋅     32.7681
+```
+"""
+function proj_rrule(f, args...)
+    ps = map(ProjectTo, args)
+    y, back = rrule(f, args...)
+    function proj_back(dy)
+        res = back(dy)
+        (first(res), map((p,dx) -> p(dx), ps, Base.tail(res))...)
+    end
+    y, proj_back
+end
+
+
