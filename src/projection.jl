@@ -69,6 +69,11 @@ julia> unthunk(u(t))
      ⋅      5.0+0.0im  8.0+0.0im
      ⋅          ⋅      9.0+0.0im
 
+julia> ProjectTo((rand(3) .> 0)')(ones(1,3))
+ZeroTangent()
+
+julia> ProjectTo(Diagonal(rand(3) .> 0))(Diagonal(ones(3)))
+ZeroTangent()
 ```
 """
 ProjectTo
@@ -143,6 +148,7 @@ ProjectTo(::T) where {T<:Number} = ProjectTo{float(T)}()
 
 # Arrays{<:Number}: optimized case so we don't need a projector per element
 function ProjectTo(x::AbstractArray{T,N}) where {T<:Number,N}
+    T == Bool && return ProjectTo(false)
     sub = ProjectTo(zero(T))
     return ProjectTo{AbstractArray{eltype(sub),N}}(; element=sub, axes=axes(x))
 end
@@ -174,6 +180,7 @@ ProjectTo(x::LinearAlgebra.TransposeAbsVec{T}) where {T<:Number} = error("not ye
 
 # Diagonal
 function ProjectTo(x::Diagonal)
+    eltype(x) == Bool && return ProjectTo(false)
     sub = ProjectTo(diag(x))
     ProjectTo{Diagonal{eltype(eltype(sub)), eltype(sub)}}(; diag=sub)
 end
@@ -184,6 +191,7 @@ end
 for (SymHerm, chk, fun) in ((:Symmetric, :issymmetric, :transpose), (:Hermitian, :ishermitian, :adjoint))
     @eval begin
         function ProjectTo(x::$SymHerm)
+            eltype(x) == Bool && return ProjectTo(false)
             sub = ProjectTo(parent(x))
             return ProjectTo{$SymHerm{eltype(eltype(sub)), eltype(sub)}}(; uplo=LinearAlgebra.sym_uplo(x.uplo), parent=sub)
         end
@@ -205,6 +213,7 @@ end
 for UL in (:UpperTriangular, :LowerTriangular, :UnitUpperTriangular, :UnitLowerTriangular)
     @eval begin
         function ProjectTo(x::$UL)
+            eltype(x) == Bool && return ProjectTo(false)
             sub = ProjectTo(parent(x))
             return ProjectTo{$UL{eltype(eltype(sub)), eltype(sub)}}(; parent=sub)
         end
@@ -217,6 +226,11 @@ end
 
 # # SubArray
 # ProjectTo(x::T) where {T<:SubArray} = ProjectTo(copy(x))  # don't project on to a view, but onto matching copy
+
+# Sparse
+
+# using SparseArrays
+
 
 
 export proj_rrule
@@ -239,13 +253,31 @@ julia> bk(z .* 100)[2] |> unthunk
  39.2846   184.577   128.653
  11.1317    45.7744   32.7681
 
-julia> z, bk = proj_rrule(*, x, y);
+julia> z2, bk2 = proj_rrule(*, x, y);
 
-julia> bk(z .* 100)[2] |> unthunk
+julia> bk2(z .* 100)[2] |> unthunk  # now preserves the subspace
 3×3 Diagonal{Float64, Vector{Float64}}:
  8.04749     ⋅       ⋅ 
   ⋅       184.577    ⋅ 
   ⋅          ⋅     32.7681
+
+julia> @btime rrule(*, \$x, \$y)[2](\$z)[2]|>unthunk;
+  66.777 ns (2 allocations: 256 bytes)
+
+julia> @btime proj_rrule(*, \$x, \$y)[2](\$z)[2]|>unthunk;  # still not ideal, makes & throws away Matrix
+  117.798 ns (4 allocations: 416 bytes)
+
+julia> _, bk3 = rrule(*, 1, 2+3im)
+(2 + 3im, ChainRules.var"#times_pullback#1114"{Int64, Complex{Int64}}(1, 2 + 3im))
+
+julia> bk3(4+5im)
+(NoTangent(), 23 - 2im, 4 + 5im)
+
+julia> _, bk4 = proj_rrule(*, 1, 2+3im);
+
+julia> bk4(4+5im)  # works for scalars too
+(NoTangent(), 23.0, 4.0 + 5.0im)
+
 ```
 """
 function proj_rrule(f, args...)
