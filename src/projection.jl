@@ -186,6 +186,13 @@ function (project::ProjectTo{AbstractArray})(dx::AbstractArray{S,M}) where {S,M}
     end
 end
 
+# This exists to solve a Zygote bug, that a splat of an array has tuple gradient.
+# Note that it can't easily be made to work with structured matrices, is that weird?
+function (project::ProjectTo{AbstractArray})(dx::Tuple)
+    dy = map(project.element, dx)
+    return reshape(collect(dy), project.axes)
+end
+
 # Arrays of arrays
 # ProjectTo(xs::T) where {T<:Array} = ProjectTo{T}(; elements=map(ProjectTo, xs))
 # function (project::ProjectTo{T})(dx::Array) where {T<:Array}
