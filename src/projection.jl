@@ -273,6 +273,18 @@ backing(x) # UndefRefError: access to undefined reference
 
 using SparseArrays
 
+function ProjectTo(x::SparseVector{T}) where {T<:Number}
+    ProjectTo{SparseVector}(; element = ProjectTo(zero(T)), nzind = x.nzind, axes = axes(x))
+end
+function (project::ProjectTo{SparseVector})(dx::AbstractArray)
+    sub = ProjectTo{AbstractArray}(; element=project.element, axes = (Base.OneTo(length(project.nzind)),))
+    nzval = sub(getindex(dx, project.nzind))
+    n = length(project.axes[1])
+    SparseVector(n, project.nzind, nzval)
+end
+# function (project::ProjectTo{SparseVector})(dx::SparseVector)
+#     Is there a fast method here?
+# end
 
 
 export MultiProject  # for now!
