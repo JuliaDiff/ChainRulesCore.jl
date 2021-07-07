@@ -90,6 +90,15 @@ julia> bi(Bidiagonal(ones(ComplexF64,3,3), :U))
  1.0  1.0   ⋅ 
   ⋅   1.0  1.0
   ⋅    ⋅   1.0
+
+julia> sp = ProjectTo(sprand(3,10,0.1))
+ProjectTo{SparseMatrixCSC}(element = ProjectTo{Float64}(), axes = (Base.OneTo(3), Base.OneTo(10)), rowvals = [1, 2, 2, 3, 2], nzranges = UnitRange{Int64}[1:0, 1:1, 2:2, 3:2, 3:4, 5:4, 5:5, 6:5, 6:5, 6:5], colptr = [1, 1, 2, 3, 3, 5, 5, 6, 6, 6, 6])
+
+julia> sp(reshape(1:30, 3, 10) .+ im)
+3×10 SparseMatrixCSC{Float64, Int64} with 5 stored entries:
+  ⋅   4.0   ⋅    ⋅     ⋅    ⋅     ⋅    ⋅    ⋅    ⋅ 
+  ⋅    ⋅   8.0   ⋅   14.0   ⋅   20.0   ⋅    ⋅    ⋅ 
+  ⋅    ⋅    ⋅    ⋅   15.0   ⋅     ⋅    ⋅    ⋅    ⋅ 
 ```
 """
 ProjectTo(x) = throw(ArgumentError("At present `ProjectTo` undersands only `x::AbstractArray`, " *
@@ -98,7 +107,9 @@ ProjectTo(x) = throw(ArgumentError("At present `ProjectTo` undersands only `x::A
 Base.getproperty(p::ProjectTo, name::Symbol) = getproperty(backing(p), name)
 Base.propertynames(p::ProjectTo) = propertynames(backing(p))
 backing(project::ProjectTo) = getfield(project, :info)
+
 project_type(p::ProjectTo{T}) where {T} = T
+project_type(p::typeof(identity)) = Any
 
 function Base.show(io::IO, project::ProjectTo{T}) where {T}
     print(io, "ProjectTo{")
@@ -193,16 +204,24 @@ function (project::ProjectTo{AbstractArray})(dx::Tuple)
     return reshape(collect(dy), project.axes)
 end
 
-# Arrays of arrays
-# ProjectTo(xs::T) where {T<:Array} = ProjectTo{T}(; elements=map(ProjectTo, xs))
-# function (project::ProjectTo{T})(dx::Array) where {T<:Array}
-#     _call(f, x) = f(x)
-#     return T(map(_call, project.elements, dx))
-# end
-# function (project::ProjectTo{T})(dx::AbstractZero) where {T<:Array}
-#     return T(map(proj -> proj(dx), project.elements))
-# end
-# (project::ProjectTo{<:Array})(dx::AbstractArray) = project(collect(dx))
+# Arrays of arrays -- store projector per element
+ProjectTo(xs::AbstractArray{<:AbstractArray}) = ProjectTo{AbstractArray{AbstractArray}}(; elements=map(ProjectTo, xs))
+function (project::ProjectTo{AbstractArray{AbstractArray}})(dx::AbstractArray)
+    dy = if axes(dx) == project.axes
+        dx
+    else
+        for d in 1:max(ndims(dx), length(project.axes))
+            size(dx, d) == length(get(project.axes, d, 1)) || throw(DimensionMismatch("wrong shape!"))
+        end
+        reshape(dx, project.axes)
+    end
+    # This always re-constructs the outer array, it's not super-lightweight
+    return map((f,x) -> f(x), project.elements, dy)
+end
+
+# Arrays of other things -- same fields as Array{<:Number}, trivial element
+ProjectTo(xs::AbstractArray) = ProjectTo{AbstractArray}(; element=identity, axes=axes(x))
+
 
 #####
 ##### `LinearAlgebra`
@@ -262,7 +281,7 @@ for UL in (:UpperTriangular, :LowerTriangular, :UnitUpperTriangular, :UnitLowerT
     end
 end
 
-# Weird
+# Weird -- not exhaustive!
 ProjectTo(x::Bidiagonal) = generic_projectto(x) # not sure!
 function (project::ProjectTo{Bidiagonal})(dx::AbstractMatrix)
     uplo = LinearAlgebra.sym_uplo(project.uplo)
