@@ -110,7 +110,9 @@ ProjectTo(x) = generic_projectto(x)
 function generic_projectto(x::T) where {T}
     # Generic fallback for structs, recursively make `ProjectTo`s all their fields
     fields_nt::NamedTuple = backing(x)
-    wrapT = T.name.wrapper # this takes "has a default constructor" more seriously than before
+    # We can't use `T` because if we have `Foo{Matrix{E}}` it should be allowed to make a `Foo{Diagaonal{E}}` etc
+    # we assume it has a default constructor that has all fields but if it doesn't `construct` will give a good error message
+    wrapT = T.name.wrapper
     return ProjectTo{wrapT}(map(ProjectTo, fields_nt))
 end
 function (project::ProjectTo{T})(dx::Tangent) where {T}
@@ -162,9 +164,12 @@ ProjectTo(::Type{T}) where T<:Number = ProjectTo(zero(T)) # maybe
 # (project::ProjectTo{<:Array})(dx::AbstractArray) = project(collect(dx))
 
 # Arrays{<:Number}: optimized case so we don't need a projector per element
+# If we don't have a more specialized `ProjectTo` rule, we just assume that it is some kind
+# of dense array without any structure, etc that we might need to preserve
 function ProjectTo(x::AbstractArray{T,N}) where {T<:Number,N}
-    T == Bool && return ProjectTo(false)
     sub = ProjectTo(zero(T))
+    # if all our elements are going to zero, then we can short circuit and just send the whole thing
+    sub <: ProjectTo{<:AbstractZero} && return sub
     return ProjectTo{AbstractArray{eltype(sub),N}}(; element=sub, axes=axes(x))
 end
 function (project::ProjectTo{AbstractArray{T,N}})(dx::AbstractArray{S,M}) where {T,S,N,M}
@@ -320,5 +325,4 @@ function proj_rrule(f, args...)
     end
     y, proj_back
 end
-
 
