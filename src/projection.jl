@@ -125,7 +125,7 @@ end
 export backing, generic_projectto # for now!
 
 # Structs
-function generic_projectto(x::T) where {T}
+function generic_projectto(x::T; kw...) where {T}
     # Generic fallback, recursively make `ProjectTo`s for all their fields
     fields_nt::NamedTuple = backing(x)
     fields_proj = map(fields_nt) do x1
@@ -139,7 +139,7 @@ function generic_projectto(x::T) where {T}
     # `Foo{Diagaonal{E}}` etc. We assume it has a default constructor that has all fields 
     # but if it doesn't `construct` will give a good error message.
     wrapT = T.name.wrapper
-    return ProjectTo{wrapT}(fields_proj)
+    return ProjectTo{wrapT}(; fields_proj..., kw...)
 end
 function (project::ProjectTo{T})(dx::Tangent) where {T}
     sub_projects = backing(project)
@@ -175,7 +175,7 @@ ProjectTo(::T) where {T<:Number} = ProjectTo{float(T)}()
 # Arrays{<:Number}
 # If we don't have a more specialized `ProjectTo` rule, we just assume that there is
 # no structure to preserve, and any array is acceptable as a gradient.
-function ProjectTo(x::AbstractArray{T,N}) where {T<:Number,N}
+function ProjectTo(x::AbstractArray{T}) where {T<:Number}
     element = ProjectTo(zero(T))
     # if all our elements are going to zero, then we can short circuit and just send the whole thing
     element isa ProjectTo{<:AbstractZero} && return element
@@ -183,14 +183,13 @@ function ProjectTo(x::AbstractArray{T,N}) where {T<:Number,N}
 end
 function (project::ProjectTo{AbstractArray})(dx::AbstractArray{S,M}) where {S,M}
     T = project_type(project.element)
-    N = length(project.axes)
     dy = S <: T ? dx : broadcast(project.element, dx)
     if axes(dy) == project.axes
         return dy
     else
         # The rule here is that we reshape to add or remove trivial dimensions like dx = ones(4,1),
         # where x = ones(4), but throw an error on dx = ones(1,4) etc.
-        for d in 1:max(N,M)
+        for d in 1:max(M, length(project.axes))
             size(dy, d) == length(get(project.axes, d, 1)) || throw(DimensionMismatch("wrong shape!"))
         end
         return reshape(dy, project.axes)
@@ -282,7 +281,8 @@ for UL in (:UpperTriangular, :LowerTriangular, :UnitUpperTriangular, :UnitLowerT
 end
 
 # Weird -- not exhaustive!
-ProjectTo(x::Bidiagonal) = generic_projectto(x) # not sure!
+# one strategy is to recurse into the struct:
+ProjectTo(x::Bidiagonal{T}) where {T<:Number} = generic_projectto(x)
 function (project::ProjectTo{Bidiagonal})(dx::AbstractMatrix)
     uplo = LinearAlgebra.sym_uplo(project.uplo)
     dv = project.dv(diag(dx))
@@ -290,13 +290,15 @@ function (project::ProjectTo{Bidiagonal})(dx::AbstractMatrix)
     return Bidiagonal(dv, ev, uplo)
 end
 
-#=
-
-x = LinearAlgebra.Tridiagonal(rand(4,4))
-backing(x) # UndefRefError: access to undefined reference
-
-=#
-
+# another strategy is just to use the AbstratArray method
+function ProjectTo(x::Tridiagonal{T}) where {T<:Number}
+    notparent = invoke(ProjectTo, Tuple{AbstractArray{T}} where T<:Number, x)
+    ProjectTo{Tridiagonal}(; notparent = notparent)
+end
+function (project::ProjectTo{Tridiagonal})(dx::AbstractArray)
+    dy = project.notparent(dx)
+    Tridiagonal(dy)
+end
 
 #####
 ##### `SparseArrays`
@@ -321,14 +323,13 @@ function (project::ProjectTo{SparseVector})(dx::AbstractArray)
     n = length(project.axes[1])
     return SparseVector(n, project.nzind, nzval)
 end
-# function (project::ProjectTo{SparseVector})(dx::SparseVector)
-#     Is there a fast method here?
-# end
 
 function ProjectTo(x::SparseMatrixCSC{T}) where {T<:Number}
     ProjectTo{SparseMatrixCSC}(; element = ProjectTo(zero(T)), axes = axes(x),
         rowvals = rowvals(x), nzranges = nzrange.(Ref(x), axes(x,2)), colptr = x.colptr)
 end
+# You need not really store nzranges, you can get them from colptr
+# nzrange(S::AbstractSparseMatrixCSC, col::Integer) = getcolptr(S)[col]:(getcolptr(S)[col+1]-1)
 function (project::ProjectTo{SparseMatrixCSC})(dx::AbstractArray)
     dy = if axes(dx) == project.axes
         dx
@@ -349,31 +350,6 @@ function (project::ProjectTo{SparseMatrixCSC})(dx::AbstractArray)
     m, n = length.(project.axes)
     return SparseMatrixCSC(m, n, project.colptr, project.rowvals, nzval)
 end
-
-
-
-  # nzrange(A::AbstractSparseMatrixCSC, col::Integer)
-
-  # Return the range of indices to the structural nonzero values of a sparse matrix column. In
-  # conjunction with nonzeros and rowvals, this allows for convenient iterating over a sparse matrix
-  # :
-
-  # A = sparse(I,J,V)
-  # rows = rowvals(A)
-  # vals = nonzeros(A)
-  # m, n = size(A)
-  # for j = 1:n
-  #    for i in nzrange(A, j)
-  #       row = rows[i]
-  #       val = vals[i]
-  #       # perform sparse wizardry...
-  #    end
-  # end
-
-  # You need not really store these, you can get them from colptr
-  # nzrange(S::AbstractSparseMatrixCSC, col::Integer) = getcolptr(S)[col]:(getcolptr(S)[col+1]-1)
-
-
 
 #####
 ##### Utilities
