@@ -270,21 +270,77 @@ backing(x) # UndefRefError: access to undefined reference
 
 
 # Sparse
-
 using SparseArrays
+# Word from on high is that we should regard all un-stored values of sparse arrays as structural zeros.
+# Thus ProjectTo needs to store nzind, and get only those. This is extremely naiive, and can probably
+# be done much more efficiently by someone who knows this stuff.
 
 function ProjectTo(x::SparseVector{T}) where {T<:Number}
     ProjectTo{SparseVector}(; element = ProjectTo(zero(T)), nzind = x.nzind, axes = axes(x))
 end
 function (project::ProjectTo{SparseVector})(dx::AbstractArray)
-    sub = ProjectTo{AbstractArray}(; element=project.element, axes = (Base.OneTo(length(project.nzind)),))
-    nzval = sub(getindex(dx, project.nzind))
+    dy = if axes(x) == project.axes
+        dx
+    else
+        size(dx, 1) == length(project.axes[1]) || throw(DimensionMismatch("wrong shape!"))
+        reshape(dx, project.axes)
+    end
+    nzval = map(i -> project.element(dy[i]), project.nzind)
     n = length(project.axes[1])
     SparseVector(n, project.nzind, nzval)
 end
 # function (project::ProjectTo{SparseVector})(dx::SparseVector)
 #     Is there a fast method here?
 # end
+
+function ProjectTo(x::SparseMatrixCSC{T}) where {T<:Number}
+    ProjectTo{SparseMatrixCSC}(; element = ProjectTo(zero(T)), axes = axes(x),
+        rowvals = rowvals(x), nzranges = nzrange.(Ref(x), axes(x,2)), colptr = x.colptr)
+end
+function (project::ProjectTo{SparseMatrixCSC})(dx::AbstractArray)
+    dy = if axes(dx) == project.axes
+        dx
+    else
+        size(dx, 1) == length(project.axes[1]) || throw(DimensionMismatch("wrong shape!"))
+        size(dx, 2) == length(project.axes[2]) || throw(DimensionMismatch("wrong shape!"))
+        reshape(dx, project.axes)
+    end
+    nzval = Vector{project_type(project.element)}(undef, length(project.rowvals))
+    k = 0
+    for col in project.axes[2]
+        for i in project.nzranges[col]
+            row = project.rowvals[i]
+            val = project.element(dy[row, col])
+            nzval[k+=1] = val
+        end
+    end
+    m, n = length.(project.axes)
+    SparseMatrixCSC(m, n, project.colptr, project.rowvals, nzval)
+end
+
+
+
+  # nzrange(A::AbstractSparseMatrixCSC, col::Integer)
+
+  # Return the range of indices to the structural nonzero values of a sparse matrix column. In
+  # conjunction with nonzeros and rowvals, this allows for convenient iterating over a sparse matrix
+  # :
+
+  # A = sparse(I,J,V)
+  # rows = rowvals(A)
+  # vals = nonzeros(A)
+  # m, n = size(A)
+  # for j = 1:n
+  #    for i in nzrange(A, j)
+  #       row = rows[i]
+  #       val = vals[i]
+  #       # perform sparse wizardry...
+  #    end
+  # end
+
+  # You need not really store these, you can get them from colptr
+  # nzrange(S::AbstractSparseMatrixCSC, col::Integer) = getcolptr(S)[col]:(getcolptr(S)[col+1]-1)
+
 
 
 export MultiProject  # for now!
@@ -304,6 +360,15 @@ end
 """
 struct MultiProject{T}
     funs::T
-    MultiProject(xs...) = begin funs = map(ProjectTo, xs); new{typeof(funs)}(funs) end
+    function MultiProject(xs...)
+        funs = map(xs) do x
+            if x isa Number || x isa AbstractArray
+                ProjectTo
+            else
+                identity
+            end
+        end
+        new{typeof(funs)}(funs)
+    end
 end
 (m::MultiProject)(dxs::Tuple) = map((f,dx) -> f(dx), m.funs, dxs)
