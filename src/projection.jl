@@ -74,6 +74,15 @@ ZeroTangent()
 
 julia> ProjectTo(Diagonal(rand(3) .> 0))(Diagonal(ones(3)))
 ZeroTangent()
+
+julia> bi = ProjectTo(Bidiagonal(rand(3,3), :U))
+ProjectTo{Bidiagonal}(dv = ProjectTo{AbstractVector{Float64}}(element = ProjectTo{Float64}(), axes = (Base.OneTo(3),)), ev = ProjectTo{AbstractVector{Float64}}(element = ProjectTo{Float64}(), axes = (Base.OneTo(2),)), uplo = ProjectTo{AbstractZero}(value = 'U',))
+
+julia> bi(Bidiagonal(ones(ComplexF64,3,3), :U))
+3×3 Bidiagonal{Float64, Vector{Float64}}:
+ 1.0  1.0   ⋅ 
+  ⋅   1.0  1.0
+  ⋅    ⋅   1.0
 ```
 """
 ProjectTo
@@ -94,11 +103,15 @@ function Base.show(io::IO, project::ProjectTo{T}) where {T}
     end
 end
 
+export backing, generic_projectto # for now!
+
 # fallback (structs)
-function ProjectTo(x::T) where {T}
+ProjectTo(x) = generic_projectto(x)
+function generic_projectto(x::T) where {T}
     # Generic fallback for structs, recursively make `ProjectTo`s all their fields
     fields_nt::NamedTuple = backing(x)
-    return ProjectTo{T}(map(ProjectTo, fields_nt))
+    wrapT = T.name.wrapper # this takes "has a default constructor" more seriously than before
+    return ProjectTo{wrapT}(map(ProjectTo, fields_nt))
 end
 function (project::ProjectTo{T})(dx::Tangent) where {T}
     sub_projects = backing(project)
@@ -123,9 +136,9 @@ end
 (project::ProjectTo)(dx::InplaceableThunk) = Thunk(project ∘ dx.val.f) # can't update in-place part
 (project::ProjectTo)(dx::AbstractThunk) = project(unthunk(dx))
 
-# Non-differentiable
-for T in (:Bool, :Symbol, :Char, :String, :Val)
-    @eval ProjectTo(dx::$T) = ProjectTo{AbstractZero}()
+# Non-differentiable -- not so sure this is necessary. Keeping value like this is a bit awkward.
+for T in (:Bool, :Symbol, :Char, :String, :Val, :Type)
+    @eval ProjectTo(dx::$T) = ProjectTo{AbstractZero}(; value=dx)
 end
 (::ProjectTo{AbstractZero})(dx::AbstractZero) = dx
 (::ProjectTo{AbstractZero})(dx) = ZeroTangent()
@@ -134,6 +147,8 @@ end
 ProjectTo(::T) where {T<:Number} = ProjectTo{float(T)}()
 (::ProjectTo{T})(dx::Number) where {T<:Number} = convert(T, dx)
 (::ProjectTo{T})(dx::Number) where {T<:Real} = convert(T, real(dx))
+
+ProjectTo(::Type{T}) where T<:Number = ProjectTo(zero(T)) # maybe
 
 # Arrays 
 # ProjectTo(xs::T) where {T<:Array} = ProjectTo{T}(; elements=map(ProjectTo, xs))
@@ -222,6 +237,22 @@ for UL in (:UpperTriangular, :LowerTriangular, :UnitUpperTriangular, :UnitLowerT
         # (project::ProjectTo{<:$UL})(dx::Tangent) = $UL(project.parent(dx.data))
     end
 end
+
+# Weird
+ProjectTo(x::Bidiagonal) = generic_projectto(x) # not sure!
+function (project::ProjectTo{<:Bidiagonal})(dx::AbstractMatrix)
+    uplo = LinearAlgebra.sym_uplo(project.uplo.value)
+    dv = project.dv(diag(dx))
+    ev = project.ev(uplo === :U ? diag(dx, 1) : diag(dx, -1))
+    Bidiagonal(dv, ev, uplo)
+end
+
+#=
+
+x = LinearAlgebra.Tridiagonal(rand(4,4))
+backing(x) # UndefRefError: access to undefined reference
+
+=#
 
 
 # # SubArray
