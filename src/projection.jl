@@ -85,7 +85,7 @@ julia> bi(Bidiagonal(ones(ComplexF64,3,3), :U))
   ⋅    ⋅   1.0
 ```
 """
-ProjectTo
+ProjectTo(x) = generic_projectto(x)
 
 backing(project::ProjectTo) = getfield(project, :info)
 Base.getproperty(p::ProjectTo, name::Symbol) = getproperty(backing(p), name)
@@ -106,7 +106,6 @@ end
 export backing, generic_projectto # for now!
 
 # fallback (structs)
-ProjectTo(x) = generic_projectto(x)
 function generic_projectto(x::T) where {T}
     # Generic fallback for structs, recursively make `ProjectTo`s all their fields
     fields_nt::NamedTuple = backing(x)
@@ -169,8 +168,8 @@ ProjectTo(::Type{T}) where T<:Number = ProjectTo(zero(T)) # maybe
 function ProjectTo(x::AbstractArray{T,N}) where {T<:Number,N}
     sub = ProjectTo(zero(T))
     # if all our elements are going to zero, then we can short circuit and just send the whole thing
-    sub <: ProjectTo{<:AbstractZero} && return sub
-    return ProjectTo{AbstractArray{eltype(sub),N}}(; element=sub, axes=axes(x))
+    sub isa ProjectTo{<:AbstractZero} && return sub
+    return ProjectTo{AbstractArray}(; element=sub, axes=axes(x))
 end
 function (project::ProjectTo{AbstractArray{T,N}})(dx::AbstractArray{S,M}) where {T,S,N,M}
     dy = S <: T ? dx : broadcast(project.element, dx)
