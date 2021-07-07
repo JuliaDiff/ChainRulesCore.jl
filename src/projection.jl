@@ -53,11 +53,11 @@ julia> s(reshape(1:9,3,3))
  3.0  5.0  7.0
  5.0  7.0  9.0
 
-julia> s(d(reshape(1:9,3,3)))
-3×3 Symmetric{Float64, Diagonal{Float64, Vector{Float64}}}:
- 1.0  0.0  0.0
- 0.0  5.0  0.0
- 0.0  0.0  9.0
+julia> s(d(reshape(1:9,3,3)))  # Diagonal ! <: Symmetric, but is a sub-vector-space
+3×3 Diagonal{Float64, Vector{Float64}}:
+ 1.0   ⋅    ⋅ 
+  ⋅   5.0   ⋅ 
+  ⋅    ⋅   9.0
 
 julia> u = ProjectTo(UpperTriangular(rand(3,3) .+ im .* rand(3,3)));
 
@@ -225,6 +225,12 @@ for (SymHerm, chk, fun) in ((:Symmetric, :issymmetric, :transpose), (:Hermitian,
             dy = project.parent(dx)
             dz = $chk(dy) ? dy : (dy .+ $fun(dy)) ./ 2
             return $SymHerm(project.parent(dz), project.uplo)
+        end
+        # subspaces which are not subtypes:
+        function (project::ProjectTo{$SymHerm})(dx::Diagonal)
+            sub = project.parent # this is going to be unhappy about the size
+            sub_one = ProjectTo{project_type(sub)}(; element = sub.element, axes = (sub.axes[1],))
+            return Diagonal(sub_one(dx.diag))
         end
     end
 end
