@@ -4,9 +4,9 @@
 Projects the differential `dx` onto a specific cotangent space.
 This guaranees `p(dx)::T`, except for `dx::AbstractZero`.
 
-In addition, it typically stores additional properties in `backing(p)::NamedTuple`,
-such as projectors for each constituent field, 
-and a projector for the element type of an array.
+Usually `T` is the "outermost" part of the type, and it stores additional 
+properties in `backing(p)::NamedTuple`, such as projectors for each constituent
+field, and a projector `p.element` for the element type of an array of numbers.
 
 When called on `dx::Thunk`, the projection is inserted into the thunk.
 """
@@ -21,6 +21,9 @@ ProjectTo{P}(; kwargs...) where {P} = ProjectTo{P}(NamedTuple(kwargs))
 
 Returns a `ProjectTo{T}` functor which projects a differential `dx` onto the
 relevant cotangent space for `x`.
+
+At present this undersands only `x::AbstractArray`, `x::Number`. 
+It should not be called on arguments of an `rrule` method which accepts other types.
 
 # Examples
 ```jldoctest
@@ -89,11 +92,12 @@ julia> bi(Bidiagonal(ones(ComplexF64,3,3), :U))
   ⋅    ⋅   1.0
 ```
 """
-ProjectTo(x) = generic_projectto(x)
+ProjectTo(x) = throw(ArgumentError("At present `ProjectTo` undersands only `x::AbstractArray`, " *
+    "`x::Number`. It should not be called on arguments of an `rrule` method which accepts other types."))
 
-backing(project::ProjectTo) = getfield(project, :info)
 Base.getproperty(p::ProjectTo, name::Symbol) = getproperty(backing(p), name)
 Base.propertynames(p::ProjectTo) = propertynames(backing(p))
+backing(project::ProjectTo) = getfield(project, :info)
 project_type(p::ProjectTo{T}) where {T} = T
 
 function Base.show(io::IO, project::ProjectTo{T}) where {T}
@@ -109,53 +113,80 @@ end
 
 export backing, generic_projectto # for now!
 
-# fallback (structs)
+# Fallback (structs)
 function generic_projectto(x::T) where {T}
     # Generic fallback for structs, recursively make `ProjectTo`s all their fields
     fields_nt::NamedTuple = backing(x)
-    # We can't use `T` because if we have `Foo{Matrix{E}}` it should be allowed to make a `Foo{Diagaonal{E}}` etc
-    # we assume it has a default constructor that has all fields but if it doesn't `construct` will give a good error message
+    fields_proj = map(fields_nt) do x1
+        if x1 isa Number || x1 isa AbstractArray
+            ProjectTo(x1)
+        else
+            x1
+        end
+    end        
+    # We can't use `T` because if we have `Foo{Matrix{E}}` it should be allowed to make a
+    # `Foo{Diagaonal{E}}` etc. We assume it has a default constructor that has all fields 
+    # but if it doesn't `construct` will give a good error message.
     wrapT = T.name.wrapper
-    return ProjectTo{wrapT}(map(ProjectTo, fields_nt))
+    return ProjectTo{wrapT}(fields_proj)
 end
 function (project::ProjectTo{T})(dx::Tangent) where {T}
     sub_projects = backing(project)
     sub_dxs = backing(canonicalize(dx))
-    _call(f, x) = f(x)
-    return construct(T, map(_call, sub_projects, sub_dxs))
-end
-
-# should not work for Tuples and NamedTuples, as not valid tangent types
-function ProjectTo(x::T) where {T<:Union{<:Tuple,NamedTuple}}
-    return throw(
-        ArgumentError("The `x` in `ProjectTo(x)` must be a valid differential, not $x")
-    )
+    maybe_call(f::ProjectTo, x) = f(x)
+    maybe_call(f, x) = f
+    return construct(T, map(maybe_call, sub_projects, sub_dxs))
 end
 
 # Generic
-(::ProjectTo{T})(dx::T) where {T} = dx  # not always true, but we can special case for when it isn't
-(::ProjectTo{T})(dx::AbstractZero) where {T} = dx # zero(T)
+(::ProjectTo{T})(dx::T) where {T} = dx 
+(::ProjectTo{T})(dx::AbstractZero) where {T} = dx
 
 # Thunks
 (project::ProjectTo)(dx::Thunk) = Thunk(project ∘ dx.f)
-(project::ProjectTo)(dx::InplaceableThunk) = Thunk(project ∘ dx.val.f) # can't update in-place part
+(project::ProjectTo)(dx::InplaceableThunk) = Thunk(project ∘ dx.val.f) # can't update in-place part, but could leave it alone?
 (project::ProjectTo)(dx::AbstractThunk) = project(unthunk(dx))
 
-# Non-differentiable -- not so sure this is necessary. Keeping value like this is a bit awkward.
-for T in (:Bool, :Symbol, :Char, :String, :Val, :Type)
-    @eval ProjectTo(dx::$T) = ProjectTo{AbstractZero}(; value=dx)
-end
-(::ProjectTo{AbstractZero})(dx::AbstractZero) = dx
+# Zero
+ProjectTo(::AbstractZero) = ProjectTo{AbstractZero}()
 (::ProjectTo{AbstractZero})(dx) = ZeroTangent()
 
-# Number -- presently preserves Float32, but not Int, is this ideal?
+# Bool
+ProjectTo(::Bool) = ProjectTo{AbstractZero}()
+
+# Number
 ProjectTo(::T) where {T<:Number} = ProjectTo{float(T)}()
+# This is quite strict, it has the virtue of preventing accidental promotion of Float32,
+# but some chance that it will prevent useful behaviour, and should become Project{Real} etc.
 (::ProjectTo{T})(dx::Number) where {T<:Number} = convert(T, dx)
 (::ProjectTo{T})(dx::Number) where {T<:Real} = convert(T, real(dx))
 
-ProjectTo(::Type{T}) where T<:Number = ProjectTo(zero(T)) # maybe
+# Arrays{<:Number}: optimized case so we don't need a projector per element
+# If we don't have a more specialized `ProjectTo` rule, we just assume that there is
+# no structure to preserve, and any array is acceptable as a gradient.
+function ProjectTo(x::AbstractArray{T,N}) where {T<:Number,N}
+    element = ProjectTo(zero(T))
+    # if all our elements are going to zero, then we can short circuit and just send the whole thing
+    element isa ProjectTo{<:AbstractZero} && return element
+    return ProjectTo{AbstractArray}(; element=element, axes=axes(x))
+end
+function (project::ProjectTo{AbstractArray})(dx::AbstractArray{S,M}) where {S,M}
+    T = project_type(project.element)
+    N = length(project.axes)
+    dy = S <: T ? dx : broadcast(project.element, dx)
+    if axes(dy) == project.axes
+        return dy
+    else
+        # The rule here is that we reshape to add or remove trivial dimensions like dx = ones(4,1),
+        # where x = ones(4), but throw an error on dx = ones(1,4) etc.
+        for d in 1:max(N,M)
+            size(dy, d) == length(get(project.axes, d, 1)) || throw(DimensionMismatch("wrong shape!"))
+        end
+        return reshape(dy, project.axes)
+    end
+end
 
-# Arrays 
+# Arrays of arrays
 # ProjectTo(xs::T) where {T<:Array} = ProjectTo{T}(; elements=map(ProjectTo, xs))
 # function (project::ProjectTo{T})(dx::Array) where {T<:Array}
 #     _call(f, x) = f(x)
@@ -165,34 +196,6 @@ ProjectTo(::Type{T}) where T<:Number = ProjectTo(zero(T)) # maybe
 #     return T(map(proj -> proj(dx), project.elements))
 # end
 # (project::ProjectTo{<:Array})(dx::AbstractArray) = project(collect(dx))
-
-# Arrays{<:Number}: optimized case so we don't need a projector per element
-# If we don't have a more specialized `ProjectTo` rule, we just assume that it is some kind
-# of dense array without any structure, etc that we might need to preserve
-function ProjectTo(x::AbstractArray{T,N}) where {T<:Number,N}
-    sub = ProjectTo(zero(T))
-    # if all our elements are going to zero, then we can short circuit and just send the whole thing
-    sub isa ProjectTo{<:AbstractZero} && return sub
-    return ProjectTo{AbstractArray}(; element=sub, axes=axes(x))
-end
-function (project::ProjectTo{AbstractArray})(dx::AbstractArray{S,M}) where {S,M}
-    T = project_type(project.element)
-    N = length(project.axes)
-    dy = S <: T ? dx : broadcast(project.element, dx)
-    if axes(dy) == project.axes
-        return dy
-    else
-        # the rule here is that we reshape to add or remove trivial dimensions like dx = ones(4,1),
-        # where x = ones(4), but throw an error on dx = ones(1,4) etc.
-        for d in 1:max(N,M)
-            size(dy, d) == length(get(project.axes, d, 1)) || throw(DimensionMismatch("wrong shape!"))
-        end
-        return reshape(dy, project.axes)
-    end
-end
-# function (project::ProjectTo{<:Array{T}})(dx::Tangent{<:SubArray}) where {T<:Number}
-#     return project(dx.parent)
-# end
 
 # Row vectors -- need a bit more optimising!
 function ProjectTo(x::LinearAlgebra.AdjointAbsVec{T}) where {T<:Number}
@@ -226,7 +229,8 @@ for (SymHerm, chk, fun) in ((:Symmetric, :issymmetric, :transpose), (:Hermitian,
             dz = $chk(dy) ? dy : (dy .+ $fun(dy)) ./ 2
             return $SymHerm(project.parent(dz), project.uplo)
         end
-        # subspaces which are not subtypes:
+        # This is an example of a subspace which is not a subtype,
+        # not clear how broadly it's worthwhile to try to support this.
         function (project::ProjectTo{$SymHerm})(dx::Diagonal)
             sub = project.parent # this is going to be unhappy about the size
             sub_one = ProjectTo{project_type(sub)}(; element = sub.element, axes = (sub.axes[1],))
@@ -250,7 +254,7 @@ end
 # Weird
 ProjectTo(x::Bidiagonal) = generic_projectto(x) # not sure!
 function (project::ProjectTo{Bidiagonal})(dx::AbstractMatrix)
-    uplo = LinearAlgebra.sym_uplo(project.uplo.value)
+    uplo = LinearAlgebra.sym_uplo(project.uplo)
     dv = project.dv(diag(dx))
     ev = project.ev(uplo === :U ? diag(dx, 1) : diag(dx, -1))
     Bidiagonal(dv, ev, uplo)
@@ -264,12 +268,10 @@ backing(x) # UndefRefError: access to undefined reference
 =#
 
 
-# # SubArray
-# ProjectTo(x::T) where {T<:SubArray} = ProjectTo(copy(x))  # don't project on to a view, but onto matching copy
 
 # Sparse
 
-# using SparseArrays
+using SparseArrays
 
 
 
