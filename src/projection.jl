@@ -2,8 +2,12 @@
     (p::ProjectTo{T})(dx)
 
 Projects the differential `dx` onto a specific cotangent space.
-This guaranees `p(dx)::T`, except for `dx::AbstractZero`,
-but may store additional properties as a NamedTuple. 
+This guaranees `p(dx)::T`, except for `dx::AbstractZero`.
+
+In addition, it typically stores additional properties in `backing(p)::NamedTuple`,
+such as projectors for each constituent field, 
+and a projector for the element type of an array.
+
 When called on `dx::Thunk`, the projection is inserted into the thunk.
 """
 struct ProjectTo{P,D<:NamedTuple}
@@ -27,7 +31,7 @@ julia> r(3 + 4im)
 3.0
 
 julia> a = ProjectTo([1,2,3]')
-ProjectTo{Adjoint{Float64, AbstractVector{Float64}}}(parent = ProjectTo{AbstractVector{Float64}}(element = ProjectTo{Float64}(), axes = (Base.OneTo(3),)),)
+ProjectTo{Adjoint}(parent = ProjectTo{AbstractArray}(element = ProjectTo{Float64}(), axes = (Base.OneTo(3),)),)
 
 julia> a(ones(1,3))
 1×3 adjoint(::Vector{Float64}) with eltype Float64:
@@ -76,7 +80,7 @@ julia> ProjectTo(Diagonal(rand(3) .> 0))(Diagonal(ones(3)))
 ZeroTangent()
 
 julia> bi = ProjectTo(Bidiagonal(rand(3,3), :U))
-ProjectTo{Bidiagonal}(dv = ProjectTo{AbstractVector{Float64}}(element = ProjectTo{Float64}(), axes = (Base.OneTo(3),)), ev = ProjectTo{AbstractVector{Float64}}(element = ProjectTo{Float64}(), axes = (Base.OneTo(2),)), uplo = ProjectTo{AbstractZero}(value = 'U',))
+ProjectTo{Bidiagonal}(dv = ProjectTo{AbstractArray}(element = ProjectTo{Float64}(), axes = (Base.OneTo(3),)), ev = ProjectTo{AbstractArray}(element = ProjectTo{Float64}(), axes = (Base.OneTo(2),)), uplo = ProjectTo{AbstractZero}(value = 'U',))
 
 julia> bi(Bidiagonal(ones(ComplexF64,3,3), :U))
 3×3 Bidiagonal{Float64, Vector{Float64}}:
@@ -90,7 +94,7 @@ ProjectTo(x) = generic_projectto(x)
 backing(project::ProjectTo) = getfield(project, :info)
 Base.getproperty(p::ProjectTo, name::Symbol) = getproperty(backing(p), name)
 Base.propertynames(p::ProjectTo) = propertynames(backing(p))
-Base.eltype(p::ProjectTo{T}) where {T} = T
+project_type(p::ProjectTo{T}) where {T} = T
 
 function Base.show(io::IO, project::ProjectTo{T}) where {T}
     print(io, "ProjectTo{")
@@ -171,11 +175,15 @@ function ProjectTo(x::AbstractArray{T,N}) where {T<:Number,N}
     sub isa ProjectTo{<:AbstractZero} && return sub
     return ProjectTo{AbstractArray}(; element=sub, axes=axes(x))
 end
-function (project::ProjectTo{AbstractArray{T,N}})(dx::AbstractArray{S,M}) where {T,S,N,M}
+function (project::ProjectTo{AbstractArray})(dx::AbstractArray{S,M}) where {S,M}
+    T = project_type(project.element)
+    N = length(project.axes)
     dy = S <: T ? dx : broadcast(project.element, dx)
     if axes(dy) == project.axes
         return dy
     else
+        # the rule here is that we reshape to add or remove trivial dimensions like dx = ones(4,1),
+        # where x = ones(4), but throw an error on dx = ones(1,4) etc.
         for d in 1:max(N,M)
             size(dy, d) == length(get(project.axes, d, 1)) || throw(DimensionMismatch("wrong shape!"))
         end
@@ -189,11 +197,11 @@ end
 # Row vectors -- need a bit more optimising!
 function ProjectTo(x::LinearAlgebra.AdjointAbsVec{T}) where {T<:Number}
     sub = ProjectTo(parent(x))
-    ProjectTo{Adjoint{eltype(eltype(sub)), eltype(sub)}}(; parent=sub)
+    ProjectTo{Adjoint}(; parent=sub)
 end
-(project::ProjectTo{<:Adjoint})(dx::Adjoint) = adjoint(project.parent(parent(dx)))
-(project::ProjectTo{<:Adjoint})(dx::Transpose) = adjoint(conj(project.parent(parent(dx)))) # might copy twice?
-(project::ProjectTo{<:Adjoint})(dx::AbstractArray) = adjoint(conj(project.parent(vec(dx)))) # not happy!
+(project::ProjectTo{Adjoint})(dx::Adjoint) = adjoint(project.parent(parent(dx)))
+(project::ProjectTo{Adjoint})(dx::Transpose) = adjoint(conj(project.parent(parent(dx)))) # might copy twice?
+(project::ProjectTo{Adjoint})(dx::AbstractArray) = adjoint(conj(project.parent(vec(dx)))) # not happy!
 
 ProjectTo(x::LinearAlgebra.TransposeAbsVec{T}) where {T<:Number} = error("not yet defined")
 
@@ -201,10 +209,9 @@ ProjectTo(x::LinearAlgebra.TransposeAbsVec{T}) where {T<:Number} = error("not ye
 function ProjectTo(x::Diagonal)
     eltype(x) == Bool && return ProjectTo(false)
     sub = ProjectTo(diag(x))
-    ProjectTo{Diagonal{eltype(eltype(sub)), eltype(sub)}}(; diag=sub)
+    ProjectTo{Diagonal}(; diag=sub)
 end
-(project::ProjectTo{<:Diagonal})(dx::AbstractMatrix) = Diagonal(project.diag(diag(dx)))
-# (project::ProjectTo{T})(dx::AbstractZero) where {T<:Diagonal} = T(project.diag(dx))
+(project::ProjectTo{Diagonal})(dx::AbstractMatrix) = Diagonal(project.diag(diag(dx)))
 
 # Symmetric
 for (SymHerm, chk, fun) in ((:Symmetric, :issymmetric, :transpose), (:Hermitian, :ishermitian, :adjoint))
@@ -212,19 +219,13 @@ for (SymHerm, chk, fun) in ((:Symmetric, :issymmetric, :transpose), (:Hermitian,
         function ProjectTo(x::$SymHerm)
             eltype(x) == Bool && return ProjectTo(false)
             sub = ProjectTo(parent(x))
-            return ProjectTo{$SymHerm{eltype(eltype(sub)), eltype(sub)}}(; uplo=LinearAlgebra.sym_uplo(x.uplo), parent=sub)
+            return ProjectTo{$SymHerm}(; uplo=LinearAlgebra.sym_uplo(x.uplo), parent=sub)
         end
-        function (project::ProjectTo{<:$SymHerm})(dx::AbstractArray)
+        function (project::ProjectTo{$SymHerm})(dx::AbstractArray)
             dy = project.parent(dx)
             dz = $chk(dy) ? dy : (dy .+ $fun(dy)) ./ 2
             return $SymHerm(project.parent(dz), project.uplo)
         end
-        # function (project::ProjectTo{<:$SymHerm})(dx::AbstractZero)
-        #     return $SymHerm(project.parent(dx), project.uplo)
-        # end
-        # function (project::ProjectTo{<:$SymHerm})(dx::Tangent)
-        #     return $SymHerm(project.parent(dx.data), project.uplo)
-        # end
     end
 end
 
@@ -234,17 +235,15 @@ for UL in (:UpperTriangular, :LowerTriangular, :UnitUpperTriangular, :UnitLowerT
         function ProjectTo(x::$UL)
             eltype(x) == Bool && return ProjectTo(false)
             sub = ProjectTo(parent(x))
-            return ProjectTo{$UL{eltype(eltype(sub)), eltype(sub)}}(; parent=sub)
+            return ProjectTo{$UL}(; parent=sub)
         end
-        (project::ProjectTo{<:$UL})(dx::AbstractArray) = $UL(project.parent(dx))
-        # (project::ProjectTo{<:$UL})(dx::AbstractZero) = $UL(project.parent(dx))
-        # (project::ProjectTo{<:$UL})(dx::Tangent) = $UL(project.parent(dx.data))
+        (project::ProjectTo{$UL})(dx::AbstractArray) = $UL(project.parent(dx))
     end
 end
 
 # Weird
 ProjectTo(x::Bidiagonal) = generic_projectto(x) # not sure!
-function (project::ProjectTo{<:Bidiagonal})(dx::AbstractMatrix)
+function (project::ProjectTo{Bidiagonal})(dx::AbstractMatrix)
     uplo = LinearAlgebra.sym_uplo(project.uplo.value)
     dv = project.dv(diag(dx))
     ev = project.ev(uplo === :U ? diag(dx, 1) : diag(dx, -1))
