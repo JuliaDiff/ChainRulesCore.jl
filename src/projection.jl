@@ -113,9 +113,9 @@ end
 
 export backing, generic_projectto # for now!
 
-# Fallback (structs)
+# Structs
 function generic_projectto(x::T) where {T}
-    # Generic fallback for structs, recursively make `ProjectTo`s all their fields
+    # Generic fallback, recursively make `ProjectTo`s for all their fields
     fields_nt::NamedTuple = backing(x)
     fields_proj = map(fields_nt) do x1
         if x1 isa Number || x1 isa AbstractArray
@@ -161,7 +161,7 @@ ProjectTo(::T) where {T<:Number} = ProjectTo{float(T)}()
 (::ProjectTo{T})(dx::Number) where {T<:Number} = convert(T, dx)
 (::ProjectTo{T})(dx::Number) where {T<:Real} = convert(T, real(dx))
 
-# Arrays{<:Number}: optimized case so we don't need a projector per element
+# Arrays{<:Number}
 # If we don't have a more specialized `ProjectTo` rule, we just assume that there is
 # no structure to preserve, and any array is acceptable as a gradient.
 function ProjectTo(x::AbstractArray{T,N}) where {T<:Number,N}
@@ -197,6 +197,10 @@ end
 # end
 # (project::ProjectTo{<:Array})(dx::AbstractArray) = project(collect(dx))
 
+#####
+##### `LinearAlgebra`
+#####
+
 # Row vectors -- need a bit more optimising!
 function ProjectTo(x::LinearAlgebra.AdjointAbsVec{T}) where {T<:Number}
     sub = ProjectTo(parent(x))
@@ -212,7 +216,7 @@ ProjectTo(x::LinearAlgebra.TransposeAbsVec{T}) where {T<:Number} = error("not ye
 function ProjectTo(x::Diagonal)
     eltype(x) == Bool && return ProjectTo(false)
     sub = ProjectTo(diag(x))
-    ProjectTo{Diagonal}(; diag=sub)
+    return ProjectTo{Diagonal}(; diag=sub)
 end
 (project::ProjectTo{Diagonal})(dx::AbstractMatrix) = Diagonal(project.diag(diag(dx)))
 
@@ -257,7 +261,7 @@ function (project::ProjectTo{Bidiagonal})(dx::AbstractMatrix)
     uplo = LinearAlgebra.sym_uplo(project.uplo)
     dv = project.dv(diag(dx))
     ev = project.ev(uplo === :U ? diag(dx, 1) : diag(dx, -1))
-    Bidiagonal(dv, ev, uplo)
+    return Bidiagonal(dv, ev, uplo)
 end
 
 #=
@@ -268,8 +272,10 @@ backing(x) # UndefRefError: access to undefined reference
 =#
 
 
+#####
+##### `SparseArrays`
+#####
 
-# Sparse
 using SparseArrays
 # Word from on high is that we should regard all un-stored values of sparse arrays as structural zeros.
 # Thus ProjectTo needs to store nzind, and get only those. This is extremely naiive, and can probably
@@ -287,7 +293,7 @@ function (project::ProjectTo{SparseVector})(dx::AbstractArray)
     end
     nzval = map(i -> project.element(dy[i]), project.nzind)
     n = length(project.axes[1])
-    SparseVector(n, project.nzind, nzval)
+    return SparseVector(n, project.nzind, nzval)
 end
 # function (project::ProjectTo{SparseVector})(dx::SparseVector)
 #     Is there a fast method here?
@@ -310,12 +316,12 @@ function (project::ProjectTo{SparseMatrixCSC})(dx::AbstractArray)
     for col in project.axes[2]
         for i in project.nzranges[col]
             row = project.rowvals[i]
-            val = project.element(dy[row, col])
-            nzval[k+=1] = val
+            val = dy[row, col]
+            nzval[k+=1] = project.element(val)
         end
     end
     m, n = length.(project.axes)
-    SparseMatrixCSC(m, n, project.colptr, project.rowvals, nzval)
+    return SparseMatrixCSC(m, n, project.colptr, project.rowvals, nzval)
 end
 
 
@@ -342,6 +348,10 @@ end
   # nzrange(S::AbstractSparseMatrixCSC, col::Integer) = getcolptr(S)[col]:(getcolptr(S)[col+1]-1)
 
 
+
+#####
+##### Utilities
+#####
 
 export MultiProject  # for now!
 
