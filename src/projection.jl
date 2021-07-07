@@ -272,3 +272,24 @@ backing(x) # UndefRefError: access to undefined reference
 # using SparseArrays
 
 
+
+export MultiProject  # for now!
+
+"""
+    MultiProject(xs...)
+
+This exists for adding projectors to rrules. 
+```
+function rrule(f, x, ys...)
+    y = f(x, ys...)
+    back(dz) = # stuff
+    proj = MultiProject(f, x, ys...)
+    return y, proj∘back
+end
+```
+"""
+struct MultiProject{T}
+    funs::T
+    MultiProject(xs...) = begin funs = map(ProjectTo, xs); new{typeof(funs)}(funs) end
+end
+(m::MultiProject)(dxs::Tuple) = map((f,dx) -> f(dx), m.funs, dxs)
