@@ -183,7 +183,7 @@ function ProjectTo(x::AbstractArray{T}) where {T<:Number}
 end
 function (project::ProjectTo{AbstractArray})(dx::AbstractArray{S,M}) where {S,M}
     T = project_type(project.element)
-    dy = S <: T ? dx : broadcast(project.element, dx)
+    dy = S <: T ? dx : map(project.element, dx)
     if axes(dy) == project.axes
         return dy
     else
@@ -194,6 +194,12 @@ function (project::ProjectTo{AbstractArray})(dx::AbstractArray{S,M}) where {S,M}
         end
         return reshape(dy, project.axes)
     end
+end
+
+# Zero-dimensional arrays -- these have a habit of going missing:
+function (project::ProjectTo{AbstractArray})(dx::Number) # ... so we restore from numbers
+    project.axes isa Tuple{} || sum(length, project.axes) == 1 || throw(DimensionMismatch("wrong shape!"))
+    fill(project.element(dx))
 end
 
 # This exists to solve a Zygote bug, that a splat of an array has tuple gradient.
@@ -218,8 +224,21 @@ function (project::ProjectTo{AbstractArray{AbstractArray}})(dx::AbstractArray)
     return map((f,x) -> f(x), project.elements, dy)
 end
 
-# Arrays of other things -- same fields as Array{<:Number}, trivial element
+# Arrays of other things -- since we've said we support arrays, but may not support their elements,
+# we handle the container as above but store trivial element projector:
 ProjectTo(xs::AbstractArray) = ProjectTo{AbstractArray}(; element=identity, axes=axes(x))
+
+# Ref -- likewise aim at containers of supported things, but treat unsupported trivially:
+function ProjectTo(x::Ref)
+    element = if x[] isa Number || x[] isa AbstractArray
+        ProjectTo(x[])
+    else
+        identity
+    end
+    ProjectTo{Ref}(; x = element)
+end
+(project::ProjectTo{Ref})(dx::Ref) = Ref(project.x(dx[]))
+(project::ProjectTo{Ref})(dx::Number) = Ref(project.x(dx))
 
 
 #####
