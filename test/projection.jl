@@ -1,240 +1,127 @@
-struct Fred
-    a::Float64
-end
-Base.zero(::Fred) = Fred(0.0)
-Base.zero(::Type{Fred}) = Fred(0.0)
-
-struct Freddy{T,N}
-    a::Array{T,N}
-end
-Base.:(==)(a::Freddy, b::Freddy) = a.a == b.a
-
-struct Mary
-    a::Fred
-end
-
-struct TwoFields
-    a::Float64
-    b::Float64
-end
+using ChainRulesCore, Test
+using LinearAlgebra, SparseArrays, Random
 
 @testset "projection" begin
+
+    @testset "Base: numbers" begin
+        # real / complex
+        @test ProjectTo(1.0)(2.0 + 3im) === 2.0
+        @test ProjectTo(1.0 + 2.0im)(3.0) === 3.0 + 0.0im
+
+        # storage
+        @test ProjectTo(1)(pi) === Float64(pi)
+        @test ProjectTo(1f0)(1/2) === Float32(1/2)
+        @test ProjectTo(1f0+2im)(3) === Float32(3) + 0im
+        @test ProjectTo(big(1.0))(2) isa BigFloat
+    end
+
+    @testset "Base: arrays" begin
+        pvec3 = ProjectTo([1,2,3])
+        @test pvec3(1.0:3.0) === 1.0:3.0
+        @test pvec3(1:3) == 1.0:3.0  # would prefer ===, map(Float64, dx) would do that, not important
+        @test pvec3([1,2,3+4im]) == 1:3
+        @test eltype(pvec3([1,2,3f0])) === Float64
+
+        # reshape
+        @test pvec3(reshape([1,2,3],3,1)) isa Vector
+        @test_throws DimensionMismatch pvec3(reshape([1,2,3],1,3))
+        @test_throws DimensionMismatch pvec3([1,2,3,4])
+
+        pmat = ProjectTo(rand(2,2) .+ im)
+        @test pmat([1 2; 3 4.0 + 5im]') isa Adjoint     # pass-through
+        @test pmat([1 2; 3 4]') isa Matrix{ComplexF64}  # broadcast type change
+
+        # arrays of arrays
+        pvecvec = ProjectTo([[1,2], [3,4,5]])
+        @test pvecvec([1:2, 3:5])[1] == 1:2
+        @test pvecvec([[1,2+3im], [4+5im,6,7]])[2] == [4,6,7]
+        @test pvecvec(hcat([1:2, hcat(3:5)]))[2] isa Vector  # reshape inner & outer
+
+        # arrays of unknown things
+        @test ProjectTo([:x, :y])(1:2) === 1:2  # no element handling,
+        @test ProjectTo([:x, :y])(reshape(1:2,2,1,1)) == 1:2  # but still reshapes container
+        @test ProjectTo(Any[1, 2])(1:2) === 1:2  # goes by eltype, hence ignores contents.
+    end
+
+    @testset "Base: zero-arrays & Ref" begin
+        pzed = ProjectTo(fill(1.0))
+        @test pzed(fill(3.14)) == fill(3.14)  # easy
+        @test pzed(fill(3)) == fill(3.0)      # broadcast type change must not produce number
+        @test pzed(hcat(3.14)) == fill(3.14)  # reshape of length-1 array
+        @test pzed(3.14 + im) == fill(3.14)   # re-wrap of a scalar number
+
+        pref = ProjectTo(Ref(2.0))
+        @test pref(Ref(3+im))[] === 3.0
+        @test pref(4)[] === 4.0
+        @test pref(Ref{Any}(5.0)) isa Base.RefValue{Float64}
+    end
+
+    @testset "LinearAlgebra: $adj" for adj in [transpose, adjoint]
+        # adjoint vectors
+        padj = ProjectTo(adj([1,2,3]))
+        adjT = typeof(adj([1,2,3.0]))
+        @test padj(transpose(1:3)) isa adjT
+        @test padj([4 5 6+7im]) isa adjT
+
+        @test_throws DimensionMismatch padj([1,2,3])
+        @test_throws DimensionMismatch padj([1 2 3]')
+        @test_throws DimensionMismatch padj([1 2 3 4])
+
+        padj_complex = ProjectTo(adj([1,2,3+4im]))
+        @test padj_complex([4 5 6+7im]) == [4 5 6+7im]
+        @test padj_complex(transpose([4, 5, 6+7im])) == [4 5 6+7im]
+        @test padj_complex(adjoint([4, 5, 6+7im])) == [4 5 6-7im]
+    end
+
+    @testset "LinearAlgebra: structured matrices" begin
+        @test_broken false
+    end
+
+    @testset "SparseArrays" begin
+        # vector
+        v = sprand(30, 0.3)
+        pv = ProjectTo(v)
+
+        @test pv(v) == v
+        @test pv(v .* (1+im)) ≈ v
+        o = pv(ones(Int, 30, 1))
+        @test nnz(o) == nnz(v)
+
+        # matrix
+        m = sprand(10, 10, 0.3)
+        pm = ProjectTo(m)
+
+        @test pm(m) == m
+        @test pm(m .* (1+im)) ≈ m
+        om = pm(ones(Int, 10, 10))
+        @test nnz(om) == nnz(m)
+
+        @test_throws DimensionMismatch pv(ones(Int, 1, 30))
+        @test_throws DimensionMismatch pm(ones(Int, 5, 20))
+    end
+
+    @testset "AbstractZero" begin
+        pz = ProjectTo(ZeroTangent())
+        pz(0) == ZeroTangent()
+
+        pb = ProjectTo(true) # Bool is categorical
+        @test pb(2) === ZeroTangent()
+
+        # all projectors preserve Zero:
+        ProjectTo(pi)(ZeroTangent()) === ZeroTangent()
+        pv = ProjectTo(sprand(30, 0.3))
+        pv(ZeroTangent()) === ZeroTangent()
+    end
+
+    @testset "Thunk" begin
+        th = @thunk 1+2+3
+        pth = ProjectTo(4+5im)(th)
+        @test pth isa Thunk
+        @test unthunk(pth) === 6.0 + 0.0im
+    end
+
     @testset "display" begin
-        @test startswith(repr(ProjectTo(Fred(1.1))), "ProjectTo{Fred}(")
         @test repr(ProjectTo(1.1)) == "ProjectTo{Float64}()"
-    end
-
-    @testset "fallback" begin
-        @test Fred(1.2) == ProjectTo(Fred(1.1))(Fred(1.2))
-        @test Fred(0.0) == ProjectTo(Fred(1.1))(ZeroTangent())
-        @test Fred(3.2) == ProjectTo(Fred(1.1))(@thunk(Fred(3.2)))
-        @test Fred(1.2) == ProjectTo(Fred(1.1))(Tangent{Fred}(; a=1.2))
-
-        # struct with complicated field
-        x = Freddy(zeros(2, 2))
-        dx = Tangent{Freddy}(; a=ZeroTangent())
-        @test x == ProjectTo(x)(dx)
-
-        # nested structs
-        f = Fred(0.0)
-        tf = Tangent{Fred}(; a=ZeroTangent())
-        m = Mary(f)
-        dm = Tangent{Mary}(; a=tf)
-        @test m == ProjectTo(m)(dm)
-
-        # two fields
-        tfa = TwoFields(3.0, 0.0)
-        tfb = TwoFields(0.0, 3.0)
-        @test tfa == ProjectTo(tfa)(Tangent{TwoFields}(; a=3.0))
-        @test tfb == ProjectTo(tfb)(Tangent{TwoFields}(; b=3.0))
-    end
-
-    @testset "to Real" begin
-        # Float64
-        @test 3.2 == ProjectTo(1.0)(3.2)
-        @test 0.0 == ProjectTo(1.0)(ZeroTangent())
-        @test 3.2 == ProjectTo(1.0)(@thunk(3.2))
-
-        # down
-        @test 3.2 == ProjectTo(1.0)(3.2 + 3im)
-        @test 3.2f0 == ProjectTo(1.0f0)(3.2)
-        @test 3.2f0 == ProjectTo(1.0f0)(3.2 - 3im)
-
-        # up
-        @test 2.0 == ProjectTo(1.0)(2.0f0)
-    end
-
-    @testset "to Number" begin
-        # Complex
-        @test 2.0 + 4.0im == ProjectTo(1.0im)(2.0 + 4.0im)
-
-        # down
-        @test 2.0 + 0.0im == ProjectTo(1.0im)(2.0)
-        @test 0.0 + 0.0im == ProjectTo(1.0im)(ZeroTangent())
-        @test 0.0 + 0.0im == ProjectTo(1.0im)(@thunk(ZeroTangent()))
-
-        # up
-        @test 2.0 + 0.0im == ProjectTo(1.0im)(2.0)
-    end
-
-    @testset "to Array" begin
-        # to an array of numbers
-        x = zeros(2, 2)
-        @test [1.0 2.0; 3.0 4.0] == ProjectTo(x)([1.0 2.0; 3.0 4.0])
-        @test x == ProjectTo(x)(ZeroTangent())
-
-        x = zeros(2)
-        @test x == ProjectTo(x)(@thunk(ZeroTangent()))
-
-        x = zeros(Float32, 2, 2)
-        @test x == ProjectTo(x)([0.0 0; 0 0])
-
-        x = [1.0 0; 0 4]
-        @test x == ProjectTo(x)(Diagonal([1.0, 4]))
-
-        # to a array of structs
-        x = [Fred(0.0), Fred(0.0)]
-        @test x == ProjectTo(x)([Fred(0.0), Fred(0.0)])
-        @test x == ProjectTo(x)([ZeroTangent(), ZeroTangent()])
-        @test x == ProjectTo(x)([ZeroTangent(), @thunk(Fred(0.0))])
-        @test x == ProjectTo(x)(ZeroTangent())
-        @test x == ProjectTo(x)(@thunk(ZeroTangent()))
-
-        x = [Fred(1.0) Fred(0.0); Fred(0.0) Fred(4.0)]
-        @test x == ProjectTo(x)(Diagonal([Fred(1.0), Fred(4.0)]))
-    end
-
-    @testset "To Array of Arrays" begin
-        # inner arrays have same type but different sizes
-        x = [[1.0, 2.0, 3.0], [4.0, 5.0]]
-        @test x == ProjectTo(x)(x)
-        @test x == ProjectTo(x)([[1.0 + 2im, 2.0, 3.0], [4.0 + 2im, 5.0]])
-
-        # This makes sure we don't fall for https://github.com/JuliaLang/julia/issues/38064
-        @test [[0.0, 0.0, 0.0], [0.0, 0.0]] == ProjectTo(x)(ZeroTangent())
-    end
-
-    @testset "Array{Any} with really messy contents" begin
-        # inner arrays have same type but different sizes
-        x = [[1.0, 2.0, 3.0], [4.0 + im 5.0], [[[Fred(1)]]]]
-        @test x == ProjectTo(x)(x)
-        @test x == ProjectTo(x)([[1.0 + im, 2.0, 3.0], [4.0 + im 5.0], [[[Fred(1)]]]])
-        # using a different type for the 2nd element (Adjoint)
-        @test x == ProjectTo(x)([[1.0 + im, 2.0, 3.0], [4.0 - im, 5.0]', [[[Fred(1)]]]])
-
-        @test [[0.0, 0.0, 0.0], [0.0im 0.0], [[[Fred(0)]]]] == ProjectTo(x)(ZeroTangent())
-    end
-
-    @testset "to Diagonal" begin
-        d_F64 = Diagonal([0.0, 0.0])
-        d_F32 = Diagonal([0.0f0, 0.0f0])
-        d_C64 = Diagonal([0.0 + 0im, 0.0])
-        d_Fred = Diagonal([Fred(0.0), Fred(0.0)])
-
-        # from Matrix
-        @test d_F64 == ProjectTo(d_F64)(zeros(2, 2))
-        @test d_F64 == ProjectTo(d_F64)(zeros(Float32, 2, 2))
-        @test d_F64 == ProjectTo(d_F64)(zeros(ComplexF64, 2, 2))
-
-        # from Diagonal of Numbers
-        @test d_F64 == ProjectTo(d_F64)(d_F64)
-        @test d_F64 == ProjectTo(d_F64)(d_F32)
-        @test d_F64 == ProjectTo(d_F64)(d_C64)
-
-        # from Diagonal of AbstractTangent
-        @test d_F64 == ProjectTo(d_F64)(ZeroTangent())
-        @test d_C64 == ProjectTo(d_C64)(ZeroTangent())
-        @test d_F64 == ProjectTo(d_F64)(@thunk(ZeroTangent()))
-        @test d_F64 == ProjectTo(d_F64)(Diagonal([ZeroTangent(), ZeroTangent()]))
-        @test d_F64 == ProjectTo(d_F64)(Diagonal([ZeroTangent(), @thunk(ZeroTangent())]))
-
-        # from Diagonal of structs
-        @test d_Fred == ProjectTo(d_Fred)(ZeroTangent())
-        @test d_Fred == ProjectTo(d_Fred)(@thunk(ZeroTangent()))
-        @test d_Fred == ProjectTo(d_Fred)(Diagonal([ZeroTangent(), ZeroTangent()]))
-
-        # from Tangent
-        @test d_F64 == ProjectTo(d_F64)(Tangent{Diagonal}(; diag=[0.0, 0.0]))
-        @test d_F64 == ProjectTo(d_F64)(Tangent{Diagonal}(; diag=[0.0f0, 0.0f0]))
-        @test d_F64 == ProjectTo(d_F64)(
-            Tangent{Diagonal}(; diag=[ZeroTangent(), @thunk(ZeroTangent())])
-        )
-    end
-
-    @testset "to $SymHerm" for SymHerm in (Symmetric, Hermitian)
-        data = [1.0+1im 2-2im; 3 4]
-
-        x = SymHerm(data)
-        @test x == ProjectTo(x)(data)
-        @test x == ProjectTo(x)(Tangent{typeof(x)}(; data=data, uplo=NoTangent()))
-
-        x = SymHerm(data, :L)
-        @test x == ProjectTo(x)(data)
-
-        data = [1.0-2im 0; 0 4]
-        x = SymHerm(data)
-        @test x == ProjectTo(x)(Diagonal([1.0 - 2im, 4.0]))
-
-        data = [0.0+0im 0; 0 0]
-        x = SymHerm(data)
-        @test x == ProjectTo(x)(ZeroTangent())
-        @test x == ProjectTo(x)(@thunk(ZeroTangent()))
-    end
-
-    @testset "to $UL" for UL in (UpperTriangular, LowerTriangular)
-        data = [1.0+1im 2-2im; 3 4]
-
-        x = UL(data)
-        @test x == ProjectTo(x)(data)
-        @test x == ProjectTo(x)(Tangent{typeof(x)}(; data=data))
-
-        data = [0.0+0im 0; 0 0]
-        x = UL(data)
-        @test x == ProjectTo(x)(Diagonal(zeros(2)))
-        @test x == ProjectTo(x)(ZeroTangent())
-        @test x == ProjectTo(x)(@thunk(ZeroTangent()))
-    end
-
-    @testset "to Transpose" begin
-        x = rand(ComplexF64, 3, 4)
-        t = transpose(x)
-        mt = collect(t)
-        a = adjoint(x)
-        ma = collect(a)
-
-        @test t == ProjectTo(t)(mt)
-        @test conj(t) == ProjectTo(t)(ma)
-        @test zeros(4, 3) == ProjectTo(t)(ZeroTangent())
-        @test zeros(4, 3) == ProjectTo(t)(Tangent{Transpose}(; parent=ZeroTangent()))
-    end
-
-    @testset "to Adjoint" begin
-        x = rand(ComplexF64, 3, 4)
-        a = adjoint(x)
-        ma = collect(a)
-
-        @test a == ProjectTo(a)(ma)
-        @test zeros(4, 3) == ProjectTo(a)(ZeroTangent())
-        @test zeros(4, 3) == ProjectTo(a)(Tangent{Adjoint}(; parent=ZeroTangent()))
-    end
-
-    @testset "to PermutedDimsArray" begin
-        a = zeros(3, 5, 4)
-        b = PermutedDimsArray(a, (2, 1, 3))
-        bc = collect(b)
-
-        @test b == ProjectTo(b)(bc)
-        @test b == ProjectTo(b)(ZeroTangent())
-    end
-
-    @testset "to SubArray" begin
-        x = rand(3, 4)
-        sa = view(x, :, 1:2)
-        m = collect(sa)
-
-        # make sure it converts the view to the parent type
-        @test ProjectTo(sa)(m) isa Matrix
-        @test zeros(3, 2) == ProjectTo(sa)(ZeroTangent())
-        @test ProjectTo(sa)(Tangent{SubArray}(; parent=ZeroTangent())) isa Matrix
+        @test occursin("ProjectTo{AbstractArray}(element", repr(ProjectTo([1,2,3])))
     end
 end

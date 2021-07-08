@@ -22,7 +22,7 @@ ProjectTo{P}(; kwargs...) where {P} = ProjectTo{P}(NamedTuple(kwargs))
 Returns a `ProjectTo{T}` functor which projects a differential `dx` onto the
 relevant cotangent space for `x`.
 
-At present this undersands only `x::AbstractArray`, `x::Number`. 
+At present this undersands only `x::AbstractArray`, `x::Number` and `x::Ref`. 
 It should not be called on arguments of an `rrule` method which accepts other types.
 
 # Examples
@@ -101,8 +101,8 @@ julia> sp(reshape(1:30, 3, 10) .+ im)
   ⋅    ⋅    ⋅    ⋅   15.0   ⋅     ⋅    ⋅    ⋅    ⋅ 
 ```
 """
-ProjectTo(x) = throw(ArgumentError("At present `ProjectTo` undersands only `x::AbstractArray`, " *
-    "`x::Number`. It should not be called on arguments of an `rrule` method which accepts other types."))
+ProjectTo(x) = throw(ArgumentError(
+    "At present `ProjectTo` undersands only `x::AbstractArray`, `x::Number`, `x::Ref`."))
 
 Base.getproperty(p::ProjectTo, name::Symbol) = getproperty(backing(p), name)
 Base.propertynames(p::ProjectTo) = propertynames(backing(p))
@@ -162,6 +162,10 @@ end
 ProjectTo(::AbstractZero) = ProjectTo{AbstractZero}()
 (::ProjectTo{AbstractZero})(dx) = ZeroTangent()
 
+#####
+##### `Base`
+#####
+
 # Bool
 ProjectTo(::Bool) = ProjectTo{AbstractZero}()
 
@@ -210,7 +214,7 @@ function (project::ProjectTo{AbstractArray})(dx::Tuple)
 end
 
 # Arrays of arrays -- store projector per element
-ProjectTo(xs::AbstractArray{<:AbstractArray}) = ProjectTo{AbstractArray{AbstractArray}}(; elements=map(ProjectTo, xs))
+ProjectTo(xs::AbstractArray{<:AbstractArray}) = ProjectTo{AbstractArray{AbstractArray}}(; elements=map(ProjectTo, xs), axes = axes(xs))
 function (project::ProjectTo{AbstractArray{AbstractArray}})(dx::AbstractArray)
     dy = if axes(dx) == project.axes
         dx
@@ -226,9 +230,9 @@ end
 
 # Arrays of other things -- since we've said we support arrays, but may not support their elements,
 # we handle the container as above but store trivial element projector:
-ProjectTo(xs::AbstractArray) = ProjectTo{AbstractArray}(; element=identity, axes=axes(x))
+ProjectTo(xs::AbstractArray) = ProjectTo{AbstractArray}(; element=identity, axes=axes(xs))
 
-# Ref -- likewise aim at containers of supported things, but treat unsupported trivially:
+# Ref -- likewise aim at containers of supported things, but treat unsupported trivially.
 function ProjectTo(x::Ref)
     element = if x[] isa Number || x[] isa AbstractArray
         ProjectTo(x[])
@@ -238,23 +242,37 @@ function ProjectTo(x::Ref)
     ProjectTo{Ref}(; x = element)
 end
 (project::ProjectTo{Ref})(dx::Ref) = Ref(project.x(dx[]))
+# And like zero-dim arrays, allow restoration from a number:
 (project::ProjectTo{Ref})(dx::Number) = Ref(project.x(dx))
-
 
 #####
 ##### `LinearAlgebra`
 #####
 
-# Row vectors -- need a bit more optimising!
+# Row vectors
 function ProjectTo(x::LinearAlgebra.AdjointAbsVec{T}) where {T<:Number}
     sub = ProjectTo(parent(x))
     ProjectTo{Adjoint}(; parent=sub)
 end
 (project::ProjectTo{Adjoint})(dx::Adjoint) = adjoint(project.parent(parent(dx)))
 (project::ProjectTo{Adjoint})(dx::Transpose) = adjoint(conj(project.parent(parent(dx)))) # might copy twice?
-(project::ProjectTo{Adjoint})(dx::AbstractArray) = adjoint(conj(project.parent(vec(dx)))) # not happy!
+function (project::ProjectTo{Adjoint})(dx::AbstractArray)
+    size(dx,1) == 1 && size(dx,2) == length(project.parent.axes[1]) || throw(DimensionMismatch("wrong shape!"))
+    dy = project.parent(vec(dx))
+    return adjoint(conj(dy))
+end
 
-ProjectTo(x::LinearAlgebra.TransposeAbsVec{T}) where {T<:Number} = error("not yet defined")
+function ProjectTo(x::LinearAlgebra.TransposeAbsVec{T}) where {T<:Number}
+    sub = ProjectTo(parent(x))
+    ProjectTo{Transpose}(; parent=sub)
+end
+(project::ProjectTo{Transpose})(dx::Transpose) = transpose(project.parent(parent(dx)))
+(project::ProjectTo{Transpose})(dx::Adjoint) = transpose(conj(project.parent(parent(dx))))
+function (project::ProjectTo{Transpose})(dx::AbstractArray)
+    size(dx,1) == 1 && size(dx,2) == length(project.parent.axes[1]) || throw(DimensionMismatch("wrong shape!"))
+    dy = project.parent(vec(dx))
+    return transpose(dy)
+end
 
 # Diagonal
 function ProjectTo(x::Diagonal)
@@ -324,15 +342,15 @@ end
 #####
 
 using SparseArrays
-# Word from on high is that we should regard all un-stored values of sparse arrays as structural zeros.
-# Thus ProjectTo needs to store nzind, and get only those. This is extremely naiive, and can probably
-# be done much more efficiently by someone who knows this stuff.
+# Word from on high is that we should regard all un-stored values of sparse arrays as
+# structural zeros. Thus ProjectTo needs to store nzind, and get only those.
+# This implementation very naiive, can probably be made more efficient.
 
 function ProjectTo(x::SparseVector{T}) where {T<:Number}
     ProjectTo{SparseVector}(; element = ProjectTo(zero(T)), nzind = x.nzind, axes = axes(x))
 end
 function (project::ProjectTo{SparseVector})(dx::AbstractArray)
-    dy = if axes(x) == project.axes
+    dy = if axes(dx) == project.axes
         dx
     else
         size(dx, 1) == length(project.axes[1]) || throw(DimensionMismatch("wrong shape!"))
@@ -369,37 +387,3 @@ function (project::ProjectTo{SparseMatrixCSC})(dx::AbstractArray)
     m, n = length.(project.axes)
     return SparseMatrixCSC(m, n, project.colptr, project.rowvals, nzval)
 end
-
-#####
-##### Utilities
-#####
-
-export MultiProject  # for now!
-
-"""
-    MultiProject(xs...)
-
-This exists for adding projectors to rrules. 
-```
-function rrule(f, x, ys...)
-    y = f(x, ys...)
-    back(dz) = # stuff
-    proj = MultiProject(f, x, ys...)
-    return y, proj∘back
-end
-```
-"""
-struct MultiProject{T}
-    funs::T
-    function MultiProject(xs...)
-        funs = map(xs) do x
-            if x isa Number || x isa AbstractArray
-                ProjectTo
-            else
-                identity
-            end
-        end
-        new{typeof(funs)}(funs)
-    end
-end
-(m::MultiProject)(dxs::Tuple) = map((f,dx) -> f(dx), m.funs, dxs)
