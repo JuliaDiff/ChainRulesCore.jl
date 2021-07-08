@@ -1,5 +1,5 @@
 using ChainRulesCore, Test
-using LinearAlgebra, SparseArrays, Random
+using LinearAlgebra, SparseArrays
 
 @testset "projection" begin
 
@@ -52,8 +52,12 @@ using LinearAlgebra, SparseArrays, Random
 
         pref = ProjectTo(Ref(2.0))
         @test pref(Ref(3+im))[] === 3.0
-        @test pref(4)[] === 4.0
+        @test pref(4)[] === 4.0  # also re-wraps scalars
         @test pref(Ref{Any}(5.0)) isa Base.RefValue{Float64}
+
+        prefvec = ProjectTo(Ref([1,2,3+4im]))  # recurses into contents
+        @test prefvec(Ref(1:3)) isa Base.RefValue{Vector{ComplexF64}}
+        @test_throws DimensionMismatch prefvec(Ref{Any}(1:4))
     end
 
     @testset "LinearAlgebra: $adj" for adj in [transpose, adjoint]
@@ -74,7 +78,37 @@ using LinearAlgebra, SparseArrays, Random
     end
 
     @testset "LinearAlgebra: structured matrices" begin
-        @test_broken false
+        # structured matrices with a full parent
+        psymm = ProjectTo(Symmetric(rand(3,3)))
+        @test psymm(reshape(1:9,3,3)) == [1.0 3.0 5.0; 3.0 5.0 7.0; 5.0 7.0 9.0]
+        @test psymm(rand(ComplexF32, 3, 3, 1)) isa Symmetric{Float64}
+
+        pherm = ProjectTo(Hermitian(rand(3,3) .+ im, :L))
+        @test pherm(reshape(1:9,3,3) .+ im) == [1.0 3.0 5.0; 3.0 5.0 7.0; 5.0 7.0 9.0]
+        @test pherm(rand(ComplexF32, 3, 3, 1)) isa Hermitian{ComplexF64}
+
+        pupp = ProjectTo(UpperTriangular(rand(3,3)))
+        @test pupp(reshape(1:9,3,3)) == [1.0 4.0 7.0; 0.0 5.0 8.0; 0.0 0.0 9.0]
+        @test pupp(rand(ComplexF32, 3, 3, 1)) isa UpperTriangular{Float64}
+
+        # structured matrices with linear-size backing
+        pdiag = ProjectTo(Diagonal(1:3))
+        @test pdiag(reshape(1:9,3,3)) == diagm([1,5,9])
+        @test pdiag(rand(ComplexF32, 3, 3)) isa Diagonal{Float64}
+        @test_broken pdiag(Diagonal(1.0:3.0)) === Diagonal(1.0:3.0)
+
+        pbi = ProjectTo(Bidiagonal(rand(3,3), :L))
+        @test pbi(reshape(1:9,3,3)) == [1.0 0.0 0.0; 2.0 5.0 0.0; 0.0 6.0 9.0]
+        @test pbi(rand(ComplexF32, 3, 3)) isa Bidiagonal{Float64}
+        @test_throws DimensionMismatch pbi(rand(ComplexF32, 3, 2))
+
+        ptri = ProjectTo(Tridiagonal(rand(3,3)))
+        @test ptri(reshape(1:9,3,3)) == [1.0 4.0 0.0; 2.0 5.0 8.0; 0.0 6.0 9.0]
+        @test ptri(rand(ComplexF32, 3, 3)) isa Tridiagonal{Float64}
+        @test_throws DimensionMismatch ptri(rand(ComplexF32, 3, 2))
+
+        # an experiment with allowing subspaces which aren't subtypes
+        @test psymm(pdiag(rand(ComplexF32, 3, 3))) isa Diagonal{Float64}
     end
 
     @testset "SparseArrays" begin

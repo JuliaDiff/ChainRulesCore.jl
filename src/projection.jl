@@ -33,72 +33,18 @@ ProjectTo{Float64}()
 julia> r(3 + 4im)
 3.0
 
-julia> a = ProjectTo([1,2,3]')
-ProjectTo{Adjoint}(parent = ProjectTo{AbstractArray}(element = ProjectTo{Float64}(), axes = (Base.OneTo(3),)),)
-
-julia> a(ones(1,3))
-1×3 adjoint(::Vector{Float64}) with eltype Float64:
- 1.0  1.0  1.0
-
 julia> d = ProjectTo(Diagonal([1,2,3]));
 
-julia> d(reshape(1:9,3,3))
-3×3 Diagonal{Float64, Vector{Float64}}:
- 1.0   ⋅    ⋅ 
-  ⋅   5.0   ⋅ 
-  ⋅    ⋅   9.0
+julia> t = @thunk reshape(1:9,3,3);
 
-julia> s = ProjectTo(Symmetric(rand(3,3)));
-
-julia> s(reshape(1:9,3,3))
-3×3 Symmetric{Float64, Matrix{Float64}}:
- 1.0  3.0  5.0
- 3.0  5.0  7.0
- 5.0  7.0  9.0
-
-julia> s(d(reshape(1:9,3,3)))  # Diagonal ! <: Symmetric, but is a sub-vector-space
-3×3 Diagonal{Float64, Vector{Float64}}:
- 1.0   ⋅    ⋅ 
-  ⋅   5.0   ⋅ 
-  ⋅    ⋅   9.0
-
-julia> u = ProjectTo(UpperTriangular(rand(3,3) .+ im .* rand(3,3)));
-
-julia> t = @thunk reshape(1:9,3,3,1)
-Thunk(var"#9#10"())
-
-julia> u(t) isa Thunk
+julia> d(t) isa Thunk
 true
 
-julia> unthunk(u(t))
-3×3 UpperTriangular{ComplexF64, Matrix{ComplexF64}}:
- 1.0+0.0im  4.0+0.0im  7.0+0.0im
-     ⋅      5.0+0.0im  8.0+0.0im
-     ⋅          ⋅      9.0+0.0im
-
-julia> ProjectTo((rand(3) .> 0)')(ones(1,3))
-ZeroTangent()
-
-julia> ProjectTo(Diagonal(rand(3) .> 0))(Diagonal(ones(3)))
-ZeroTangent()
-
-julia> bi = ProjectTo(Bidiagonal(rand(3,3), :U))
-ProjectTo{Bidiagonal}(dv = ProjectTo{AbstractArray}(element = ProjectTo{Float64}(), axes = (Base.OneTo(3),)), ev = ProjectTo{AbstractArray}(element = ProjectTo{Float64}(), axes = (Base.OneTo(2),)), uplo = ProjectTo{AbstractZero}(value = 'U',))
-
-julia> bi(Bidiagonal(ones(ComplexF64,3,3), :U))
-3×3 Bidiagonal{Float64, Vector{Float64}}:
- 1.0  1.0   ⋅ 
-  ⋅   1.0  1.0
-  ⋅    ⋅   1.0
-
-julia> sp = ProjectTo(sprand(3,10,0.1))
-ProjectTo{SparseMatrixCSC}(element = ProjectTo{Float64}(), axes = (Base.OneTo(3), Base.OneTo(10)), rowvals = [1, 2, 2, 3, 2], nzranges = UnitRange{Int64}[1:0, 1:1, 2:2, 3:2, 3:4, 5:4, 5:5, 6:5, 6:5, 6:5], colptr = [1, 1, 2, 3, 3, 5, 5, 6, 6, 6, 6])
-
-julia> sp(reshape(1:30, 3, 10) .+ im)
-3×10 SparseMatrixCSC{Float64, Int64} with 5 stored entries:
-  ⋅   4.0   ⋅    ⋅     ⋅    ⋅     ⋅    ⋅    ⋅    ⋅ 
-  ⋅    ⋅   8.0   ⋅   14.0   ⋅   20.0   ⋅    ⋅    ⋅ 
-  ⋅    ⋅    ⋅    ⋅   15.0   ⋅     ⋅    ⋅    ⋅    ⋅ 
+julia> unthunk(d(t))
+3×3 Diagonal{Float64, Vector{Float64}}:
+ 1.0   ⋅    ⋅ 
+  ⋅   5.0   ⋅ 
+  ⋅    ⋅   9.0
 ```
 """
 ProjectTo(x) = throw(ArgumentError(
