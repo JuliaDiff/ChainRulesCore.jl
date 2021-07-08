@@ -93,7 +93,7 @@ using LinearAlgebra, SparseArrays
 
         # structured matrices with linear-size backing
         pdiag = ProjectTo(Diagonal(1:3))
-        @test pdiag(reshape(1:9,3,3)) == diagm([1,5,9])
+        @test pdiag(reshape(1:9,3,3)) == Diagonal([1,5,9])
         @test pdiag(rand(ComplexF32, 3, 3)) isa Diagonal{Float64}
         @test_broken pdiag(Diagonal(1.0:3.0)) === Diagonal(1.0:3.0)
 
