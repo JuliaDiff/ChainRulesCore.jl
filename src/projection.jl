@@ -157,13 +157,6 @@ function (project::ProjectTo{AbstractArray})(dx::Number) # ... so we restore fro
     fill(project.element(dx))
 end
 
-# This exists to solve a Zygote bug, that a splat of an array has tuple gradient.
-# Note that it can't easily be made to work with structured matrices, is that weird?
-function (project::ProjectTo{AbstractArray})(dx::Tuple)
-    dy = map(project.element, dx)
-    return reshape(collect(dy), project.axes)
-end
-
 # Arrays of arrays -- store projector per element
 ProjectTo(xs::AbstractArray{<:AbstractArray}) = ProjectTo{AbstractArray{AbstractArray}}(; elements=map(ProjectTo, xs), axes = axes(xs))
 function (project::ProjectTo{AbstractArray{AbstractArray}})(dx::AbstractArray)
