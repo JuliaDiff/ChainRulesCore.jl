@@ -98,6 +98,7 @@ end
 # Generic
 (::ProjectTo{T})(dx::T) where {T} = dx 
 (::ProjectTo{T})(dx::AbstractZero) where {T} = dx
+(::ProjectTo{T})(dx::NotImplemented) where {T} = dx
 
 # Thunks
 (project::ProjectTo)(dx::Thunk) = Thunk(project ∘ dx.f)

@@ -87,7 +87,7 @@ _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
     self, rr1 = cool_pullback(1)
     @test self === NoTangent()
     @test rrx === 2
-    @test rr1 === 1
+    @test rr1 === 1.0
 
     frx, nice_pushforward = frule((dself, 1), nice, 1)
     @test nice_pushforward === ZeroTangent()
