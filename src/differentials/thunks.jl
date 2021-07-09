@@ -197,24 +197,25 @@ Base.convert(::Type{<:Thunk}, a::AbstractZero) = @thunk(a)
 
 
 """
-    InplaceableThunk(val::Thunk, add!::Function)
+    InplaceableThunk(val::Thunk, add!::Function, [safe::Type])
 
 A wrapper for a `Thunk`, that allows it to define an inplace `add!` function.
 
-`add!` should be defined such that: `ithunk.add!(Δ) = Δ .+= ithunk.val`
-but it should do this more efficently than simply doing this directly.
-(Otherwise one can just use a normal `Thunk`).
+`add!` should obey `ithunk.add!(Δ) = Δ .+= ithunk.val`,
+but it should do this more efficently than simply doing this directly,
+otherwise nothing is gained over a normal `Thunk`.
 
-Most operations on an `InplaceableThunk` treat it just like a normal `Thunk`;
-and destroy its inplacability.
+The optional 3rd argument is a type, and `add!` will only be called when `Δ isa S`.
 """
-struct InplaceableThunk{T<:Thunk,F} <: AbstractThunk
+struct InplaceableThunk{T<:Thunk,F,S} <: AbstractThunk
     val::T
     add!::F
+    InplaceableThunk(val::T, add!::F, safe::Type{S}=Any) where {T,F,S} = new{T,F,S}(val, add!)
 end
 
 unthunk(x::InplaceableThunk) = unthunk(x.val)
 
-function Base.show(io::IO, x::InplaceableThunk)
-    return print(io, "InplaceableThunk($(repr(x.val)), $(repr(x.add!)))")
+function Base.show(io::IO, x::InplaceableThunk{T,F,S}) where {T,F,S}
+    print(io, "InplaceableThunk(", repr(x.val), ", ", repr(x.add!))
+    print(io, S == Any ? ")" : ", $S)")
 end

@@ -12,8 +12,8 @@ add!!(x, y) = x + y
 The specialization of `add!!` for [`InplaceableThunk`](@ref) promises to only call
 `t.add!` on `x` if `x` is suitably mutable; otherwise it will be out of place.
 """
-function add!!(x, t::InplaceableThunk)
-    return if is_inplaceable_destination(x)
+function add!!(x, t::InplaceableThunk{T,F,S}) where {T,F,S}
+    return if x isa S && is_inplaceable_destination(x)
         if !debug_mode()
             t.add!(x)
         else
