@@ -116,9 +116,13 @@ ProjectTo(::AbstractZero) = ProjectTo{AbstractZero}()
 ProjectTo(::Bool) = ProjectTo{AbstractZero}()
 
 # Number
-ProjectTo(::T) where {T<:Number} = ProjectTo{float(T)}()
+ProjectTo(::T) where {T<:Integer} = ProjectTo{float(T)}()
+ProjectTo(::T) where {T<:Complex{<:Integer}} = ProjectTo{float(T)}()
+ProjectTo(::T) where {T<:Irrational} = ProjectTo{float(T)}()
 # This is quite strict, it has the virtue of preventing accidental promotion of Float32,
 # but some chance that it will prevent useful behaviour, and should become Project{Real} etc.
+ProjectTo(::T) where {T<:Number} = ProjectTo{T}()
+
 (::ProjectTo{T})(dx::Number) where {T<:Number} = convert(T, dx)
 (::ProjectTo{T})(dx::Number) where {T<:Real} = convert(T, real(dx))
 
