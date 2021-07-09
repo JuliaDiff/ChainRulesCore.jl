@@ -124,16 +124,25 @@ _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
         @inferred frule((ZeroTangent(), sx, sy), sum_two, 1, 2)
     end
 
-    @testset "complex inputs" begin
+    @testset "complex numbers" begin
         x, ẋ, Ω̄ = randn(ComplexF64, 3)
         Ω = complex_times(x)
+
         Ω_fwd, Ω̇ = frule((nothing, ẋ), complex_times, x)
         @test Ω_fwd == Ω
         @test Ω̇ ≈ (1 + 2im) * ẋ
+
         Ω_rev, back = rrule(complex_times, x)
         @test Ω_rev == Ω
         ∂self, ∂x = back(Ω̄)
         @test ∂self == NoTangent()
         @test ∂x ≈ (1 - 2im) * Ω̄
+
+        xr = rand()
+        Ωr = complex_times(xr)
+        Ωr_rev, backr = rrule(complex_times, xr)
+        ∂selfr, ∂xr = backr(Ω̄)
+        @test ∂xr isa Float64
+        @test ∂xr ≈ real(∂x)
     end
 end
