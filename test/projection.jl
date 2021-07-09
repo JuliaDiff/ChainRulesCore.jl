@@ -11,10 +11,10 @@ using LinearAlgebra, SparseArrays
         # storage
         @test ProjectTo(1)(pi) === Float64(pi)
         @test ProjectTo(1+im)(pi) === ComplexF64(pi)
-        @test ProjectTo(1//2)(pi) === Rational{Int}(pi)
-        @test ProjectTo(1f0)(1/2) === Float32(1/2)
-        @test ProjectTo(1f0+2im)(3) === Float32(3) + 0im
-        @test ProjectTo(big(1.0))(2) isa BigFloat
+        @test ProjectTo(1//2)(3//4) === 3//4
+        @test ProjectTo(1f0)(1/2) === 0.5f0
+        @test ProjectTo(1f0+2im)(3) === 3f0 + 0im
+        @test ProjectTo(big(1.0))(2) === 2
     end
 
     @testset "Base: arrays" begin

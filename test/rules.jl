@@ -128,16 +128,19 @@ _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
         x, ẋ, Ω̄ = randn(ComplexF64, 3)
         Ω = complex_times(x)
 
+        # forwards
         Ω_fwd, Ω̇ = frule((nothing, ẋ), complex_times, x)
         @test Ω_fwd == Ω
         @test Ω̇ ≈ (1 + 2im) * ẋ
 
+        # reverse
         Ω_rev, back = rrule(complex_times, x)
         @test Ω_rev == Ω
         ∂self, ∂x = back(Ω̄)
         @test ∂self == NoTangent()
         @test ∂x ≈ (1 - 2im) * Ω̄
 
+        # real argument, complex output
         xr = rand()
         Ωr = complex_times(xr)
         Ωr_rev, backr = rrule(complex_times, xr)

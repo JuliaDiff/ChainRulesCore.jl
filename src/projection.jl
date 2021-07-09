@@ -116,14 +116,16 @@ ProjectTo(::AbstractZero) = ProjectTo{AbstractZero}()
 # Bool
 ProjectTo(::Bool) = ProjectTo{AbstractZero}()
 
-# Number
-ProjectTo(::T) where {T<:Integer} = ProjectTo{float(T)}()
-ProjectTo(::T) where {T<:Complex{<:Integer}} = ProjectTo{float(T)}()
-ProjectTo(::T) where {T<:Irrational} = ProjectTo{float(T)}()
-# This is quite strict, it has the virtue of preventing accidental promotion of Float32,
-# but some chance that it will prevent useful behaviour, and should become Project{Real} etc.
-ProjectTo(::T) where {T<:Number} = ProjectTo{T}()
-
+# Numbers
+ProjectTo(::Real) = ProjectTo{Real}()
+ProjectTo(::Complex) = ProjectTo{Complex}()
+ProjectTo(::Number) = ProjectTo{Number}()
+for T in (Float16, Float32, Float64, ComplexF16, ComplexF32, ComplexF64)
+    # Preserve low-precision floats as accidental promotion is a common perforance bug
+    @eval ProjectTo(::$T) = ProjectTo{$T}()
+end
+ProjectTo(x::Integer) = ProjectTo(float(x))
+ProjectTo(x::Complex{<:Integer}) = ProjectTo(float(x))
 (::ProjectTo{T})(dx::Number) where {T<:Number} = convert(T, dx)
 (::ProjectTo{T})(dx::Number) where {T<:Real} = convert(T, real(dx))
 
