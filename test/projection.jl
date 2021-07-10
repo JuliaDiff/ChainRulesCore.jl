@@ -159,5 +159,7 @@ using LinearAlgebra, SparseArrays
     @testset "display" begin
         @test repr(ProjectTo(1.1)) == "ProjectTo{Float64}()"
         @test occursin("ProjectTo{AbstractArray}(element", repr(ProjectTo([1,2,3])))
+        str = repr(ProjectTo([1,2,3]'))
+        @test eval(Meta.parse(str))(ones(1,3)) isa Adjoint{Float64, Vector{Float64}}
     end
 end

@@ -68,8 +68,6 @@ function Base.show(io::IO, project::ProjectTo{T}) where {T}
     end
 end
 
-export backing, generic_projectto # for now!
-
 # Structs
 function generic_projectto(x::T; kw...) where {T}
     # Generic fallback, recursively make `ProjectTo`s for all their fields
@@ -99,6 +97,9 @@ end
 (::ProjectTo{T})(dx::T) where {T} = dx 
 (::ProjectTo{T})(dx::AbstractZero) where {T} = dx
 (::ProjectTo{T})(dx::NotImplemented) where {T} = dx
+
+ProjectTo() = ProjectTo{Any}()  # trivial
+(x::ProjectTo{Any})(dx) = dx
 
 # Thunks
 (project::ProjectTo)(dx::Thunk) = Thunk(project ∘ dx.f)
@@ -176,17 +177,12 @@ end
 
 # Arrays of other things -- since we've said we support arrays, but may not support their elements,
 # we handle the container as above but store trivial element projector:
-ProjectTo(xs::AbstractArray) = ProjectTo{AbstractArray}(; element=identity, axes=axes(xs))
+ProjectTo(xs::AbstractArray) = ProjectTo{AbstractArray}(; element=ProjectTo(), axes=axes(xs))
 
 # Ref -- likewise aim at containers of supported things, but treat unsupported trivially.
-function ProjectTo(x::Ref)
-    element = if x[] isa Number || x[] isa AbstractArray
-        ProjectTo(x[])
-    else
-        identity
-    end
-    ProjectTo{Ref}(; x = element)
-end
+ProjectTo(x::Ref{<:Number}) = ProjectTo{Ref}(; x = ProjectTo(getindex(x)))
+ProjectTo(x::Ref{<:AbstractArray}) = ProjectTo{Ref}(; x = ProjectTo(getindex(x)))
+ProjectTo(x::Ref) = ProjectTo{Ref}(; x = ProjectTo())
 (project::ProjectTo{Ref})(dx::Ref) = Ref(project.x(dx[]))
 # And like zero-dim arrays, allow restoration from a number:
 (project::ProjectTo{Ref})(dx::Number) = Ref(project.x(dx))
