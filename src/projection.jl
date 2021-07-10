@@ -98,7 +98,7 @@ end
 (::ProjectTo{T})(dx::AbstractZero) where {T} = dx
 (::ProjectTo{T})(dx::NotImplemented) where {T} = dx
 
-ProjectTo() = ProjectTo{Any}()  # trivial
+ProjectTo() = ProjectTo{Any}()  # trivial case, exists so that maybe_call(f, x) knows what to do
 (x::ProjectTo{Any})(dx) = dx
 
 # Thunks
@@ -216,7 +216,7 @@ end
 (project::ProjectTo{Transpose})(dx::Transpose) = transpose(project.parent(parent(dx)))
 (project::ProjectTo{Transpose})(dx::Adjoint) = transpose(conj(project.parent(parent(dx))))
 function (project::ProjectTo{Transpose})(dx::AbstractArray)
-    size(dx,1) == 1 && size(dx,2) == length(project.parent.axes[1]) || throw(_projection_mismatch((1:1, project.parent.axes, size(dx))))
+    size(dx,1) == 1 && size(dx,2) == length(project.parent.axes[1]) || throw(_projection_mismatch((1:1, project.parent.axes...), size(dx)))
     dy = project.parent(vec(dx))
     return transpose(dy)
 end
