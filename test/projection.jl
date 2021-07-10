@@ -83,29 +83,36 @@ using LinearAlgebra, SparseArrays
         # structured matrices with a full parent
         psymm = ProjectTo(Symmetric(rand(3,3)))
         @test psymm(reshape(1:9,3,3)) == [1.0 3.0 5.0; 3.0 5.0 7.0; 5.0 7.0 9.0]
+        @test psymm(psymm(reshape(1:9,3,3))) == psymm(reshape(1:9,3,3))
         @test psymm(rand(ComplexF32, 3, 3, 1)) isa Symmetric{Float64}
 
         pherm = ProjectTo(Hermitian(rand(3,3) .+ im, :L))
+        # NB, projection onto Hermitian subspace, not application of Hermitian constructor
         @test pherm(reshape(1:9,3,3) .+ im) == [1.0 3.0 5.0; 3.0 5.0 7.0; 5.0 7.0 9.0]
+        @test pherm(pherm(reshape(1:9,3,3))) == pherm(reshape(1:9,3,3))
         @test pherm(rand(ComplexF32, 3, 3, 1)) isa Hermitian{ComplexF64}
 
         pupp = ProjectTo(UpperTriangular(rand(3,3)))
         @test pupp(reshape(1:9,3,3)) == [1.0 4.0 7.0; 0.0 5.0 8.0; 0.0 0.0 9.0]
+        @test pupp(pupp(reshape(1:9,3,3))) == pupp(reshape(1:9,3,3))
         @test pupp(rand(ComplexF32, 3, 3, 1)) isa UpperTriangular{Float64}
 
         # structured matrices with linear-size backing
         pdiag = ProjectTo(Diagonal(1:3))
         @test pdiag(reshape(1:9,3,3)) == Diagonal([1,5,9])
+        @test pdiag(pdiag(reshape(1:9,3,3))) == pdiag(reshape(1:9,3,3))
         @test pdiag(rand(ComplexF32, 3, 3)) isa Diagonal{Float64}
         @test_broken pdiag(Diagonal(1.0:3.0)) === Diagonal(1.0:3.0)
 
         pbi = ProjectTo(Bidiagonal(rand(3,3), :L))
         @test pbi(reshape(1:9,3,3)) == [1.0 0.0 0.0; 2.0 5.0 0.0; 0.0 6.0 9.0]
+        @test pbi(pbi(reshape(1:9,3,3))) == pbi(reshape(1:9,3,3))
         @test pbi(rand(ComplexF32, 3, 3)) isa Bidiagonal{Float64}
         @test_throws DimensionMismatch pbi(rand(ComplexF32, 3, 2))
 
         ptri = ProjectTo(Tridiagonal(rand(3,3)))
         @test ptri(reshape(1:9,3,3)) == [1.0 4.0 0.0; 2.0 5.0 8.0; 0.0 6.0 9.0]
+        @test ptri(ptri(reshape(1:9,3,3))) == ptri(reshape(1:9,3,3))
         @test ptri(rand(ComplexF32, 3, 3)) isa Tridiagonal{Float64}
         @test_throws DimensionMismatch ptri(rand(ComplexF32, 3, 2))
 
