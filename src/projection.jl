@@ -102,7 +102,7 @@ end
 
 # Thunks
 (project::ProjectTo)(dx::Thunk) = Thunk(project ∘ dx.f)
-(project::ProjectTo)(dx::InplaceableThunk) = Thunk(project ∘ dx.val.f) # can't update in-place part, but could leave it alone?
+(project::ProjectTo)(dx::InplaceableThunk) = project(dx.val)  # can't update in-place part
 (project::ProjectTo)(dx::AbstractThunk) = project(unthunk(dx))
 
 # Zero
@@ -147,7 +147,7 @@ function (project::ProjectTo{AbstractArray})(dx::AbstractArray{S,M}) where {S,M}
         # The rule here is that we reshape to add or remove trivial dimensions like dx = ones(4,1),
         # where x = ones(4), but throw an error on dx = ones(1,4) etc.
         for d in 1:max(M, length(project.axes))
-            size(dy, d) == length(get(project.axes, d, 1)) || throw(DimensionMismatch("wrong shape!"))
+            size(dy, d) == length(get(project.axes, d, 1)) || throw(_projection_mismatch(project.axes, size(dy)))
         end
         return reshape(dy, project.axes)
     end
@@ -155,7 +155,7 @@ end
 
 # Zero-dimensional arrays -- these have a habit of going missing:
 function (project::ProjectTo{AbstractArray})(dx::Number) # ... so we restore from numbers
-    project.axes isa Tuple{} || sum(length, project.axes) == 1 || throw(DimensionMismatch("wrong shape!"))
+    project.axes isa Tuple{} || sum(length, project.axes) == 1 || throw(_projection_mismatch(project.axes, size(dx)))
     fill(project.element(dx))
 end
 
@@ -166,7 +166,7 @@ function (project::ProjectTo{AbstractArray{AbstractArray}})(dx::AbstractArray)
         dx
     else
         for d in 1:max(ndims(dx), length(project.axes))
-            size(dx, d) == length(get(project.axes, d, 1)) || throw(DimensionMismatch("wrong shape!"))
+            size(dx, d) == length(get(project.axes, d, 1)) || throw(_projection_mismatch(project.axes, size(dx)))
         end
         reshape(dx, project.axes)
     end
@@ -191,6 +191,11 @@ end
 # And like zero-dim arrays, allow restoration from a number:
 (project::ProjectTo{Ref})(dx::Number) = Ref(project.x(dx))
 
+function _projection_mismatch(axes_x::Tuple, size_dx::Tuple)
+    size_x = map(length, axes_x)
+    DimensionMismatch("variable with size(x) == $size_x cannot have a gradient with size(dx) == $size_dx")
+end
+
 #####
 ##### `LinearAlgebra`
 #####
@@ -203,7 +208,7 @@ end
 (project::ProjectTo{Adjoint})(dx::Adjoint) = adjoint(project.parent(parent(dx)))
 (project::ProjectTo{Adjoint})(dx::Transpose) = adjoint(conj(project.parent(parent(dx)))) # might copy twice?
 function (project::ProjectTo{Adjoint})(dx::AbstractArray)
-    size(dx,1) == 1 && size(dx,2) == length(project.parent.axes[1]) || throw(DimensionMismatch("wrong shape!"))
+    size(dx,1) == 1 && size(dx,2) == length(project.parent.axes[1]) || throw(_projection_mismatch((1:1, project.parent.axes...), size(dx)))
     dy = project.parent(vec(dx))
     return adjoint(conj(dy))
 end
@@ -215,7 +220,7 @@ end
 (project::ProjectTo{Transpose})(dx::Transpose) = transpose(project.parent(parent(dx)))
 (project::ProjectTo{Transpose})(dx::Adjoint) = transpose(conj(project.parent(parent(dx))))
 function (project::ProjectTo{Transpose})(dx::AbstractArray)
-    size(dx,1) == 1 && size(dx,2) == length(project.parent.axes[1]) || throw(DimensionMismatch("wrong shape!"))
+    size(dx,1) == 1 && size(dx,2) == length(project.parent.axes[1]) || throw(_projection_mismatch((1:1, project.parent.axes, size(dx))))
     dy = project.parent(vec(dx))
     return transpose(dy)
 end
@@ -299,7 +304,7 @@ function (project::ProjectTo{SparseVector})(dx::AbstractArray)
     dy = if axes(dx) == project.axes
         dx
     else
-        size(dx, 1) == length(project.axes[1]) || throw(DimensionMismatch("wrong shape!"))
+        size(dx, 1) == length(project.axes[1]) || throw(_projection_mismatch(project.axes, size(dx)))
         reshape(dx, project.axes)
     end
     nzval = map(i -> project.element(dy[i]), project.nzind)
@@ -317,8 +322,8 @@ function (project::ProjectTo{SparseMatrixCSC})(dx::AbstractArray)
     dy = if axes(dx) == project.axes
         dx
     else
-        size(dx, 1) == length(project.axes[1]) || throw(DimensionMismatch("wrong shape!"))
-        size(dx, 2) == length(project.axes[2]) || throw(DimensionMismatch("wrong shape!"))
+        size(dx, 1) == length(project.axes[1]) || throw(_projection_mismatch(project.axes, size(dx)))
+        size(dx, 2) == length(project.axes[2]) || throw(_projection_mismatch(project.axes, size(dx)))
         reshape(dx, project.axes)
     end
     nzval = Vector{project_type(project.element)}(undef, length(project.rowvals))
