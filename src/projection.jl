@@ -27,11 +27,11 @@ It should not be called on arguments of an `rrule` method which accepts other ty
 
 # Examples
 ```jldoctest
-julia> r = ProjectTo(1.5)
-ProjectTo{Float64}()
+julia> r = ProjectTo(1.5f0)
+ProjectTo{Float32}()
 
 julia> r(3 + 4im)
-3.0
+3.0f0
 
 julia> d = ProjectTo(Diagonal([1,2,3]));
 
