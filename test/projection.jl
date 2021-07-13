@@ -173,9 +173,9 @@ using LinearAlgebra, SparseArrays
         @test unthunk(pth) === 6.0 + 0.0im
 
         ith = InplaceableThunk(th, dx -> dx .+ 7)
+        @info """don't mind this red "@error" logging message, it's a test!"""
         pith = ProjectTo(8)(ith)
-        @test pith isa Thunk
-        @test unthunk(pith) === 6.0
+        @test pith === 6.0
     end
 
     @testset "display" begin

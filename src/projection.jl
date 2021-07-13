@@ -112,8 +112,10 @@ ProjectTo() = ProjectTo{Any}()  # trivial case, exists so that maybe_call(f, x) 
 
 # Thunks
 (project::ProjectTo)(dx::Thunk) = Thunk(project ∘ dx.f)
-(project::ProjectTo)(dx::InplaceableThunk) = project(dx.val)  # can't update in-place part
-(project::ProjectTo)(dx::AbstractThunk) = project(unthunk(dx))
+function (project::ProjectTo)(dx::AbstractThunk)
+    @error "ProjectTo shouldn't be applied to thunks other than Thunk, such as InplaceableThunk" project dx
+    return project(unthunk(dx))
+end
 
 # Zero
 ProjectTo(::AbstractZero) = ProjectTo{AbstractZero}()
