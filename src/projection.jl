@@ -2,11 +2,14 @@
     (p::ProjectTo{T})(dx)
 
 Projects the differential `dx` onto a specific cotangent space.
-This guaranees `p(dx)::T`, except for `dx::AbstractZero`.
+This guaranees `p(dx)::T`, except for allowing `dx::AbstractZero` to pass through.
 
-Usually `T` is the "outermost" part of the type, and it stores additional 
-properties in `backing(p)::NamedTuple`, such as projectors for each constituent
-field, and a projector `p.element` for the element type of an array of numbers.
+Usually `T` is the "outermost" part of the type, and `p` stores additional 
+properties such as projectors for each constituent field,
+and a projector `p.element` for the element type of an array of numbers.
+These properties can be supplied as keyword arguments on construction,
+`p = ProjectTo{T}(; field=data, element=Projector(x))`. For each `T` in use,
+corresponding methods should be written for `ProjectTo{T}(dx)` with nonzero `dx`.
 
 When called on `dx::Thunk`, the projection is inserted into the thunk.
 """
@@ -15,39 +18,6 @@ struct ProjectTo{P,D<:NamedTuple}
 end
 ProjectTo{P}(info::D) where {P,D<:NamedTuple} = ProjectTo{P,D}(info)
 ProjectTo{P}(; kwargs...) where {P} = ProjectTo{P}(NamedTuple(kwargs))
-
-"""
-    ProjectTo(x)
-
-Returns a `ProjectTo{T}` functor which projects a differential `dx` onto the
-relevant cotangent space for `x`.
-
-At present this undersands only `x::AbstractArray`, `x::Number` and `x::Ref`. 
-It should not be called on arguments of an `rrule` method which accepts other types.
-
-# Examples
-```jldoctest
-julia> r = ProjectTo(1.5f0)
-ProjectTo{Float32}()
-
-julia> r(3 + 4im)
-3.0f0
-
-julia> d = ProjectTo(Diagonal([1,2,3]));
-
-julia> t = @thunk reshape(1:9,3,3);
-
-julia> d(t) isa Thunk
-true
-
-julia> unthunk(d(t))
-3×3 Diagonal{Float64, Vector{Float64}}:
- 1.0   ⋅    ⋅ 
-  ⋅   5.0   ⋅ 
-  ⋅    ⋅   9.0
-```
-"""
-function ProjectTo end
 
 Base.getproperty(p::ProjectTo, name::Symbol) = getproperty(backing(p), name)
 Base.propertynames(p::ProjectTo) = propertynames(backing(p))
@@ -83,6 +53,7 @@ function generic_projectto(x::T; kw...) where {T}
     wrapT = T.name.wrapper
     return ProjectTo{wrapT}(; fields_proj..., kw...)
 end
+
 function (project::ProjectTo{T})(dx::Tangent) where {T}
     sub_projects = backing(project)
     sub_dxs = backing(canonicalize(dx))
@@ -91,13 +62,45 @@ function (project::ProjectTo{T})(dx::Tangent) where {T}
     return construct(T, map(maybe_call, sub_projects, sub_dxs))
 end
 
+"""
+    ProjectTo(x)
+
+Returns a `ProjectTo{T}` functor which projects a differential `dx` onto the
+relevant cotangent space for `x`.
+
+At present this undersands only `x::Number`, `x::AbstractArray` and `x::Ref`.
+It should not be called on arguments of an `rrule` method which accepts other types.
+
+# Examples
+```jldoctest
+julia> r = ProjectTo(1.5f0)  # preserves real numbers, and floating point precision
+ProjectTo{Float32}()
+
+julia> r(3 + 4im)
+3.0f0
+
+julia> d = ProjectTo(Diagonal([1,2,3]))  # preserves structured matrices
+ProjectTo{Diagonal}(diag = ProjectTo{AbstractArray}(element = ProjectTo{Float64}(), axes = (Base.OneTo(3),)),)
+
+julia> t = @thunk reshape(1:9,3,3);
+
+julia> d(t) isa Thunk
+true
+
+julia> unthunk(d(t))  # integers are promoted to float(x)
+3×3 Diagonal{Float64, Vector{Float64}}:
+ 1.0   ⋅    ⋅ 
+  ⋅   5.0   ⋅ 
+  ⋅    ⋅   9.0
+```
+"""
+ProjectTo() = ProjectTo{Any}()  # trivial case, exists so that maybe_call(f, x) knows what to do
+(x::ProjectTo{Any})(dx) = dx
+
 # Generic
 (::ProjectTo{T})(dx::T) where {T} = dx  # not always correct but we have special cases for when it isn't
 (::ProjectTo{T})(dx::AbstractZero) where {T} = dx
 (::ProjectTo{T})(dx::NotImplemented) where {T} = dx
-
-ProjectTo() = ProjectTo{Any}()  # trivial case, exists so that maybe_call(f, x) knows what to do
-(x::ProjectTo{Any})(dx) = dx
 
 # Thunks
 (project::ProjectTo)(dx::Thunk) = Thunk(project ∘ dx.f)
@@ -130,7 +133,7 @@ ProjectTo(x::Complex{<:Integer}) = ProjectTo(float(x))
 
 # Arrays{<:Number}
 # If we don't have a more specialized `ProjectTo` rule, we just assume that there is
-# no structure to preserve, and any array is acceptable as a gradient.
+# no structure worth preserving. Then any array is acceptable as a gradient.
 function ProjectTo(x::AbstractArray{T}) where {T<:Number}
     element = ProjectTo(zero(T))
     # if all our elements are going to zero, then we can short circuit and just send the whole thing
@@ -158,7 +161,7 @@ function (project::ProjectTo{AbstractArray})(dx::Number) # ... so we restore fro
     fill(project.element(dx))
 end
 
-# Arrays of arrays -- store projector per element
+# Arrays of arrays -- store projector per element:
 ProjectTo(xs::AbstractArray{<:AbstractArray}) = ProjectTo{AbstractArray{AbstractArray}}(; elements=map(ProjectTo, xs), axes = axes(xs))
 function (project::ProjectTo{AbstractArray{AbstractArray}})(dx::AbstractArray)
     dy = if axes(dx) == project.axes
@@ -199,6 +202,9 @@ function ProjectTo(x::LinearAlgebra.AdjointAbsVec{T}) where {T<:Number}
     sub = ProjectTo(parent(x))
     ProjectTo{Adjoint}(; parent=sub)
 end
+# Note that while [1 2; 3 4]' isa Adjoint, we use ProjectTo{Adjoint} only to encode AdjointAbsVec.
+# Transposed matrices are, like PermutedDimsArray, just a storage detail,
+# but while row vectors behave differently, for example [1,2,3]' * [1,2,3] isa Number
 (project::ProjectTo{Adjoint})(dx::Adjoint) = adjoint(project.parent(parent(dx)))
 (project::ProjectTo{Adjoint})(dx::Transpose) = adjoint(conj(project.parent(parent(dx)))) # might copy twice?
 function (project::ProjectTo{Adjoint})(dx::AbstractArray)
@@ -251,7 +257,7 @@ for (SymHerm, chk, fun) in ((:Symmetric, :issymmetric, :transpose), (:Hermitian,
 end
 
 # Triangular
-for UL in (:UpperTriangular, :LowerTriangular, :UnitUpperTriangular, :UnitLowerTriangular)
+for UL in (:UpperTriangular, :LowerTriangular, :UnitUpperTriangular, :UnitLowerTriangular) # UpperHessenberg
     @eval begin
         function ProjectTo(x::$UL)
             eltype(x) == Bool && return ProjectTo(false)
