@@ -37,8 +37,9 @@ function Base.show(io::IO, project::ProjectTo{T}) where {T}
 end
 
 # Structs
-function generic_projectto(x::T; kw...) where {T}
-    # Generic fallback, recursively make `ProjectTo`s for all their fields
+# Generic method is to recursively make `ProjectTo`s for all their fields. Not actually 
+# used on unknown structs, but useful for handling many known ones in the same manner.
+function generic_projector(x::T; kw...) where {T}
     fields_nt::NamedTuple = backing(x)
     fields_proj = map(fields_nt) do x1
         if x1 isa Number || x1 isa AbstractArray
@@ -54,13 +55,20 @@ function generic_projectto(x::T; kw...) where {T}
     return ProjectTo{wrapT}(; fields_proj..., kw...)
 end
 
+function generic_projection(project::ProjectTo{T}, dx::T) where {T}
+    sub_projects = backing(project)
+    sub_dxs = backing(dx)
+    return construct(T, map(_maybe_project, sub_projects, sub_dxs))
+end
+
 function (project::ProjectTo{T})(dx::Tangent) where {T}
     sub_projects = backing(project)
     sub_dxs = backing(canonicalize(dx))
-    maybe_call(f::ProjectTo, x) = f(x)
-    maybe_call(f, x) = f
-    return construct(T, map(maybe_call, sub_projects, sub_dxs))
+    return construct(T, map(_maybe_project, sub_projects, sub_dxs))
 end
+
+_maybe_project(f::ProjectTo, x) = f(x)
+_maybe_project(f, x) = f
 
 """
     ProjectTo(x)
@@ -272,22 +280,22 @@ end
 
 # Weird -- not exhaustive!
 # one strategy is to recurse into the struct:
-ProjectTo(x::Bidiagonal{T}) where {T<:Number} = generic_projectto(x)
+ProjectTo(x::Bidiagonal{T}) where {T<:Number} = generic_projector(x)
 function (project::ProjectTo{Bidiagonal})(dx::AbstractMatrix)
     uplo = LinearAlgebra.sym_uplo(project.uplo)
     dv = project.dv(diag(dx))
     ev = project.ev(uplo === :U ? diag(dx, 1) : diag(dx, -1))
     return Bidiagonal(dv, ev, uplo)
 end
-(project::ProjectTo{Bidiagonal})(dx::Bidiagonal) = project(Tangent(dx))
+(project::ProjectTo{Bidiagonal})(dx::Bidiagonal) = generic_projection(project, dx)
 
-ProjectTo(x::SymTridiagonal{T}) where {T<:Number} = generic_projectto(x)
+ProjectTo(x::SymTridiagonal{T}) where {T<:Number} = generic_projector(x)
 function (project::ProjectTo{SymTridiagonal})(dx::AbstractMatrix)
     dv = project.dv(diag(dx))
     ev = project.ev((diag(dx, 1) .+ diag(dx, -1)) ./ 2)
     return SymTridiagonal(dv, ev)
 end
-(project::ProjectTo{SymTridiagonal})(dx::SymTridiagonal) = project(Tangent(dx))
+(project::ProjectTo{SymTridiagonal})(dx::SymTridiagonal) = generic_projection(project, dx)
 
 # another strategy is just to use the AbstratArray method
 function ProjectTo(x::Tridiagonal{T}) where {T<:Number}

@@ -109,7 +109,7 @@ using LinearAlgebra, SparseArrays
         @test pbi(pbi(reshape(1:9,3,3))) == pbi(reshape(1:9,3,3))
         @test pbi(rand(ComplexF32, 3, 3)) isa Bidiagonal{Float64}
         bi = Bidiagonal(rand(3,3) .+ im, :L)
-        @test pbi(bi) == real(bi)  # reconstruct via Tangent
+        @test pbi(bi) == real(bi)  # reconstruct via generic_projector
         @test_throws DimensionMismatch pbi(rand(ComplexF32, 3, 2))
 
         pstri = ProjectTo(SymTridiagonal(Symmetric(rand(3,3))))
