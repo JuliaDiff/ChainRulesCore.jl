@@ -52,6 +52,10 @@ using LinearAlgebra, SparseArrays
         @test pzed(hcat(3.14)) == fill(3.14)  # reshape of length-1 array
         @test pzed(3.14 + im) == fill(3.14)   # re-wrap of a scalar number
 
+        @test_throws DimensionMismatch ProjectTo([1])(3.14 + im) # other array projectors don't accept numbers
+        @test_throws DimensionMismatch ProjectTo(hcat([1,2]))(3.14)
+        @test pzed isa ProjectTo{AbstractArray}
+
         pref = ProjectTo(Ref(2.0))
         @test pref(Ref(3+im))[] === 3.0
         @test pref(4)[] === 4.0  # also re-wraps scalars

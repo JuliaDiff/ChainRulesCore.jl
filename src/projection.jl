@@ -2,7 +2,7 @@
     (p::ProjectTo{T})(dx)
 
 Projects the differential `dx` onto a specific cotangent space.
-This guaranees `p(dx)::T`, except for allowing `dx::AbstractZero` to pass through.
+This guarantees `p(dx)::T`, except for allowing `dx::AbstractZero` to pass through.
 
 Usually `T` is the "outermost" part of the type, and `p` stores additional 
 properties such as projectors for each constituent field,
@@ -81,25 +81,28 @@ It should not be called on arguments of an `rrule` method which accepts other ty
 
 # Examples
 ```jldoctest
-julia> r = ProjectTo(1.5f0)  # preserves real numbers, and floating point precision
+julia> pr = ProjectTo(1.5f0)  # preserves real numbers, and floating point precision
 ProjectTo{Float32}()
 
-julia> r(3 + 4im)
+julia> pr(3 + 4im)
 3.0f0
 
-julia> d = ProjectTo(Diagonal([1,2,3]))  # preserves structured matrices
+julia> pd = ProjectTo(Diagonal([1,2,3]))  # preserves structured matrices
 ProjectTo{Diagonal}(diag = ProjectTo{AbstractArray}(element = ProjectTo{Float64}(), axes = (Base.OneTo(3),)),)
 
-julia> t = @thunk reshape(1:9,3,3);
+julia> th = @thunk reshape(1:9,3,3);
 
-julia> d(t) isa Thunk
+julia> pd(th) isa Thunk
 true
 
-julia> unthunk(d(t))  # integers are promoted to float(x)
+julia> unthunk(pd(th))
 3×3 Diagonal{Float64, Vector{Float64}}:
  1.0   ⋅    ⋅ 
   ⋅   5.0   ⋅ 
   ⋅    ⋅   9.0
+
+julia> ProjectTo([1 2; 3 4]')  # no special structure, integers are promoted to float(x)
+ProjectTo{AbstractArray}(element = ProjectTo{Float64}(), axes = (Base.OneTo(2), Base.OneTo(2)))
 ```
 """
 ProjectTo() = ProjectTo{Any}()  # trivial case, exists so that maybe_call(f, x) knows what to do
@@ -339,7 +342,7 @@ function ProjectTo(x::SparseMatrixCSC{T}) where {T<:Number}
     ProjectTo{SparseMatrixCSC}(; element = ProjectTo(zero(T)), axes = axes(x),
         rowvals = rowvals(x), nzranges = nzrange.(Ref(x), axes(x,2)), colptr = x.colptr)
 end
-# You need not really store nzranges, you can get them from colptr
+# You need not really store nzranges, you can get them from colptr -- TODO
 # nzrange(S::AbstractSparseMatrixCSC, col::Integer) = getcolptr(S)[col]:(getcolptr(S)[col+1]-1)
 function (project::ProjectTo{SparseMatrixCSC})(dx::AbstractArray)
     dy = if axes(dx) == project.axes
