@@ -47,15 +47,13 @@ julia> unthunk(d(t))
   ⋅    ⋅   9.0
 ```
 """
-ProjectTo(x) = throw(ArgumentError(
-    "At present `ProjectTo` undersands only `x::AbstractArray`, `x::Number`, `x::Ref`."))
+function ProjectTo end
 
 Base.getproperty(p::ProjectTo, name::Symbol) = getproperty(backing(p), name)
 Base.propertynames(p::ProjectTo) = propertynames(backing(p))
 backing(project::ProjectTo) = getfield(project, :info)
 
 project_type(p::ProjectTo{T}) where {T} = T
-project_type(p::typeof(identity)) = Any
 
 function Base.show(io::IO, project::ProjectTo{T}) where {T}
     print(io, "ProjectTo{")
@@ -94,7 +92,7 @@ function (project::ProjectTo{T})(dx::Tangent) where {T}
 end
 
 # Generic
-(::ProjectTo{T})(dx::T) where {T} = dx 
+(::ProjectTo{T})(dx::T) where {T} = dx  # not always correct but we have special cases for when it isn't
 (::ProjectTo{T})(dx::AbstractZero) where {T} = dx
 (::ProjectTo{T})(dx::NotImplemented) where {T} = dx
 
