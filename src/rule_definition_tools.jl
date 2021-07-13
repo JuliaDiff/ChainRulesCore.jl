@@ -108,7 +108,7 @@ end
 
 returns (in order) the correctly escaped:
     - `call` with out any type constraints
-    - `setup_stmts`: the content of `@setup` or `[]` if that is not provided,
+    - `setup_stmts`: the content of `@setup` or `nothing` if that is not provided,
     -  `inputs`: with all args having the constraints removed from call, or
         defaulting to `Number`
     - `partials`: which are all `Expr{:tuple,...}`
@@ -118,9 +118,9 @@ function _normalize_scalarrules_macro_input(call, maybe_setup, partials)
     # Setup: normalizing input form etc
 
     if Meta.isexpr(maybe_setup, :macrocall) && maybe_setup.args[1] == Symbol("@setup")
-        setup_stmts = Any[esc(ex) for ex in maybe_setup.args[3:end]]
+        setup_stmts = map(esc, maybe_setup.args[3:end])
     else
-        setup_stmts = []
+        setup_stmts = (nothing,)
         partials = (maybe_setup, partials...)
     end
     @assert Meta.isexpr(call, :call)
@@ -185,14 +185,10 @@ function scalar_rrule_expr(__source__, f, call, setup_stmts, inputs, partials)
     # because this is a pull-back there is one per output of function
     Δs = _propagator_inputs(n_outputs)
 
-    # Make a projector for each argument
-    ps, setup_ps  = _make_projectors(call.args[2:end])
-    append!(setup_stmts, setup_ps)
-
     # 1 partial derivative per input
     pullback_returns = map(1:n_inputs) do input_i
         ∂s = [partial.args[input_i] for partial in partials]
-        propagation_expr(Δs, ∂s, true, ps[input_i])
+        propagation_expr(Δs, ∂s, true)
     end
 
     # Multi-output functions have pullbacks with a tuple input that will be destructured
@@ -219,22 +215,14 @@ end
 "Declares properly hygenic inputs for propagation expressions"
 _propagator_inputs(n) = [esc(gensym(Symbol(:Δ, i))) for i in 1:n]
 
-"given the variable names, escaped but without types, makes setup expressions for projection operators"
-function _make_projectors(xs)
-    ps = map(x -> gensym(Symbol(:proj_, x.args[1])), xs)
-    setups = map((x,p) -> :($p = ProjectTo($x)), xs, ps)
-    return ps, setups
-end
-
 """
-    propagation_expr(Δs, ∂s, [_conj = false, proj = identity])
+    propagation_expr(Δs, ∂s, _conj = false)
 
-Returns the expression for the propagation of
-the input gradient `Δs` though the partials `∂s`.
-Specify `_conj = true` to conjugate the partials.
-Projector `proj`, usually `ProjectTo(x)`, is applied at the end.
+    Returns the expression for the propagation of
+    the input gradient `Δs` though the partials `∂s`.
+    Specify `_conj = true` to conjugate the partials.
 """
-function propagation_expr(Δs, ∂s, _conj = false, proj = identity)
+function propagation_expr(Δs, ∂s, _conj = false)
     # This is basically Δs ⋅ ∂s
     _∂s = map(∂s) do ∂s_i
         if _conj
@@ -261,7 +249,7 @@ function propagation_expr(Δs, ∂s, _conj = false, proj = identity)
         :($(_∂s[1]) * $(Δs[1]))
     end
 
-    return :($proj($summed_∂_mul_Δs))
+    return summed_∂_mul_Δs
 end
 
 """

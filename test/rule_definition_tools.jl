@@ -228,8 +228,7 @@ end
 
             y, simo_pb = rrule(simo, π)
 
-            @test simo_pb((10f0, 20f0)) === (NoTangent(), 50.0f0)
-            @test simo_pb((10f0, 2f0+im)) === (NoTangent(), 14.0f0)  # real input => projection to real output
+            @test simo_pb((10f0, 20f0)) == (NoTangent(), 50f0)
 
             y, ẏ = frule((NoTangent(), 50f0), simo, π)
             @test y == (π, 2π)
