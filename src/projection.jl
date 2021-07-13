@@ -118,15 +118,16 @@ function (project::ProjectTo)(dx::AbstractThunk)
 end
 
 # Zero
-ProjectTo(::AbstractZero) = ProjectTo{AbstractZero}()
-(::ProjectTo{AbstractZero})(dx) = ZeroTangent()
+ProjectTo(::AbstractZero) = ProjectTo{NoTangent}()  # Any x::Zero in forward pass makes this one projector,
+(::ProjectTo{NoTangent})(dx) = NoTangent()          # but this is the projection only for nonzero gradients,
+(::ProjectTo{NoTangent})(::NoTangent) = NoTangent() # and this one solves an ambiguity.
 
 #####
 ##### `Base`
 #####
 
 # Bool
-ProjectTo(::Bool) = ProjectTo{AbstractZero}()
+ProjectTo(::Bool) = ProjectTo{NoTangent}()  # same projector as ProjectTo(::AbstractZero) above
 
 # Numbers
 ProjectTo(::Real) = ProjectTo{Real}()

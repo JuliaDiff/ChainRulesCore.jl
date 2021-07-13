@@ -155,15 +155,19 @@ using LinearAlgebra, SparseArrays
 
     @testset "AbstractZero" begin
         pz = ProjectTo(ZeroTangent())
-        pz(0) == ZeroTangent()
-
+        pz(0) == NoTangent()
+        @test_broken pz(ZeroTangent()) === ZeroTangent()  # not sure how NB this is to preserve
+        @test pz(NoTangent()) === NoTangent()
+        
         pb = ProjectTo(true) # Bool is categorical
-        @test pb(2) === ZeroTangent()
+        @test pb(2) === NoTangent()
 
-        # all projectors preserve Zero:
-        ProjectTo(pi)(ZeroTangent()) === ZeroTangent()
+        # all projectors preserve Zero, and specific type, via one fallback method:
+        @test ProjectTo(pi)(ZeroTangent()) === ZeroTangent()
+        @test ProjectTo(pi)(NoTangent()) === NoTangent() 
         pv = ProjectTo(sprand(30, 0.3))
-        pv(ZeroTangent()) === ZeroTangent()
+        @test pv(ZeroTangent()) === ZeroTangent()
+        @test pv(NoTangent()) === NoTangent()
     end
 
     @testset "Thunk" begin
