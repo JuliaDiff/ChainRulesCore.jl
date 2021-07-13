@@ -144,10 +144,10 @@ ProjectTo(x::Complex{<:Integer}) = ProjectTo(float(x))
 
 # Arrays{<:Number}
 # If we don't have a more specialized `ProjectTo` rule, we just assume that there is
-# no structure worth preserving. Then any array is acceptable as a gradient.
+# no structure worth re-imposing. Then any array is acceptable as a gradient.
 function ProjectTo(x::AbstractArray{T}) where {T<:Number}
     element = ProjectTo(zero(T))
-    # if all our elements are going to zero, then we can short circuit and just send the whole thing
+    # If all our elements are going to zero, then we can short circuit and just send the whole thing
     element isa ProjectTo{<:AbstractZero} && return element
     return ProjectTo{AbstractArray}(; element=element, axes=axes(x))
 end
@@ -168,8 +168,8 @@ end
 
 # Zero-dimensional arrays -- these have a habit of going missing:
 function (project::ProjectTo{AbstractArray})(dx::Number) # ... so we restore from numbers
-    project.axes isa Tuple{} || sum(length, project.axes) == 1 || throw(_projection_mismatch(project.axes, size(dx)))
-    fill(project.element(dx))
+    project.axes isa Tuple{} || throw(DimensionMismatch("array with ndims(x) == $(length(project.axes)) >  0 cannot have as gradient dx::Number"))
+    return fill(project.element(dx))
 end
 
 # Arrays of arrays -- store projector per element:
@@ -188,7 +188,7 @@ function (project::ProjectTo{AbstractArray{AbstractArray}})(dx::AbstractArray)
 end
 
 # Arrays of other things -- since we've said we support arrays, but may not support their elements,
-# we handle the container as above but store trivial element projector:
+# We handle the container as above but store trivial element projector:
 ProjectTo(xs::AbstractArray) = ProjectTo{AbstractArray}(; element=ProjectTo(), axes=axes(xs))
 
 # Ref -- likewise aim at containers of supported things, but treat unsupported trivially.
@@ -201,7 +201,7 @@ ProjectTo(x::Ref) = ProjectTo{Ref}(; x = ProjectTo())
 
 function _projection_mismatch(axes_x::Tuple, size_dx::Tuple)
     size_x = map(length, axes_x)
-    DimensionMismatch("variable with size(x) == $size_x cannot have a gradient with size(dx) == $size_dx")
+    return DimensionMismatch("variable with size(x) == $size_x cannot have a gradient with size(dx) == $size_dx")
 end
 
 #####
@@ -303,11 +303,11 @@ end
 # another strategy is just to use the AbstratArray method
 function ProjectTo(x::Tridiagonal{T}) where {T<:Number}
     notparent = invoke(ProjectTo, Tuple{AbstractArray{T}} where T<:Number, x)
-    ProjectTo{Tridiagonal}(; notparent = notparent)
+    return ProjectTo{Tridiagonal}(; notparent = notparent)
 end
 function (project::ProjectTo{Tridiagonal})(dx::AbstractArray)
     dy = project.notparent(dx)
-    Tridiagonal(dy)
+    return Tridiagonal(dy)
 end
 # Note that backing(::Tridiagonal) doesn't work, https://github.com/JuliaDiff/ChainRulesCore.jl/issues/392
 
@@ -321,7 +321,7 @@ using SparseArrays
 # This implementation very naiive, can probably be made more efficient.
 
 function ProjectTo(x::SparseVector{T}) where {T<:Number}
-    ProjectTo{SparseVector}(; element = ProjectTo(zero(T)), nzind = x.nzind, axes = axes(x))
+    return ProjectTo{SparseVector}(; element = ProjectTo(zero(T)), nzind = x.nzind, axes = axes(x))
 end
 function (project::ProjectTo{SparseVector})(dx::AbstractArray)
     dy = if axes(dx) == project.axes

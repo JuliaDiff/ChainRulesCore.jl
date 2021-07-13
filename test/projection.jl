@@ -102,7 +102,8 @@ using LinearAlgebra, SparseArrays
         @test pdiag(reshape(1:9,3,3)) == Diagonal([1,5,9])
         @test pdiag(pdiag(reshape(1:9,3,3))) == pdiag(reshape(1:9,3,3))
         @test pdiag(rand(ComplexF32, 3, 3)) isa Diagonal{Float64}
-        @test_broken pdiag(Diagonal(1.0:3.0)) === Diagonal(1.0:3.0)
+        @test_broken pdiag(Diagonal(1.0:3.0)) === Diagonal(1.0:3.0)  # in fact materialises a Vector,
+        @test pdiag(Diagonal(1.0:3.0)) == Diagonal(1.0:3.0)          # but that's not a disaster.
 
         pbi = ProjectTo(Bidiagonal(rand(3,3), :L))
         @test pbi(reshape(1:9,3,3)) == [1.0 0.0 0.0; 2.0 5.0 0.0; 0.0 6.0 9.0]
