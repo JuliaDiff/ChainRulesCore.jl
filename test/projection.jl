@@ -60,10 +60,12 @@ using LinearAlgebra, SparseArrays
         @test pref(Ref(3+im))[] === 3.0
         @test pref(4)[] === 4.0  # also re-wraps scalars
         @test pref(Ref{Any}(5.0)) isa Base.RefValue{Float64}
+        pref2 = ProjectTo(Ref{Any}(6+7im))
+        @test pref2(Ref(8))[] === 8.0 + 0.0im
 
         prefvec = ProjectTo(Ref([1,2,3+4im]))  # recurses into contents
         @test prefvec(Ref(1:3)) isa Base.RefValue{Vector{ComplexF64}}
-        @test_throws DimensionMismatch prefvec(Ref{Any}(1:4))
+        @test_throws DimensionMismatch prefvec(Ref{Any}(1:5))
     end
 
     @testset "LinearAlgebra: $adj" for adj in [transpose, adjoint]

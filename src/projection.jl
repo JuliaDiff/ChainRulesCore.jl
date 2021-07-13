@@ -45,6 +45,8 @@ function generic_projector(x::T; kw...) where {T}
         if x1 isa Number || x1 isa AbstractArray
             ProjectTo(x1)
         else
+            # This stores things like Symbols & functions verbatim,
+            # and _maybe_project below keeps these in the reconstructed result.
             x1
         end
     end        
@@ -176,7 +178,7 @@ function (project::ProjectTo{AbstractArray})(dx::Number) # ... so we restore fro
 end
 
 # Arrays of arrays -- store projector per element:
-ProjectTo(xs::AbstractArray{<:AbstractArray}) = ProjectTo{AbstractArray{AbstractArray}}(; elements=map(ProjectTo, xs), axes = axes(xs))
+ProjectTo(xs::AbstractArray{<:AbstractArray}) = ProjectTo{AbstractArray{AbstractArray}}(; elements=map(ProjectTo, xs), axes=axes(xs))
 function (project::ProjectTo{AbstractArray{AbstractArray}})(dx::AbstractArray)
     dy = if axes(dx) == project.axes
         dx
@@ -194,10 +196,18 @@ end
 # We handle the container as above but store trivial element projector:
 ProjectTo(xs::AbstractArray) = ProjectTo{AbstractArray}(; element=ProjectTo(), axes=axes(xs))
 
-# Ref -- likewise aim at containers of supported things, but treat unsupported trivially.
+# Ref -- likewise aim mostly at containers of supported things:
 ProjectTo(x::Ref{<:Number}) = ProjectTo{Ref}(; x = ProjectTo(getindex(x)))
 ProjectTo(x::Ref{<:AbstractArray}) = ProjectTo{Ref}(; x = ProjectTo(getindex(x)))
-ProjectTo(x::Ref) = ProjectTo{Ref}(; x = ProjectTo())
+function ProjectTo(x::Ref)
+    return if !isassigned(x)
+        ProjectTo{Ref}(; x = ProjectTo())
+    elseif x[] isa Number || x[] isa AbstractArray
+        ProjectTo{Ref}(; x = ProjectTo(x[]))
+    else
+        ProjectTo{Ref}(; x = ProjectTo())
+    end
+end
 (project::ProjectTo{Ref})(dx::Ref) = Ref(project.x(dx[]))
 # And like zero-dim arrays, allow restoration from a number:
 (project::ProjectTo{Ref})(dx::Number) = Ref(project.x(dx))
