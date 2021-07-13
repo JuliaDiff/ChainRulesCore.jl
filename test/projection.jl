@@ -108,7 +108,17 @@ using LinearAlgebra, SparseArrays
         @test pbi(reshape(1:9,3,3)) == [1.0 0.0 0.0; 2.0 5.0 0.0; 0.0 6.0 9.0]
         @test pbi(pbi(reshape(1:9,3,3))) == pbi(reshape(1:9,3,3))
         @test pbi(rand(ComplexF32, 3, 3)) isa Bidiagonal{Float64}
+        bi = Bidiagonal(rand(3,3) .+ im, :L)
+        @test pbi(bi) == real(bi)  # reconstruct via Tangent
         @test_throws DimensionMismatch pbi(rand(ComplexF32, 3, 2))
+
+        pstri = ProjectTo(SymTridiagonal(Symmetric(rand(3,3))))
+        @test pstri(reshape(1:9,3,3)) == [1.0 3.0 0.0; 3.0 5.0 7.0; 0.0 7.0 9.0]
+        @test pstri(pstri(reshape(1:9,3,3))) == pstri(reshape(1:9,3,3))
+        @test pstri(rand(ComplexF32, 3, 3)) isa SymTridiagonal{Float64}
+        stri = SymTridiagonal(Symmetric(rand(3,3) .+ im))
+        @test pstri(stri) == real(stri)
+        @test_throws DimensionMismatch pstri(rand(ComplexF32, 3, 2))
 
         ptri = ProjectTo(Tridiagonal(rand(3,3)))
         @test ptri(reshape(1:9,3,3)) == [1.0 4.0 0.0; 2.0 5.0 8.0; 0.0 6.0 9.0]

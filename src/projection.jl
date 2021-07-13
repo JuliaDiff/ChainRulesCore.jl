@@ -243,6 +243,8 @@ for (SymHerm, chk, fun) in ((:Symmetric, :issymmetric, :transpose), (:Hermitian,
         end
         function (project::ProjectTo{$SymHerm})(dx::AbstractArray)
             dy = project.parent(dx)
+            # Here $chk means this is efficient on same-type.
+            # If we could mutate dx, then that could speed up action on dx::Matrix.
             dz = $chk(dy) ? dy : (dy .+ $fun(dy)) ./ 2
             return $SymHerm(project.parent(dz), project.uplo)
         end
@@ -277,6 +279,15 @@ function (project::ProjectTo{Bidiagonal})(dx::AbstractMatrix)
     ev = project.ev(uplo === :U ? diag(dx, 1) : diag(dx, -1))
     return Bidiagonal(dv, ev, uplo)
 end
+(project::ProjectTo{Bidiagonal})(dx::Bidiagonal) = project(Tangent(dx))
+
+ProjectTo(x::SymTridiagonal{T}) where {T<:Number} = generic_projectto(x)
+function (project::ProjectTo{SymTridiagonal})(dx::AbstractMatrix)
+    dv = project.dv(diag(dx))
+    ev = project.ev((diag(dx, 1) .+ diag(dx, -1)) ./ 2)
+    return SymTridiagonal(dv, ev)
+end
+(project::ProjectTo{SymTridiagonal})(dx::SymTridiagonal) = project(Tangent(dx))
 
 # another strategy is just to use the AbstratArray method
 function ProjectTo(x::Tridiagonal{T}) where {T<:Number}
@@ -287,6 +298,7 @@ function (project::ProjectTo{Tridiagonal})(dx::AbstractArray)
     dy = project.notparent(dx)
     Tridiagonal(dy)
 end
+# Note that backing(::Tridiagonal) doesn't work, https://github.com/JuliaDiff/ChainRulesCore.jl/issues/392
 
 #####
 ##### `SparseArrays`
