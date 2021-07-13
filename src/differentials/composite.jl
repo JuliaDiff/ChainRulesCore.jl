@@ -20,11 +20,31 @@ via `comp.fieldname`.
 Any fields not explictly present in the `Tangent` are treated as being set to `ZeroTangent()`.
 To make a `Tangent` have all the fields of the primal the [`canonicalize`](@ref)
 function is provided.
+
+# Examples
+```jldoctest
+julia> Tangent{Symmetric}(; data = [1 2; 3 4])
+Tangent{Symmetric}(data = [1 2; 3 4],)
+
+julia> canonicalize(ans)
+Tangent{Symmetric}(data = [1 2; 3 4], uplo = ZeroTangent())
+
+julia> Tangent(Symmetric([1 2; 3 4]))
+Tangent{Symmetric}(data = [1 2; 3 4], uplo = 'U')
+
+julia> ChainRulesCore.construct(Symmetric, ChainRulesCore.backing(ans))
+ERROR: MethodError: no method matching Symmetric(::Matrix{Int64}, ::Char)
+```
 """
 struct Tangent{P, T} <: AbstractTangent
     # Note: If T is a Tuple/Dict, then P is also a Tuple/Dict
     # (but potentially a different one, as it doesn't contain differentials)
     backing::T
+end
+
+function Tangent(x::XT) where XT
+    kwargs = backing(x)
+    return Tangent{XT.name.wrapper}(; kwargs...)
 end
 
 function Tangent{P}(; kwargs...) where P
@@ -123,6 +143,14 @@ Identity function on `Tuple`. and `NamedTuple`s.
 
 This is an internal function used to simplify operations between `Tangent`s and the
 primal types.
+
+```jldoctest
+julia> ChainRulesCore.backing([1,2,3]')
+(parent = [1, 2, 3],)
+
+julia> ChainRulesCore.backing(Symmetric([1 2; 3 4], :L))
+(data = [1 2; 3 4], uplo = 'L')
+```
 """
 backing(x::Tuple) = x
 backing(x::NamedTuple) = x
@@ -159,6 +187,12 @@ end
 Return the canonical `Tangent` for the primal type `P`.
 The property names of the returned `Tangent` match the field names of the primal,
 and all fields of `P` not present in the input `comp` are explictly set to `ZeroTangent()`.
+
+# Examples
+```jldoctest
+julia> canonicalize(Tangent{Bidiagonal}(uplo = 'U'))
+Tangent{Bidiagonal}(dv = ZeroTangent(), ev = ZeroTangent(), uplo = 'U')
+```
 """
 function canonicalize(comp::Tangent{P, <:NamedTuple{L}}) where {P,L}
     nil = _zeroed_backing(P)
@@ -207,6 +241,19 @@ after an operation such as the addition of a primal to a composite.
 
 It should be overloaded, if `T` does not have a default constructor,
 or if `T` needs to maintain some invarients between its fields.
+
+# Examples
+```jldoctest
+julia> ChainRulesCore.construct(Adjoint, (; parent=[1,2,3]))
+1×3 adjoint(::Vector{Int64}) with eltype Int64:
+ 1  2  3
+
+julia> ChainRulesCore.construct(SparseMatrixCSC, (; m=3, n=3, colptr=[1,3,4,5], rowval=[1,2,3,2], nzval=[0.11, 0.22, 0.33, 0.44]))
+3×3 SparseMatrixCSC{Float64, Int64} with 4 stored entries:
+ 0.11   ⋅     ⋅ 
+ 0.22   ⋅    0.44
+  ⋅    0.33   ⋅ 
+```
 """
 function construct(::Type{T}, fields::NamedTuple{L}) where {T, L}
     # Tested and verified that that this avoids a ton of allocations
