@@ -212,7 +212,9 @@ using OffsetArrays, BenchmarkTools
         @test eval(Meta.parse(str))(ones(1,3)) isa Adjoint{Float64, Vector{Float64}}
     end
 
-    @testset "allocation tests" begin
+    VERSION > v"1.1" && @testset "allocation tests" begin
+        # For sure these fail on Julia 1.0, not sure about 1.1 to 1.5
+
         pvec = ProjectTo(rand(10^3))
         @test 0 == @ballocated $pvec(dx) setup=(dx =rand(10^3))    # pass through
         @test 90 > @ballocated $pvec(dx) setup=(dx =rand(10^3,1))  # reshape
