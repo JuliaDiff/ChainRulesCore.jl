@@ -122,7 +122,7 @@ using OffsetArrays, BenchmarkTools
         bi = Bidiagonal(rand(3,3) .+ im, :L)
         @test pbi(bi) == real(bi)  # reconstruct via generic_projector
         bu = Bidiagonal(rand(3,3) .+ im, :U)  # differs but uplo, not type
-        @test pbi(bu) == Diagonal(real(bu))
+        @test pbi(bu) == diagm(diag(real(bu)))
         @test_throws DimensionMismatch pbi(rand(ComplexF32, 3, 2))
 
         pstri = ProjectTo(SymTridiagonal(Symmetric(rand(3,3))))
