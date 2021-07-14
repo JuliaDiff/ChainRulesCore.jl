@@ -1,7 +1,7 @@
 """
     (p::ProjectTo{T})(dx)
 
-Projects the differential `dx` onto a specific cotangent space.
+Projects the differential `dx` onto a specific tangent space.
 This guarantees `p(dx)::T`, except for allowing `dx::AbstractZero` to pass through.
 
 Usually `T` is the "outermost" part of the type, and `p` stores additional 
@@ -76,7 +76,7 @@ _maybe_project(f, x) = f
     ProjectTo(x)
 
 Returns a `ProjectTo{T}` functor which projects a differential `dx` onto the
-relevant cotangent space for `x`.
+relevant tangent space for `x`.
 
 At present this undersands only `x::Number`, `x::AbstractArray` and `x::Ref`.
 It should not be called on arguments of an `rrule` method which accepts other types.
@@ -171,7 +171,8 @@ function (project::ProjectTo{AbstractArray})(dx::AbstractArray{S,M}) where {S,M}
     end
 end
 
-# Zero-dimensional arrays -- these have a habit of going missing:
+# Zero-dimensional arrays -- these have a habit of going missing,
+# although really Ref() is probably a better structure.
 function (project::ProjectTo{AbstractArray})(dx::Number) # ... so we restore from numbers
     project.axes isa Tuple{} || throw(DimensionMismatch("array with ndims(x) == $(length(project.axes)) >  0 cannot have as gradient dx::Number"))
     return fill(project.element(dx))
@@ -303,7 +304,16 @@ function (project::ProjectTo{Bidiagonal})(dx::AbstractMatrix)
     ev = project.ev(uplo === :U ? diag(dx, 1) : diag(dx, -1))
     return Bidiagonal(dv, ev, uplo)
 end
-(project::ProjectTo{Bidiagonal})(dx::Bidiagonal) = generic_projection(project, dx)
+function (project::ProjectTo{Bidiagonal})(dx::Bidiagonal)
+    if project.uplo == dx.uplo
+        return generic_projection(project, dx) # fast path
+    else
+        uplo = LinearAlgebra.sym_uplo(project.uplo)
+        dv = project.dv(diag(dx))
+        ev = fill!(similar(dv, length(dv)-1), 0)
+        return Bidiagonal(dv, ev, uplo)
+    end
+end
 
 ProjectTo(x::SymTridiagonal{T}) where {T<:Number} = generic_projector(x)
 function (project::ProjectTo{SymTridiagonal})(dx::AbstractMatrix)
