@@ -21,4 +21,6 @@ using Test
     include("rules.jl")
     include("rule_definition_tools.jl")
     include("config.jl")
+
+    include("deprecated.jl")
 end
