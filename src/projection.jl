@@ -253,10 +253,13 @@ end
 # Diagonal
 function ProjectTo(x::Diagonal)
     eltype(x) == Bool && return ProjectTo(false)
-    sub = ProjectTo(diag(x))
+    sub = ProjectTo(get_diag(x))
     return ProjectTo{Diagonal}(; diag=sub)
 end
-(project::ProjectTo{Diagonal})(dx::AbstractMatrix) = Diagonal(project.diag(diag(dx)))
+(project::ProjectTo{Diagonal})(dx::AbstractMatrix) = Diagonal(project.diag(get_diag(dx)))
+
+get_diag(x) = diag(x)
+get_diag(x::Diagonal) = x.diag
 
 # Symmetric
 for (SymHerm, chk, fun) in ((:Symmetric, :issymmetric, :transpose), (:Hermitian, :ishermitian, :adjoint))
