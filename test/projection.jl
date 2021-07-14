@@ -1,5 +1,6 @@
 using ChainRulesCore, Test
 using LinearAlgebra, SparseArrays
+using OffsetArrays
 
 @testset "projection" begin
 
@@ -158,6 +159,19 @@ using LinearAlgebra, SparseArrays
 
         @test_throws DimensionMismatch pv(ones(Int, 1, 30))
         @test_throws DimensionMismatch pm(ones(Int, 5, 20))
+    end
+
+    @testset "OffsetArrays" begin
+        # While there is no code for this, the rule that it checks axes(x) == axes(dx) else
+        # reshape means that it restores offsets. (It throws an error on nontrivial size mismatch.)
+
+        poffv = ProjectTo(OffsetArray(rand(3), 0:2))
+        @test axes(poffv([1,2,3])) == (0:2,)
+        @test axes(poffv(hcat([1,2,3]))) == (0:2,)
+
+        @test axes(poffv(OffsetArray(rand(3), 0:2))) == (0:2,)
+        @test axes(poffv(OffsetArray(rand(3,1), 0:2, 0:0))) == (0:2,)
+
     end
 
     @testset "AbstractZero" begin
