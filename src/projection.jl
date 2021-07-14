@@ -254,6 +254,7 @@ end
 function ProjectTo(x::Diagonal)
     eltype(x) == Bool && return ProjectTo(false)
     sub = ProjectTo(get_diag(x))
+    sub isa ProjectTo{<:AbstractZero} && return sub
     return ProjectTo{Diagonal}(; diag=sub)
 end
 (project::ProjectTo{Diagonal})(dx::AbstractMatrix) = Diagonal(project.diag(get_diag(dx)))
@@ -267,6 +268,7 @@ for (SymHerm, chk, fun) in ((:Symmetric, :issymmetric, :transpose), (:Hermitian,
         function ProjectTo(x::$SymHerm)
             eltype(x) == Bool && return ProjectTo(false)
             sub = ProjectTo(parent(x))
+            sub isa ProjectTo{<:AbstractZero} && return sub
             return ProjectTo{$SymHerm}(; uplo=LinearAlgebra.sym_uplo(x.uplo), parent=sub)
         end
         function (project::ProjectTo{$SymHerm})(dx::AbstractArray)
@@ -292,6 +294,7 @@ for UL in (:UpperTriangular, :LowerTriangular, :UnitUpperTriangular, :UnitLowerT
         function ProjectTo(x::$UL)
             eltype(x) == Bool && return ProjectTo(false)
             sub = ProjectTo(parent(x))
+            sub isa ProjectTo{<:AbstractZero} && return sub
             return ProjectTo{$UL}(; parent=sub)
         end
         (project::ProjectTo{$UL})(dx::AbstractArray) = $UL(project.parent(dx))

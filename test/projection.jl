@@ -92,6 +92,7 @@ using OffsetArrays, BenchmarkTools
         @test psymm(reshape(1:9,3,3)) == [1.0 3.0 5.0; 3.0 5.0 7.0; 5.0 7.0 9.0]
         @test psymm(psymm(reshape(1:9,3,3))) == psymm(reshape(1:9,3,3))
         @test psymm(rand(ComplexF32, 3, 3, 1)) isa Symmetric{Float64}
+        @test ProjectTo(Symmetric(randn(3,3) .> 0))(randn(3,3)) == NoTangent()
 
         pherm = ProjectTo(Hermitian(rand(3,3) .+ im, :L))
         # NB, projection onto Hermitian subspace, not application of Hermitian constructor
@@ -103,6 +104,7 @@ using OffsetArrays, BenchmarkTools
         @test pupp(reshape(1:9,3,3)) == [1.0 4.0 7.0; 0.0 5.0 8.0; 0.0 0.0 9.0]
         @test pupp(pupp(reshape(1:9,3,3))) == pupp(reshape(1:9,3,3))
         @test pupp(rand(ComplexF32, 3, 3, 1)) isa UpperTriangular{Float64}
+        @test ProjectTo(UpperTriangular(randn(3,3) .> 0))(randn(3,3)) == NoTangent()
 
         # structured matrices with linear-size backing
         pdiag = ProjectTo(Diagonal(1:3))
@@ -110,6 +112,8 @@ using OffsetArrays, BenchmarkTools
         @test pdiag(pdiag(reshape(1:9,3,3))) == pdiag(reshape(1:9,3,3))
         @test pdiag(rand(ComplexF32, 3, 3)) isa Diagonal{Float64}
         @test pdiag(Diagonal(1.0:3.0)) === Diagonal(1.0:3.0)
+        @test ProjectTo(Diagonal(randn(3) .> 0))(randn(3,3)) == NoTangent()
+        @test ProjectTo(Diagonal(randn(3) .> 0))(Diagonal(rand(3))) == NoTangent()
 
         pbi = ProjectTo(Bidiagonal(rand(3,3), :L))
         @test pbi(reshape(1:9,3,3)) == [1.0 0.0 0.0; 2.0 5.0 0.0; 0.0 6.0 9.0]
