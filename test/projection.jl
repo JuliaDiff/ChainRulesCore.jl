@@ -1,6 +1,6 @@
 using ChainRulesCore, Test
 using LinearAlgebra, SparseArrays
-using OffsetArrays
+using OffsetArrays, BenchmarkTools
 
 @testset "projection" begin
 
@@ -208,5 +208,21 @@ using OffsetArrays
         @test occursin("ProjectTo{AbstractArray}(element", repr(ProjectTo([1,2,3])))
         str = repr(ProjectTo([1,2,3]'))
         @test eval(Meta.parse(str))(ones(1,3)) isa Adjoint{Float64, Vector{Float64}}
+    end
+
+    @testset "allocation tests" begin
+        pvec = ProjectTo(rand(10^3))
+        @test 0 == @ballocated $pvec(dx) setup=(dx =rand(10^3))    # pass through
+        @test 90 > @ballocated $pvec(dx) setup=(dx =rand(10^3,1))  # reshape
+
+        padj = ProjectTo(adjoint(rand(10^3)))
+        @test 0 == @ballocated $padj(dx) setup=(dx=adjoint(rand(10^3)))
+        @test 0 == @ballocated $padj(dx) setup=(dx=transpose(rand(10^3)))
+
+        pdiag = ProjectTo(Diagonal(rand(10^3)))
+        @test_broken 0 == @ballocated $pdiag(dx) setup=(dx=Diagonal(rand(10^3)))  # 8128
+
+        psymm = ProjectTo(Symmetric(rand(10^3,10^3)))
+        @test_broken 0 == @ballocated $psymm(dx) setup=(dx=Symmetric(rand(10^3,10^3)))  # 64
     end
 end
