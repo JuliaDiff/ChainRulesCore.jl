@@ -211,11 +211,6 @@ using OffsetArrays, BenchmarkTools
         pth = ProjectTo(4+5im)(th)
         @test pth isa Thunk
         @test unthunk(pth) === 6.0 + 0.0im
-
-        ith = InplaceableThunk(th, dx -> dx .+ 7)
-        @info """don't mind this red "@error" logging message, it's a test!"""
-        pith = ProjectTo(8)(ith)
-        @test pith === 6.0
     end
 
     @testset "display" begin
