@@ -28,3 +28,7 @@ end
     @test_deprecated (@thunk(3))() == 3
     @test_deprecated (@thunk(@thunk(3)))() isa Thunk
 end
+
+@testset "Deprecated: Inplacable Thunk argument order" begin
+    @test (@test_deprecated InplaceableThunk(@thunk([1]), x->x.+=1)) isa InplaceableThunk
+end

@@ -54,3 +54,6 @@ for T in (:Thunk, :InplaceableThunk)
         return unthunk(x)
     end    
 end
+
+
+Base.@deprecate InplaceableThunk(t::Thunk, add!) InplaceableThunk(add!, t)
