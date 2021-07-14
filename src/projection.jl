@@ -42,15 +42,7 @@ end
 # used on unknown structs, but useful for handling many known ones in the same manner.
 function generic_projector(x::T; kw...) where {T}
     fields_nt::NamedTuple = backing(x)
-    fields_proj = map(fields_nt) do x1
-        if x1 isa Number || x1 isa AbstractArray
-            ProjectTo(x1)
-        else
-            # This stores things like Symbols & functions verbatim,
-            # and _maybe_project below keeps these in the reconstructed result.
-            x1
-        end
-    end        
+    fields_proj = map(_maybe_projector, fields_nt)
     # We can't use `T` because if we have `Foo{Matrix{E}}` it should be allowed to make a
     # `Foo{Diagaonal{E}}` etc. We assume it has a default constructor that has all fields 
     # but if it doesn't `construct` will give a good error message.
@@ -61,17 +53,25 @@ end
 function generic_projection(project::ProjectTo{T}, dx::T) where {T}
     sub_projects = backing(project)
     sub_dxs = backing(dx)
-    return construct(T, map(_maybe_project, sub_projects, sub_dxs))
+    return construct(T, map(_maybe_call, sub_projects, sub_dxs))
 end
 
 function (project::ProjectTo{T})(dx::Tangent) where {T}
     sub_projects = backing(project)
     sub_dxs = backing(canonicalize(dx))
-    return construct(T, map(_maybe_project, sub_projects, sub_dxs))
+    return construct(T, map(_maybe_call, sub_projects, sub_dxs))
 end
 
-_maybe_project(f::ProjectTo, x) = f(x)
-_maybe_project(f, x) = f
+# Used for encoding fields, leaves alone non-diff types:
+_maybe_projector(x::Union{AbstractArray, Number, Ref}) = ProjectTo(x)
+_maybe_projector(x) = x
+# Used for re-constructing fields, restores non-diff types:
+_maybe_call(f::ProjectTo, x) = f(x)
+_maybe_call(f, x) = f
+
+# Used for elements of e.g. Array{Any}, trivial projector
+_always_projector(x::Union{AbstractArray, Number, Ref}) = ProjectTo(x)
+_always_projector(x) = ProjectTo()
 
 """
     ProjectTo(x)
@@ -151,50 +151,48 @@ ProjectTo(x::Complex{<:Integer}) = ProjectTo(float(x))
 # Arrays
 # If we don't have a more specialized `ProjectTo` rule, we just assume that there is
 # no structure worth re-imposing. Then any array is acceptable as a gradient.
+
+# For arrays of numbers, just store one projector:
 function ProjectTo(x::AbstractArray{T}) where {T<:Number}
-    # For arrays of numbers, just store one projector:
     element = ProjectTo(zero(T))
-    # If all our elements are going to zero, then we can short circuit and just send the whole thing
-    element isa ProjectTo{<:AbstractZero} && return element
-    return ProjectTo{AbstractArray}(; element=element, axes=axes(x))
-end
-function ProjectTo(xs::AbstractArray)
-    # Especially for arrays of arrays, we will store a projector per element:
-    elements = map(xs) do x
-        if x isa Number || x isa AbstractArray
-            ProjectTo(x)
-        else
-            ProjectTo()
-        end
-    end
-    if elements isa AbstractArray{<:ProjectTo{<:AbstractZero}}
-        return ProjectTo{NoTangent}()
-    elseif elements isa AbstractArray{<:ProjectTo{Any}}
-        return ProjectTo{AbstractArray}(; element=ProjectTo(), axes=axes(xs))
+    if element isa ProjectTo{<:AbstractZero}
+        return ProjectTo{NoTangent}() # short-circuit if all elements project to zero
     else
-        # They will be individually applied:
+        return ProjectTo{AbstractArray}(; element=element, axes=axes(x))
+    end
+end
+
+# In other cases, store a projector per element:
+function ProjectTo(xs::AbstractArray)
+    elements = map(_always_projector, xs)
+    if elements isa AbstractArray{<:ProjectTo{<:AbstractZero}}
+        return ProjectTo{NoTangent}() # short-circuit if all elements project to zero
+    elseif elements isa AbstractArray{<:ProjectTo{Any}}
+        return ProjectTo{AbstractArray}(; element=ProjectTo(), axes=axes(xs)) # ... or none project
+    else
+        # Arrays of arrays come here, and will apply projectors individually:
         return ProjectTo{AbstractArray}(; elements=elements, axes=axes(xs))
     end
 end
+
 function (project::ProjectTo{AbstractArray})(dx::AbstractArray{S,M}) where {S,M}
+    # First deal with shape. The rule is that we reshape to add or remove trivial dimensions
+    # like dx = ones(4,1), where x = ones(4), but throw an error on dx = ones(1,4) etc.
     dy = if axes(dx) == project.axes
         dx
     else
-        # The rule here is that we reshape to add or remove trivial dimensions like dx = ones(4,1),
-        # where x = ones(4), but throw an error on dx = ones(1,4) etc.
         for d in 1:max(M, length(project.axes))
             size(dx, d) == length(get(project.axes, d, 1)) || throw(_projection_mismatch(project.axes, size(dx)))
         end
         reshape(dx, project.axes)
     end
+    # Then deal with the elements. One projector if AbstractArray{<:Number},
+    # or one per element for arrays of arrays:
     dz = if hasfield(typeof(backing(project)), :element)
-        # Easy case, like AbstractArray{<:Number}, fix eltype if necessary
         T = project_type(project.element)
         S <: T ? dy : map(project.element, dy)
-    elseif hasfield(typeof(backing(project)), :elements)
-        map((f,y) -> f(y), project.elements, dy)
     else
-        throw(ArgumentError("bad ProjectTo{AbstractArray} -- it should always have .element or .elements"))
+        map((f,y) -> f(y), project.elements, dy)
     end
     return dz
 end
@@ -206,20 +204,9 @@ function (project::ProjectTo{AbstractArray})(dx::Number) # ... so we restore fro
     return fill(project.element(dx))
 end
 
-# Ref -- works like a zero-array:
-ProjectTo(x::Ref{<:Number}) = ProjectTo{Ref}(; x = ProjectTo(getindex(x)))
-ProjectTo(x::Ref{<:AbstractArray}) = ProjectTo{Ref}(; x = ProjectTo(getindex(x)))
-function ProjectTo(x::Ref)
-    return if !isassigned(x)
-        ProjectTo{Ref}(; x = ProjectTo())
-    elseif x[] isa Number || x[] isa AbstractArray
-        ProjectTo{Ref}(; x = ProjectTo(x[]))
-    else
-        ProjectTo{Ref}(; x = ProjectTo())
-    end
-end
+# Ref -- works like a zero-array, allowss restoration from a number:
+ProjectTo(x::Ref) = ProjectTo{Ref}(; x = _always_projector(x[]))
 (project::ProjectTo{Ref})(dx::Ref) = Ref(project.x(dx[]))
-# And like zero-dim arrays, allow restoration from a number:
 (project::ProjectTo{Ref})(dx::Number) = Ref(project.x(dx))
 
 function _projection_mismatch(axes_x::Tuple, size_dx::Tuple)
@@ -238,7 +225,7 @@ function ProjectTo(x::LinearAlgebra.AdjointAbsVec{T}) where {T<:Number}
 end
 # Note that while [1 2; 3 4]' isa Adjoint, we use ProjectTo{Adjoint} only to encode AdjointAbsVec.
 # Transposed matrices are, like PermutedDimsArray, just a storage detail,
-# but while row vectors behave differently, for example [1,2,3]' * [1,2,3] isa Number
+# but row vectors behave differently, for example [1,2,3]' * [1,2,3] isa Number
 (project::ProjectTo{Adjoint})(dx::Adjoint) = adjoint(project.parent(parent(dx)))
 (project::ProjectTo{Adjoint})(dx::Transpose) = adjoint(conj(project.parent(parent(dx)))) # might copy twice?
 function (project::ProjectTo{Adjoint})(dx::AbstractArray)

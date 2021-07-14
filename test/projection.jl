@@ -34,6 +34,9 @@ using OffsetArrays, BenchmarkTools
         @test pmat([1 2; 3 4.0 + 5im]') isa Adjoint     # pass-through
         @test pmat([1 2; 3 4]') isa Matrix{ComplexF64}  # broadcast type change
 
+        pmat2 = ProjectTo(rand(2,2)')
+        @test pmat2([1 2; 3 4.0 + 5im]) isa Matrix  # adjoint matrices are not preserved
+
         # arrays of arrays
         pvecvec = ProjectTo([[1,2], [3,4,5]])
         @test pvecvec([1:2, 3:5])[1] == 1:2
