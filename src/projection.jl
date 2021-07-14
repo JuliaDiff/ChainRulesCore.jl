@@ -5,8 +5,9 @@ Projects the differential `dx` onto a specific tangent space.
 This guarantees `p(dx)::T`, except for allowing `dx::AbstractZero` to pass through.
 
 Usually `T` is the "outermost" part of the type, and `p` stores additional 
-properties such as projectors for each constituent field,
-and a projector `p.element` for the element type of an array of numbers.
+properties such as projectors for each constituent field.
+Arrays have either one projector `p.element` expressing the element type for 
+an array of numbers, or else an array of projectors `p.elements`.
 These properties can be supplied as keyword arguments on construction,
 `p = ProjectTo{T}(; field=data, element=Projector(x))`. For each `T` in use,
 corresponding methods should be written for `ProjectTo{T}(dx)` with nonzero `dx`.
@@ -147,28 +148,55 @@ ProjectTo(x::Complex{<:Integer}) = ProjectTo(float(x))
 (::ProjectTo{T})(dx::Number) where {T<:Number} = convert(T, dx)
 (::ProjectTo{T})(dx::Number) where {T<:Real} = convert(T, real(dx))
 
-# Arrays{<:Number}
+# Arrays
 # If we don't have a more specialized `ProjectTo` rule, we just assume that there is
 # no structure worth re-imposing. Then any array is acceptable as a gradient.
 function ProjectTo(x::AbstractArray{T}) where {T<:Number}
+    # For arrays of numbers, just store one projector:
     element = ProjectTo(zero(T))
     # If all our elements are going to zero, then we can short circuit and just send the whole thing
     element isa ProjectTo{<:AbstractZero} && return element
     return ProjectTo{AbstractArray}(; element=element, axes=axes(x))
 end
+function ProjectTo(xs::AbstractArray)
+    # Especially for arrays of arrays, we will store a projector per element:
+    elements = map(xs) do x
+        if x isa Number || x isa AbstractArray
+            ProjectTo(x)
+        else
+            ProjectTo()
+        end
+    end
+    if elements isa AbstractArray{<:ProjectTo{<:AbstractZero}}
+        return ProjectTo{NoTangent}()
+    elseif elements isa AbstractArray{<:ProjectTo{Any}}
+        return ProjectTo{AbstractArray}(; element=ProjectTo(), axes=axes(xs))
+    else
+        # They will be individually applied:
+        return ProjectTo{AbstractArray}(; elements=elements, axes=axes(xs))
+    end
+end
 function (project::ProjectTo{AbstractArray})(dx::AbstractArray{S,M}) where {S,M}
-    T = project_type(project.element)
-    dy = S <: T ? dx : map(project.element, dx)
-    if axes(dy) == project.axes
-        return dy
+    dy = if axes(dx) == project.axes
+        dx
     else
         # The rule here is that we reshape to add or remove trivial dimensions like dx = ones(4,1),
         # where x = ones(4), but throw an error on dx = ones(1,4) etc.
         for d in 1:max(M, length(project.axes))
-            size(dy, d) == length(get(project.axes, d, 1)) || throw(_projection_mismatch(project.axes, size(dy)))
+            size(dx, d) == length(get(project.axes, d, 1)) || throw(_projection_mismatch(project.axes, size(dx)))
         end
-        return reshape(dy, project.axes)
+        reshape(dx, project.axes)
     end
+    dz = if hasfield(typeof(backing(project)), :element)
+        # Easy case, like AbstractArray{<:Number}, fix eltype if necessary
+        T = project_type(project.element)
+        S <: T ? dy : map(project.element, dy)
+    elseif hasfield(typeof(backing(project)), :elements)
+        map((f,y) -> f(y), project.elements, dy)
+    else
+        throw(ArgumentError("bad ProjectTo{AbstractArray} -- it should always have .element or .elements"))
+    end
+    return dz
 end
 
 # Zero-dimensional arrays -- these have a habit of going missing,
@@ -178,26 +206,7 @@ function (project::ProjectTo{AbstractArray})(dx::Number) # ... so we restore fro
     return fill(project.element(dx))
 end
 
-# Arrays of arrays -- store projector per element:
-ProjectTo(xs::AbstractArray{<:AbstractArray}) = ProjectTo{AbstractArray{AbstractArray}}(; elements=map(ProjectTo, xs), axes=axes(xs))
-function (project::ProjectTo{AbstractArray{AbstractArray}})(dx::AbstractArray)
-    dy = if axes(dx) == project.axes
-        dx
-    else
-        for d in 1:max(ndims(dx), length(project.axes))
-            size(dx, d) == length(get(project.axes, d, 1)) || throw(_projection_mismatch(project.axes, size(dx)))
-        end
-        reshape(dx, project.axes)
-    end
-    # This always re-constructs the outer array, it's not super-lightweight
-    return map((f,x) -> f(x), project.elements, dy)
-end
-
-# Arrays of other things -- since we've said we support arrays, but may not support their elements,
-# We handle the container as above but store trivial element projector:
-ProjectTo(xs::AbstractArray) = ProjectTo{AbstractArray}(; element=ProjectTo(), axes=axes(xs))
-
-# Ref -- likewise aim mostly at containers of supported things:
+# Ref -- works like a zero-array:
 ProjectTo(x::Ref{<:Number}) = ProjectTo{Ref}(; x = ProjectTo(getindex(x)))
 ProjectTo(x::Ref{<:AbstractArray}) = ProjectTo{Ref}(; x = ProjectTo(getindex(x)))
 function ProjectTo(x::Ref)

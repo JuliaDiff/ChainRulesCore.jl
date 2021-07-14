@@ -43,7 +43,14 @@ using OffsetArrays, BenchmarkTools
         # arrays of unknown things
         @test ProjectTo([:x, :y])(1:2) === 1:2  # no element handling,
         @test ProjectTo([:x, :y])(reshape(1:2,2,1,1)) == 1:2  # but still reshapes container
-        @test ProjectTo(Any[1, 2])(1:2) === 1:2  # goes by eltype, hence ignores contents.
+        @test ProjectTo(Any[1, 2])(1:2) == [1.0, 2.0]  # projects each number.
+        @test Tuple(ProjectTo(Any[1, 2+3im])(1:2)) === (1.0, 2.0 + 0.0im)
+        @test ProjectTo(Any[true, false]) isa ProjectTo{NoTangent}
+
+        # empty arrays
+        @test isempty(ProjectTo([])(1:0))
+        @test_throws DimensionMismatch ProjectTo(Int[])([2])
+        @test ProjectTo(Bool[]) isa ProjectTo{NoTangent}
     end
 
     @testset "Base: zero-arrays & Ref" begin
@@ -219,12 +226,16 @@ using OffsetArrays, BenchmarkTools
         # For sure these fail on Julia 1.0, not sure about 1.1 to 1.5
 
         pvec = ProjectTo(rand(10^3))
-        @test 0 == @ballocated $pvec(dx) setup=(dx =rand(10^3))    # pass through
-        @test 90 > @ballocated $pvec(dx) setup=(dx =rand(10^3,1))  # reshape
+        @test 0 == @ballocated $pvec(dx) setup=(dx=rand(10^3))    # pass through
+        @test 90 > @ballocated $pvec(dx) setup=(dx=rand(10^3,1))  # reshape
+
+        @test 0 == @ballocated ProjectTo(x)(dx) setup=(x=rand(10^3); dx=rand(10^3)) # including construction
 
         padj = ProjectTo(adjoint(rand(10^3)))
         @test 0 == @ballocated $padj(dx) setup=(dx=adjoint(rand(10^3)))
         @test 0 == @ballocated $padj(dx) setup=(dx=transpose(rand(10^3)))
+
+        @test 0 == @ballocated ProjectTo(x')(dx') setup=(x=rand(10^3); dx=rand(10^3))
 
         pdiag = ProjectTo(Diagonal(rand(10^3)))
         @test 0 == @ballocated $pdiag(dx) setup=(dx=Diagonal(rand(10^3)))
