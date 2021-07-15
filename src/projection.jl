@@ -47,6 +47,7 @@ function generic_projector(x::T; kw...) where {T}
     # `Foo{Diagaonal{E}}` etc. We assume it has a default constructor that has all fields 
     # but if it doesn't `construct` will give a good error message.
     wrapT = T.name.wrapper
+    # Official API for this? https://github.com/JuliaLang/julia/issues/35543
     return ProjectTo{wrapT}(; fields_proj..., kw...)
 end
 
@@ -352,13 +353,31 @@ function (project::ProjectTo{SparseVector})(dx::AbstractArray)
         reshape(dx, project.axes)
     end
     nzval = map(i -> project.element(dy[i]), project.nzind)
-    n = length(project.axes[1])
-    return SparseVector(n, project.nzind, nzval)
+    return SparseVector(length(dx), project.nzind, nzval)
+end
+function (project::ProjectTo{SparseVector})(dx::SparseVector)
+    size(dx) == map(length, project.axes) || throw(_projection_mismatch(project.axes, size(dx)))
+    # When sparsity pattern is unchanged, all the time is in checking this,
+    # perhaps some simple hash/checksum might be good enough?
+    samepattern = project.nzind == dx.nzind
+    # samepattern = length(project.nzind) == length(dx.nzind) 
+    if eltype(dx.nzval) <: project_type(project.element) && samepattern
+        return dx
+    elseif samepattern
+        nzval = map(project.element, dx.nzval)
+        SparseVector(length(dx), dx.nzind, nzval)
+    else
+        nzind = project.nzind
+        # Or should we intersect? Can this exploit sorting?
+        # nzind = intersect(project.nzind, dx.nzind)
+        nzval = map(i -> project.element(dx[i]), nzind)
+        return SparseVector(length(dx), nzind, nzval)
+    end
 end
 
 function ProjectTo(x::SparseMatrixCSC{T}) where {T<:Number}
     ProjectTo{SparseMatrixCSC}(; element = ProjectTo(zero(T)), axes = axes(x),
-        rowvals = rowvals(x), nzranges = nzrange.(Ref(x), axes(x,2)), colptr = x.colptr)
+        rowval = rowvals(x), nzranges = nzrange.(Ref(x), axes(x,2)), colptr = x.colptr)
 end
 # You need not really store nzranges, you can get them from colptr -- TODO
 # nzrange(S::AbstractSparseMatrixCSC, col::Integer) = getcolptr(S)[col]:(getcolptr(S)[col+1]-1)
@@ -370,15 +389,31 @@ function (project::ProjectTo{SparseMatrixCSC})(dx::AbstractArray)
         size(dx, 2) == length(project.axes[2]) || throw(_projection_mismatch(project.axes, size(dx)))
         reshape(dx, project.axes)
     end
-    nzval = Vector{project_type(project.element)}(undef, length(project.rowvals))
+    nzval = Vector{project_type(project.element)}(undef, length(project.rowval))
     k = 0
     for col in project.axes[2]
         for i in project.nzranges[col]
-            row = project.rowvals[i]
+            row = project.rowval[i]
             val = dy[row, col]
             nzval[k+=1] = project.element(val)
         end
     end
     m, n = length.(project.axes)
-    return SparseMatrixCSC(m, n, project.colptr, project.rowvals, nzval)
+    return SparseMatrixCSC(m, n, project.colptr, project.rowval, nzval)
+end
+
+function (project::ProjectTo{SparseMatrixCSC})(dx::SparseMatrixCSC)
+    size(dx) == map(length, project.axes) || throw(_projection_mismatch(project.axes, size(dx)))
+    samepattern = dx.colptr == project.colptr && dx.rowval == project.rowval
+    # samepattern = length(dx.colptr) == length(project.colptr) && dx.colptr[end] == project.colptr[end]
+    if eltype(dx.nzval) <: project_type(project.element) && samepattern
+        return dx
+    elseif samepattern
+        nzval = map(project.element, dx.nzval)
+        m, n = size(dx)
+        return SparseMatrixCSC(m, n, dx.colptr, dx.rowval, nzval)
+    else
+
+        invoke(project, Tuple{AbstractArray}, dx)
+    end
 end

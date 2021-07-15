@@ -159,9 +159,13 @@ using OffsetArrays, BenchmarkTools
         pv = ProjectTo(v)
 
         @test pv(v) == v
-        @test pv(v .* (1+im)) ≈ v
-        o = pv(ones(Int, 30, 1))
+        @test pv(v .* (1+im)) ≈ v  # same nonzero elements
+
+        o = pv(ones(Int, 30, 1))  # dense array
         @test nnz(o) == nnz(v)
+
+        v2 = sprand(30, 0.7)  # different nonzero elements
+        @test pv(v2) == pv(collect(v2))
 
         # matrix
         m = sprand(10, 10, 0.3)
@@ -171,6 +175,9 @@ using OffsetArrays, BenchmarkTools
         @test pm(m .* (1+im)) ≈ m
         om = pm(ones(Int, 10, 10))
         @test nnz(om) == nnz(m)
+
+        m2 = sprand(10, 10, 0.5)
+        @test pm(m2) == pm(collect(m2))
 
         @test_throws DimensionMismatch pv(ones(Int, 1, 30))
         @test_throws DimensionMismatch pm(ones(Int, 5, 20))
