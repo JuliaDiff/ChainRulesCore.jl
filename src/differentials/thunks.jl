@@ -197,7 +197,7 @@ Base.convert(::Type{<:Thunk}, a::AbstractZero) = @thunk(a)
 
 
 """
-    InplaceableThunk(val::Thunk, add!::Function)
+    InplaceableThunk(add!::Function, val::Thunk)
 
 A wrapper for a `Thunk`, that allows it to define an inplace `add!` function.
 
@@ -209,8 +209,8 @@ Most operations on an `InplaceableThunk` treat it just like a normal `Thunk`;
 and destroy its inplacability.
 """
 struct InplaceableThunk{T<:Thunk,F} <: AbstractThunk
-    val::T
     add!::F
+    val::T
 end
 
 unthunk(x::InplaceableThunk) = unthunk(x.val)
