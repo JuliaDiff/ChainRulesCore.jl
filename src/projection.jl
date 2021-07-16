@@ -197,6 +197,9 @@ function (project::ProjectTo{AbstractArray})(dx::AbstractArray{S,M}) where {S,M}
     return dz
 end
 
+# Row vectors aren't acceptable as gradients for 1-row matrices:
+(project::ProjectTo{AbstractArray})(dx::LinearAlgebra.AdjOrTransAbsVec) = project(reshape(vec(dx),1,:))
+
 # Zero-dimensional arrays -- these have a habit of going missing,
 # although really Ref() is probably a better structure.
 function (project::ProjectTo{AbstractArray})(dx::Number) # ... so we restore from numbers
@@ -204,7 +207,7 @@ function (project::ProjectTo{AbstractArray})(dx::Number) # ... so we restore fro
     return fill(project.element(dx))
 end
 
-# Ref -- works like a zero-array, allowss restoration from a number:
+# Ref -- works like a zero-array, also allows restoration from a number:
 ProjectTo(x::Ref) = ProjectTo{Ref}(; x = _always_projector(x[]))
 (project::ProjectTo{Ref})(dx::Ref) = Ref(project.x(dx[]))
 (project::ProjectTo{Ref})(dx::Number) = Ref(project.x(dx))
@@ -219,7 +222,7 @@ end
 #####
 
 # Row vectors
-function ProjectTo(x::LinearAlgebra.AdjointAbsVec{T}) where {T<:Number}
+function ProjectTo(x::LinearAlgebra.AdjointAbsVec)
     sub = ProjectTo(parent(x))
     ProjectTo{Adjoint}(; parent=sub)
 end
@@ -227,19 +230,25 @@ end
 # Transposed matrices are, like PermutedDimsArray, just a storage detail,
 # but row vectors behave differently, for example [1,2,3]' * [1,2,3] isa Number
 (project::ProjectTo{Adjoint})(dx::Adjoint) = adjoint(project.parent(parent(dx)))
-(project::ProjectTo{Adjoint})(dx::Transpose) = adjoint(conj(project.parent(parent(dx)))) # might copy twice?
+(project::ProjectTo{Adjoint})(dx::Transpose) = adjoint(adjoint.(project.parent(parent(dx)))) # might copy twice?
 function (project::ProjectTo{Adjoint})(dx::AbstractArray)
     size(dx,1) == 1 && size(dx,2) == length(project.parent.axes[1]) || throw(_projection_mismatch((1:1, project.parent.axes...), size(dx)))
     dy = project.parent(vec(dx))
-    return adjoint(conj(dy))
+    if eltype(dy) <: Real
+        return adjoint(dy)
+    else
+        println("here")
+        # adjoint.(dy) copies, if project.parent changed the type it copied too, ideally could fuse those
+        return adjoint(adjoint.(dy))
+    end
 end
 
-function ProjectTo(x::LinearAlgebra.TransposeAbsVec{T}) where {T<:Number}
+function ProjectTo(x::LinearAlgebra.TransposeAbsVec)
     sub = ProjectTo(parent(x))
     ProjectTo{Transpose}(; parent=sub)
 end
 (project::ProjectTo{Transpose})(dx::Transpose) = transpose(project.parent(parent(dx)))
-(project::ProjectTo{Transpose})(dx::Adjoint) = transpose(conj(project.parent(parent(dx))))
+(project::ProjectTo{Transpose})(dx::Adjoint) = transpose(adjoint.(project.parent(parent(dx))))
 function (project::ProjectTo{Transpose})(dx::AbstractArray)
     size(dx,1) == 1 && size(dx,2) == length(project.parent.axes[1]) || throw(_projection_mismatch((1:1, project.parent.axes...), size(dx)))
     dy = project.parent(vec(dx))

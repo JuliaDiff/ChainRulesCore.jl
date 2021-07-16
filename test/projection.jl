@@ -18,7 +18,7 @@ using OffsetArrays, BenchmarkTools
         @test ProjectTo(big(1.0))(2) === 2
     end
 
-    @testset "Base: arrays" begin
+    @testset "Base: arrays of numbers" begin
         pvec3 = ProjectTo([1,2,3])
         @test pvec3(1.0:3.0) === 1.0:3.0
         @test pvec3(1:3) == 1.0:3.0  # would prefer ===, map(Float64, dx) would do that, not important
@@ -35,17 +35,30 @@ using OffsetArrays, BenchmarkTools
         @test pmat([1 2; 3 4]') isa Matrix{ComplexF64}  # broadcast type change
 
         pmat2 = ProjectTo(rand(2,2)')
-        @test pmat2([1 2; 3 4.0 + 5im]) isa Matrix  # adjoint matrices are not preserved
+        @test pmat2([1 2; 3 4.0 + 5im]) isa Matrix  # adjoint matrices are not re-created
 
-        # arrays of arrays
+        prow = ProjectTo([1im 2 3im])
+        @test prow(transpose([1, 2, 3+4.0im])) == [1 2 3+4im]
+        @test prow(transpose([1, 2, 3+4.0im])) isa Matrix  # row vectors may not pass through 
+        @test prow(adjoint([1, 2, 3+5im])) == [1 2 3-5im]
+        @test prow(adjoint([1, 2, 3])) isa Matrix
+    end
+
+    @testset "Base: arrays of arrays, etc" begin
         pvecvec = ProjectTo([[1,2], [3,4,5]])
         @test pvecvec([1:2, 3:5])[1] == 1:2
         @test pvecvec([[1,2+3im], [4+5im,6,7]])[2] == [4,6,7]
         @test pvecvec(hcat([1:2, hcat(3:5)]))[2] isa Vector  # reshape inner & outer
 
+        pvecvec2 = ProjectTo(reshape(Any[[1 2], [3 4 5]],1,2))  # a row of rows
+        y1 = pvecvec2([[1,2], [3,4,5]]')
+        @test y1[1] == [1 2]
+        @test !(y1 isa Adjoint) && !(y1[1] isa Adjoint)
+
         # arrays of unknown things
         @test ProjectTo([:x, :y])(1:2) === 1:2  # no element handling,
         @test ProjectTo([:x, :y])(reshape(1:2,2,1,1)) == 1:2  # but still reshapes container
+
         @test ProjectTo(Any[1, 2])(1:2) == [1.0, 2.0]  # projects each number.
         @test Tuple(ProjectTo(Any[1, 2+3im])(1:2)) === (1.0, 2.0 + 0.0im)
         @test ProjectTo(Any[true, false]) isa ProjectTo{NoTangent}
@@ -94,6 +107,15 @@ using OffsetArrays, BenchmarkTools
         @test padj_complex([4 5 6+7im]) == [4 5 6+7im]
         @test padj_complex(transpose([4, 5, 6+7im])) == [4 5 6+7im]
         @test padj_complex(adjoint([4, 5, 6+7im])) == [4 5 6-7im]
+
+        # evil test case
+        xs = adjoint(Any[Any[1,2,3], Any[4+im,5-im,6+im,7-im]])
+        pvecvec3 = ProjectTo(xs)
+        @test pvecvec3(xs)[1] == [1 2 3]
+        @test pvecvec3(xs)[2] isa Adjoint{ComplexF64, <:Vector}
+        @test_broken pvecvec3(collect(xs))[1] == [1 2 3]
+        ys = permutedims([[1 2 3+im], [4 5 6 7]])
+        @test_broken pvecvec3(ys)[1] == [1 2 3]
     end
 
     @testset "LinearAlgebra: structured matrices" begin
@@ -242,7 +264,7 @@ using OffsetArrays, BenchmarkTools
 
         padj = ProjectTo(adjoint(rand(10^3)))
         @test 0 == @ballocated $padj(dx) setup=(dx=adjoint(rand(10^3)))
-        @test 0 == @ballocated $padj(dx) setup=(dx=transpose(rand(10^3)))
+        @test_broken 0 == @ballocated $padj(dx) setup=(dx=transpose(rand(10^3)))
 
         @test 0 == @ballocated ProjectTo(x')(dx') setup=(x=rand(10^3); dx=rand(10^3))
 
