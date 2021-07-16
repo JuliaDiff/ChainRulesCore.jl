@@ -4,6 +4,10 @@ using OffsetArrays, BenchmarkTools
 
 @testset "projection" begin
 
+#####
+##### `Base`
+#####
+
     @testset "Base: numbers" begin
         # real / complex
         @test ProjectTo(1.0)(2.0 + 3im) === 2.0
@@ -91,6 +95,10 @@ using OffsetArrays, BenchmarkTools
         @test prefvec(Ref(1:3)) isa Base.RefValue{Vector{ComplexF64}}
         @test_throws DimensionMismatch prefvec(Ref{Any}(1:5))
     end
+
+#####
+##### `LinearAlgebra`
+#####
 
     @testset "LinearAlgebra: $adj vectors" for adj in [transpose, adjoint]
         # adjoint vectors
@@ -189,6 +197,10 @@ using OffsetArrays, BenchmarkTools
         @test_throws DimensionMismatch ptri(rand(ComplexF32, 3, 2))
     end
 
+#####
+##### `SparseArrays`
+#####
+
     @testset "SparseArrays" begin
         # vector
         v = sprand(30, 0.3)
@@ -219,6 +231,10 @@ using OffsetArrays, BenchmarkTools
         @test_throws DimensionMismatch pm(ones(Int, 5, 20))
     end
 
+#####
+##### `OffsetArrays`
+#####
+
     @testset "OffsetArrays" begin
         # While there is no code for this, the rule that it checks axes(x) == axes(dx) else
         # reshape means that it restores offsets. (It throws an error on nontrivial size mismatch.)
@@ -231,6 +247,10 @@ using OffsetArrays, BenchmarkTools
         @test axes(poffv(OffsetArray(rand(3,1), 0:2, 0:0))) == (0:2,)
 
     end
+
+#####
+##### `ChainRulesCore`
+#####
 
     @testset "AbstractZero" begin
         pz = ProjectTo(ZeroTangent())
