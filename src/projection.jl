@@ -108,8 +108,7 @@ julia> ProjectTo([1 2; 3 4]')  # no special structure, integers are promoted to 
 ProjectTo{AbstractArray}(element = ProjectTo{Float64}(), axes = (Base.OneTo(2), Base.OneTo(2)))
 ```
 """
-ProjectTo() = ProjectTo{Any}()  # trivial case, exists so that maybe_call(f, x) knows what to do
-(x::ProjectTo{Any})(dx) = dx
+ProjectTo(::Any) # just to attach docstring
 
 # Generic
 (::ProjectTo{T})(dx::T) where {T} = dx  # not always correct but we have special cases for when it isn't
@@ -163,8 +162,6 @@ function ProjectTo(xs::AbstractArray)
     elements = map(ProjectTo, xs)
     if elements isa AbstractArray{<:ProjectTo{<:AbstractZero}}
         return ProjectTo{NoTangent}() # short-circuit if all elements project to zero
-    # elseif elements isa AbstractArray{<:ProjectTo{Any}}
-    #     return ProjectTo{AbstractArray}(; element=ProjectTo(), axes=axes(xs)) # ... or all identity projection
     else
         # Arrays of arrays come here, and will apply projectors individually:
         return ProjectTo{AbstractArray}(; elements=elements, axes=axes(xs))
