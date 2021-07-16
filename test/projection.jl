@@ -169,7 +169,7 @@ using OffsetArrays, BenchmarkTools
         bi = Bidiagonal(rand(3,3) .+ im, :L)
         @test pbi(bi) == real(bi)  # reconstruct via generic_projector
         bu = Bidiagonal(rand(3,3) .+ im, :U)  # differs but uplo, not type
-        @test pbi(bu) == diagm(diag(real(bu)))
+        @test pbi(bu) == diagm(0 => diag(real(bu)))
         @test_throws DimensionMismatch pbi(rand(ComplexF32, 3, 2))
 
         pstri = ProjectTo(SymTridiagonal(Symmetric(rand(3,3))))
@@ -274,7 +274,7 @@ using OffsetArrays, BenchmarkTools
         @test 0 == @ballocated $padj(dx) setup=(dx=adjoint(rand(10^3)))
         @test 0 == @ballocated $padj(dx) setup=(dx=transpose(rand(10^3)))
 
-        @test 0 == @ballocated ProjectTo(x')(dx') setup=(x=rand(10^3); dx=rand(10^3))
+        VERSION >= v"1.6" && @test 0 == @ballocated ProjectTo(x')(dx') setup=(x=rand(10^3); dx=rand(10^3))
 
         pdiag = ProjectTo(Diagonal(rand(10^3)))
         @test 0 == @ballocated $pdiag(dx) setup=(dx=Diagonal(rand(10^3)))
