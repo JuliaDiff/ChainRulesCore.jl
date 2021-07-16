@@ -110,6 +110,7 @@ using OffsetArrays, BenchmarkTools
         @test padj_complex(adjoint([4, 5, 6+7im])) == [4 5 6-7im]
 
         # evil test case
+        if VERSION >= v"1.7-"  # up to 1.6  Vector[[1,2,3]]'  is an error, not sure why it's called
         xs = adj(Any[Any[1,2,3], Any[4+im,5-im,6+im,7-im]])
         pvecvec3 = ProjectTo(xs)
         @test pvecvec3(xs)[1] == [1 2 3]
@@ -127,6 +128,7 @@ using OffsetArrays, BenchmarkTools
         @test pvecmat(zs) == zs
         @test pvecmat(collect.(zs)) == zs
         @test pvecmat(collect.(zs)) isa LinearAlgebra.AdjOrTransAbsVec
+        end
     end
 
     @testset "LinearAlgebra: dense structured matrices" begin
