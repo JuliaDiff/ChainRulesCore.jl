@@ -186,13 +186,13 @@ function scalar_rrule_expr(__source__, f, call, setup_stmts, inputs, partials)
     Δs = _propagator_inputs(n_outputs)
 
     # Make a projector for each argument
-    ps, setup_ps  = _make_projectors(call.args[2:end])
-    append!(setup_stmts, setup_ps)
+    projs, psetup  = _make_projectors(call.args[2:end])
+    append!(setup_stmts, psetup)
 
     # 1 partial derivative per input
     pullback_returns = map(1:n_inputs) do input_i
         ∂s = [partial.args[input_i] for partial in partials]
-        propagation_expr(Δs, ∂s, true, ps[input_i])
+        propagation_expr(Δs, ∂s, true, projs[input_i])
     end
 
     # Multi-output functions have pullbacks with a tuple input that will be destructured
@@ -221,9 +221,9 @@ _propagator_inputs(n) = [esc(gensym(Symbol(:Δ, i))) for i in 1:n]
 
 "given the variable names, escaped but without types, makes setup expressions for projection operators"
 function _make_projectors(xs)
-    ps = map(x -> gensym(Symbol(:proj_, x.args[1])), xs)
-    setups = map((x,p) -> :($p = ProjectTo($x)), xs, ps)
-    return ps, setups
+    projs = map(x -> gensym(Symbol(:proj_, x.args[1])), xs)
+    setups = map((x,p) -> :($p = ProjectTo($x)), xs, projs)
+    return projs, setups
 end
 
 """
