@@ -2,7 +2,10 @@
     (p::ProjectTo{T})(dx)
 
 Projects the differential `dx` onto a specific tangent space.
-This guarantees `p(dx)::T`, except for allowing `dx::AbstractZero` to pass through.
+
+The type `T` is meant to encode the largest acceptable space, so usually
+this enforces `p(dx)::T`. But some subspaces which aren't subtypes of `T` may
+be allowed, and in particular `dx::AbstractZero` always passes through.
 
 Usually `T` is the "outermost" part of the type, and `p` stores additional 
 properties such as projectors for each constituent field.
@@ -245,23 +248,19 @@ end
 
 # Diagonal
 function ProjectTo(x::Diagonal)
-    eltype(x) == Bool && return ProjectTo(false)
-    sub = ProjectTo(get_diag(x))
-    sub isa ProjectTo{<:AbstractZero} && return sub
+    sub = ProjectTo(x.diag)
+    sub isa ProjectTo{<:AbstractZero} && return sub # TODO not necc if Diagonal(NoTangent()) worked
     return ProjectTo{Diagonal}(; diag=sub)
 end
-(project::ProjectTo{Diagonal})(dx::AbstractMatrix) = Diagonal(project.diag(get_diag(dx)))
-
-get_diag(x) = diag(x)
-get_diag(x::Diagonal) = x.diag
+(project::ProjectTo{Diagonal})(dx::AbstractMatrix) = Diagonal(project.diag(diag(dx)))
+(project::ProjectTo{Diagonal})(dx::Diagonal) = Diagonal(project.diag(dx.diag))
 
 # Symmetric
 for (SymHerm, chk, fun) in ((:Symmetric, :issymmetric, :transpose), (:Hermitian, :ishermitian, :adjoint))
     @eval begin
         function ProjectTo(x::$SymHerm)
-            eltype(x) == Bool && return ProjectTo(false)
             sub = ProjectTo(parent(x))
-            sub isa ProjectTo{<:AbstractZero} && return sub
+            sub isa ProjectTo{<:AbstractZero} && return sub  # TODO not necc if Hermitian(NoTangent()) etc. worked
             return ProjectTo{$SymHerm}(; uplo=LinearAlgebra.sym_uplo(x.uplo), parent=sub)
         end
         function (project::ProjectTo{$SymHerm})(dx::AbstractArray)
@@ -285,12 +284,16 @@ end
 for UL in (:UpperTriangular, :LowerTriangular, :UnitUpperTriangular, :UnitLowerTriangular) # UpperHessenberg
     @eval begin
         function ProjectTo(x::$UL)
-            eltype(x) == Bool && return ProjectTo(false)
             sub = ProjectTo(parent(x))
-            sub isa ProjectTo{<:AbstractZero} && return sub
+            sub isa ProjectTo{<:AbstractZero} && return sub  # TODO not necc if UnitUpperTriangular(NoTangent()) etc. worked
             return ProjectTo{$UL}(; parent=sub)
         end
         (project::ProjectTo{$UL})(dx::AbstractArray) = $UL(project.parent(dx))
+        function (project::ProjectTo{$UL})(dx::Diagonal)
+            sub = project.parent
+            sub_one = ProjectTo{project_type(sub)}(; element = sub.element, axes = (sub.axes[1],))
+            return Diagonal(sub_one(dx.diag))
+        end
     end
 end
 

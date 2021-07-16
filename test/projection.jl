@@ -116,6 +116,10 @@ using OffsetArrays, BenchmarkTools
         @test pupp(rand(ComplexF32, 3, 3, 1)) isa UpperTriangular{Float64}
         @test ProjectTo(UpperTriangular(randn(3,3) .> 0))(randn(3,3)) == NoTangent()
 
+        # some subspaces which aren't subtypes
+        @test psymm(Diagonal([1,2,3])) isa Diagonal{Float64}
+        @test pupp(Diagonal([1,2,3+4im])) isa Diagonal{Float64}
+
         # structured matrices with linear-size backing
         pdiag = ProjectTo(Diagonal(1:3))
         @test pdiag(reshape(1:9,3,3)) == Diagonal([1,5,9])
