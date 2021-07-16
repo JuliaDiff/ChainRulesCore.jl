@@ -229,24 +229,22 @@ end
 # Note that while [1 2; 3 4]' isa Adjoint, we use ProjectTo{Adjoint} only to encode AdjointAbsVec.
 # Transposed matrices are, like PermutedDimsArray, just a storage detail,
 # but row vectors behave differently, for example [1,2,3]' * [1,2,3] isa Number
-(project::ProjectTo{Adjoint})(dx::Adjoint) = adjoint(project.parent(parent(dx)))
-(project::ProjectTo{Adjoint})(dx::Transpose) = adjoint(adjoint.(project.parent(parent(dx)))) # might copy twice?
+(project::ProjectTo{Adjoint})(dx::LinearAlgebra.AdjOrTransAbsVec) = adjoint(project.parent(adjoint(dx)))
 function (project::ProjectTo{Adjoint})(dx::AbstractArray)
     size(dx,1) == 1 && size(dx,2) == length(project.parent.axes[1]) || throw(_projection_mismatch((1:1, project.parent.axes...), size(dx)))
-    dy = project.parent(adjoint(dx))
-    return adjoint(dy)
+    dy = eltype(dx) <: Real ? vec(dx) : adjoint(dx)
+    return adjoint(project.parent(dy))
 end
 
 function ProjectTo(x::LinearAlgebra.TransposeAbsVec)
     sub = ProjectTo(parent(x))
     ProjectTo{Transpose}(; parent=sub)
 end
-(project::ProjectTo{Transpose})(dx::Transpose) = transpose(project.parent(parent(dx)))
-(project::ProjectTo{Transpose})(dx::Adjoint) = transpose(adjoint.(project.parent(parent(dx))))
+(project::ProjectTo{Transpose})(dx::LinearAlgebra.AdjOrTransAbsVec) = transpose(project.parent(transpose(dx)))
 function (project::ProjectTo{Transpose})(dx::AbstractArray)
     size(dx,1) == 1 && size(dx,2) == length(project.parent.axes[1]) || throw(_projection_mismatch((1:1, project.parent.axes...), size(dx)))
-    dy = project.parent(transpose(dx))
-    return transpose(dy)
+    dy = eltype(dx) <: Number ? vec(dx) : transpose(dx)
+    return transpose(project.parent(dy))
 end
 
 # Diagonal

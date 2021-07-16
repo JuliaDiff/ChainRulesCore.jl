@@ -98,7 +98,7 @@ using OffsetArrays, BenchmarkTools
         adjT = typeof(adj([1,2,3.0]))
         @test padj(transpose(1:3)) isa adjT
         @test padj([4 5 6+7im]) isa adjT
-        @test_broken padj([4.0 5.0 6.0]) isa adjT
+        @test padj([4.0 5.0 6.0]) isa adjT
 
         @test_throws DimensionMismatch padj([1,2,3])
         @test_throws DimensionMismatch padj([1 2 3]')
@@ -258,7 +258,7 @@ using OffsetArrays, BenchmarkTools
         @test repr(ProjectTo(1.1)) == "ProjectTo{Float64}()"
         @test occursin("ProjectTo{AbstractArray}(element", repr(ProjectTo([1,2,3])))
         str = repr(ProjectTo([1,2,3]'))
-        @test_broken eval(Meta.parse(str))(ones(1,3)) isa Adjoint{Float64, Vector{Float64}}
+        @test eval(Meta.parse(str))(ones(1,3)) isa Adjoint{Float64, Vector{Float64}}
     end
 
     VERSION > v"1.1" && @testset "allocation tests" begin
@@ -272,7 +272,7 @@ using OffsetArrays, BenchmarkTools
 
         padj = ProjectTo(adjoint(rand(10^3)))
         @test 0 == @ballocated $padj(dx) setup=(dx=adjoint(rand(10^3)))
-        @test_broken 0 == @ballocated $padj(dx) setup=(dx=transpose(rand(10^3)))
+        @test 0 == @ballocated $padj(dx) setup=(dx=transpose(rand(10^3)))
 
         @test 0 == @ballocated ProjectTo(x')(dx') setup=(x=rand(10^3); dx=rand(10^3))
 
