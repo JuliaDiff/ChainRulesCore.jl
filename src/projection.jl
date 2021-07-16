@@ -168,7 +168,7 @@ function ProjectTo(xs::AbstractArray)
     if elements isa AbstractArray{<:ProjectTo{<:AbstractZero}}
         return ProjectTo{NoTangent}() # short-circuit if all elements project to zero
     elseif elements isa AbstractArray{<:ProjectTo{Any}}
-        return ProjectTo{AbstractArray}(; element=ProjectTo(), axes=axes(xs)) # ... or none project
+        return ProjectTo{AbstractArray}(; element=ProjectTo(), axes=axes(xs)) # ... or all identity projection
     else
         # Arrays of arrays come here, and will apply projectors individually:
         return ProjectTo{AbstractArray}(; elements=elements, axes=axes(xs))
@@ -187,7 +187,7 @@ function (project::ProjectTo{AbstractArray})(dx::AbstractArray{S,M}) where {S,M}
         reshape(dx, project.axes)
     end
     # Then deal with the elements. One projector if AbstractArray{<:Number},
-    # or one per element for arrays of arrays:
+    # or one per element for arrays of anything else, including arrays of arrays:
     dz = if hasfield(typeof(backing(project)), :element)
         T = project_type(project.element)
         S <: T ? dy : map(project.element, dy)
@@ -326,7 +326,7 @@ function (project::ProjectTo{SymTridiagonal})(dx::AbstractMatrix)
 end
 (project::ProjectTo{SymTridiagonal})(dx::SymTridiagonal) = generic_projection(project, dx)
 
-# another strategy is just to use the AbstratArray method
+# another strategy is just to use the AbstractArray method
 function ProjectTo(x::Tridiagonal{T}) where {T<:Number}
     notparent = invoke(ProjectTo, Tuple{AbstractArray{T}} where T<:Number, x)
     return ProjectTo{Tridiagonal}(; notparent = notparent)
