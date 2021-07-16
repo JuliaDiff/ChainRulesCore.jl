@@ -284,19 +284,20 @@ using OffsetArrays, BenchmarkTools
     end
 
     VERSION > v"1.1" && @testset "allocation tests" begin
-        # For sure these fail on Julia 1.0, not sure about 1.1 to 1.5
+        # For sure these fail on Julia 1.0, not sure about 1.3 etc.
+        # Each "@test 33 > ..." is zero on nightly, 32 on 1.5.
 
         pvec = ProjectTo(rand(10^3))
-        VERSION >= v"1.7-" && @test 0 == @ballocated $pvec(dx) setup=(dx=rand(10^3))    # pass through
+        @test 0 == @ballocated $pvec(dx) setup=(dx=rand(10^3))    # pass through
         @test 90 > @ballocated $pvec(dx) setup=(dx=rand(10^3,1))  # reshape
 
-        @test 0 == @ballocated ProjectTo(x)(dx) setup=(x=rand(10^3); dx=rand(10^3)) # including construction
+        @test 33 > @ballocated ProjectTo(x)(dx) setup=(x=rand(10^3); dx=rand(10^3)) # including construction
 
         padj = ProjectTo(adjoint(rand(10^3)))
         @test 0 == @ballocated $padj(dx) setup=(dx=adjoint(rand(10^3)))
         @test 0 == @ballocated $padj(dx) setup=(dx=transpose(rand(10^3)))
 
-        VERSION >= v"1.7-" && @test 0 == @ballocated ProjectTo(x')(dx') setup=(x=rand(10^3); dx=rand(10^3))
+        @test 33 > @ballocated ProjectTo(x')(dx') setup=(x=rand(10^3); dx=rand(10^3))
 
         pdiag = ProjectTo(Diagonal(rand(10^3)))
         @test 0 == @ballocated $pdiag(dx) setup=(dx=Diagonal(rand(10^3)))
