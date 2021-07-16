@@ -233,14 +233,8 @@ end
 (project::ProjectTo{Adjoint})(dx::Transpose) = adjoint(adjoint.(project.parent(parent(dx)))) # might copy twice?
 function (project::ProjectTo{Adjoint})(dx::AbstractArray)
     size(dx,1) == 1 && size(dx,2) == length(project.parent.axes[1]) || throw(_projection_mismatch((1:1, project.parent.axes...), size(dx)))
-    dy = project.parent(vec(dx))
-    if eltype(dy) <: Real
-        return adjoint(dy)
-    else
-        println("here")
-        # adjoint.(dy) copies, if project.parent changed the type it copied too, ideally could fuse those
-        return adjoint(adjoint.(dy))
-    end
+    dy = project.parent(adjoint(dx))
+    return adjoint(dy)
 end
 
 function ProjectTo(x::LinearAlgebra.TransposeAbsVec)
@@ -251,7 +245,7 @@ end
 (project::ProjectTo{Transpose})(dx::Adjoint) = transpose(adjoint.(project.parent(parent(dx))))
 function (project::ProjectTo{Transpose})(dx::AbstractArray)
     size(dx,1) == 1 && size(dx,2) == length(project.parent.axes[1]) || throw(_projection_mismatch((1:1, project.parent.axes...), size(dx)))
-    dy = project.parent(vec(dx))
+    dy = project.parent(transpose(dx))
     return transpose(dy)
 end
 
@@ -373,7 +367,7 @@ function (project::ProjectTo{SparseVector})(dx::SparseVector)
     # perhaps some simple hash/checksum might be good enough?
     samepattern = project.nzind == dx.nzind
     # samepattern = length(project.nzind) == length(dx.nzind) 
-    if eltype(dx.nzval) <: project_type(project.element) && samepattern
+    if eltype(dx) <: project_type(project.element) && samepattern
         return dx
     elseif samepattern
         nzval = map(project.element, dx.nzval)
@@ -410,7 +404,7 @@ function (project::ProjectTo{SparseMatrixCSC})(dx::AbstractArray)
             nzval[k+=1] = project.element(val)
         end
     end
-    m, n = length.(project.axes)
+    m, n = map(length, project.axes)
     return SparseMatrixCSC(m, n, project.colptr, project.rowval, nzval)
 end
 
@@ -418,14 +412,13 @@ function (project::ProjectTo{SparseMatrixCSC})(dx::SparseMatrixCSC)
     size(dx) == map(length, project.axes) || throw(_projection_mismatch(project.axes, size(dx)))
     samepattern = dx.colptr == project.colptr && dx.rowval == project.rowval
     # samepattern = length(dx.colptr) == length(project.colptr) && dx.colptr[end] == project.colptr[end]
-    if eltype(dx.nzval) <: project_type(project.element) && samepattern
+    if eltype(dx) <: project_type(project.element) && samepattern
         return dx
     elseif samepattern
         nzval = map(project.element, dx.nzval)
         m, n = size(dx)
         return SparseMatrixCSC(m, n, dx.colptr, dx.rowval, nzval)
     else
-
         invoke(project, Tuple{AbstractArray}, dx)
     end
 end

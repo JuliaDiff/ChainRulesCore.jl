@@ -92,12 +92,13 @@ using OffsetArrays, BenchmarkTools
         @test_throws DimensionMismatch prefvec(Ref{Any}(1:5))
     end
 
-    @testset "LinearAlgebra: $adj" for adj in [transpose, adjoint]
+    @testset "LinearAlgebra: $adj vectors" for adj in [transpose, adjoint]
         # adjoint vectors
         padj = ProjectTo(adj([1,2,3]))
         adjT = typeof(adj([1,2,3.0]))
         @test padj(transpose(1:3)) isa adjT
         @test padj([4 5 6+7im]) isa adjT
+        @test_broken padj([4.0 5.0 6.0]) isa adjT
 
         @test_throws DimensionMismatch padj([1,2,3])
         @test_throws DimensionMismatch padj([1 2 3]')
@@ -109,22 +110,31 @@ using OffsetArrays, BenchmarkTools
         @test padj_complex(adjoint([4, 5, 6+7im])) == [4 5 6-7im]
 
         # evil test case
-        xs = adjoint(Any[Any[1,2,3], Any[4+im,5-im,6+im,7-im]])
+        xs = adj(Any[Any[1,2,3], Any[4+im,5-im,6+im,7-im]])
         pvecvec3 = ProjectTo(xs)
         @test pvecvec3(xs)[1] == [1 2 3]
-        @test pvecvec3(xs)[2] isa Adjoint{ComplexF64, <:Vector}
-        @test_broken pvecvec3(collect(xs))[1] == [1 2 3]
-        ys = permutedims([[1 2 3+im], [4 5 6 7]])
-        @test_broken pvecvec3(ys)[1] == [1 2 3]
+        @test pvecvec3(xs)[2] == adj.([4+im 5-im 6+im 7-im])
+        @test pvecvec3(xs)[2] isa LinearAlgebra.AdjOrTransAbsMat{ComplexF64, <:Vector}
+        @test pvecvec3(collect(xs))[1] == [1 2 3]
+        ys = permutedims([[1 2 3+im], Any[4 5 6 7+8im]])
+        @test pvecvec3(ys)[1] == [1 2 3]
+        @test pvecvec3(ys)[2] == [4 5 6 7+8im]
+        @test pvecvec3(xs)[2] isa LinearAlgebra.AdjOrTransAbsMat{ComplexF64, <:Vector}
+        @test pvecvec3(ys) isa LinearAlgebra.AdjOrTransAbsVec
+
+        zs = adj([[1 2; 3 4], [5 6; 7 8+im]'])
+        pvecmat = ProjectTo(zs)
+        @test pvecmat(zs) == zs
+        @test pvecmat(collect.(zs)) == zs
+        @test pvecmat(collect.(zs)) isa LinearAlgebra.AdjOrTransAbsVec
     end
 
-    @testset "LinearAlgebra: structured matrices" begin
-        # structured matrices with a full parent
+    @testset "LinearAlgebra: dense structured matrices" begin
         psymm = ProjectTo(Symmetric(rand(3,3)))
         @test psymm(reshape(1:9,3,3)) == [1.0 3.0 5.0; 3.0 5.0 7.0; 5.0 7.0 9.0]
         @test psymm(psymm(reshape(1:9,3,3))) == psymm(reshape(1:9,3,3))
         @test psymm(rand(ComplexF32, 3, 3, 1)) isa Symmetric{Float64}
-        @test ProjectTo(Symmetric(randn(3,3) .> 0))(randn(3,3)) == NoTangent()
+        @test ProjectTo(Symmetric(randn(3,3) .> 0))(randn(3,3)) == NoTangent() # Bool
 
         pherm = ProjectTo(Hermitian(rand(3,3) .+ im, :L))
         # NB, projection onto Hermitian subspace, not application of Hermitian constructor
@@ -138,11 +148,12 @@ using OffsetArrays, BenchmarkTools
         @test pupp(rand(ComplexF32, 3, 3, 1)) isa UpperTriangular{Float64}
         @test ProjectTo(UpperTriangular(randn(3,3) .> 0))(randn(3,3)) == NoTangent()
 
-        # some subspaces which aren't subtypes
+        # an experiment with allowing subspaces which aren't subtypes
         @test psymm(Diagonal([1,2,3])) isa Diagonal{Float64}
         @test pupp(Diagonal([1,2,3+4im])) isa Diagonal{Float64}
+    end
 
-        # structured matrices with linear-size backing
+    @testset "LinearAlgebra: sparse structured matrices" begin
         pdiag = ProjectTo(Diagonal(1:3))
         @test pdiag(reshape(1:9,3,3)) == Diagonal([1,5,9])
         @test pdiag(pdiag(reshape(1:9,3,3))) == pdiag(reshape(1:9,3,3))
@@ -174,9 +185,6 @@ using OffsetArrays, BenchmarkTools
         @test ptri(ptri(reshape(1:9,3,3))) == ptri(reshape(1:9,3,3))
         @test ptri(rand(ComplexF32, 3, 3)) isa Tridiagonal{Float64}
         @test_throws DimensionMismatch ptri(rand(ComplexF32, 3, 2))
-
-        # an experiment with allowing subspaces which aren't subtypes
-        @test psymm(pdiag(rand(ComplexF32, 3, 3))) isa Diagonal{Float64}
     end
 
     @testset "SparseArrays" begin
@@ -250,7 +258,7 @@ using OffsetArrays, BenchmarkTools
         @test repr(ProjectTo(1.1)) == "ProjectTo{Float64}()"
         @test occursin("ProjectTo{AbstractArray}(element", repr(ProjectTo([1,2,3])))
         str = repr(ProjectTo([1,2,3]'))
-        @test eval(Meta.parse(str))(ones(1,3)) isa Adjoint{Float64, Vector{Float64}}
+        @test_broken eval(Meta.parse(str))(ones(1,3)) isa Adjoint{Float64, Vector{Float64}}
     end
 
     VERSION > v"1.1" && @testset "allocation tests" begin
