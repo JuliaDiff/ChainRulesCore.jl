@@ -56,8 +56,8 @@ using OffsetArrays, BenchmarkTools
         @test !(y1 isa Adjoint) && !(y1[1] isa Adjoint)
 
         # arrays of unknown things
-        @test ProjectTo([:x, :y])(1:2) === 1:2  # no element handling,
-        @test ProjectTo([:x, :y])(reshape(1:2,2,1,1)) == 1:2  # but still reshapes container
+        @test_throws MethodError ProjectTo([:x, :y])
+        @test_throws MethodError ProjectTo(Any[:x, :y])
 
         @test ProjectTo(Any[1, 2])(1:2) == [1.0, 2.0]  # projects each number.
         @test Tuple(ProjectTo(Any[1, 2+3im])(1:2)) === (1.0, 2.0 + 0.0im)

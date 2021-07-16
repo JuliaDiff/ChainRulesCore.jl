@@ -73,10 +73,6 @@ _maybe_projector(x) = x
 _maybe_call(f::ProjectTo, x) = f(x)
 _maybe_call(f, x) = f
 
-# Used for elements of e.g. Array{Any}, trivial projector
-_always_projector(x::Union{AbstractArray, Number, Ref}) = ProjectTo(x)
-_always_projector(x) = ProjectTo()
-
 """
     ProjectTo(x)
 
@@ -164,11 +160,11 @@ end
 
 # In other cases, store a projector per element:
 function ProjectTo(xs::AbstractArray)
-    elements = map(_always_projector, xs)
+    elements = map(ProjectTo, xs)
     if elements isa AbstractArray{<:ProjectTo{<:AbstractZero}}
         return ProjectTo{NoTangent}() # short-circuit if all elements project to zero
-    elseif elements isa AbstractArray{<:ProjectTo{Any}}
-        return ProjectTo{AbstractArray}(; element=ProjectTo(), axes=axes(xs)) # ... or all identity projection
+    # elseif elements isa AbstractArray{<:ProjectTo{Any}}
+    #     return ProjectTo{AbstractArray}(; element=ProjectTo(), axes=axes(xs)) # ... or all identity projection
     else
         # Arrays of arrays come here, and will apply projectors individually:
         return ProjectTo{AbstractArray}(; elements=elements, axes=axes(xs))
@@ -208,7 +204,7 @@ function (project::ProjectTo{AbstractArray})(dx::Number) # ... so we restore fro
 end
 
 # Ref -- works like a zero-array, also allows restoration from a number:
-ProjectTo(x::Ref) = ProjectTo{Ref}(; x = _always_projector(x[]))
+ProjectTo(x::Ref) = ProjectTo{Ref}(; x = ProjectTo(x[]))
 (project::ProjectTo{Ref})(dx::Ref) = Ref(project.x(dx[]))
 (project::ProjectTo{Ref})(dx::Number) = Ref(project.x(dx))
 
