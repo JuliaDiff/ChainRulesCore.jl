@@ -287,7 +287,7 @@ using OffsetArrays, BenchmarkTools
         # For sure these fail on Julia 1.0, not sure about 1.1 to 1.5
 
         pvec = ProjectTo(rand(10^3))
-        @test 0 == @ballocated $pvec(dx) setup=(dx=rand(10^3))    # pass through
+        VERSION >= v"1.7-" && @test 0 == @ballocated $pvec(dx) setup=(dx=rand(10^3))    # pass through
         @test 90 > @ballocated $pvec(dx) setup=(dx=rand(10^3,1))  # reshape
 
         @test 0 == @ballocated ProjectTo(x)(dx) setup=(x=rand(10^3); dx=rand(10^3)) # including construction
