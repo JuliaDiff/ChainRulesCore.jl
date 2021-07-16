@@ -221,7 +221,7 @@ _propagator_inputs(n) = [esc(gensym(Symbol(:Δ, i))) for i in 1:n]
 
 "given the variable names, escaped but without types, makes setup expressions for projection operators"
 function _make_projectors(xs)
-    projs = map(x -> gensym(Symbol(:proj_, x.args[1])), xs)
+    projs = map(x -> Symbol(:proj_, x.args[1]), xs)
     setups = map((x,p) -> :($p = ProjectTo($x)), xs, projs)
     return projs, setups
 end
