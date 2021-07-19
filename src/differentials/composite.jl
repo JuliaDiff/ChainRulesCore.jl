@@ -68,10 +68,6 @@ function Base.show(io::IO, comp::Tangent{P}) where P
     end
 end
 
-Base.convert(::Type{<:NamedTuple}, comp::Tangent{<:Any, <:NamedTuple}) = backing(comp)
-Base.convert(::Type{<:Tuple}, comp::Tangent{<:Any, <:Tuple}) = backing(comp)
-Base.convert(::Type{<:Dict}, comp::Tangent{<:Dict, <:Dict}) = backing(comp)
-
 Base.getindex(comp::Tangent, idx) = getindex(backing(comp), idx)
 
 # for Tuple
