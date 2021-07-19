@@ -1,3 +1,5 @@
+import Base: convert
+
 Base.@deprecate_binding NO_FIELDS NoTangent()
 
 const EXTERN_DEPRECATION = "`extern` is deprecated, use `unthunk` or `backing` instead, " *
@@ -57,3 +59,7 @@ end
 
 
 Base.@deprecate InplaceableThunk(t::Thunk, add!) InplaceableThunk(add!, t)
+
+Base.@deprecate convert(::Type{<:Tuple}, t::Tangent{<:Any, <:Tuple}) backing(t)
+Base.@deprecate convert(::Type{<:NamedTuple}, t::Tangent{<:Any, <:NamedTuple}) backing(t)
+Base.@deprecate convert(::Type{<:Dict}, t::Tangent{<:Dict, <:Dict}) backing(t)
