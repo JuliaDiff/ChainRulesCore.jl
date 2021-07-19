@@ -1,3 +1,5 @@
+import Base: convert
+
 Base.@deprecate_binding NO_FIELDS NoTangent()
 
 const EXTERN_DEPRECATION = "`extern` is deprecated, use `unthunk` or `backing` instead, " *
@@ -58,17 +60,6 @@ end
 
 Base.@deprecate InplaceableThunk(t::Thunk, add!) InplaceableThunk(add!, t)
 
-const CONVERT_DEPRECATION = "convert(::Type{T}, t::Tangent) is deprecated, use ChainRulesCore.backing(t) instead"
-
-function Base.convert(::Type{<:NamedTuple}, comp::Tangent{<:Any, <:NamedTuple})
-    Base.depwarn(CONVERT_DEPRECATION, :convert)
-    return backing(comp)
-end
-function Base.convert(::Type{<:Tuple}, comp::Tangent{<:Any, <:Tuple})
-    Base.depwarn(CONVERT_DEPRECATION, :convert)
-    return backing(comp)
-end
-function Base.convert(::Type{<:Dict}, comp::Tangent{<:Dict, <:Dict})
-    Base.depwarn(CONVERT_DEPRECATION, :convert)
-    return backing(comp)
-end
+Base.@deprecate convert(::Type{<:Tuple}, t::Tangent{<:Any, <:Tuple}) backing(t)
+Base.@deprecate convert(::Type{<:NamedTuple}, t::Tangent{<:Any, <:NamedTuple}) backing(t)
+Base.@deprecate convert(::Type{<:Dict}, t::Tangent{<:Dict, <:Dict}) backing(t)
