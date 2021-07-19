@@ -1,9 +1,7 @@
 # These are some macros (and supporting functions) to make it easier to define rules.
-using Base.Meta
 
-macro strip_linenos(expr)
-    return esc(Base.remove_linenums!(expr))
-end
+############################################################################################
+### @scalar_rule
 
 """
     @scalar_rule(f(x₁, x₂, ...),
@@ -88,7 +86,6 @@ macro scalar_rule(call, maybe_setup, partials...)
     frule_expr = scalar_frule_expr(__source__, f, call, setup_stmts, inputs, partials)
     rrule_expr = scalar_rrule_expr(__source__, f, call, setup_stmts, inputs, partials)
 
-    ############################################################################
     # Final return: building the expression to insert in the place of this macro
     code = quote
         if !($f isa Type) && fieldcount(typeof($f)) > 0
@@ -114,7 +111,6 @@ returns (in order) the correctly escaped:
     - `partials`: which are all `Expr{:tuple,...}`
 """
 function _normalize_scalarrules_macro_input(call, maybe_setup, partials)
-    ############################################################################
     # Setup: normalizing input form etc
 
     if Meta.isexpr(maybe_setup, :macrocall) && maybe_setup.args[1] == Symbol("@setup")
@@ -275,6 +271,9 @@ propagator_name(f::Expr, propname::Symbol) = propagator_name(f.args[end], propna
 propagator_name(fname::Symbol, propname::Symbol) = Symbol(fname, :_, propname)
 propagator_name(fname::QuoteNode, propname::Symbol) = propagator_name(fname.value, propname)
 
+############################################################################################
+### @non_differentiable
+
 """
     @non_differentiable(signature_expression)
 
@@ -324,7 +323,7 @@ macro non_differentiable(sig_expr)
         :($(primal_name)($(unconstrained_args...)))
     else
         normal_args = unconstrained_args[1:end-1]
-        var_arg = unconstrained_args[end]
+        var_arg = s[end]
         :($(primal_name)($(normal_args...), $(var_arg)...))
     end
 
@@ -393,9 +392,12 @@ function _nondiff_rrule_expr(__source__, primal_sig_parts, primal_invoke)
     end
 end
 
-
-###########
+############################################################################################
 # Helpers
+
+macro strip_linenos(expr)
+    return esc(Base.remove_linenums!(expr))
+end
 
 """
     _isvararg(expr)

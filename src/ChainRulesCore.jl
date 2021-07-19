@@ -1,5 +1,6 @@
 module ChainRulesCore
 using Base.Broadcast: broadcasted, Broadcasted, broadcastable, materialize, materialize!
+using Base.Meta
 using LinearAlgebra
 using SparseArrays: SparseVector, SparseMatrixCSC
 using Compat: hasfield
