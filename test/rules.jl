@@ -148,4 +148,32 @@ _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
         @test_skip ∂xr isa Float64  # to be made true with projection
         @test_skip ∂xr ≈ real(∂x)
     end
+
+
+    @testset "@opt_out" begin
+        first_oa(x, y) = x
+        @scalar_rule(first_oa(x, y), (1, 0))
+        @opt_out ChainRulesCore.rrule(::typeof(first_oa), x::T, y::T) where T<:Float32
+        @opt_out(
+            ChainRulesCore.frule(::Any, ::typeof(first_oa), x::T, y::T) where T<:Float32
+        )
+
+        @testset "rrule" begin
+            @test rrule(first_oa, 3.0, 4.0)[2](1) == (NoTangent(), 1, 0)
+            @test rrule(first_oa, 3f0, 4f0) === nothing
+
+            @test !isempty(Iterators.filter(methods(ChainRulesCore.no_rrule)) do m
+                m.sig <:Tuple{Any, typeof(first_oa), T, T} where T<:Float32
+            end)
+        end
+
+        @testset "frule" begin
+            @test frule((NoTangent(), 1,0), first_oa, 3.0, 4.0) == (3.0, 1)
+            @test frule((NoTangent(), 1,0), first_oa, 3f0, 4f0) === nothing
+
+            @test !isempty(Iterators.filter(methods(ChainRulesCore.no_frule)) do m
+                m.sig <:Tuple{Any, Any, typeof(first_oa), T, T} where T<:Float32
+            end)
+        end
+    end
 end

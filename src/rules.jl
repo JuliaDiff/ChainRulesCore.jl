@@ -139,3 +139,52 @@ const rrule_kwfunc = Core.kwftype(typeof(rrule)).instance
 function (::typeof(rrule_kwfunc))(kws::Any, ::typeof(rrule), ::RuleConfig, args...)
     return rrule_kwfunc(kws, rrule, args...)
 end
+
+##############################################################
+### Opt out functionality
+
+const NO_RRULE_DOC = """
+    no_rrule
+
+This is an implementation detail for opting out of [`rrule`](@ref).
+It follows the signature for `rrule` exactly.
+We use it as a way to store a collection of type-tuples in its method-table.
+If something has this defined, it means that it must having a must also have a `rrule`,
+that returns `nothing`.
+
+### Machanics
+note: when this says methods `==` or `<:` it actually means:
+`parameters(m.sig)[2:end]` rather than the method object `m` itself.
+
+To decide if should opt-out using this mechanism.
+ - find the most specific method of `rrule`
+ - find the most specific method of `no_rrule`
+ - if the method of `no_rrule` `<:` the method of `rrule`, then should opt-out
+
+To just ignore the fact that rules can be opted-out from, and that some rules thus return
+`nothing`, then filter the list of methods of `rrule` to remove those that are `==` to ones
+that occur in the method table of `no_rrule`.
+
+Note also when doing this you must still also handle falling back from rule with config, to
+rule without config.
+
+On the other-hand if your AD can work with `rrule`s that return `nothing`, then it is
+simpler to just use that mechanism for opting out; and you don't need to worry about this
+at all.
+"""
+
+"""
+$NO_RRULE_DOC
+
+See also [`ChainRulesCore.no_frule`](@ref).
+"""
+function no_rrule end
+no_rrule(::Any, ::Vararg{Any}) = nothing
+
+"""
+$(replace(NO_RRULE_DOC, "rrule"=>"frule"))
+
+See also [`ChainRulesCore.no_rrule`](@ref).
+"""
+function no_frule end
+no_frule(ȧrgs, f, ::Vararg{Any}) = nothing

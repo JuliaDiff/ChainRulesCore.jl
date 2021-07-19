@@ -1,5 +1,10 @@
 # These are some macros (and supporting functions) to make it easier to define rules.
 
+# Note: must be declared before it is used, which is later in this file.
+macro strip_linenos(expr)
+    return esc(Base.remove_linenums!(expr))
+end
+
 ############################################################################################
 ### @scalar_rule
 
@@ -323,7 +328,7 @@ macro non_differentiable(sig_expr)
         :($(primal_name)($(unconstrained_args...)))
     else
         normal_args = unconstrained_args[1:end-1]
-        var_arg = s[end]
+        var_arg = unconstrained_args[end]
         :($(primal_name)($(normal_args...), $(var_arg)...))
     end
 
@@ -392,12 +397,72 @@ function _nondiff_rrule_expr(__source__, primal_sig_parts, primal_invoke)
     end
 end
 
+
+############################################################################################
+# @opt_out
+
+"""
+    @opt_out frule([config], _, f, args...)
+    @opt_out rrule([config], f, args...)
+
+This allows you to opt-out of a `frule` or `rrule` by providing a more specific method,
+that says to use the AD system, to solver it.
+
+For example, consider some function `foo(x::AbtractArray)`.
+In general, you know a efficicent and generic way to implement it's `rrule`.
+You do so, (likely making use of [`ProjectTo`](@ref)).
+But it actually turns out that for some `FancyArray` type it is better to let the AD do it's
+thing.
+
+Then you would write something like:
+```julia
+function rrule(::typeof(foo), x::AbstractArray)
+    foo_pullback(ȳ) = ...
+    return foo(x), foo_pullback
+end
+
+@opt_out rrule(::typeof(foo), ::FancyArray)
+```
+
+This will generate a [`rrule`](@ref) that returns `nothing`,
+and will also add a similar entry to [`ChainRulesCore.no_rrule`](@ref).
+
+Similar applies for [`frule`](@ref) and [`ChainRulesCore.no_frule`](@ref)
+"""
+macro opt_out(expr)
+    no_rule_target = _no_rule_target_rewrite!(deepcopy(expr))
+
+    return @strip_linenos quote
+        $(esc(no_rule_target)) = nothing
+        $(esc(expr)) = nothing
+    end
+end
+
+function _no_rule_target_rewrite!(call_target::Symbol)
+    return if call_target == :rrule
+        :(ChainRulesCore.no_rrule)
+    elseif call_target == :frule
+        :(ChainRulesCore.no_frule)
+    else
+        error("Unexpected opt-out target. Exprected frule or rrule, got: $call_target")
+    end
+end
+_no_rule_target_rewrite!(qt::QuoteNode) = _no_rule_target_rewrite!(qt.value)
+function _no_rule_target_rewrite!(expr::Expr)
+    length(expr.args)===0 && error("Malformed method expression. $expr")
+    if expr.head === :call || expr.head === :where
+        expr.args[1] = _no_rule_target_rewrite!(expr.args[1])
+    elseif expr.head == :(.) && expr.args[1] == :ChainRulesCore
+        expr = _no_rule_target_rewrite!(expr.args[end])
+    else
+        error("Malformed method expression. $(expr)")
+    end
+    return expr
+end
+
+
 ############################################################################################
 # Helpers
-
-macro strip_linenos(expr)
-    return esc(Base.remove_linenums!(expr))
-end
 
 """
     _isvararg(expr)
