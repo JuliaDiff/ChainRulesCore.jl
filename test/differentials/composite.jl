@@ -22,11 +22,6 @@ end
     @testset "empty types" begin
         @test typeof(Tangent{Tuple{}}()) == Tangent{Tuple{}, Tuple{}}
     end
-    @testset "convert" begin
-        @test convert(NamedTuple, Tangent{Foo}(x=2.5)) == (; x=2.5)
-        @test convert(Tuple, Tangent{Tuple{Float64,}}(2.0)) == (2.0,)
-        @test convert(Dict, Tangent{Dict}(Dict(4 => 3))) == Dict(4 => 3)
-    end
 
     @testset "==" begin
         @test Tangent{Foo}(x=0.1, y=2.5) == Tangent{Foo}(x=0.1, y=2.5)
