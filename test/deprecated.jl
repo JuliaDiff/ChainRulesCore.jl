@@ -39,7 +39,7 @@ end
 end
 
 @testset "Deprecated: convert from Tangent" begin
-    @test convert(NamedTuple, Tangent{Foo}(x=2.5)) == (; x=2.5)
-    @test convert(Tuple, Tangent{Tuple{Float64,}}(2.0)) == (2.0,)
-    @test convert(Dict, Tangent{Dict}(Dict(4 => 3))) == Dict(4 => 3)
+    @test (@test_deprecated convert(NamedTuple, Tangent{Foo}(x=2.5))) == (; x=2.5)
+    @test (@test_deprecated convert(Tuple, Tangent{Tuple{Float64,}}(2.0))) == (2.0,)
+    @test (@test_deprecated convert(Dict, Tangent{Dict}(Dict(4 => 3)))) == Dict(4 => 3)
 end
