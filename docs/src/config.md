@@ -16,7 +16,7 @@ rrule(::RuleConfig{>:Feature1}, f, args...) = # rrule that should only be define
 frule(::RuleConfig{>:Union{Feature1,Feature2}}, f, args...) = # frule that should only be define for ADs with both `Feature1` and `Feature2`
 ```
 
-!!! warning Rules with Config always take precedence over rules without
+!!! warning "Rules with Config always take precedence over rules without"
     Even if the other arguments are more specific the rule with the config will always take precedence.
     For example of there is a rule `rrule(::RuleConfig, ::typeof(foo), ::Any)` and other `rrule(foo, ::Float64)`,
     the first will always be selected.
