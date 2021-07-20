@@ -440,16 +440,7 @@ macro opt_out(expr)
     end
 end
 
-function _no_rule_target_rewrite!(call_target::Symbol)
-    return if call_target == :rrule
-        :(ChainRulesCore.no_rrule)
-    elseif call_target == :frule
-        :(ChainRulesCore.no_frule)
-    else
-        error("Unexpected opt-out target. Exprected frule or rrule, got: $call_target")
-    end
-end
-_no_rule_target_rewrite!(qt::QuoteNode) = _no_rule_target_rewrite!(qt.value)
+"Rewrite method sig Expr for `rrule` to be for `no_rrule`, and `frule` to be `no_frule`."
 function _no_rule_target_rewrite!(expr::Expr)
     length(expr.args)===0 && error("Malformed method expression. $expr")
     if expr.head === :call || expr.head === :where
@@ -461,6 +452,17 @@ function _no_rule_target_rewrite!(expr::Expr)
     end
     return expr
 end
+_no_rule_target_rewrite!(qt::QuoteNode) = _no_rule_target_rewrite!(qt.value)
+function _no_rule_target_rewrite!(call_target::Symbol)
+    return if call_target == :rrule
+        :(ChainRulesCore.no_rrule)
+    elseif call_target == :frule
+        :(ChainRulesCore.no_frule)
+    else
+        error("Unexpected opt-out target. Exprected frule or rrule, got: $call_target")
+    end
+end
+
 
 
 ############################################################################################
