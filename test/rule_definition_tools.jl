@@ -237,6 +237,18 @@ end
             @test ẏ isa Tangent{Tuple{Irrational{:π}, Float64}, Tuple{Float32, Float32}}
         end
 
+        @testset "@scalar_rule projection" begin
+            make_imaginary(x) = im*x
+            @scalar_rule make_imaginary(x) im
+
+            # note: the === will make sure that these are Float64, not ComplexF64
+            @test (NoTangent(), 1.0) === rrule(make_imaginary, 2.0)[2](1.0*im)
+            @test (NoTangent(), 0.0) === rrule(make_imaginary, 2.0)[2](1.0)
+
+            @test (NoTangent(), 1.0+0.0im) === rrule(make_imaginary, 2.0im)[2](1.0*im)
+            @test (NoTangent(), 0.0-1.0im) === rrule(make_imaginary, 2.0im)[2](1.0)
+        end
+
         @testset "Regression tests against #276 and #265" begin
             # https://github.com/JuliaDiff/ChainRulesCore.jl/pull/276
             # https://github.com/JuliaDiff/ChainRulesCore.jl/pull/265
