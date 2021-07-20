@@ -1,9 +1,12 @@
 # These are some macros (and supporting functions) to make it easier to define rules.
-using Base.Meta
 
+# Note: must be declared before it is used, which is later in this file.
 macro strip_linenos(expr)
     return esc(Base.remove_linenums!(expr))
 end
+
+############################################################################################
+### @scalar_rule
 
 """
     @scalar_rule(f(x₁, x₂, ...),
@@ -88,7 +91,6 @@ macro scalar_rule(call, maybe_setup, partials...)
     frule_expr = scalar_frule_expr(__source__, f, call, setup_stmts, inputs, partials)
     rrule_expr = scalar_rrule_expr(__source__, f, call, setup_stmts, inputs, partials)
 
-    ############################################################################
     # Final return: building the expression to insert in the place of this macro
     code = quote
         if !($f isa Type) && fieldcount(typeof($f)) > 0
@@ -114,7 +116,6 @@ returns (in order) the correctly escaped:
     - `partials`: which are all `Expr{:tuple,...}`
 """
 function _normalize_scalarrules_macro_input(call, maybe_setup, partials)
-    ############################################################################
     # Setup: normalizing input form etc
 
     if Meta.isexpr(maybe_setup, :macrocall) && maybe_setup.args[1] == Symbol("@setup")
@@ -275,6 +276,9 @@ propagator_name(f::Expr, propname::Symbol) = propagator_name(f.args[end], propna
 propagator_name(fname::Symbol, propname::Symbol) = Symbol(fname, :_, propname)
 propagator_name(fname::QuoteNode, propname::Symbol) = propagator_name(fname.value, propname)
 
+############################################################################################
+### @non_differentiable
+
 """
     @non_differentiable(signature_expression)
 
@@ -394,7 +398,74 @@ function _nondiff_rrule_expr(__source__, primal_sig_parts, primal_invoke)
 end
 
 
-###########
+############################################################################################
+# @opt_out
+
+"""
+    @opt_out frule([config], _, f, args...)
+    @opt_out rrule([config], f, args...)
+
+This allows you to opt-out of an `frule` or an `rrule` by providing a more specific method,
+that says to use the AD system to differentiate it.
+
+For example, consider some function `foo(x::AbtractArray)`.
+In general, you know an efficient and generic way to implement its `rrule`.
+You do so, (likely making use of [`ProjectTo`](@ref)).
+But it actually turns out that for some `FancyArray` type it is better to let the AD do its
+thing.
+
+Then you would write something like:
+```julia
+function rrule(::typeof(foo), x::AbstractArray)
+    foo_pullback(ȳ) = ...
+    return foo(x), foo_pullback
+end
+
+@opt_out rrule(::typeof(foo), ::FancyArray)
+```
+
+This will generate an [`rrule`](@ref) that returns `nothing`,
+and will also add a similar entry to [`ChainRulesCore.no_rrule`](@ref).
+
+Similar applies for [`frule`](@ref) and [`ChainRulesCore.no_frule`](@ref)
+
+For more information see the [documentation on opting out of rules](@ref opt_out).
+"""
+macro opt_out(expr)
+    no_rule_target = _no_rule_target_rewrite!(deepcopy(expr))
+
+    return @strip_linenos quote
+        $(esc(no_rule_target)) = nothing
+        $(esc(expr)) = nothing
+    end
+end
+
+"Rewrite method sig Expr for `rrule` to be for `no_rrule`, and `frule` to be `no_frule`."
+function _no_rule_target_rewrite!(expr::Expr)
+    length(expr.args)===0 && error("Malformed method expression. $expr")
+    if expr.head === :call || expr.head === :where
+        expr.args[1] = _no_rule_target_rewrite!(expr.args[1])
+    elseif expr.head == :(.) && expr.args[1] == :ChainRulesCore
+        expr = _no_rule_target_rewrite!(expr.args[end])
+    else
+        error("Malformed method expression. $(expr)")
+    end
+    return expr
+end
+_no_rule_target_rewrite!(qt::QuoteNode) = _no_rule_target_rewrite!(qt.value)
+function _no_rule_target_rewrite!(call_target::Symbol)
+    return if call_target == :rrule
+        :(ChainRulesCore.no_rrule)
+    elseif call_target == :frule
+        :(ChainRulesCore.no_frule)
+    else
+        error("Unexpected opt-out target. Exprected frule or rrule, got: $call_target")
+    end
+end
+
+
+
+############################################################################################
 # Helpers
 
 """
