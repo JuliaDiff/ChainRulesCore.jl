@@ -78,7 +78,7 @@ The Julia compiler will specialize based on inferring the return type of `rrule`
 The body of this method doesn't matter, what matters is that it is a method-table.
 A simple thing you can do with this is not support opting out.
 To do this, filter all methods from the `rrule`/`frule` method table that also occur in the `no_frule`/`no_rrule` table.
-This will thus avoid ever hitting an `rrule`/`frule` that returns `nothing` and thus makes your library error.
+This will thus avoid ever hitting an `rrule`/`frule` that returns `nothing` (and thus prevents your library from erroring).
 This is easily done, though it does mean ignoring the user's stated desire to opt out of the rule.
 
 More complex you can use this to generate code that triggers your AD.
