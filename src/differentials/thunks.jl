@@ -155,13 +155,10 @@ To evaluate the wrapped closure, call [`unthunk`](@ref) which is a no-op when th
 argument is not a `Thunk`.
 
 ```jldoctest
-julia> t = @thunk(@thunk(3))
-Thunk(var"#4#6"())
+julia> t = @thunk(3)
+Thunk(var"#4#5"())
 
-julia> t()
-Thunk(var"#5#7"())
-
-julia> unthunk(t())
+julia> unthunk(t)
 3
 ```
 
