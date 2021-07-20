@@ -152,9 +152,9 @@ We use it as a way to store a collection of type-tuples in its method-table.
 If something has this defined, it means that it must having a must also have a `rrule`,
 that returns `nothing`.
 
-### Machanics
-note: when this says methods `==` or `<:` it actually means:
-`parameters(m.sig)[2:end]` rather than the method object `m` itself.
+### Mechanics
+note: when the text below says methods `==` or `<:` it actually means:
+`parameters(m.sig)[2:end]` (i.e. the signature type tuple) rather than the method object `m` itself.
 
 To decide if should opt-out using this mechanism.
  - find the most specific method of `rrule`

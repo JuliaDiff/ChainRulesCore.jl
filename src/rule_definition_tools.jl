@@ -405,13 +405,13 @@ end
     @opt_out frule([config], _, f, args...)
     @opt_out rrule([config], f, args...)
 
-This allows you to opt-out of a `frule` or `rrule` by providing a more specific method,
-that says to use the AD system, to solver it.
+This allows you to opt-out of an `frule` or an `rrule` by providing a more specific method,
+that says to use the AD system to differentiate it.
 
 For example, consider some function `foo(x::AbtractArray)`.
-In general, you know a efficicent and generic way to implement it's `rrule`.
+In general, you know an efficient and generic way to implement its `rrule`.
 You do so, (likely making use of [`ProjectTo`](@ref)).
-But it actually turns out that for some `FancyArray` type it is better to let the AD do it's
+But it actually turns out that for some `FancyArray` type it is better to let the AD do its
 thing.
 
 Then you would write something like:
@@ -424,7 +424,7 @@ end
 @opt_out rrule(::typeof(foo), ::FancyArray)
 ```
 
-This will generate a [`rrule`](@ref) that returns `nothing`,
+This will generate an [`rrule`](@ref) that returns `nothing`,
 and will also add a similar entry to [`ChainRulesCore.no_rrule`](@ref).
 
 Similar applies for [`frule`](@ref) and [`ChainRulesCore.no_frule`](@ref)
