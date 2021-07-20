@@ -10,7 +10,7 @@ DocMeta.setdocmeta!(
         using Random
         Random.seed!(0)  # frule doctest shows output
 
-        using ChainRulesCore
+        using ChainRulesCore, LinearAlgebra
         # These rules are all actually defined in ChainRules.jl, but we redefine them here to
         # avoid the dependency.
         @scalar_rule(sin(x), cos(x))  # frule and rrule doctest
