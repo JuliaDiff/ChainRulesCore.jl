@@ -51,8 +51,3 @@ ProjectTo
 ChainRulesCore.AbstractTangent
 ChainRulesCore.debug_mode
 ```
-
-## Deprecated
-```@docs
-ChainRulesCore.extern
-```

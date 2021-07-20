@@ -13,7 +13,7 @@ uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
 deps = ["Compat", "LinearAlgebra", "SparseArrays"]
 path = ".."
 uuid = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
-version = "0.10.11"
+version = "1.0.0-DEV"
 
 [[Compat]]
 deps = ["Base64", "Dates", "DelimitedFiles", "Distributed", "InteractiveUtils", "LibGit2", "Libdl", "LinearAlgebra", "Markdown", "Mmap", "Pkg", "Printf", "REPL", "Random", "SHA", "Serialization", "SharedArrays", "Sockets", "SparseArrays", "Statistics", "Test", "UUIDs", "Unicode"]
@@ -41,9 +41,9 @@ version = "0.8.5"
 
 [[DocThemeIndigo]]
 deps = ["Sass"]
-git-tree-sha1 = "7b15d5e64ae6e27f8cc9eaff280c305199c6bfc7"
+git-tree-sha1 = "9f722e4ab9fe188f04c7bbe7b5d21ebd3fe0d0a1"
 uuid = "8bac0ac5-51bf-41f9-885e-2bf1ac2bec5f"
-version = "0.1.0"
+version = "0.1.1"
 
 [[Documenter]]
 deps = ["Base64", "Dates", "DocStringExtensions", "IOCapture", "InteractiveUtils", "JSON", "LibGit2", "Logging", "Markdown", "REPL", "Test", "Unicode"]
