@@ -98,7 +98,7 @@ The list here is incomplete, but is vetted for quality.
  - ["Evaluating Derivatives"](https://dl.acm.org/doi/book/10.5555/1455489) (by Griewank and Walther) is the best book at least for reverse-mode.
 It also covers forward-mode though (by its own admission) not as well, it never mentioned dual numbers which is an unfortunate lack.
 
-## Why isn't removing a thunk a breaking change?
+## Is removing a thunk a breaking change?
 Removing thunks is not considered a breaking change.
 This is because (in principle) removing them changes the implementation of the values
 returned by an rrule, not the value that they represent.
