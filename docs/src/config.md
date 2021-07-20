@@ -18,7 +18,7 @@ frule(::RuleConfig{>:Union{Feature1,Feature2}}, f, args...) = # frule that shoul
 
 !!! warning Rules with Config always take precedence over rules without
     Even if the other arguments are more specific the rule with the config will always take precedence.
-    for example of there is a rule `rrule(::RuleConfig, ::typeof(foo), ::Any)` and other `rrule(foo, ::Float64)`,
+    For example of there is a rule `rrule(::RuleConfig, ::typeof(foo), ::Any)` and other `rrule(foo, ::Float64)`,
     the first will always be selected.
     This is because the AD will always attempt to provide its config when checking for a rule, and only if that doesn't match, will the config-less rule be tried.
     In practice this doesn't happen often, but when it does the solution is a little ugly -- though very similar to resolving method ambiguities.  
