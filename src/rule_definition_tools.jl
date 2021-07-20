@@ -227,14 +227,15 @@ function _make_projectors(xs)
 end
 
 """
-    propagation_expr(Δs, ∂s, [_conj = false, proj = identity])
+    propagation_expr(Δs, ∂s, [_conj=false, proj=identity])
 
 Returns the expression for the propagation of
 the input gradient `Δs` though the partials `∂s`.
 Specify `_conj = true` to conjugate the partials.
-Projector `proj`, usually `ProjectTo(x)`, is applied at the end.
+Projector `proj` is a function that will be applied at the end; 
+    for `rrules` it is usually a `ProjectTo(x)`, for `frules` it is `identity`
 """
-function propagation_expr(Δs, ∂s, _conj = false, proj = identity)
+function propagation_expr(Δs, ∂s, _conj=false, proj=identity)
     # This is basically Δs ⋅ ∂s
     _∂s = map(∂s) do ∂s_i
         if _conj
