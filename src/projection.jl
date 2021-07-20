@@ -67,7 +67,7 @@ function (project::ProjectTo{T})(dx::Tangent) where {T}
 end
 
 # Used for encoding fields, leaves alone non-diff types:
-_maybe_projector(x::Union{AbstractArray, Number, Ref}) = ProjectTo(x)
+_maybe_projector(x::Union{AbstractArray,Number,Ref}) = ProjectTo(x)
 _maybe_projector(x) = x
 # Used for re-constructing fields, restores non-diff types:
 _maybe_call(f::ProjectTo, x) = f(x)
@@ -161,7 +161,7 @@ end
 function ProjectTo(xs::AbstractArray)
     elements = map(ProjectTo, xs)
     if elements isa AbstractArray{<:ProjectTo{<:AbstractZero}}
-        return ProjectTo{NoTangent}() # short-circuit if all elements project to zero
+        return ProjectTo{NoTangent}()  # short-circuit if all elements project to zero
     else
         # Arrays of arrays come here, and will apply projectors individually:
         return ProjectTo{AbstractArray}(; elements=elements, axes=axes(xs))
@@ -175,7 +175,9 @@ function (project::ProjectTo{AbstractArray})(dx::AbstractArray{S,M}) where {S,M}
         dx
     else
         for d in 1:max(M, length(project.axes))
-            size(dx, d) == length(get(project.axes, d, 1)) || throw(_projection_mismatch(project.axes, size(dx)))
+            if size(dx, d) != length(get(project.axes, d, 1))
+                throw(_projection_mismatch(project.axes, size(dx)))
+            end
         end
         reshape(dx, project.axes)
     end
@@ -185,29 +187,37 @@ function (project::ProjectTo{AbstractArray})(dx::AbstractArray{S,M}) where {S,M}
         T = project_type(project.element)
         S <: T ? dy : map(project.element, dy)
     else
-        map((f,y) -> f(y), project.elements, dy)
+        map((f, y) -> f(y), project.elements, dy)
     end
     return dz
 end
 
 # Row vectors aren't acceptable as gradients for 1-row matrices:
-(project::ProjectTo{AbstractArray})(dx::LinearAlgebra.AdjOrTransAbsVec) = project(reshape(vec(dx),1,:))
+function (project::ProjectTo{AbstractArray})(dx::LinearAlgebra.AdjOrTransAbsVec)
+    return project(reshape(vec(dx), 1, :))
+end
 
 # Zero-dimensional arrays -- these have a habit of going missing,
 # although really Ref() is probably a better structure.
 function (project::ProjectTo{AbstractArray})(dx::Number) # ... so we restore from numbers
-    project.axes isa Tuple{} || throw(DimensionMismatch("array with ndims(x) == $(length(project.axes)) >  0 cannot have as gradient dx::Number"))
+    if !(project.axes isa Tuple{})
+        throw(DimensionMismatch(
+            "array with ndims(x) == $(length(project.axes)) >  0 cannot have dx::Number",
+        ))
+    end
     return fill(project.element(dx))
 end
 
 # Ref -- works like a zero-array, also allows restoration from a number:
-ProjectTo(x::Ref) = ProjectTo{Ref}(; x = ProjectTo(x[]))
+ProjectTo(x::Ref) = ProjectTo{Ref}(; x=ProjectTo(x[]))
 (project::ProjectTo{Ref})(dx::Ref) = Ref(project.x(dx[]))
 (project::ProjectTo{Ref})(dx::Number) = Ref(project.x(dx))
 
 function _projection_mismatch(axes_x::Tuple, size_dx::Tuple)
     size_x = map(length, axes_x)
-    return DimensionMismatch("variable with size(x) == $size_x cannot have a gradient with size(dx) == $size_dx")
+    return DimensionMismatch(
+        "variable with size(x) == $size_x cannot have a gradient with size(dx) == $size_dx"
+    )
 end
 
 #####
@@ -217,25 +227,33 @@ end
 # Row vectors
 function ProjectTo(x::LinearAlgebra.AdjointAbsVec)
     sub = ProjectTo(parent(x))
-    ProjectTo{Adjoint}(; parent=sub)
+    return ProjectTo{Adjoint}(; parent=sub)
 end
 # Note that while [1 2; 3 4]' isa Adjoint, we use ProjectTo{Adjoint} only to encode AdjointAbsVec.
 # Transposed matrices are, like PermutedDimsArray, just a storage detail,
 # but row vectors behave differently, for example [1,2,3]' * [1,2,3] isa Number
-(project::ProjectTo{Adjoint})(dx::LinearAlgebra.AdjOrTransAbsVec) = adjoint(project.parent(adjoint(dx)))
+function (project::ProjectTo{Adjoint})(dx::LinearAlgebra.AdjOrTransAbsVec)
+    return adjoint(project.parent(adjoint(dx)))
+end
 function (project::ProjectTo{Adjoint})(dx::AbstractArray)
-    size(dx,1) == 1 && size(dx,2) == length(project.parent.axes[1]) || throw(_projection_mismatch((1:1, project.parent.axes...), size(dx)))
+    if size(dx, 1) != 1 || size(dx, 2) != length(project.parent.axes[1])
+        throw(_projection_mismatch((1:1, project.parent.axes...), size(dx)))
+    end
     dy = eltype(dx) <: Real ? vec(dx) : adjoint(dx)
     return adjoint(project.parent(dy))
 end
 
 function ProjectTo(x::LinearAlgebra.TransposeAbsVec)
     sub = ProjectTo(parent(x))
-    ProjectTo{Transpose}(; parent=sub)
+    return ProjectTo{Transpose}(; parent=sub)
 end
-(project::ProjectTo{Transpose})(dx::LinearAlgebra.AdjOrTransAbsVec) = transpose(project.parent(transpose(dx)))
+function (project::ProjectTo{Transpose})(dx::LinearAlgebra.AdjOrTransAbsVec)
+    return transpose(project.parent(transpose(dx)))
+end
 function (project::ProjectTo{Transpose})(dx::AbstractArray)
-    size(dx,1) == 1 && size(dx,2) == length(project.parent.axes[1]) || throw(_projection_mismatch((1:1, project.parent.axes...), size(dx)))
+    if size(dx, 1) != 1 || size(dx, 2) != length(project.parent.axes[1])
+        throw(_projection_mismatch((1:1, project.parent.axes...), size(dx)))
+    end
     dy = eltype(dx) <: Number ? vec(dx) : transpose(dx)
     return transpose(project.parent(dy))
 end
@@ -250,7 +268,10 @@ end
 (project::ProjectTo{Diagonal})(dx::Diagonal) = Diagonal(project.diag(dx.diag))
 
 # Symmetric
-for (SymHerm, chk, fun) in ((:Symmetric, :issymmetric, :transpose), (:Hermitian, :ishermitian, :adjoint))
+for (SymHerm, chk, fun) in (
+    (:Symmetric, :issymmetric, :transpose),
+    (:Hermitian, :ishermitian, :adjoint),
+    )
     @eval begin
         function ProjectTo(x::$SymHerm)
             sub = ProjectTo(parent(x))
@@ -268,7 +289,9 @@ for (SymHerm, chk, fun) in ((:Symmetric, :issymmetric, :transpose), (:Hermitian,
         # not clear how broadly it's worthwhile to try to support this.
         function (project::ProjectTo{$SymHerm})(dx::Diagonal)
             sub = project.parent # this is going to be unhappy about the size
-            sub_one = ProjectTo{project_type(sub)}(; element = sub.element, axes = (sub.axes[1],))
+            sub_one = ProjectTo{project_type(sub)}(;
+                element=sub.element, axes=(sub.axes[1],)
+            )
             return Diagonal(sub_one(dx.diag))
         end
     end
@@ -279,13 +302,16 @@ for UL in (:UpperTriangular, :LowerTriangular, :UnitUpperTriangular, :UnitLowerT
     @eval begin
         function ProjectTo(x::$UL)
             sub = ProjectTo(parent(x))
-            sub isa ProjectTo{<:AbstractZero} && return sub  # TODO not necc if UnitUpperTriangular(NoTangent()) etc. worked
+            # TODO not nesc if UnitUpperTriangular(NoTangent()) etc. worked
+            sub isa ProjectTo{<:AbstractZero} && return sub
             return ProjectTo{$UL}(; parent=sub)
         end
         (project::ProjectTo{$UL})(dx::AbstractArray) = $UL(project.parent(dx))
         function (project::ProjectTo{$UL})(dx::Diagonal)
             sub = project.parent
-            sub_one = ProjectTo{project_type(sub)}(; element = sub.element, axes = (sub.axes[1],))
+            sub_one = ProjectTo{project_type(sub)}(;
+                element=sub.element, axes=(sub.axes[1],)
+            )
             return Diagonal(sub_one(dx.diag))
         end
     end
@@ -306,7 +332,7 @@ function (project::ProjectTo{Bidiagonal})(dx::Bidiagonal)
     else
         uplo = LinearAlgebra.sym_uplo(project.uplo)
         dv = project.dv(diag(dx))
-        ev = fill!(similar(dv, length(dv)-1), 0)
+        ev = fill!(similar(dv, length(dv) - 1), 0)
         return Bidiagonal(dv, ev, uplo)
     end
 end
@@ -321,8 +347,8 @@ end
 
 # another strategy is just to use the AbstractArray method
 function ProjectTo(x::Tridiagonal{T}) where {T<:Number}
-    notparent = invoke(ProjectTo, Tuple{AbstractArray{T}} where T<:Number, x)
-    return ProjectTo{Tridiagonal}(; notparent = notparent)
+    notparent = invoke(ProjectTo, Tuple{AbstractArray{T}} where {T<:Number}, x)
+    return ProjectTo{Tridiagonal}(; notparent=notparent)
 end
 function (project::ProjectTo{Tridiagonal})(dx::AbstractArray)
     dy = project.notparent(dx)
@@ -340,20 +366,26 @@ using SparseArrays
 # This implementation very naiive, can probably be made more efficient.
 
 function ProjectTo(x::SparseVector{T}) where {T<:Number}
-    return ProjectTo{SparseVector}(; element = ProjectTo(zero(T)), nzind = x.nzind, axes = axes(x))
+    return ProjectTo{SparseVector}(;
+        element=ProjectTo(zero(T)), nzind=x.nzind, axes=axes(x)
+    )
 end
 function (project::ProjectTo{SparseVector})(dx::AbstractArray)
     dy = if axes(dx) == project.axes
         dx
     else
-        size(dx, 1) == length(project.axes[1]) || throw(_projection_mismatch(project.axes, size(dx)))
+        if size(dx, 1) != length(project.axes[1])
+            throw(_projection_mismatch(project.axes, size(dx)))
+        end
         reshape(dx, project.axes)
     end
     nzval = map(i -> project.element(dy[i]), project.nzind)
     return SparseVector(length(dx), project.nzind, nzval)
 end
 function (project::ProjectTo{SparseVector})(dx::SparseVector)
-    size(dx) == map(length, project.axes) || throw(_projection_mismatch(project.axes, size(dx)))
+    if size(dx) != map(length, project.axes)
+        throw(_projection_mismatch(project.axes, size(dx)))
+    end
     # When sparsity pattern is unchanged, all the time is in checking this,
     # perhaps some simple hash/checksum might be good enough?
     samepattern = project.nzind == dx.nzind
@@ -373,8 +405,13 @@ function (project::ProjectTo{SparseVector})(dx::SparseVector)
 end
 
 function ProjectTo(x::SparseMatrixCSC{T}) where {T<:Number}
-    ProjectTo{SparseMatrixCSC}(; element = ProjectTo(zero(T)), axes = axes(x),
-        rowval = rowvals(x), nzranges = nzrange.(Ref(x), axes(x,2)), colptr = x.colptr)
+    return ProjectTo{SparseMatrixCSC}(;
+        element=ProjectTo(zero(T)),
+        axes=axes(x),
+        rowval=rowvals(x),
+        nzranges=nzrange.(Ref(x), axes(x, 2)),
+        colptr=x.colptr,
+    )
 end
 # You need not really store nzranges, you can get them from colptr -- TODO
 # nzrange(S::AbstractSparseMatrixCSC, col::Integer) = getcolptr(S)[col]:(getcolptr(S)[col+1]-1)
@@ -382,8 +419,9 @@ function (project::ProjectTo{SparseMatrixCSC})(dx::AbstractArray)
     dy = if axes(dx) == project.axes
         dx
     else
-        size(dx, 1) == length(project.axes[1]) || throw(_projection_mismatch(project.axes, size(dx)))
-        size(dx, 2) == length(project.axes[2]) || throw(_projection_mismatch(project.axes, size(dx)))
+        if size(dx) != (length(project.axes[1]), length(project.axes[2]))
+            throw(_projection_mismatch(project.axes, size(dx)))
+        end
         reshape(dx, project.axes)
     end
     nzval = Vector{project_type(project.element)}(undef, length(project.rowval))
@@ -392,7 +430,7 @@ function (project::ProjectTo{SparseMatrixCSC})(dx::AbstractArray)
         for i in project.nzranges[col]
             row = project.rowval[i]
             val = dy[row, col]
-            nzval[k+=1] = project.element(val)
+            nzval[k += 1] = project.element(val)
         end
     end
     m, n = map(length, project.axes)
@@ -400,7 +438,9 @@ function (project::ProjectTo{SparseMatrixCSC})(dx::AbstractArray)
 end
 
 function (project::ProjectTo{SparseMatrixCSC})(dx::SparseMatrixCSC)
-    size(dx) == map(length, project.axes) || throw(_projection_mismatch(project.axes, size(dx)))
+    if size(dx) != map(length, project.axes)
+        throw(_projection_mismatch(project.axes, size(dx)))
+    end
     samepattern = dx.colptr == project.colptr && dx.rowval == project.rowval
     # samepattern = length(dx.colptr) == length(project.colptr) && dx.colptr[end] == project.colptr[end]
     if eltype(dx) <: project_type(project.element) && samepattern
