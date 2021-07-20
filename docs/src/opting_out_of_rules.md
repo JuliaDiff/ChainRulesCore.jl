@@ -1,4 +1,4 @@
-# Opting out of rules
+# [Opting out of rules](@id opt_out)
 
 It is common to define rules fairly generically.
 Often matching (or exceeding) how generic the matching original primal method is.
@@ -52,6 +52,12 @@ Though this is likely to cause some method-ambiguities.
 Similar can be done  `@opt_out frule`.
 It can also be done passing in a [`RuleConfig`](@ref config).
 
+
+!!! warning "If the general rule uses a config, the opt-out must also"
+    Following the same principles as for [rules with config](@ref config), a rule with a `RuleConfig` argument will take precedence over one without, including if that one is a opt-out rule.
+    But if the general rule does not use a config, then the opt-out rule *can* use a config.
+    This allows, for example, you to use opt-out to avoid a particular AD system using a opt-out rule that takes that particular AD's config.
+    
 
 ## How to support this (for AD implementers)
 

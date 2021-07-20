@@ -428,6 +428,8 @@ This will generate an [`rrule`](@ref) that returns `nothing`,
 and will also add a similar entry to [`ChainRulesCore.no_rrule`](@ref).
 
 Similar applies for [`frule`](@ref) and [`ChainRulesCore.no_frule`](@ref)
+
+For more information see the [documentation on opting out of rules](@ref opt_out).
 """
 macro opt_out(expr)
     no_rule_target = _no_rule_target_rewrite!(deepcopy(expr))

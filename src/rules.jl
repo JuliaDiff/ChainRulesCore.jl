@@ -146,20 +146,26 @@ end
 const NO_RRULE_DOC = """
     no_rrule
 
-This is an implementation detail for opting out of [`rrule`](@ref).
+This is an piece of infastructure supporting opting out of [`rrule`](@ref).
 It follows the signature for `rrule` exactly.
-We use it as a way to store a collection of type-tuples in its method-table.
-If something has this defined, it means that it must having a must also have a `rrule`,
-that returns `nothing`.
+A collection of type-tuples is stored in its method-table.
+If something has this defined, it means that it must having a must also have a `rrule`, 
+defined that returns `nothing`.
+
+!!! warning "do not overload no_rrule directly
+    It is fine and intended to query the method table of `no_rrule`.
+    It is not safe to add to that directly, as corresponding changes also need to be made to
+    `rrule`.
+    The [`@opt_out`](@ref) macro does both these things, and so should almost always be used
+    rather than defining a method of `no_rrule` directly.
 
 ### Mechanics
-note: when the text below says methods `==` or `<:` it actually means:
+note: when the text below says methods `==` it actually means:
 `parameters(m.sig)[2:end]` (i.e. the signature type tuple) rather than the method object `m` itself.
 
 To decide if should opt-out using this mechanism.
- - find the most specific method of `rrule`
- - find the most specific method of `no_rrule`
- - if the method of `no_rrule` `<:` the method of `rrule`, then should opt-out
+ - find the most specific method of `rrule` and `no_rule` e.g with `Base.which`
+  - if the method of `no_rrule` `==` the method of `rrule`, then should opt-out
 
 To just ignore the fact that rules can be opted-out from, and that some rules thus return
 `nothing`, then filter the list of methods of `rrule` to remove those that are `==` to ones
@@ -171,6 +177,8 @@ rule without config.
 On the other-hand if your AD can work with `rrule`s that return `nothing`, then it is
 simpler to just use that mechanism for opting out; and you don't need to worry about this
 at all.
+
+For more information see the [documentation on opting out of rules](@ref opt_out)
 """
 
 """
