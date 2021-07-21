@@ -47,9 +47,6 @@ Other types should overload this, as it defaults to `false`.
 """
 is_inplaceable_destination(::Any) = false
 is_inplaceable_destination(::Array) = true
-is_inplaceable_destination(::SparseVector) = true
-is_inplaceable_destination(::SparseMatrixCSC) = true
-is_inplaceable_destination(::BitArray) = true
 function is_inplaceable_destination(x::AbstractArray)
     p = parent(x)
     p === x && return false  # no parent
@@ -57,12 +54,6 @@ function is_inplaceable_destination(x::AbstractArray)
     # processing and so are mutable if their `parent` is.
     return is_inplaceable_destination(p)
 end
-
-# Hermitian and Symmetric are too fussy to deal with right now
-# https://github.com/JuliaLang/julia/issues/38056
-# TODO: https://github.com/JuliaDiff/ChainRulesCore.jl/issues/236
-is_inplaceable_destination(::LinearAlgebra.Hermitian) = false
-is_inplaceable_destination(::LinearAlgebra.Symmetric) = false
 
 
 function debug_add!(accumuland, t::InplaceableThunk)
