@@ -25,7 +25,6 @@ include("differentials/thunks.jl")
 include("differentials/composite.jl")
 include("differentials/notimplemented.jl")
 
-include("differential_arithmetic.jl")
 include("accumulation.jl")
 include("projection.jl")
 
