@@ -29,7 +29,7 @@ But sometimes, it is the case that ADing the (faster, more specific) primal for 
 Consider a summing  [`SkewSymmetric` (anti-symmetric)](https://en.wikipedia.org/wiki/Skew-symmetric_matrix) matrix.
 The skew symmetric matrix has structural zeros on the diagonal, and off-diagonals are paired with their negation.
 Thus the sum is always going to be zero.
-As such the author of that matrix type would probably ahve overloaded `sum(x::SkewSymmetric{T}) where T = zero(T)`.
+As such the author of that matrix type would probably have overloaded `sum(x::SkewSymmetric{T}) where T = zero(T)`.
 ADing this would result in the tangent computed for `x` as `ZeroTangent()` and it would be very fast since AD can see that `x` is never used in the right-hand side.
 In contrast the generic method for `AbstractArray` defined above would have to allocate the fill array, and then compute the skew projection.
 Only to findout the output would be projected to `SkewSymmetric(zeros(T))` anyway (slower, and a less useful type).
