@@ -27,7 +27,7 @@ end
 That is a fairly reasonable `rrule` for the vast majority of cases.
 
 You might have a custom array type for which you could write a faster rule.
-For example, the pullback for summing a [`SkewSymmetric` (anti-symmetric)](https://en.wikipedia.org/wiki/Skew-symmetric_matrix) matrix can be optimized all the way to `ZeroTangent()` as all off-diagonals cancel and the diagaonal is structurally zeros.
+For example, the pullback for summing a [`SkewSymmetric` (anti-symmetric)](https://en.wikipedia.org/wiki/Skew-symmetric_matrix) matrix can be optimized all the way to `ZeroTangent()` as all off-diagonals cancel and the diagonal is structurally zeros.
 To do that, you can indeed write another more specific [`rrule`](@ref).
 But another case is where the AD system itself would generate a more optimized case.
 
