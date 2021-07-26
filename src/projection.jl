@@ -183,7 +183,7 @@ function (project::ProjectTo{AbstractArray})(dx::AbstractArray{S,M}) where {S,M}
     end
     # Then deal with the elements. One projector if AbstractArray{<:Number},
     # or one per element for arrays of anything else, including arrays of arrays:
-    dz = if hasfield(typeof(backing(project)), :element)
+    dz = if hasproperty(project, :element)
         T = project_type(project.element)
         S <: T ? dy : map(project.element, dy)
     else
