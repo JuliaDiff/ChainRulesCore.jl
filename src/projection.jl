@@ -134,39 +134,32 @@ ProjectTo(::Bool) = ProjectTo{NoTangent}()  # same projector as ProjectTo(::Abst
 ProjectTo(::Real) = ProjectTo{Real}()
 ProjectTo(::Complex) = ProjectTo{Complex}()
 ProjectTo(::Number) = ProjectTo{Number}()
-for T in (Float16, Float32, Float64, ComplexF16, ComplexF32, ComplexF64)
-    # Preserve low-precision floats as accidental promotion is a common performance bug
-    @eval ProjectTo(::$T) = ProjectTo{$T}()
-end
+
 ProjectTo(x::Integer) = ProjectTo(float(x))
 ProjectTo(x::Complex{<:Integer}) = ProjectTo(float(x))
 
 # Preserve low-precision floats as accidental promotion is a common performance bug
+for T in (Float16, Float32, Float64, ComplexF16, ComplexF32, ComplexF64)
+    @eval ProjectTo(::$T) = ProjectTo{$T}()
+end
+
 # In these cases we can just `convert` as we know we are dealing with plain and simple types
 (::ProjectTo{T})(dx::AbstractFloat) where T<:AbstractFloat = convert(T, dx)
 (::ProjectTo{T})(dx::Integer) where T<:AbstractFloat = convert(T, dx)  #needed to avoid ambiguity
+# simple Complex{<:AbstractFloat}} cases
+(::ProjectTo{T})(dx::Complex{<:AbstractFloat}) where {T<:Complex{<:AbstractFloat}} = convert(T, dx)
+(::ProjectTo{T})(dx::AbstractFloat) where {T<:Complex{<:AbstractFloat}} = convert(T, dx)
+(::ProjectTo{T})(dx::Complex{<:Integer}) where {T<:Complex{<:AbstractFloat}} = convert(T, dx)
+(::ProjectTo{T})(dx::Integer) where {T<:Complex{<:AbstractFloat}} = convert(T, dx)
 
 # Other numbers, including e.g. ForwardDiff.Dual and Symbolics.Sym, should pass through.
-# We assume (lacking evidence to the contrary) that 
+# We assume (lacking evidence to the contrary) that it is the right subspace of numebers
 # The (::ProjectTo{T})(::T) method doesn't work because we are allowing a different
 # Number type that might not be a subtype of the `project_type`.
 (::ProjectTo{<:Number})(dx::Number) = dx 
 
 (project::ProjectTo{<:Real})(dx::Complex) = project(real(dx))
-
-# Complex 
-
-# Preserve low-precision floats as accidental promotion is a common performance bug
-# In these cases we can just `convert` as we know we are dealing with plain and simple types
-(::ProjectTo{T})(dx::Complex{<:AbstractFloat}) where {T<:Complex{<:AbstractFloat}} = convert(T, dx)
-(::ProjectTo{T})(dx::AbstractFloat) where {T<:Complex{<:AbstractFloat}} = convert(T, dx)
-
-# For  on-AbstractFloat other types pass though to project each component
-function (::ProjectTo{<:Complex{T}})(dx::Complex) where T
-    project = ProjectTo(zero(T))
-    return Complex(project(real(dx)), project(imag(dx)))
-end
-(::ProjectTo{<:Complex{T}})(dx::Real) where T = Complex(ProjectTo(zero(T))(dx))
+(project::ProjectTo{<:Complex})(dx::Real) = project(complex(dx))
 
 # Arrays
 # If we don't have a more specialized `ProjectTo` rule, we just assume that there is
