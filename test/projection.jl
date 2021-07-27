@@ -21,18 +21,19 @@ Base.zero(x::Dual) = Dual(zero(x.value), zero(x.partial))
         # real / complex
         @test ProjectTo(1.0)(2.0 + 3im) === 2.0
         @test ProjectTo(1.0 + 2.0im)(3.0) === 3.0 + 0.0im
-        @test ProjectTo(2.0+3.0im)(1+1im) === 1.0+1.0im
-        @test ProjectTo(2.0)(1+1im) === 1.0
+        @test ProjectTo(2.0+3.0im)(1+1im) === 1 + 1im
+        @test ProjectTo(2.0)(1+1im) === 1
         
 
         # storage
         @test ProjectTo(1)(pi) === pi
-        @test ProjectTo(1 + im)(pi) === ComplexF64(pi)
+        @test ProjectTo(1 + im)(pi) === Complex(pi)
         @test ProjectTo(1//2)(3//4) === 3//4
         @test ProjectTo(1.0f0)(1 / 2) === 0.5f0
-        @test ProjectTo(1.0f0 + 2im)(3) === 3.0f0 + 0im
+        @test ProjectTo(1.0f0 + 2im)(3) === 3 + 0im
+        @test ProjectTo(1.0f0 + 2im)(3.0) === 3f0 + 0f0im
         @test ProjectTo(big(1.0))(2) === 2
-        @test ProjectTo(1.0)(2) === 2.0
+        @test ProjectTo(1.0)(2) === 2
     end
 
     @testset "Dual" begin # some weird Real subtype that we should basically leave alone
@@ -48,9 +49,9 @@ Base.zero(x::Dual) = Dual(zero(x.value), zero(x.partial))
     @testset "Base: arrays of numbers" begin
         pvec3 = ProjectTo([1, 2, 3])
         @test pvec3(1.0:3.0) === 1.0:3.0
-        @test pvec3(1:3) == 1.0:3.0  # would prefer ===, map(Float64, dx) would do that, not important
+        @test pvec3(1:3) == 1:3
         @test pvec3([1, 2, 3 + 4im]) == 1:3
-        @test eltype(pvec3([1, 2, 3.0f0])) === Float64
+        @test eltype(pvec3([1, 2, 3.0f0])) === Float32
 
         # reshape
         @test pvec3(reshape([1, 2, 3], 3, 1)) isa Vector
@@ -59,7 +60,7 @@ Base.zero(x::Dual) = Dual(zero(x.value), zero(x.partial))
 
         pmat = ProjectTo(rand(2, 2) .+ im)
         @test pmat([1 2; 3 4.0+5im]') isa Adjoint     # pass-through
-        @test pmat([1 2; 3 4]') isa Matrix{ComplexF64}  # broadcast type change
+        @test pmat([1 2; 3 4]') isa Matrix{<:Complex}  # broadcast type change
 
         pmat2 = ProjectTo(rand(2, 2)')
         @test pmat2([1 2; 3 4.0+5im]) isa Matrix  # adjoint matrices are not re-created
@@ -87,7 +88,7 @@ Base.zero(x::Dual) = Dual(zero(x.value), zero(x.partial))
         @test_throws MethodError ProjectTo(Any[:x, :y])
 
         @test ProjectTo(Any[1, 2])(1:2) == [1.0, 2.0]  # projects each number.
-        @test Tuple(ProjectTo(Any[1, 2 + 3im])(1:2)) === (1.0, 2.0 + 0.0im)
+        @test Tuple(ProjectTo(Any[1, 2 + 3im])(1:2)) === (1, 2 + 0im)
         @test ProjectTo(Any[true, false]) isa ProjectTo{NoTangent}
 
         # empty arrays
@@ -108,14 +109,14 @@ Base.zero(x::Dual) = Dual(zero(x.value), zero(x.partial))
         @test pzed isa ProjectTo{AbstractArray}
 
         pref = ProjectTo(Ref(2.0))
-        @test pref(Ref(3 + im))[] === 3.0
-        @test pref(4)[] === 4.0  # also re-wraps scalars
+        @test pref(Ref(3 + im))[] === 3
+        @test pref(4)[] === 4  # also re-wraps scalars
         @test pref(Ref{Any}(5.0)) isa Base.RefValue{Float64}
         pref2 = ProjectTo(Ref{Any}(6 + 7im))
-        @test pref2(Ref(8))[] === 8.0 + 0.0im
+        @test pref2(Ref(8))[] === 8 + 0im
 
         prefvec = ProjectTo(Ref([1, 2, 3 + 4im]))  # recurses into contents
-        @test prefvec(Ref(1:3)) isa Base.RefValue{Vector{ComplexF64}}
+        @test prefvec(Ref(1:3)) isa Base.RefValue{<:Vector{<:Complex}}
         @test_throws DimensionMismatch prefvec(Ref{Any}(1:5))
     end
 
@@ -126,7 +127,7 @@ Base.zero(x::Dual) = Dual(zero(x.value), zero(x.partial))
     @testset "LinearAlgebra: $adj vectors" for adj in [transpose, adjoint]
         # adjoint vectors
         padj = ProjectTo(adj([1, 2, 3]))
-        adjT = typeof(adj([1, 2, 3.0]))
+        adjT = adj == transpose ? Transpose : Adjoint
         @test padj(transpose(1:3)) isa adjT
         @test padj([4 5 6 + 7im]) isa adjT
         @test padj([4.0 5.0 6.0]) isa adjT
@@ -182,15 +183,15 @@ Base.zero(x::Dual) = Dual(zero(x.value), zero(x.partial))
         @test ProjectTo(UpperTriangular(randn(3, 3) .> 0))(randn(3, 3)) == NoTangent()
 
         # an experiment with allowing subspaces which aren't subtypes
-        @test psymm(Diagonal([1, 2, 3])) isa Diagonal{Float64}
-        @test pupp(Diagonal([1, 2, 3 + 4im])) isa Diagonal{Float64}
+        @test psymm(Diagonal([1, 2, 3])) isa Diagonal{Int}
+        @test pupp(Diagonal([1, 2, 3 + 4im])) isa Diagonal{Int}
     end
 
     @testset "LinearAlgebra: sparse structured matrices" begin
         pdiag = ProjectTo(Diagonal(1:3))
         @test pdiag(reshape(1:9, 3, 3)) == Diagonal([1, 5, 9])
         @test pdiag(pdiag(reshape(1:9, 3, 3))) == pdiag(reshape(1:9, 3, 3))
-        @test pdiag(rand(ComplexF32, 3, 3)) isa Diagonal{Float64}
+        @test pdiag(rand(ComplexF32, 3, 3)) isa Diagonal{Float32}
         @test pdiag(Diagonal(1.0:3.0)) === Diagonal(1.0:3.0)
         @test ProjectTo(Diagonal(randn(3) .> 0))(randn(3, 3)) == NoTangent()
         @test ProjectTo(Diagonal(randn(3) .> 0))(Diagonal(rand(3))) == NoTangent()
@@ -295,7 +296,7 @@ Base.zero(x::Dual) = Dual(zero(x.value), zero(x.partial))
         th = @thunk 1 + 2 + 3
         pth = ProjectTo(4 + 5im)(th)
         @test pth isa Thunk
-        @test unthunk(pth) === 6.0 + 0.0im
+        @test unthunk(pth) === 6 + 0im
     end
 
     @testset "display" begin
