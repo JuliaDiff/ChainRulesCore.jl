@@ -146,14 +146,11 @@ ProjectTo(x::Complex{<:Integer}) = ProjectTo(float(x))
 (::ProjectTo{T})(dx::AbstractFloat) where T<:AbstractFloat = convert(T, dx)
 (::ProjectTo{T})(dx::Integer) where T<:AbstractFloat = convert(T, dx)  #needed to avoid ambiguity
 
-# We asked for a number/real and they gave use one. We did ask for a particular concrete
-# type, but that is just for the preserving low precision floats, which is handled above.
-# Any Number/Real actually occupies the same subspace, so we can trust them.
-# In particular, this makes weirder Real subtypes that are not simply the values like
-# ForwardDiff.Dual and Symbolics.Sym work, because we stay out of their way.
+# Other numbers, including e.g. ForwardDiff.Dual and Symbolics.Sym, should pass through.
+# We assume (lacking evidence to the contrary) that 
+# The (::ProjectTo{T})(::T) method doesn't work because we are allowing a different
+# Number type that might not be a subtype of the `project_type`.
 (::ProjectTo{<:Number})(dx::Number) = dx 
-# If you remove the above julia sometimes can't find the (::ProjectTo{T})(::T) for complex T
-# Seems like it might be a julia bug?
 
 (project::ProjectTo{<:Real})(dx::Complex) = project(real(dx))
 
