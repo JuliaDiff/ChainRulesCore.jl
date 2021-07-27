@@ -135,44 +135,41 @@ ProjectTo(::Real) = ProjectTo{Real}()
 ProjectTo(::Complex) = ProjectTo{Complex}()
 ProjectTo(::Number) = ProjectTo{Number}()
 for T in (Float16, Float32, Float64, ComplexF16, ComplexF32, ComplexF64)
-    # Preserve low-precision floats as accidental promotion is a common perforance bug    
+    # Preserve low-precision floats as accidental promotion is a common performance bug
     @eval ProjectTo(::$T) = ProjectTo{$T}()
 end
 ProjectTo(x::Integer) = ProjectTo(float(x))
 ProjectTo(x::Complex{<:Integer}) = ProjectTo(float(x))
 
-# Preserve low-precision floats as accidental promotion is a common perforance bug
+# Preserve low-precision floats as accidental promotion is a common performance bug
+# In these cases we can just `convert` as we know we are dealing with plain and simple types
 (::ProjectTo{T})(dx::AbstractFloat) where T<:AbstractFloat = convert(T, dx)
-(::ProjectTo{T})(dx::Integer) where T<:AbstractFloat = convert(T, dx)
-
+(::ProjectTo{T})(dx::Integer) where T<:AbstractFloat = convert(T, dx)  #needed to avoid ambiguity
 
 # We asked for a number/real and they gave use one. We did ask for a particular concrete
 # type, but that is just for the preserving low precision floats, which is handled above.
 # Any Number/Real actually occupies the same subspace, so we can trust them.
 # In particular, this makes weirder Real subtypes that are not simply the values like
 # ForwardDiff.Dual and Symbolics.Sym work, because we stay out of their way.
-(::ProjectTo{<:Number})(dx::Number) where {T<:Number} = dx
-(::ProjectTo{<:Real})(dx::Real) = dx
+(::ProjectTo{<:Number})(dx::Number) = dx 
+# If you remove the above julia sometimes can't find the (::ProjectTo{T})(::T) for complex T
+# Seems like it might be a julia bug?
 
-(::ProjectTo{T})(dx::Complex) where T<:Real = ProjectTo(zero(T))(real(dx))
+(project::ProjectTo{<:Real})(dx::Complex) = project(real(dx))
 
 # Complex 
-function (proj::ProjectTo{<:Complex{<:AbstractFloat}})(
-    dx::Complex{<:Union{AbstractFloat,Integer}}
-)   
-    # in this case we can just convert as we know we are dealing with 
-    # boring floating point types or integers
-    return convert(project_type(proj), dx)
-end
-# Pass though non-AbstractFloat to project each component
+
+# Preserve low-precision floats as accidental promotion is a common performance bug
+# In these cases we can just `convert` as we know we are dealing with plain and simple types
+(::ProjectTo{T})(dx::Complex{<:AbstractFloat}) where {T<:Complex{<:AbstractFloat}} = convert(T, dx)
+(::ProjectTo{T})(dx::AbstractFloat) where {T<:Complex{<:AbstractFloat}} = convert(T, dx)
+
+# For  on-AbstractFloat other types pass though to project each component
 function (::ProjectTo{<:Complex{T}})(dx::Complex) where T
     project = ProjectTo(zero(T))
     return Complex(project(real(dx)), project(imag(dx)))
 end
-function (::ProjectTo{<:Complex{T}})(dx::Real) where T
-    project = ProjectTo(zero(T))
-    return Complex(project(dx), project(zero(dx)))
-end
+(::ProjectTo{<:Complex{T}})(dx::Real) where T = Complex(ProjectTo(zero(T))(dx))
 
 # Arrays
 # If we don't have a more specialized `ProjectTo` rule, we just assume that there is
