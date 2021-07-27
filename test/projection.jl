@@ -2,6 +2,15 @@ using ChainRulesCore, Test
 using LinearAlgebra, SparseArrays
 using OffsetArrays, BenchmarkTools
 
+# Like ForwardDiff.jl's Dual
+struct Dual{T<:Real} <: Real
+    value::T
+    partial::T
+end
+Base.real(x::Dual) = x
+Base.float(x::Dual) = Dual(float(x.value), float(x.partial))
+Base.zero(x::Dual) = Dual(zero(x.value), zero(x.partial))
+
 @testset "projection" begin
 
     #####
@@ -12,14 +21,28 @@ using OffsetArrays, BenchmarkTools
         # real / complex
         @test ProjectTo(1.0)(2.0 + 3im) === 2.0
         @test ProjectTo(1.0 + 2.0im)(3.0) === 3.0 + 0.0im
+        @test ProjectTo(2.0+3.0im)(1+1im) === 1.0+1.0im
+        @test ProjectTo(2.0)(1+1im) === 1.0
+        
 
         # storage
-        @test ProjectTo(1)(pi) === Float64(pi)
+        @test ProjectTo(1)(pi) === pi
         @test ProjectTo(1 + im)(pi) === ComplexF64(pi)
         @test ProjectTo(1//2)(3//4) === 3//4
         @test ProjectTo(1.0f0)(1 / 2) === 0.5f0
         @test ProjectTo(1.0f0 + 2im)(3) === 3.0f0 + 0im
         @test ProjectTo(big(1.0))(2) === 2
+        @test ProjectTo(1.0)(2) === 2.0
+    end
+
+    @testset "Dual" begin # some weird Real subtype that we should basically leave alone
+        @test ProjectTo(1.0)(Dual(1.0, 2.0)) isa Dual
+        @test ProjectTo(1.0)(Dual(1, 2)) isa Dual
+        @test ProjectTo(1.0 + 1im)(Dual(1.0, 2.0)) isa Complex{<:Dual}
+        @test ProjectTo(1.0 + 1im)(
+            Complex(Dual(1.0, 2.0), Dual(1.0, 2.0))
+        ) isa Complex{<:Dual}
+        @test ProjectTo(1.0)(Complex(Dual(1.0, 2.0), Dual(1.0, 2.0))) isa Dual
     end
 
     @testset "Base: arrays of numbers" begin
