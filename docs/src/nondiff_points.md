@@ -18,12 +18,12 @@ Which you *can* do.
 However, this is not useful.
 Instead we introduce what we call the **sub/super-differential convention**:
 
-> It is always permissable to return any element of the sub/super-differential.
+> It is always permissible to return any element of the sub/super-differential.
 > You should return the most useful.
 
 Or equivalently but considering the trivial singleton sub/super-differential seperately:
 
-> At any point where the derivative is not defined, it is permissable to return any element of the sub/super-differential.
+> At any point where the derivative is not defined, it is permissible to return any element of the sub/super-differential.
 > You should return the most useful.
 
 We will justify this further below, but first let us discuss what it means.
