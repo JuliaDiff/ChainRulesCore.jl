@@ -1,5 +1,8 @@
 # What to return for non-differentiable points
-
+!!! info "What is the short version?"
+    If the function is not differentiable due to e.g. a branch, like `abs`, your rule can reasonably claim the derivative at that point is the value from either branch, *or* any value in-between (e.g. for `abs` claiming 0 is a good idea).
+    If it is not differentiable due to the primal not being defined on one side, you can set it to what ever you like.
+    Your rule should claim a derivative that is *useful*.
 In calculus one learns that if the derivative as computed by approaching from the left,
 and the derivative one computes as approaching from the right are not equal then the derivative is not defined,
 and we say the function is not differentiable at that point.
