@@ -90,7 +90,7 @@ Such a thing would look like:
 struct SupportsMutation end
 
 function rrule(
-    ::RuleConfig{>:SupportsMutatation}, typeof(push!), x::Vector
+    ::RuleConfig{>:SupportsMutation}, typeof(push!), x::Vector
 )
     y = push!(x)
 
