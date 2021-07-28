@@ -33,8 +33,8 @@ We will justify this further below, but first let us discuss what it means.
 
 ## What is the sub/super-differential?
 
-The subderivative is defined only for locally convex functions, where-as the super-deriviative is fined only for locally concave functions.
-For our purpose we, basically never care which we are working with  and so write sub/super-derivative.
+The subderivative is defined only for locally convex functions, whereas the super-derivative is defined only for locally concave functions.
+For our purpose we basically never care which we are working with and so write sub/super-derivative.
 
 For a function $f$ at some point $x_0$ a sub/super-derivative is a real number $c$ such that there exists a open ball $\mathcal{B} \subset \mathrm{dom}(f)$ containing $x_0$,
 and for all points $z \in \mathcal{B}$ the following holds:
@@ -126,7 +126,7 @@ It will agree with either the forwards or reverse finite differencing results.
 Practically speaking, people are generally using AD to perform some gradient descent like optimization procedure.
 `NaN` and `Inf` do not generally take us to nice places.
 Erroring can be worse, especially if it is a local minima -- the optimization fully converges to that minima and then throws an error rather than reporting the result.
-If the primal function takes a non-finite value or errors on one side, then we are in the case that we are at a boundry of the domain.
+If the primal function takes a non-finite value or errors on one side, then we are in the case that we are at a boundary of the domain.
 Which means we are free to chose *any* value.
 In particular we often want to chose value of the derivative from **the other side where the primal is defined.**
 
