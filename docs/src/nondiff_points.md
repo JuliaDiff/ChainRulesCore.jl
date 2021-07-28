@@ -139,6 +139,8 @@ We are trying to accomplish some goal, and this approach works well.
 One way to think about this  convention is to take an infinitely sharp discontinuity in a function and replace that discontinuty with a very (infinitesimally) small, smooth corner.
 Due to the intermediate value theorem, we can then say that over this tiny interval, any derivative between the two extremes is realized and we are free to pick any one of them that we find useful as the 'canonical' value.
 
+![animation showing `abs(x)` transforming into `x^2`](https://user-images.githubusercontent.com/29157027/127267988-92ca0899-ca33-4dd6-af45-e5a085283c83.gif)
+
 More specifically, consider our initial examples:
 `abs_left(x) = (x <= 0) ? -x : x`, and `abs_right(x) = (x < 0) ? -x : x`.
 These are a a primal level indistinguishable to the user.
