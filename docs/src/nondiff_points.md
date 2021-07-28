@@ -134,7 +134,11 @@ In particular we often want to chose value of the derivative from **the other si
 ## Why is the sub/super-differential convention permissible?
 
 Math isn't real, and AD doesn't do calculus.
-We are trying to accomplish some goal, and this is approach works well.
+We are trying to accomplish some goal, and this approach works well.
+
+One way to think about this  convention is to take an infinitely sharp discontinuity in a function and replace that discontinuty with a very (infinitesimally) small, smooth corner.
+Due to the intermediate value theorem, we can then say that over this tiny interval, any derivative between the two extremes is realized and we are free to pick any one of them that we find useful as the 'canonical' value.
+
 More specifically, consider our initial examples:
 `abs_left(x) = (x <= 0) ? -x : x`, and `abs_right(x) = (x < 0) ? -x : x`.
 These are a a primal level indistinguishable to the user.
