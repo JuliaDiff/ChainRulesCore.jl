@@ -30,6 +30,8 @@ There are three reasons the rules also calculate the `f(x)`.
 2. For many `rrule`s the output value is used in the definition of the pullback. For example `tan`, `sigmoid` etc.
 3. For some `frule`s there exists a single, non-separable operation that will compute both derivative and primal result. For example many of the methods for [differential equation sensitivity analysis](https://docs.juliadiffeq.org/stable/analysis/sensitivity/#sensitivity-1).
 
+For more information and examples see the [design notes on changing the primal](@ref change_primal).
+
 ## Where are the derivatives for keyword arguments?
 _pullbacks_ do not return a sensitivity for keyword arguments;
 similarly _pushfowards_ do not accept a perturbation for keyword arguments.

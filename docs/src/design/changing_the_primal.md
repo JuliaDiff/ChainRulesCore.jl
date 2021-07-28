@@ -1,4 +1,4 @@
-# Design Notes: Why can you change the primal computation?
+# [Design Notes: Why can you change the primal computation?](@id change_primal)
 
 These design notes are to help you understand ChainRules.jl's [`rrule`](@ref) function.
 It explains why we have a `rrule` function that returns both the primal result (i.e. the output for the forward pass) and the pullback as a closure.
