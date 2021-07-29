@@ -365,7 +365,7 @@ end
 
 # another strategy is just to use the AbstractArray method
 function ProjectTo(x::Tridiagonal{T}) where {T<:Number}
-    notparent = invoke(ProjectTo, Tuple{AbstractArray{T}} where {T<:Number}, x)
+    notparent = invoke(ProjectTo, Tuple{AbstractArray{T2}} where {T2<:Number}, x)
     return ProjectTo{Tridiagonal}(; notparent=notparent)
 end
 function (project::ProjectTo{Tridiagonal})(dx::AbstractArray)
