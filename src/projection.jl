@@ -7,9 +7,9 @@ The type `T` is meant to encode the largest acceptable space, so usually
 this enforces `p(dx)::T`. But some subspaces which aren't subtypes of `T` may
 be allowed, and in particular `dx::AbstractZero` always passes through.
 
-Usually `T` is the "outermost" part of the type, and `p` stores additional 
+Usually `T` is the "outermost" part of the type, and `p` stores additional
 properties such as projectors for each constituent field.
-Arrays have either one projector `p.element` expressing the element type for 
+Arrays have either one projector `p.element` expressing the element type for
 an array of numbers, or else an array of projectors `p.elements`.
 These properties can be supplied as keyword arguments on construction,
 `p = ProjectTo{T}(; field=data, element=Projector(x))`. For each `T` in use,
@@ -21,7 +21,19 @@ struct ProjectTo{P,D<:NamedTuple}
     info::D
 end
 ProjectTo{P}(info::D) where {P,D<:NamedTuple} = ProjectTo{P,D}(info)
-ProjectTo{P}(; kwargs...) where {P} = ProjectTo{P}(NamedTuple(kwargs))
+
+# We'd like to write
+# ProjectTo{P}(; kwargs...) where {P} = ProjectTo{P}(NamedTuple(kwargs))
+#
+# but the kwarg dispatcher has non-trivial complexity. See rules.jl for an
+# explanation of this trick.
+const EMPTY_NT = NamedTuple()
+ProjectTo{P}() where {P} = ProjectTo{P}(EMPTY_NT)
+
+const Type_kwfunc = Core.kwftype(Type).instance
+function (::typeof(Type_kwfunc))(kws::Any, ::Type{ProjectTo{P}}) where {P}
+    ProjectTo{P}(NamedTuple(kws))
+end
 
 Base.getproperty(p::ProjectTo, name::Symbol) = getproperty(backing(p), name)
 Base.propertynames(p::ProjectTo) = propertynames(backing(p))
@@ -41,13 +53,13 @@ function Base.show(io::IO, project::ProjectTo{T}) where {T}
 end
 
 # Structs
-# Generic method is to recursively make `ProjectTo`s for all their fields. Not actually 
+# Generic method is to recursively make `ProjectTo`s for all their fields. Not actually
 # used on unknown structs, but useful for handling many known ones in the same manner.
 function generic_projector(x::T; kw...) where {T}
     fields_nt::NamedTuple = backing(x)
     fields_proj = map(_maybe_projector, fields_nt)
     # We can't use `T` because if we have `Foo{Matrix{E}}` it should be allowed to make a
-    # `Foo{Diagaonal{E}}` etc. We assume it has a default constructor that has all fields 
+    # `Foo{Diagaonal{E}}` etc. We assume it has a default constructor that has all fields
     # but if it doesn't `construct` will give a good error message.
     wrapT = T.name.wrapper
     # Official API for this? https://github.com/JuliaLang/julia/issues/35543
@@ -100,8 +112,8 @@ true
 
 julia> unthunk(pd(th))
 3×3 Diagonal{Float64, Vector{Float64}}:
- 1.0   ⋅    ⋅ 
-  ⋅   5.0   ⋅ 
+ 1.0   ⋅    ⋅
+  ⋅   5.0   ⋅
   ⋅    ⋅   9.0
 
 julia> ProjectTo([1 2; 3 4]')  # no special structure, integers are promoted to float(x)
@@ -156,7 +168,7 @@ end
 # We assume (lacking evidence to the contrary) that it is the right subspace of numebers
 # The (::ProjectTo{T})(::T) method doesn't work because we are allowing a different
 # Number type that might not be a subtype of the `project_type`.
-(::ProjectTo{<:Number})(dx::Number) = dx 
+(::ProjectTo{<:Number})(dx::Number) = dx
 
 (project::ProjectTo{<:Real})(dx::Complex) = project(real(dx))
 (project::ProjectTo{<:Complex})(dx::Real) = project(complex(dx))
@@ -407,7 +419,7 @@ function (project::ProjectTo{SparseVector})(dx::SparseVector)
     # When sparsity pattern is unchanged, all the time is in checking this,
     # perhaps some simple hash/checksum might be good enough?
     samepattern = project.nzind == dx.nzind
-    # samepattern = length(project.nzind) == length(dx.nzind) 
+    # samepattern = length(project.nzind) == length(dx.nzind)
     if eltype(dx) <: project_type(project.element) && samepattern
         return dx
     elseif samepattern
