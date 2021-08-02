@@ -169,7 +169,7 @@ function scalar_frule_expr(__source__, f, call, setup_stmts, inputs, partials)
     return @strip_linenos quote
         # _ is the input derivative w.r.t. function internals. since we do not
         # allow closures/functors with @scalar_rule, it is always ignored
-        function ChainRulesCore.frule((_, $(Δs...)), ::typeof($f), $(inputs...))
+        function ChainRulesCore.frule((_, $(Δs...)), ::Core.Typeof($f), $(inputs...))
             $(__source__)
             $(esc(:Ω)) = $call
             $(setup_stmts...)
@@ -206,7 +206,7 @@ function scalar_rrule_expr(__source__, f, call, setup_stmts, inputs, partials)
     end
 
     return @strip_linenos quote
-        function ChainRulesCore.rrule(::typeof($f), $(inputs...))
+        function ChainRulesCore.rrule(::Core.Typeof($f), $(inputs...))
             $(__source__)
             $(esc(:Ω)) = $call
             $(setup_stmts...)
@@ -233,7 +233,7 @@ end
 Returns the expression for the propagation of
 the input gradient `Δs` though the partials `∂s`.
 Specify `_conj = true` to conjugate the partials.
-Projector `proj` is a function that will be applied at the end; 
+Projector `proj` is a function that will be applied at the end;
     for `rrules` it is usually a `ProjectTo(x)`, for `frules` it is `identity`
 """
 function propagation_expr(Δs, ∂s, _conj=false, proj=identity)
