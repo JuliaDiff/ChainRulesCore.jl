@@ -69,6 +69,10 @@ Base.zero(x::Dual) = Dual(zero(x.value), zero(x.partial))
         @test prow(transpose([1, 2, 3 + 4.0im])) isa Matrix  # row vectors may not pass through 
         @test prow(adjoint([1, 2, 3 + 5im])) == [1 2 3 - 5im]
         @test prow(adjoint([1, 2, 3])) isa Matrix
+
+        # some bugs
+        @test pvec3(fill(NoTangent(), 3)) === NoTangent()  #410, was an array of such
+        @test ProjectTo([pi])([1]) isa Vector{Int}  #423, was Irrational -> Bool -> NoTangent
     end
 
     @testset "Base: arrays of arrays, etc" begin
@@ -160,6 +164,9 @@ Base.zero(x::Dual) = Dual(zero(x.value), zero(x.partial))
             @test pvecmat(collect.(zs)) == zs
             @test pvecmat(collect.(zs)) isa LinearAlgebra.AdjOrTransAbsVec
         end
+
+        # issue #410
+        @test padj([NoTangent() NoTangent() NoTangent()]) === NoTangent()
     end
 
     @testset "LinearAlgebra: dense structured matrices" begin

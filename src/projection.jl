@@ -179,7 +179,7 @@ end
 
 # For arrays of numbers, just store one projector:
 function ProjectTo(x::AbstractArray{T}) where {T<:Number}
-    element = ProjectTo(zero(T))
+    element = T <: Irrational ? ProjectTo{Real}() : ProjectTo(zero(T))
     if element isa ProjectTo{<:AbstractZero}
         return ProjectTo{NoTangent}() # short-circuit if all elements project to zero
     else
@@ -221,6 +221,9 @@ function (project::ProjectTo{AbstractArray})(dx::AbstractArray{S,M}) where {S,M}
     end
     return dz
 end
+
+# Trivial case, this won't collapse Any[NoTangent(), NoTangent()] but that's OK.
+(project::ProjectTo{AbstractArray})(dx::AbstractArray{<:AbstractZero}) = NoTangent()
 
 # Row vectors aren't acceptable as gradients for 1-row matrices:
 function (project::ProjectTo{AbstractArray})(dx::LinearAlgebra.AdjOrTransAbsVec)
