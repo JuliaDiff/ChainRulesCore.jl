@@ -164,6 +164,9 @@ Base.zero(x::Dual) = Dual(zero(x.value), zero(x.partial))
             @test pvecmat(collect.(zs)) == zs
             @test pvecmat(collect.(zs)) isa LinearAlgebra.AdjOrTransAbsVec
         end
+
+        # issue #410
+        @test padj([NoTangent() NoTangent() NoTangent()]) === NoTangent()
     end
 
     @testset "LinearAlgebra: dense structured matrices" begin

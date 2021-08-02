@@ -222,7 +222,7 @@ function (project::ProjectTo{AbstractArray})(dx::AbstractArray{S,M}) where {S,M}
     return dz
 end
 
-# Trivial case -- won't collapse Any[NoTangent(), NoTangent()]
+# Trivial case, this won't collapse Any[NoTangent(), NoTangent()] but that's OK.
 (project::ProjectTo{AbstractArray})(dx::AbstractArray{<:AbstractZero}) = NoTangent()
 
 # Row vectors aren't acceptable as gradients for 1-row matrices:
