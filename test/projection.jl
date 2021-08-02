@@ -71,8 +71,8 @@ Base.zero(x::Dual) = Dual(zero(x.value), zero(x.partial))
         @test prow(adjoint([1, 2, 3])) isa Matrix
 
         # some bugs
-        @test pvec3(fill(NoTangent(), 3)) === NoTangent() #410, was an array of such
-        @test ProjectTo([pi])([1]) isa Vector{Int} #423, was Irrational -> Bool -> NoTangent
+        @test pvec3(fill(NoTangent(), 3)) === NoTangent()  #410, was an array of such
+        @test ProjectTo([pi])([1]) isa Vector{Int}  #423, was Irrational -> Bool -> NoTangent
     end
 
     @testset "Base: arrays of arrays, etc" begin

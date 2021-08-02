@@ -223,9 +223,7 @@ function (project::ProjectTo{AbstractArray})(dx::AbstractArray{S,M}) where {S,M}
 end
 
 # Trivial case -- won't collapse Any[NoTangent(), NoTangent()]
-function (project::ProjectTo{AbstractArray})(dx::AbstractArray{<:AbstractZero})
-    return NoTangent()
-end
+(project::ProjectTo{AbstractArray})(dx::AbstractArray{<:AbstractZero}) = NoTangent()
 
 # Row vectors aren't acceptable as gradients for 1-row matrices:
 function (project::ProjectTo{AbstractArray})(dx::LinearAlgebra.AdjOrTransAbsVec)
