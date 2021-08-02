@@ -199,11 +199,7 @@ function ProjectTo(xs::AbstractArray)
 end
 
 function (project::ProjectTo{AbstractArray})(dx::AbstractArray{S,M}) where {S,M}
-    # Trivial case:
-    if all(el -> el isa AbstractZero, dx)
-        return NoTangent()
-    end
-    # Now deal with shape. The rule is that we reshape to add or remove trivial dimensions
+    # First deal with shape. The rule is that we reshape to add or remove trivial dimensions
     # like dx = ones(4,1), where x = ones(4), but throw an error on dx = ones(1,4) etc.
     dy = if axes(dx) == project.axes
         dx
@@ -224,6 +220,11 @@ function (project::ProjectTo{AbstractArray})(dx::AbstractArray{S,M}) where {S,M}
         map((f, y) -> f(y), project.elements, dy)
     end
     return dz
+end
+
+# Trivial case -- won't collapse Any[NoTangent(), NoTangent()]
+function (project::ProjectTo{AbstractArray})(dx::AbstractArray{<:AbstractZero})
+    return NoTangent()
 end
 
 # Row vectors aren't acceptable as gradients for 1-row matrices:

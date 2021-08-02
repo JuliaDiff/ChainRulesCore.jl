@@ -72,7 +72,6 @@ Base.zero(x::Dual) = Dual(zero(x.value), zero(x.partial))
 
         # some bugs
         @test pvec3(fill(NoTangent(), 3)) === NoTangent() #410, was an array of such
-        @test pvec3(Any[NoTangent(), NoTangent(), NoTangent()]) === NoTangent()
         @test ProjectTo([pi])([1]) isa Vector{Int} #423, was Irrational -> Bool -> NoTangent
     end
 
