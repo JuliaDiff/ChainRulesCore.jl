@@ -69,6 +69,11 @@ Base.zero(x::Dual) = Dual(zero(x.value), zero(x.partial))
         @test prow(transpose([1, 2, 3 + 4.0im])) isa Matrix  # row vectors may not pass through 
         @test prow(adjoint([1, 2, 3 + 5im])) == [1 2 3 - 5im]
         @test prow(adjoint([1, 2, 3])) isa Matrix
+
+        # some bugs
+        @test pvec3(fill(NoTangent(), 3)) === NoTangent() #410, was an array of such
+        @test pvec3(Any[NoTangent(), NoTangent(), NoTangent()]) === NoTangent()
+        @test ProjectTo([pi])([1]) isa Vector{Int} #423, was Irrational -> Bool -> NoTangent
     end
 
     @testset "Base: arrays of arrays, etc" begin

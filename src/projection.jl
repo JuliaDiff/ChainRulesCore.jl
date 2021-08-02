@@ -179,7 +179,7 @@ end
 
 # For arrays of numbers, just store one projector:
 function ProjectTo(x::AbstractArray{T}) where {T<:Number}
-    element = ProjectTo(zero(T))
+    element = T <: Irrational ? ProjectTo{Real}() : ProjectTo(zero(T))
     if element isa ProjectTo{<:AbstractZero}
         return ProjectTo{NoTangent}() # short-circuit if all elements project to zero
     else
@@ -199,7 +199,11 @@ function ProjectTo(xs::AbstractArray)
 end
 
 function (project::ProjectTo{AbstractArray})(dx::AbstractArray{S,M}) where {S,M}
-    # First deal with shape. The rule is that we reshape to add or remove trivial dimensions
+    # Trivial case:
+    if all(el -> el isa AbstractZero, dx)
+        return NoTangent()
+    end
+    # Now deal with shape. The rule is that we reshape to add or remove trivial dimensions
     # like dx = ones(4,1), where x = ones(4), but throw an error on dx = ones(1,4) etc.
     dy = if axes(dx) == project.axes
         dx
