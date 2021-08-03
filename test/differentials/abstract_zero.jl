@@ -4,6 +4,14 @@
         @test iszero(NoTangent())
     end
 
+    @testset "Linear operators" begin
+        @test view(ZeroTangent(), 1) == ZeroTangent()
+        @test view(NoTangent(), 1, 2) == NoTangent()
+
+        @test sum(ZeroTangent()) == ZeroTangent()
+        @test sum(NoTangent(); dims=2) == NoTangent()
+    end
+
     @testset "ZeroTangent" begin
         z = ZeroTangent()
         @test z + z === z

@@ -28,6 +28,9 @@ Base.convert(::Type{T}, x::AbstractZero) where T <: Number = zero(T)
 
 Base.getindex(z::AbstractZero, k) = z
 
+Base.view(z::AbstractZero, ind...) = z
+Base.sum(z::AbstractZero; dims=:) = z
+
 """
     ZeroTangent() <: AbstractZero
 
