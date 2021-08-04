@@ -59,10 +59,8 @@ function generic_projector(x::T; kw...) where {T}
     fields_nt::NamedTuple = backing(x)
     fields_proj = map(_maybe_projector, fields_nt)
     # We can't use `T` because if we have `Foo{Matrix{E}}` it should be allowed to make a
-    # `Foo{Diagaonal{E}}` etc. We assume it has a default constructor that has all fields
-    # but if it doesn't `construct` will give a good error message.
+    # `Foo{Diagaonal{E}}` etc. Official API for this? https://github.com/JuliaLang/julia/issues/35543
     wrapT = T.name.wrapper
-    # Official API for this? https://github.com/JuliaLang/julia/issues/35543
     return ProjectTo{wrapT}(; fields_proj..., kw...)
 end
 
@@ -252,11 +250,18 @@ end
 
 # Ref
 # This can't be its own tangent, so it standardises on a Tangent{<:Ref}
-ProjectTo(x::Ref) = ProjectTo{Ref}(; reftype=typeof(x), x=ProjectTo(x[]))
-(project::ProjectTo{Ref})(dx::Ref) = Tangent{project.reftype}(; x=project.x(dx[]))
-(project::ProjectTo{Ref})(dx::Tangent) = Tangent{project.reftype}(; x=project.x(dx.x))
+function ProjectTo(x::Ref)
+    sub = ProjectTo(x[])  # should we worry about isdefined(Ref{Vector{Int}}(), :x)? 
+    if sub isa ProjectTo{<:AbstractZero}
+        return ProjectTo{NoTangent}()
+    else
+        return ProjectTo{Ref}(; type=typeof(x), x=sub)
+    end
+end
+(project::ProjectTo{Ref})(dx::Ref) = Tangent{project.type}(; x=project.x(dx[]))
+(project::ProjectTo{Ref})(dx::Tangent) = Tangent{project.type}(; x=project.x(dx.x))
 # Since this works like a zero-array in broadcasting, it should also accept a number:
-(project::ProjectTo{Ref})(dx::Number) = Tangent{project.reftype}(; x=project.x(dx))
+(project::ProjectTo{Ref})(dx::Number) = Tangent{project.type}(; x=project.x(dx))
 
 #####
 ##### `LinearAlgebra`
