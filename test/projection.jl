@@ -100,7 +100,7 @@ Base.zero(x::Dual) = Dual(zero(x.value), zero(x.partial))
         @test ProjectTo(Bool[]) isa ProjectTo{NoTangent}
     end
 
-    @testset "Base: zero-arrays & Ref" begin
+    @testset "Base: zero-arrays" begin
         pzed = ProjectTo(fill(1.0))
         @test pzed(fill(3.14)) == fill(3.14)  # easy
         @test pzed(fill(3)) == fill(3.0)      # broadcast type change must not produce number
@@ -110,16 +110,18 @@ Base.zero(x::Dual) = Dual(zero(x.value), zero(x.partial))
         @test_throws DimensionMismatch ProjectTo([1])(3.14 + im) # other array projectors don't accept numbers
         @test_throws DimensionMismatch ProjectTo(hcat([1, 2]))(3.14)
         @test pzed isa ProjectTo{AbstractArray}
+    end
 
+    @testset "Base: Ref" begin
         pref = ProjectTo(Ref(2.0))
-        @test pref(Ref(3 + im))[] === 3.0
-        @test pref(4)[] === 4.0  # also re-wraps scalars
-        @test pref(Ref{Any}(5.0)) isa Base.RefValue{Float64}
+        @test pref(Ref(3 + im)).x === 3.0
+        @test pref(4).x === 4.0  # also re-wraps scalars
+        @test pref(Ref{Any}(5.0)) isa Tangent{<:Base.RefValue}
         pref2 = ProjectTo(Ref{Any}(6 + 7im))
-        @test pref2(Ref(8))[] === 8.0 + 0.0im
+        @test pref2(Ref(8)).x === 8.0 + 0.0im
 
         prefvec = ProjectTo(Ref([1, 2, 3 + 4im]))  # recurses into contents
-        @test prefvec(Ref(1:3)) isa Base.RefValue{Vector{ComplexF64}}
+        @test prefvec(Ref(1:3)).x isa Vector{ComplexF64}
         @test_throws DimensionMismatch prefvec(Ref{Any}(1:5))
     end
 
@@ -303,6 +305,19 @@ Base.zero(x::Dual) = Dual(zero(x.value), zero(x.partial))
         pth = ProjectTo(4 + 5im)(th)
         @test pth isa Thunk
         @test unthunk(pth) === 6.0 + 0.0im
+    end
+
+    @testset "Tangent" begin
+        x = 1:3.0
+        dx = Tangent{typeof(x)}(; step=0.1, ref=NoTangent());
+        @test ProjectTo(x)(dx) isa Tangent
+        @test ProjectTo(x)(dx).step === 0.1
+        @test ProjectTo(x)(dx).offset isa AbstractZero
+
+        pref = ProjectTo(Ref(2.0))
+        dy = Tangent{typeof(Ref(2.0))}(x = 3+4im)
+        @test pref(dy) isa Tangent{<:Base.RefValue}
+        @test pref(dy).x === 3.0
     end
 
     @testset "display" begin
