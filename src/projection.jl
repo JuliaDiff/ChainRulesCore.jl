@@ -270,6 +270,7 @@ end
 # Row vectors
 function ProjectTo(x::LinearAlgebra.AdjointAbsVec)
     sub = ProjectTo(parent(x))
+    sub isa ProjectTo{<:AbstractZero} && return sub
     return ProjectTo{Adjoint}(; parent=sub)
 end
 # Note that while [1 2; 3 4]' isa Adjoint, we use ProjectTo{Adjoint} only to encode AdjointAbsVec.
@@ -288,6 +289,7 @@ end
 
 function ProjectTo(x::LinearAlgebra.TransposeAbsVec)
     sub = ProjectTo(parent(x))
+    sub isa ProjectTo{<:AbstractZero} && return sub
     return ProjectTo{Transpose}(; parent=sub)
 end
 function (project::ProjectTo{Transpose})(dx::LinearAlgebra.AdjOrTransAbsVec)

@@ -125,7 +125,7 @@ Base.zero(x::Dual) = Dual(zero(x.value), zero(x.partial))
         @test_throws DimensionMismatch prefvec(Ref{Any}(1:5))
 
         @test ProjectTo(Ref(true)) isa ProjectTo{NoTangent}
-        @test_broken ProjectTo(Ref([false]')) isa ProjectTo{NoTangent}
+        @test ProjectTo(Ref([false]')) isa ProjectTo{NoTangent}
     end
 
     #####
@@ -172,6 +172,9 @@ Base.zero(x::Dual) = Dual(zero(x.value), zero(x.partial))
 
         # issue #410
         @test padj([NoTangent() NoTangent() NoTangent()]) === NoTangent()
+
+        @test ProjectTo(adj([true, false]))([1 2]) isa AbstractZero
+        @test ProjectTo(adj([[true], [false]])) isa ProjectTo{<:AbstractZero}
     end
 
     @testset "LinearAlgebra: dense structured matrices" begin
