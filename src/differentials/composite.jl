@@ -23,10 +23,10 @@ function is provided.
 
 # Examples
 ```jldoctest
-julia> y = Ref(3.0)
+julia> y = Ref(3.0)  # simple struct, just one field
 Base.RefValue{Float64}(3.0)
 
-julia> y.x === y[]  # simple struct, just one field
+julia> y.x === y[]
 true
 
 julia> dy = Tangent{typeof(y)}(; x=1.1)
@@ -53,8 +53,30 @@ ZeroTangent()
 julia> dx′ = canonicalize(dx)
 Tangent{LinRange{Float64}}(start = 0.0, stop = 1.0, len = ZeroTangent(), lendiv = ZeroTangent())
 
-julia> ChainRulesCore.construct(typeof(x), ChainRulesCore.backing(dx′))  # does not have default constructor
-ERROR: MethodError: no method matching LinRange{Float64}(::Float64, ::Float64, ::ZeroTangent, ::ZeroTangent)
+julia> z = Symmetric(Float32[1 2; 300 4], :U);  # here a gradient for :U would make no sense
+
+julia> ChainRulesCore.backing(z)
+(data = Float32[1.0 2.0; 300.0 4.0], uplo = 'U')
+
+julia> dz = Tangent{typeof(z)}(; data = [0 1.2; 0 0])
+Tangent{Symmetric{Float32, Matrix{Float32}}}(data = [0.0 1.2; 0.0 0.0],)
+
+julia> dz.uplo
+ZeroTangent()
+
+julia> dz′ = canonicalize(dz)
+Tangent{Symmetric{Float32, Matrix{Float32}}}(data = [0.0 1.2; 0.0 0.0], uplo = ZeroTangent())
+```
+
+For the last two examples, `construct` will fail. This may be seen as an accident of their
+constuctors, but mathematically, the gradient of a `LinRange` isn't obviously represented
+as another `LinRange`; and while the gradient of a `Symmetric` matrix can be, is needs
+symmetrisation, not just wrapping in a `struct`.
+
+```
+ChainRulesCore.construct(typeof(x), ChainRulesCore.backing(dx′))  # LinRange
+ChainRulesCore.construct(typeof(z), ChainRulesCore.backing(dz′))  # Symmetric
+ProjectTo(z)(dz.data) ≈ [0.0 1.2; 1.2 0.0]
 ```
 """
 struct Tangent{P, T} <: AbstractTangent
@@ -165,8 +187,8 @@ primal types.
 julia> ChainRulesCore.backing(LinRange(1,2,11))
 (start = 1.0, stop = 2.0, len = 11, lendiv = 10)
 
-julia> ChainRulesCore.backing(Ref([1,2,3]'))  # does not recurse into struct
-(x = [1 2 3],)
+julia> ChainRulesCore.backing(Ref(LinRange(1,2,11)))  # does not recurse into struct
+(x = range(1.0, stop=2.0, length=11),)
 
 julia> ChainRulesCore.backing(Symmetric([1 2; 3 4], :L))
 (data = [1 2; 3 4], uplo = 'L')
