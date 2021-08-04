@@ -72,12 +72,6 @@ function generic_projection(project::ProjectTo{T}, dx::T) where {T}
     return construct(T, map(_maybe_call, sub_projects, sub_dxs))
 end
 
-function (project::ProjectTo{T})(dx::Tangent) where {T}
-    sub_projects = backing(project)
-    sub_dxs = backing(canonicalize(dx))
-    return construct(T, map(_maybe_call, sub_projects, sub_dxs))
-end
-
 # Used for encoding fields, leaves alone non-diff types:
 _maybe_projector(x::Union{AbstractArray,Number,Ref}) = ProjectTo(x)
 _maybe_projector(x) = x
@@ -134,6 +128,14 @@ ProjectTo(::Any) # just to attach docstring
 ProjectTo(::AbstractZero) = ProjectTo{NoTangent}()  # Any x::Zero in forward pass makes this one projector,
 (::ProjectTo{NoTangent})(dx) = NoTangent()          # but this is the projection only for nonzero gradients,
 (::ProjectTo{NoTangent})(::NoTangent) = NoTangent() # and this one solves an ambiguity.
+
+# Tangent
+# This may be produced from e.g. x=range(1,2,length=3). There need not be any
+# AbstractArray representation of such a tangent, so we just pass it along,
+# and trust that projection on fields before the constructor will act if necessary.
+(::ProjectTo{T})(dx::Tangent{<:T}) where {T} = dx
+
+# (project::ProjectTo{<:AbstractArray})(dx::Tangent{<:AbstractArray}) = dx 
 
 #####
 ##### `Base`
@@ -241,17 +243,20 @@ function (project::ProjectTo{AbstractArray})(dx::Number) # ... so we restore fro
     return fill(project.element(dx))
 end
 
-# Ref -- works like a zero-array, also allows restoration from a number:
-ProjectTo(x::Ref) = ProjectTo{Ref}(; x=ProjectTo(x[]))
-(project::ProjectTo{Ref})(dx::Ref) = Ref(project.x(dx[]))
-(project::ProjectTo{Ref})(dx::Number) = Ref(project.x(dx))
-
 function _projection_mismatch(axes_x::Tuple, size_dx::Tuple)
     size_x = map(length, axes_x)
     return DimensionMismatch(
         "variable with size(x) == $size_x cannot have a gradient with size(dx) == $size_dx"
     )
 end
+
+# Ref
+# This can't be its own tangent, so it standardises on a Tangent{<:Ref}
+ProjectTo(x::Ref) = ProjectTo{Ref}(; reftype=typeof(x), x=ProjectTo(x[]))
+(project::ProjectTo{Ref})(dx::Ref) = Tangent{project.reftype}(; x=project.x(dx[]))
+(project::ProjectTo{Ref})(dx::Tangent) = Tangent{project.reftype}(; x=project.x(dx.x))
+# Since this works like a zero-array in broadcasting, it should also accept a number:
+(project::ProjectTo{Ref})(dx::Number) = Tangent{project.reftype}(; x=project.x(dx))
 
 #####
 ##### `LinearAlgebra`
