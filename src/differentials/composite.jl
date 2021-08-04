@@ -20,6 +20,42 @@ via `comp.fieldname`.
 Any fields not explictly present in the `Tangent` are treated as being set to `ZeroTangent()`.
 To make a `Tangent` have all the fields of the primal the [`canonicalize`](@ref)
 function is provided.
+
+# Examples
+```jldoctest
+julia> y = Ref(3.0)
+Base.RefValue{Float64}(3.0)
+
+julia> y.x === y[]  # simple struct, just one field
+true
+
+julia> dy = Tangent{typeof(y)}(; x=1.1)
+Tangent{Base.RefValue{Float64}}(x = 1.1,)
+
+julia> dy.x
+1.1
+
+julia> ChainRulesCore.construct(typeof(y), ChainRulesCore.backing(dy))
+Base.RefValue{Float64}(1.1)
+
+julia> x = LinRange(1,2,11); x ≈ 1:0.1:2
+true
+
+julia> fieldnames(typeof(x))
+(:start, :stop, :len, :lendiv)
+
+julia> dx = Tangent{typeof(x)}(; start=0.0, stop=1.0)  # gradients for a subset of the fields
+Tangent{LinRange{Float64}}(start = 0.0, stop = 1.0)
+
+julia> dx.len
+ZeroTangent()
+
+julia> dx′ = canonicalize(dx)
+Tangent{LinRange{Float64}}(start = 0.0, stop = 1.0, len = ZeroTangent(), lendiv = ZeroTangent())
+
+julia> ChainRulesCore.construct(typeof(x), ChainRulesCore.backing(dx′))  # does not have default constructor
+ERROR: MethodError: no method matching LinRange{Float64}(::Float64, ::Float64, ::ZeroTangent, ::ZeroTangent)
+```
 """
 struct Tangent{P, T} <: AbstractTangent
     # Note: If T is a Tuple/Dict, then P is also a Tuple/Dict
@@ -123,6 +159,18 @@ Identity function on `Tuple`. and `NamedTuple`s.
 
 This is an internal function used to simplify operations between `Tangent`s and the
 primal types.
+
+# Examples
+```jldoctest
+julia> ChainRulesCore.backing(LinRange(1,2,11))
+(start = 1.0, stop = 2.0, len = 11, lendiv = 10)
+
+julia> ChainRulesCore.backing(Ref([1,2,3]'))  # does not recurse into struct
+(x = [1 2 3],)
+
+julia> ChainRulesCore.backing(Symmetric([1 2; 3 4], :L))
+(data = [1 2; 3 4], uplo = 'L')
+```
 """
 backing(x::Tuple) = x
 backing(x::NamedTuple) = x
@@ -159,6 +207,25 @@ end
 Return the canonical `Tangent` for the primal type `P`.
 The property names of the returned `Tangent` match the field names of the primal,
 and all fields of `P` not present in the input `comp` are explictly set to `ZeroTangent()`.
+
+# Examples
+```jldoctest
+julia> struct Two{T,S}; alpha::T; beta::S; end;
+
+julia> x = Two([1,2], "three");
+
+julia> dx = Tangent{typeof(x)}(; alpha = [1.0, 0.0])
+Tangent{Two{Vector{Int64}, String}}(alpha = [1.0, 0.0],)
+
+julia> canonicalize(dx)
+Tangent{Two{Vector{Int64}, String}}(alpha = [1.0, 0.0], beta = ZeroTangent())
+
+julia> canonicalize(Tangent{Base.RefValue}(;))
+Tangent{Base.RefValue}(x = ZeroTangent(),)
+
+julia> canonicalize(Tangent{Bidiagonal}(; dv = [1.0, 0.0, 0.0], ev = [0.0, 0.0]))
+Tangent{Bidiagonal}(dv = [1.0, 0.0, 0.0], ev = [0.0, 0.0], uplo = ZeroTangent())
+```
 """
 function canonicalize(comp::Tangent{P, <:NamedTuple{L}}) where {P,L}
     nil = _zeroed_backing(P)
@@ -207,6 +274,15 @@ after an operation such as the addition of a primal to a composite.
 
 It should be overloaded, if `T` does not have a default constructor,
 or if `T` needs to maintain some invarients between its fields.
+
+# Examples
+```jldoctest
+julia> y = Ref(1.0f0 + im)
+Base.RefValue{ComplexF32}(1.0f0 + 1.0f0im)
+
+julia> ChainRulesCore.construct(typeof(y), (; x = pi))
+Base.RefValue{ComplexF32}(3.1415927f0 + 0.0f0im)
+```
 """
 function construct(::Type{T}, fields::NamedTuple{L}) where {T, L}
     # Tested and verified that that this avoids a ton of allocations
