@@ -115,7 +115,6 @@ ProjectTo{AbstractArray}(element = ProjectTo{Float64}(), axes = (Base.OneTo(2), 
 ProjectTo(::Any) # just to attach docstring
 
 # Generic
-(::ProjectTo{T})(dx::T) where {T} = dx  # not always correct but we have special cases for when it isn't
 (::ProjectTo{T})(dx::AbstractZero) where {T} = dx
 (::ProjectTo{T})(dx::NotImplemented) where {T} = dx
 
@@ -132,8 +131,6 @@ ProjectTo(::AbstractZero) = ProjectTo{NoTangent}()  # Any x::Zero in forward pas
 # AbstractArray representation of such a tangent, so we just pass it along,
 # and trust that projection on fields before the constructor will act if necessary.
 (::ProjectTo{T})(dx::Tangent{<:T}) where {T} = dx
-
-# (project::ProjectTo{<:AbstractArray})(dx::Tangent{<:AbstractArray}) = dx 
 
 #####
 ##### `Base`
