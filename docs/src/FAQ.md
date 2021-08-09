@@ -112,3 +112,34 @@ This is morally the same as similar issues [discussed in ColPrac](https://github
 On a practical level, it's important that this is the case because thunks are a bit of a hack,
 and over time it is hoped that the need for them will reduce, as they increase
 code-complexity and place additional stress on the compiler.
+
+
+## What types does my pullback need to accept?
+As a rule the number of types you need to accept in a pullback is theoretically unlimitted, but practically highly constrained to inline with the primal return type.
+The three kinds of inputs you will practically need to accept one or more of: _natural tangents_, _structural tangents_, and _thunks_.
+You do not in general have to handle `AbstractZero`s as the AD system will not call the pullback if the input is a zero, since the output will also be.
+Some more background information on these types can be found in [the design notes](@ref manytypes).
+In many cases these all all tangents can be treated the same: tangent types overload a bunch of linear-operators, and the majority of functions used inside a pullback are linear operators.
+If you find linear operators from Base/stdlibs that are not supported, consider openning an issue or PR on the [ChainRulesCorejl repo](https://github.com/JuliaDiff/ChainRulesCore.jl/).
+
+TODO TODO TODO Write this breaking down the 3 categories of 
+_natural tangents_, _structural tangents_, and _thunks_.
+
+!!! warning "You should to support AbstractThunk inputs even if you don't use thunks"
+     Unfortunately the AD sytems do not know what rules support thunks and what do not.
+     So all rules have to; at least if they want to play nice with arbitary AD systems.
+     Luckily it is not hard: much of the time they will duck-type as the object they wrap.
+     If not, then just add a [`unthunk`](@ref) after the start of your pullback.
+     (Even when they do duck-type, if they are used multiple times then unthunking at the start will prevent them from being recomputed.)
+     If you are using [`@thunk`](@ref) and the input is only needed for one of them then the `unthunk` should be in that one.
+     If not, and you have a bunch of pullbacks you might like to write a little helper `unthunking(f) = x̄ -> f(unthunk(x̄))` that you can wrap your pullback function in before returning it from the `rrule`.
+     Yes, this is a bit of boiler-plate, and it is unfortunate.
+     Sadly, it is needed because if the AD wants to benefit it can't get that benifit unless things are not unthunked unnecessarily.
+     Which eventually allows them in some cases to never be unthunked at all.
+     There are two ways common things are never unthunked.
+     One is if the unthunking happens inside a `@thunk` which is never unthunked itself because it is the tangent for a primal input that never has it's tangent queried.
+     The second is if they are not unthunked because the rule does not need to know what is inside: consider the pullback for `identity`: `x̄ -> (NoTangent(), x̄)`.
+
+
+
+
