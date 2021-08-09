@@ -176,13 +176,12 @@ end
 
 # For arrays of numbers, just store one projector:
 function ProjectTo(x::AbstractArray{T}) where {T<:Number}
-    element = T <: Irrational ? ProjectTo{Real}() : ProjectTo(zero(T))
-    if element isa ProjectTo{<:AbstractZero}
-        return ProjectTo{NoTangent}() # short-circuit if all elements project to zero
-    else
-        return ProjectTo{AbstractArray}(; element=element, axes=axes(x))
-    end
+    return ProjectTo{AbstractArray}(; element=_eltype_projectto(T), axes=axes(x))
 end
+ProjectTo(x::AbstractArray{Bool}) = ProjectTo{NoTangent}()
+
+_eltype_projectto(::Type{T}) where {T<:Number} = ProjectTo(zero(T))
+_eltype_projectto(::Type{<:Irrational}) = ProjectTo{Real}()
 
 # In other cases, store a projector per element:
 function ProjectTo(xs::AbstractArray)
