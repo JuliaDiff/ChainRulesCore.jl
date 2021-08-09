@@ -248,8 +248,11 @@ function _projection_mismatch(axes_x::Tuple, size_dx::Tuple)
     )
 end
 
+#####
+##### `Base`, part II: return of the Tangent
+#####
+
 # Ref
-# This can't be its own tangent, so it standardises on a Tangent{<:Ref}
 function ProjectTo(x::Ref)
     sub = ProjectTo(x[])  # should we worry about isdefined(Ref{Vector{Int}}(), :x)? 
     if sub isa ProjectTo{<:AbstractZero}
@@ -258,7 +261,6 @@ function ProjectTo(x::Ref)
         return ProjectTo{Ref}(; type=typeof(x), x=sub)
     end
 end
-(project::ProjectTo{Ref})(dx::Ref) = Tangent{project.type}(; x=project.x(dx[]))
 (project::ProjectTo{Ref})(dx::Tangent) = Tangent{project.type}(; x=project.x(dx.x))
 # Since this works like a zero-array in broadcasting, it should also accept a number:
 (project::ProjectTo{Ref})(dx::Number) = Tangent{project.type}(; x=project.x(dx))
