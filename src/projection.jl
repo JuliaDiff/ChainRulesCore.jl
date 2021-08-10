@@ -167,9 +167,7 @@ end
 (::ProjectTo{T})(dx::Integer) where {T<:Complex{<:AbstractFloat}} = convert(T, dx)
 
 # Other numbers, including e.g. ForwardDiff.Dual and Symbolics.Sym, should pass through.
-# We assume (lacking evidence to the contrary) that it is the right subspace of numebers
-# The (::ProjectTo{T})(::T) method doesn't work because we are allowing a different
-# Number type that might not be a subtype of the `project_type`.
+# We assume (lacking evidence to the contrary) that it is the right subspace of numebers.
 (::ProjectTo{<:Number})(dx::Number) = dx
 
 (project::ProjectTo{<:Real})(dx::Complex) = project(real(dx))
