@@ -126,6 +126,11 @@ ProjectTo(::AbstractZero) = ProjectTo{NoTangent}()  # Any x::Zero in forward pas
 (::ProjectTo{NoTangent})(dx) = NoTangent()          # but this is the projection only for nonzero gradients,
 (::ProjectTo{NoTangent})(::NoTangent) = NoTangent() # and this one solves an ambiguity.
 
+# Also, any explicit construction with fields, where all fields project to zero, itself
+# projects to zero. This simplifies projectors for wrapper types like Diagonal([true, false]).
+const _PZ = ProjectTo{<:AbstractZero}
+ProjectTo{P}(::NamedTuple{T, <:Tuple{_PZ, Vararg{<:_PZ}}}) where {P,T} = ProjectTo{NoTangent}()
+
 # Tangent
 # This may be produced from e.g. x=range(1,2,length=3). There need not be any
 # AbstractArray representation of such a tangent, so we just pass it along,
@@ -265,12 +270,10 @@ end
 ##### `LinearAlgebra`
 #####
 
+using LinearAlgebra: AdjointAbsVec, TransposeAbsVec, AdjOrTransAbsVec
+
 # Row vectors
-function ProjectTo(x::LinearAlgebra.AdjointAbsVec)
-    sub = ProjectTo(parent(x))
-    sub isa ProjectTo{<:AbstractZero} && return sub
-    return ProjectTo{Adjoint}(; parent=sub)
-end
+ProjectTo(x::AdjointAbsVec) = ProjectTo{Adjoint}(; parent=ProjectTo(parent(x)))
 # Note that while [1 2; 3 4]' isa Adjoint, we use ProjectTo{Adjoint} only to encode AdjointAbsVec.
 # Transposed matrices are, like PermutedDimsArray, just a storage detail,
 # but row vectors behave differently, for example [1,2,3]' * [1,2,3] isa Number
@@ -285,11 +288,7 @@ function (project::ProjectTo{Adjoint})(dx::AbstractArray)
     return adjoint(project.parent(dy))
 end
 
-function ProjectTo(x::LinearAlgebra.TransposeAbsVec)
-    sub = ProjectTo(parent(x))
-    sub isa ProjectTo{<:AbstractZero} && return sub
-    return ProjectTo{Transpose}(; parent=sub)
-end
+ProjectTo(x::LinearAlgebra.TransposeAbsVec) = ProjectTo{Transpose}(; parent=ProjectTo(parent(x)))
 function (project::ProjectTo{Transpose})(dx::LinearAlgebra.AdjOrTransAbsVec)
     return transpose(project.parent(transpose(dx)))
 end
@@ -302,11 +301,7 @@ function (project::ProjectTo{Transpose})(dx::AbstractArray)
 end
 
 # Diagonal
-function ProjectTo(x::Diagonal)
-    sub = ProjectTo(x.diag)
-    sub isa ProjectTo{<:AbstractZero} && return sub # TODO not necc if Diagonal(NoTangent()) worked
-    return ProjectTo{Diagonal}(; diag=sub)
-end
+ProjectTo(x::Diagonal) = ProjectTo{Diagonal}(; diag=ProjectTo(x.diag))
 (project::ProjectTo{Diagonal})(dx::AbstractMatrix) = Diagonal(project.diag(diag(dx)))
 (project::ProjectTo{Diagonal})(dx::Diagonal) = Diagonal(project.diag(dx.diag))
 
@@ -318,7 +313,8 @@ for (SymHerm, chk, fun) in (
     @eval begin
         function ProjectTo(x::$SymHerm)
             sub = ProjectTo(parent(x))
-            sub isa ProjectTo{<:AbstractZero} && return sub  # TODO not necc if Hermitian(NoTangent()) etc. worked
+            # Because the projector stores uplo, ProjectTo(Symmetric(rand(3,3) .> 0)) isn't automatically trivial:
+            sub isa ProjectTo{<:AbstractZero} && return sub
             return ProjectTo{$SymHerm}(; uplo=LinearAlgebra.sym_uplo(x.uplo), parent=sub)
         end
         function (project::ProjectTo{$SymHerm})(dx::AbstractArray)
@@ -343,12 +339,7 @@ end
 # Triangular
 for UL in (:UpperTriangular, :LowerTriangular, :UnitUpperTriangular, :UnitLowerTriangular) # UpperHessenberg
     @eval begin
-        function ProjectTo(x::$UL)
-            sub = ProjectTo(parent(x))
-            # TODO not nesc if UnitUpperTriangular(NoTangent()) etc. worked
-            sub isa ProjectTo{<:AbstractZero} && return sub
-            return ProjectTo{$UL}(; parent=sub)
-        end
+        ProjectTo(x::$UL) = ProjectTo{$UL}(; parent=ProjectTo(parent(x)))
         (project::ProjectTo{$UL})(dx::AbstractArray) = $UL(project.parent(dx))
         function (project::ProjectTo{$UL})(dx::Diagonal)
             sub = project.parent
