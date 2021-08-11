@@ -173,6 +173,11 @@ end
 (project::ProjectTo{<:Real})(dx::Complex) = project(real(dx))
 (project::ProjectTo{<:Complex})(dx::Real) = project(complex(dx))
 
+# Tangents: we prefer to reconstruct numbers, but only safe to try when their constructor
+# understands, including a mix of Zeros & reals. Other cases, we just let through:
+(project::ProjectTo{<:Complex})(dx::Tangent{<:Number}) = project(Complex(dx.re, dx.im))
+(::ProjectTo{<:Number})(dx::Tangent{<:Number}) = dx
+
 # Arrays
 # If we don't have a more specialized `ProjectTo` rule, we just assume that there is
 # no structure worth re-imposing. Then any array is acceptable as a gradient.

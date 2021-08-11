@@ -25,6 +25,10 @@ Base.transpose(z::AbstractZero) = z
 Base.:/(z::AbstractZero, ::Any) = z
 
 Base.convert(::Type{T}, x::AbstractZero) where T <: Number = zero(T)
+(::Type{T})(xs::AbstractZero...) where T <: Number = zero(T)
+
+(::Type{Complex})(x::AbstractZero, y::Real) = Complex(false, y)
+(::Type{Complex})(x::Real, y::AbstractZero) = Complex(x, false)
 
 Base.getindex(z::AbstractZero, k) = z
 

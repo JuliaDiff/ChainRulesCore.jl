@@ -64,9 +64,15 @@
         @test complex(z, z) === z
         @test complex(z, 2.0) === Complex{Float64}(0.0, 2.0)
         @test complex(1.5, z) === Complex{Float64}(1.5, 0.0)
+        @test Complex(z, 2.0) === Complex{Float64}(0.0, 2.0)
+        @test Complex(1.5, z) === Complex{Float64}(1.5, 0.0)
+        @test ComplexF64(z, 2.0) === Complex{Float64}(0.0, 2.0)
+        @test ComplexF64(1.5, z) === Complex{Float64}(1.5, 0.0)
 
-        @test convert(Int64, ZeroTangent()) == 0
-        @test convert(Float64, ZeroTangent()) == 0.0
+        @test convert(Bool, ZeroTangent()) === false
+        @test convert(Int64, ZeroTangent()) === 0
+        @test convert(Float32, ZeroTangent()) === 0.0f0
+        @test convert(ComplexF64, ZeroTangent()) === 0.0 + 0.0im
     end
 
     @testset "NoTangent" begin

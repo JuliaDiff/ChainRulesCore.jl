@@ -33,6 +33,9 @@ Base.zero(x::Dual) = Dual(zero(x.value), zero(x.partial))
         @test ProjectTo(1.0f0 + 2im)(3) === 3.0f0 + 0im
         @test ProjectTo(big(1.0))(2) === 2
         @test ProjectTo(1.0)(2) === 2.0
+
+        # Tangents
+        ProjectTo(1.0f0 + 2im)(Tangent{ComplexF64}(re=1, im=NoTangent())) === 1.0f0 + 0.0f0im
     end
 
     @testset "Dual" begin # some weird Real subtype that we should basically leave alone
