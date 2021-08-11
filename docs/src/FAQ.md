@@ -4,11 +4,11 @@
 
 ### `Δx`, `∂x`, `dx`
 ChainRules uses these perhaps atypically.
-As a notation that is the same across propagators, regardless of direction (incontrast see `ẋ` and `x̄` below).
+As a notation that is the same across propagators, regardless of direction (in contrast see `ẋ` and `x̄` below).
 
- - `Δx` is the input to a propagator, (i.e a _seed_ for a _pullback_; or a _perturbation_ for a _pushforward_)
- - `∂x` is the output of a propagator
- - `dx` could be either `input` or `output`
+ - `Δx` is the input to a propagator, (i.e a _seed_ for a _pullback_; or a _perturbation_ for a _pushforward_).
+ - `∂x` is the output of a propagator.
+ - `dx` could be either `input` or `output`.
 
 
 ### dots and bars: ``\dot{y} = \dfrac{∂y}{∂x} = \overline{x}``
@@ -28,16 +28,19 @@ Why not just return the pushforward/pullback, and let the user call `f(x)` to ge
 There are three reasons the rules also calculate the `f(x)`.
 1. For some rules an alternative way of calculating `f(x)` can give the same answer while also generating intermediate values that can be used in the calculations required to propagate the derivative.
 2. For many `rrule`s the output value is used in the definition of the pullback. For example `tan`, `sigmoid` etc.
-3. For some `frule`s there exists a single, non-separable operation that will compute both derivative and primal result. For example many of the methods for [differential equation sensitivity analysis](https://docs.juliadiffeq.org/stable/analysis/sensitivity/#sensitivity-1).
+3. For some `frule`s there exists a single, non-separable operation that will compute both derivative and primal result. For example, this is the case for many of the methods for [differential equation sensitivity analysis](https://docs.juliadiffeq.org/stable/analysis/sensitivity/#sensitivity-1).
 
 For more information and examples see the [design notes on changing the primal](@ref change_primal).
 
 ## Where are the derivatives for keyword arguments?
-_pullbacks_ do not return a sensitivity for keyword arguments;
-similarly _pushfowards_ do not accept a perturbation for keyword arguments.
+
+_Pullbacks_ do not return a sensitivity for keyword arguments;
+similarly, _pushforwards_ do not accept a perturbation for keyword arguments.
 This is because in practice functions are very rarely differentiable with respect to keyword arguments.
-As a rule keyword arguments tend to control side-effects, like logging verbosity,
-or to be functionality changing to perform a different operation, e.g. `dims=3`, and thus not differentiable.
+
+As a rule, keyword arguments tend to control side-effects, like logging verbosity,
+or to be functionality-changing to perform a different operation, e.g. `dims=3`, and thus not differentiable.
+
 To the best of our knowledge no Julia AD system, with support for the definition of custom primitives, supports differentiating with respect to keyword arguments.
 At some point in the future ChainRules may support these. Maybe.
 
@@ -47,13 +50,13 @@ At some point in the future ChainRules may support these. Maybe.
 Odds are if you write a rule that returns the wrong one everything will just work fine.
 We provide both to allow for clearer writing of rules, and easier debugging.
 
-`ZeroTangent()` represents the fact that if one perturbs (adds a small change to) the matching primal there will be no change in the behaviour of the primal function.
-For example in `fst(x,y) = x`, then the derivative of `fst` with respect to `y` is `ZeroTangent()`.
-`fst(10, 5) == 10` and if we add `0.1` to `5` we still get `fst(10, 5.1)=10`.
+`ZeroTangent()` represents the fact that if one perturbs (adds a small change to) the matching primal, there will be no change in the behaviour of the primal function.
+For example, in `fst(x, y) = x`, the derivative of `fst` with respect to `y` is `ZeroTangent()`.
+`fst(10, 5) == 10` and if we add `0.1` to `5` we still get `fst(10, 5.1) == 10`.
 
 `NoTangent()` represents the fact that if one perturbs the matching primal, the primal function will now error.
-For example in `access(xs, n) = xs[n]` then the derivative of `access` with respect to `n` is `NoTangent()`.
-`access([10, 20, 30], 2) = 20`, but if we add `0.1` to `2` we get `access([10, 20, 30], 2.1)` which errors as indexing can't be applied at fractional indexes.
+For example, in `access(xs, n) = xs[n]`, the derivative of `access` with respect to `n` is `NoTangent()`.
+`access([10, 20, 30], 2) == 20`, but if we add `0.1` to `2` we get `access([10, 20, 30], 2.1)` which errors as indexing can't be applied at fractional indexes.
 
 
 ## When to use ChainRules vs ChainRulesCore?
@@ -62,16 +65,16 @@ For example in `access(xs, n) = xs[n]` then the derivative of `access` with resp
 It has almost no dependencies of its own.
 If you only want to define rules, not use them, then you probably only want to load ChainRulesCore.jl.
 
-[ChainRules.jl](https://github.com/JuliaDiff/ChainRules.jl) provides the full functionality for AD systems, in particular it has all the rules for Base Julia and the standard libraries.
+[ChainRules.jl](https://github.com/JuliaDiff/ChainRules.jl) provides the full functionality for AD systems. In particular, it has all the rules for Base Julia and the standard libraries.
 It is thus a much heavier package to load.
 AD systems making use of `frule`s and `rrule`s should load ChainRules.jl.
 
 ## Where should I put my rules?
 
 We recommend adding custom rules to your own packages with [ChainRulesCore.jl](https://github.com/JuliaDiff/ChainRulesCore.jl).
-It is good to have them in the same pacakge that defines the original function.
+It is good to have them in the same package that defines the original function.
 This avoids type-piracy, and makes it easy to keep in-sync.
-ChainRulesCore is a very light weight dependency.
+ChainRulesCore is a very light-weight dependency.
 
 ## How do I test my rules?
 
@@ -79,7 +82,7 @@ You can use [ChainRulesTestUtils.jl](https://github.com/JuliaDiff/ChainRulesTest
 ChainRulesTestUtils.jl has some dependencies, so it is a separate package from ChainRulesCore.jl.
 This means your package can depend on the light-weight ChainRulesCore.jl, and make ChainRulesTestUtils.jl a test-only dependency.
 
-Remember to read the section on [On writing good `rrule` / `frule` methods](@ref).
+Remember to read the section [On writing good `rrule` / `frule` methods](@ref).
 
 ## Where can I learn more about AD ?
 There are not so many truly excellent learning resources for autodiff out there in the world, which is a bit sad.
@@ -103,9 +106,9 @@ It also covers forward-mode though (by its own admission) not as well, it never 
 ## Is removing a thunk a breaking change?
 Removing thunks is not considered a breaking change.
 This is because (in principle) removing them changes the implementation of the values
-returned by an rrule, not the value that they represent.
+returned by an `rrule`, not the value that they represent.
 This is morally the same as similar issues [discussed in ColPrac](https://github.com/SciML/ColPrac#changes-that-are-not-considered-breaking), such as details of floating point arithmetic changing.
 
-On a practical level, it's important that this is the case because thunks a bit of a hack,
+On a practical level, it's important that this is the case because thunks are a bit of a hack,
 and over time it is hoped that the need for them will reduce, as they increase
 code-complexity and place additional stress on the compiler.
