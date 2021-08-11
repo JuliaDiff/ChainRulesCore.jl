@@ -24,7 +24,6 @@ Base.zero(x::Dual) = Dual(zero(x.value), zero(x.partial))
         @test ProjectTo(2.0+3.0im)(1+1im) === 1.0+1.0im
         @test ProjectTo(2.0)(1+1im) === 1.0
         
-
         # storage
         @test ProjectTo(1)(pi) === pi
         @test ProjectTo(1 + im)(pi) === ComplexF64(pi)
@@ -284,6 +283,15 @@ Base.zero(x::Dual) = Dual(zero(x.value), zero(x.partial))
     #####
     ##### `OffsetArrays`
     #####
+
+# function ProjectTo(x::OffsetArray{T,N}) where {T<:Number,N}
+#     # As usual:
+#     element = ChainRulesCore._eltype_projectto(T)
+#     S = ChainRulesCore.project_type(element)
+#     # But don't save N? Avoids fast path?
+#     # Or perhaps the default constructor can check whether axes(x) is NTuple{N,OneTo}?
+#     return ProjectTo{AbstractArray{S}}(; element=element, axes=axes(x))
+# end
 
     @testset "OffsetArrays" begin
         # While there is no code for this, the rule that it checks axes(x) == axes(dx) else
