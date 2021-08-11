@@ -282,7 +282,7 @@ propagator_name(fname::QuoteNode, propname::Symbol) = propagator_name(fname.valu
 """
     @non_differentiable(signature_expression)
 
-A helper to make it easier to declare that a method is not not differentiable.
+A helper to make it easier to declare that a method is not differentiable.
 This is a short-hand for defining an [`frule`](@ref) and [`rrule`](@ref) that
 return [`NoTangent()`](@ref) for all partials (even for the function `s̄elf`-partial
 itself)
