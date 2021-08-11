@@ -237,7 +237,7 @@ If the function is `y = f(x)` often the pushforward will be written `ẏ = last(
     The `∂y` are similar in type/structure to the original function's output `Y`.
     In particular if that function returned a tuple then `∂y` will be a tuple of the same size.
 
-### Self derivative `Δself`, `∂self`, `s̄elf`, `ṡelf` etc
+### [Self derivative `Δself`, `∂self`, `s̄elf`, `ṡelf` etc](@id self_derivative)
 
 !!! terminology "Δself, ∂self, s̄elf, ṡelf"
     It is the derivatives with respect to the internal fields of the function.
@@ -301,7 +301,7 @@ y, f_pullback = rrule(f, a, b, c)
 s̄elf, ā, b̄, c̄ = ∇f
 ```
 Then we have that `∇f` is the _gradient_ of `f` at `(a, b, c)`.
-And we thus have the partial derivatives ``\overline{\mathrm{self}}, = \dfrac{∂f}{∂\mathrm{self}}``, ``\overline{a} = \dfrac{∂f}{∂a}``, ``\overline{b} = \dfrac{∂f}{∂b}``, ``\overline{c} = \dfrac{∂f}{∂c}``, including the and the self-partial derivative, ``\overline{\mathrm{self}}``.
+And we thus have the partial derivatives ``\overline{\mathrm{self}} = \dfrac{∂f}{∂\mathrm{self}}``, ``\overline{a} = \dfrac{∂f}{∂a}``, ``\overline{b} = \dfrac{∂f}{∂b}``, ``\overline{c} = \dfrac{∂f}{∂c}``, including the [self-partial derivative](@ref self_derivative), ``\overline{\mathrm{self}}``.
 
 ## Differentials
 
