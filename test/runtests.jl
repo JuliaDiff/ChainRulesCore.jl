@@ -1,25 +1,26 @@
 using Base.Broadcast: broadcastable
 using BenchmarkTools
 using ChainRulesCore
-using LinearAlgebra: Diagonal, dot
-using FiniteDifferences
+using LinearAlgebra
+using LinearAlgebra.BLAS: ger!, gemv!, gemv, scal!
+using StaticArrays
+using SparseArrays
 using Test
 
 @testset "ChainRulesCore" begin
     @testset "differentials" begin
         include("differentials/abstract_zero.jl")
-        include("differentials/one.jl")
         include("differentials/thunks.jl")
         include("differentials/composite.jl")
+        include("differentials/notimplemented.jl")
     end
 
-    include("ruleset_loading.jl")
+    include("accumulation.jl")
+    include("projection.jl")
+
     include("rules.jl")
     include("rule_definition_tools.jl")
+    include("config.jl")
 
-
-    @testset "demos" begin
-        include("demos/forwarddiffzero.jl")
-        include("demos/reversediffzero.jl")
-    end
+    include("deprecated.jl")
 end

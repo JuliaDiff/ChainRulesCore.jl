@@ -23,20 +23,33 @@ Pages = [
     "differentials/composite.jl",
     "differentials/thunks.jl",
     "differentials/abstract_differential.jl",
+    "differentials/notimplemented.jl",
 ]
 Private = false
 ```
 
-## Ruleset Loading
+## Accumulation
+```@docs
+add!!
+ChainRulesCore.is_inplaceable_destination
+```
+
+## RuleConfig
 ```@autodocs
 Modules = [ChainRulesCore]
-Pages = ["ruleset_loading.jl"]
+Pages = ["config.jl"]
 Private = false
+```
+
+## ProjectTo
+```@docs
+ProjectTo
 ```
 
 ## Internal
 ```@docs
-ChainRulesCore.AbstractDifferential
+ChainRulesCore.AbstractTangent
 ChainRulesCore.debug_mode
-ChainRulesCore.clear_new_rule_hooks!
+ChainRulesCore.no_rrule
+ChainRulesCore.no_frule
 ```

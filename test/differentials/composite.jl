@@ -1,15 +1,15 @@
-# For testing Composite
+# For testing Tangent
 struct Foo
     x
     y::Float64
 end
 
-# For testing Primal + Composite performance
+# For testing Primal + Tangent performance
 struct Bar
     x::Float64
 end
 
-# For testing Composite: it is an invarient of the type that x2 = 2x
+# For testing Tangent: it is an invarient of the type that x2 = 2x
 # so simple addition can not be defined
 struct StructWithInvariant
     x
@@ -18,80 +18,140 @@ struct StructWithInvariant
     StructWithInvariant(x) = new(x, 2x)
 end
 
-
-@testset "Composite" begin
+@testset "Tangent" begin
     @testset "empty types" begin
-        @test typeof(Composite{Tuple{}}()) == Composite{Tuple{}, Tuple{}}
+        @test typeof(Tangent{Tuple{}}()) == Tangent{Tuple{}, Tuple{}}
     end
-    @testset "convert" begin
-        @test convert(NamedTuple, Composite{Foo}(x=2.5)) == (; x=2.5)
-        @test convert(Tuple, Composite{Tuple{Float64,}}(2.0)) == (2.0,)
-        @test convert(Dict, Composite{Dict}(Dict(4 => 3))) == Dict(4 => 3)
+
+    @testset "==" begin
+        @test Tangent{Foo}(x=0.1, y=2.5) == Tangent{Foo}(x=0.1, y=2.5)
+        @test Tangent{Foo}(x=0.1, y=2.5) == Tangent{Foo}(y=2.5, x=0.1)
+        @test Tangent{Foo}(y=2.5, x=ZeroTangent()) == Tangent{Foo}(y=2.5)
+
+        @test Tangent{Tuple{Float64,}}(2.0) == Tangent{Tuple{Float64,}}(2.0)
+        @test Tangent{Dict}(Dict(4 => 3)) == Tangent{Dict}(Dict(4 => 3))
+
+        tup = (1.0, 2.0)
+        @test Tangent{typeof(tup)}(1.0, 2.0) == Tangent{typeof(tup)}(1.0, @thunk(2*1.0))
+        @test Tangent{typeof(tup)}(1.0, 2.0) == Tangent{typeof(tup)}(1.0, 2)
+
+        @test Tangent{Foo}(;y=2.0,) == Tangent{Foo}(;x=ZeroTangent(), y=Float32(2.0),)
+    end
+
+    @testset "hash" begin
+        @test hash(Tangent{Foo}(x=0.1, y=2.5)) == hash(Tangent{Foo}(y=2.5, x=0.1))
+        @test hash(Tangent{Foo}(y=2.5, x=ZeroTangent())) == hash(Tangent{Foo}(y=2.5))
     end
 
     @testset "indexing, iterating, and properties" begin
-        @test keys(Composite{Foo}(x=2.5)) == (:x,)
-        @test propertynames(Composite{Foo}(x=2.5)) == (:x,)
-        @test Composite{Foo}(x=2.5).x == 2.5
+        @test keys(Tangent{Foo}(x=2.5)) == (:x,)
+        @test propertynames(Tangent{Foo}(x=2.5)) == (:x,)
+        @test haskey(Tangent{Foo}(x=2.5), :x) == true
+        if isdefined(Base, :hasproperty)
+            @test hasproperty(Tangent{Foo}(x=2.5), :y) == false
+        end
+        @test Tangent{Foo}(x=2.5).x == 2.5
 
-        @test keys(Composite{Tuple{Float64,}}(2.0)) == Base.OneTo(1)
-        @test propertynames(Composite{Tuple{Float64,}}(2.0)) == (1,)
-        @test getproperty(Composite{Tuple{Float64,}}(2.0), 1) == 2.0
+        @test keys(Tangent{Tuple{Float64,}}(2.0)) == Base.OneTo(1)
+        @test propertynames(Tangent{Tuple{Float64,}}(2.0)) == (1,)
+        @test getproperty(Tangent{Tuple{Float64,}}(2.0), 1) == 2.0
+        @test getproperty(Tangent{Tuple{Float64,}}(@thunk 2.0^2), 1) == 4.0
+        @test getproperty(Tangent{Tuple{Float64,}}(a=(@thunk 2.0^2),), :a) == 4.0
 
-        @test length(Composite{Foo}(x=2.5)) == 1
-        @test length(Composite{Tuple{Float64,}}(2.0)) == 1
+        # TODO: uncomment this once https://github.com/JuliaLang/julia/issues/35516
+        @test_broken haskey(Tangent{Tuple{Float64}}(2.0), 1) == true
+        @test_broken hasproperty(Tangent{Tuple{Float64}}(2.0), 2) == false
 
-        @test eltype(Composite{Foo}(x=2.5)) == Float64
-        @test eltype(Composite{Tuple{Float64,}}(2.0)) == Float64
+        @test length(Tangent{Foo}(x=2.5)) == 1
+        @test length(Tangent{Tuple{Float64,}}(2.0)) == 1
+
+        @test eltype(Tangent{Foo}(x=2.5)) == Float64
+        @test eltype(Tangent{Tuple{Float64,}}(2.0)) == Float64
 
         # Testing iterate via collect
-        @test collect(Composite{Foo}(x=2.5)) == [2.5]
-        @test collect(Composite{Tuple{Float64,}}(2.0)) == [2.0]
+        @test collect(Tangent{Foo}(x=2.5)) == [2.5]
+        @test collect(Tangent{Tuple{Float64,}}(2.0)) == [2.0]
+
+        # Test indexed_iterate
+        ctup = Tangent{Tuple{Float64,Int64}}(2.0, 3)
+        _unpack2tuple = function(comp)
+            a, b = comp
+            return (a, b)
+        end
+        @inferred _unpack2tuple(ctup)
+        @test _unpack2tuple(ctup) === (2.0, 3)
+
+        # Test getproperty is inferrable
+        _unpacknamedtuple = comp -> (comp.x, comp.y)
+        if VERSION ≥ v"1.2"
+            @inferred _unpacknamedtuple(Tangent{Foo}(x=2, y=3.0))
+            @inferred _unpacknamedtuple(Tangent{Foo}(y=3.0))
+        end
+    end
+
+    @testset "reverse" begin
+        c = Tangent{Tuple{Int, Int, String}}(1, 2, "something")
+        cr = Tangent{Tuple{String, Int, Int}}("something", 2, 1)
+        @test reverse(c) === cr
+
+        # can't reverse a named tuple or a dict
+        @test_throws MethodError reverse(Tangent{Foo}(;x=1.0, y=2.0))
+
+        d = Dict(:x => 1, :y => 2.0)
+        cdict = Tangent{Foo, typeof(d)}(d)
+        @test_throws MethodError reverse(Tangent{Foo}()) 
     end
 
     @testset "unset properties" begin
-        @test Composite{Foo}(; x=1.4).y === Zero()
+        @test Tangent{Foo}(; x=1.4).y === ZeroTangent()
     end
 
     @testset "conj" begin
-        @test conj(Composite{Foo}(x=2.0+3.0im)) == Composite{Foo}(x=2.0-3.0im)
+        @test conj(Tangent{Foo}(x=2.0+3.0im)) == Tangent{Foo}(x=2.0-3.0im)
         @test ==(
-            conj(Composite{Tuple{Float64,}}(2.0+3.0im)),
-            Composite{Tuple{Float64,}}(2.0-3.0im)
+            conj(Tangent{Tuple{Float64,}}(2.0+3.0im)),
+            Tangent{Tuple{Float64,}}(2.0-3.0im)
         )
         @test ==(
-            conj(Composite{Dict}(Dict(4 => 2.0 + 3.0im))),
-            Composite{Dict}(Dict(4 => 2.0 + -3.0im)),
+            conj(Tangent{Dict}(Dict(4 => 2.0 + 3.0im))),
+            Tangent{Dict}(Dict(4 => 2.0 + -3.0im)),
         )
-    end
-
-    @testset "extern" begin
-        @test extern(Composite{Foo}(x=2.0)) == (;x=2.0)
-        @test extern(Composite{Tuple{Float64,}}(2.0)) == (2.0,)
-        @test extern(Composite{Dict}(Dict(4 => 3))) == Dict(4 => 3)
-
-        # with differentials on the inside
-        @test extern(Composite{Foo}(x=@thunk(0+2.0))) == (;x=2.0)
-        @test extern(Composite{Tuple{Float64,}}(@thunk(0+2.0))) == (2.0,)
-        @test extern(Composite{Dict}(Dict(4 => @thunk(3)))) == Dict(4 => 3)
     end
 
     @testset "canonicalize" begin
         # Testing iterate via collect
-        @test collect(Composite{Tuple{Float64,}}(2.0)) == [2.0]
+        @test ==(
+            canonicalize(Tangent{Tuple{Float64,}}(2.0)),
+            Tangent{Tuple{Float64,}}(2.0)
+        )
 
-        # For structure it needs to match order and Zero() fill to match primal
-        CFoo = Composite{Foo}
+        @test ==(
+            canonicalize(Tangent{Dict}(Dict(4 => 3))),
+            Tangent{Dict}(Dict(4 => 3)),
+        )
+
+        # For structure it needs to match order and ZeroTangent() fill to match primal
+        CFoo = Tangent{Foo}
         @test canonicalize(CFoo(x=2.5, y=10)) == CFoo(x=2.5, y=10)
         @test canonicalize(CFoo(y=10, x=2.5)) == CFoo(x=2.5, y=10)
-        @test canonicalize(CFoo(y=10)) == CFoo(x=Zero(), y=10)
+        @test canonicalize(CFoo(y=10)) == CFoo(x=ZeroTangent(), y=10)
 
         @test_throws ArgumentError canonicalize(CFoo(q=99.0, x=2.5))
+
+        @testset "unspecified primal type" begin
+            c1 = Tangent{Any}(;a=1, b=2)
+            c2 = Tangent{Any}(1, 2)
+            c3 = Tangent{Any}(Dict(4 => 3))
+
+            @test c1 == canonicalize(c1)
+            @test c2 == canonicalize(c2)
+            @test c3 == canonicalize(c3)
+        end
     end
 
     @testset "+ with other composites" begin
         @testset "Structs" begin
-            CFoo = Composite{Foo}
+            CFoo = Tangent{Foo}
             @test  CFoo(x=1.5) + CFoo(x=2.5) == CFoo(x=4.0)
             @test CFoo(y=1.5) + CFoo(x=2.5) == CFoo(y=1.5, x=2.5)
             @test CFoo(y=1.5, x=1.5) + CFoo(x=2.5) == CFoo(y=1.5, x=4.0)
@@ -99,13 +159,13 @@ end
 
         @testset "Tuples" begin
             @test ==(
-                typeof(Composite{Tuple{}}() + Composite{Tuple{}}()), 
-                Composite{Tuple{}, Tuple{}}
+                typeof(Tangent{Tuple{}}() + Tangent{Tuple{}}()),
+                Tangent{Tuple{}, Tuple{}}
             )
             @test (
-                Composite{Tuple{Float64, Float64}}(1.0, 2.0) +
-                Composite{Tuple{Float64, Float64}}(1.0, 1.0)
-            ) == Composite{Tuple{Float64, Float64}}(2.0, 3.0)
+                Tangent{Tuple{Float64, Float64}}(1.0, 2.0) +
+                Tangent{Tuple{Float64, Float64}}(1.0, 1.0)
+            ) == Tangent{Tuple{Float64, Float64}}(2.0, 3.0)
         end
 
         @testset "NamedTuples" begin
@@ -113,50 +173,85 @@ end
             nt2 = (;a=0.0, b=2.5)
             nt_sum = (a=1.5, b=2.5)
             @test (
-                Composite{typeof(nt1)}(; nt1...) +
-                Composite{typeof(nt2)}(; nt2...)
-            ) == Composite{typeof(nt_sum)}(; nt_sum...)
+                Tangent{typeof(nt1)}(; nt1...) +
+                Tangent{typeof(nt2)}(; nt2...)
+            ) == Tangent{typeof(nt_sum)}(; nt_sum...)
         end
 
         @testset "Dicts" begin
-            d1 = Composite{Dict}(Dict(4 => 3.0, 3 => 2.0))
-            d2 = Composite{Dict}(Dict(4 => 3.0, 2 => 2.0))
-            d_sum = Composite{Dict}(Dict(4 => 3.0 + 3.0, 3 => 2.0, 2 => 2.0))
+            d1 = Tangent{Dict}(Dict(4 => 3.0, 3 => 2.0))
+            d2 = Tangent{Dict}(Dict(4 => 3.0, 2 => 2.0))
+            d_sum = Tangent{Dict}(Dict(4 => 3.0 + 3.0, 3 => 2.0, 2 => 2.0))
             @test d1 + d2 == d_sum
+        end
+
+        @testset "Fields of type NotImplemented" begin
+            CFoo = Tangent{Foo}
+            a = CFoo(x=1.5)
+            b = CFoo(x=@not_implemented(""))
+            for (x, y) in ((a, b), (b, a), (b, b))
+                z = x + y
+                @test z isa CFoo
+                @test z.x isa ChainRulesCore.NotImplemented
+            end
+
+            a = Tangent{Tuple}(1.5)
+            b = Tangent{Tuple}(@not_implemented(""))
+            for (x, y) in ((a, b), (b, a), (b, b))
+                z = x + y
+                @test z isa Tangent{Tuple}
+                @test first(z) isa ChainRulesCore.NotImplemented
+            end
+
+            a = Tangent{NamedTuple{(:x,)}}(x=1.5)
+            b = Tangent{NamedTuple{(:x,)}}(x=@not_implemented(""))
+            for (x, y) in ((a, b), (b, a), (b, b))
+                z = x + y
+                @test z isa Tangent{NamedTuple{(:x,)}}
+                @test z.x isa ChainRulesCore.NotImplemented
+            end
+
+            a = Tangent{Dict}(Dict(:x => 1.5))
+            b = Tangent{Dict}(Dict(:x => @not_implemented("")))
+            for (x, y) in ((a, b), (b, a), (b, b))
+                z = x + y
+                @test z isa Tangent{Dict}
+                @test z[:x] isa ChainRulesCore.NotImplemented
+            end
         end
     end
 
     @testset "+ with Primals" begin
         @testset "Structs" begin
-            @test Foo(3.5, 1.5) + Composite{Foo}(x=2.5) == Foo(6.0, 1.5)
-            @test Composite{Foo}(x=2.5) + Foo(3.5, 1.5) == Foo(6.0, 1.5)
-            @test (@ballocated Bar(0.5) + Composite{Bar}(; x=0.5)) == 0
+            @test Foo(3.5, 1.5) + Tangent{Foo}(x=2.5) == Foo(6.0, 1.5)
+            @test Tangent{Foo}(x=2.5) + Foo(3.5, 1.5) == Foo(6.0, 1.5)
+            @test (@ballocated Bar(0.5) + Tangent{Bar}(; x=0.5)) == 0
         end
 
         @testset "Tuples" begin
-            @test Composite{Tuple{}}() + () == ()
-            @test ((1.0, 2.0) + Composite{Tuple{Float64, Float64}}(1.0, 1.0)) == (2.0, 3.0)
-            @test (Composite{Tuple{Float64, Float64}}(1.0, 1.0)) + (1.0, 2.0) == (2.0, 3.0)
+            @test Tangent{Tuple{}}() + () == ()
+            @test ((1.0, 2.0) + Tangent{Tuple{Float64, Float64}}(1.0, 1.0)) == (2.0, 3.0)
+            @test (Tangent{Tuple{Float64, Float64}}(1.0, 1.0)) + (1.0, 2.0) == (2.0, 3.0)
         end
 
         @testset "NamedTuple" begin
             ntx = (; a=1.5)
-            @test Composite{typeof(ntx)}(; ntx...) + ntx == (; a=3.0)
+            @test Tangent{typeof(ntx)}(; ntx...) + ntx == (; a=3.0)
 
             nty = (; a=1.5, b=0.5)
-            @test Composite{typeof(nty)}(; nty...) + nty == (; a=3.0, b=1.0)
+            @test Tangent{typeof(nty)}(; nty...) + nty == (; a=3.0, b=1.0)
         end
 
         @testset "Dicts" begin
             d_primal = Dict(4 => 3.0, 3 => 2.0)
-            d_tangent = Composite{typeof(d_primal)}(Dict(4 =>5.0))
+            d_tangent = Tangent{typeof(d_primal)}(Dict(4 =>5.0))
             @test d_primal + d_tangent == Dict(4 => 3.0 + 5.0, 3 => 2.0)
         end
     end
 
     @testset "+ with Primals, with inner constructor" begin
         value = StructWithInvariant(10.0)
-        diff = Composite{StructWithInvariant}(x=2.0, x2=6.0)
+        diff = Tangent{StructWithInvariant}(x=2.0, x2=6.0)
 
         @testset "with and without debug mode" begin
             @assert ChainRulesCore.debug_mode() == false
@@ -181,20 +276,20 @@ end
     end
 
     @testset "differential arithmetic" begin
-        c = Composite{Foo}(y=1.5, x=2.5)
+        c = Tangent{Foo}(y=1.5, x=2.5)
 
-        @test DoesNotExist() * c == DoesNotExist()
-        @test c * DoesNotExist() == DoesNotExist()
-        @test dot(DoesNotExist(), c) == DoesNotExist()
-        @test dot(c, DoesNotExist()) == DoesNotExist()
+        @test NoTangent() * c == NoTangent()
+        @test c * NoTangent() == NoTangent()
+        @test dot(NoTangent(), c) == NoTangent()
+        @test dot(c, NoTangent()) == NoTangent()
 
-        @test Zero() * c == Zero()
-        @test c * Zero() == Zero()
-        @test dot(Zero(), c) == Zero()
-        @test dot(c, Zero()) == Zero()
+        @test ZeroTangent() * c == ZeroTangent()
+        @test c * ZeroTangent() == ZeroTangent()
+        @test dot(ZeroTangent(), c) == ZeroTangent()
+        @test dot(c, ZeroTangent()) == ZeroTangent()
 
-        @test One() * c === c
-        @test c * One() === c
+        @test true * c === c
+        @test c * true === c
 
         t = @thunk 2
         @test t * c == 2 * c
@@ -203,23 +298,30 @@ end
 
     @testset "scaling" begin
         @test (
-            2 *  Composite{Foo}(y=1.5, x=2.5)
-            == Composite{Foo}(y=3.0, x=5.0)
-            == Composite{Foo}(y=1.5, x=2.5) * 2
+            2 *  Tangent{Foo}(y=1.5, x=2.5)
+            == Tangent{Foo}(y=3.0, x=5.0)
+            == Tangent{Foo}(y=1.5, x=2.5) * 2
         )
         @test (
-            2 * Composite{Tuple{Float64, Float64}}(2.0, 4.0)
-            == Composite{Tuple{Float64, Float64}}(4.0, 8.0)
-            == Composite{Tuple{Float64, Float64}}(2.0, 4.0) * 2
+            2 * Tangent{Tuple{Float64, Float64}}(2.0, 4.0)
+            == Tangent{Tuple{Float64, Float64}}(4.0, 8.0)
+            == Tangent{Tuple{Float64, Float64}}(2.0, 4.0) * 2
         )
-        d = Composite{Dict}(Dict(4 => 3.0))
-        two_d = Composite{Dict}(Dict(4 => 2 * 3.0))
+        d = Tangent{Dict}(Dict(4 => 3.0))
+        two_d = Tangent{Dict}(Dict(4 => 2 * 3.0))
         @test 2 * d == two_d == d * 2
     end
 
     @testset "show" begin
-        @test repr(Composite{Foo}(x=1,)) == "Composite{Foo}(x = 1,)"
-        @test repr(Composite{Tuple{Int,Int}}(1, 2)) == "Composite{Tuple{Int64,Int64}}(1, 2)"
+        @test repr(Tangent{Foo}(x=1,)) == "Tangent{Foo}(x = 1,)"
+        # check for exact regex match not occurence( `^...$`)
+        # and allowing optional whitespace (`\s?`)
+        @test occursin(
+            r"^Tangent{Tuple{Int64,\s?Int64}}\(1,\s?2\)$",
+            repr(Tangent{Tuple{Int64,Int64}}(1, 2)),
+        )
+
+        @test repr(Tangent{Foo}()) == "Tangent{Foo}()"
     end
 
     @testset "internals" begin
@@ -229,12 +331,9 @@ end
 
         @testset "Internals don't allocate a ton" begin
             bk = (; x=1.0, y=2.0)
-            if VERSION >= v"1.5"
-                @test (@ballocated(ChainRulesCore.construct($Foo, $bk))) <= 32
-            else
-                @test_broken (@ballocated(ChainRulesCore.construct($Foo, $bk))) <= 32
-            end
-            # weaker version of the above (which should pass, but make sure not failing too bad)
+            VERSION >= v"1.5" && @test (@ballocated(ChainRulesCore.construct($Foo, $bk))) <= 32
+            
+            # weaker version of the above (which should pass on all versions)
             @test (@ballocated(ChainRulesCore.construct($Foo, $bk))) <= 48
             @test (@ballocated ChainRulesCore.elementwise_add($bk, $bk)) <= 48
         end
@@ -242,11 +341,7 @@ end
 
     @testset "non-same-typed differential arithmetic" begin
         nt = (; a=1, b=2.0)
-        c = Composite{typeof(nt)}(; a=DoesNotExist(), b=0.1)
+        c = Tangent{typeof(nt)}(; a=NoTangent(), b=0.1)
         @test nt + c == (; a=1, b=2.1);
-    end
-
-    @testset "NO_FIELDS" begin
-        @test NO_FIELDS === Zero()
     end
 end

@@ -1,29 +1,38 @@
 module ChainRulesCore
 using Base.Broadcast: broadcasted, Broadcasted, broadcastable, materialize, materialize!
-using LinearAlgebra: LinearAlgebra
-using MuladdMacro: @muladd
+using Base.Meta
+using LinearAlgebra
+using SparseArrays: SparseVector, SparseMatrixCSC
+using Compat: hasfield, hasproperty
 
-export on_new_rule, refresh_rules  # generation tools
 export frule, rrule  # core function
-export @non_differentiable, @scalar_rule, @thunk  # definition helper macros
-export canonicalize, extern, unthunk  # differential operations
+# rule configurations
+export RuleConfig, HasReverseMode, NoReverseMode, HasForwardsMode, NoForwardsMode
+export frule_via_ad, rrule_via_ad
+# definition helper macros
+export @non_differentiable, @opt_out, @scalar_rule, @thunk, @not_implemented
+export ProjectTo, canonicalize, unthunk  # differential operations
+export add!!  # gradient accumulation operations
 # differentials
-export Composite, DoesNotExist, InplaceableThunk, One, Thunk, Zero, AbstractZero, AbstractThunk
-export NO_FIELDS
+export Tangent, NoTangent, InplaceableThunk, Thunk, ZeroTangent, AbstractZero, AbstractThunk
 
 include("compat.jl")
 include("debug_mode.jl")
 
 include("differentials/abstract_differential.jl")
 include("differentials/abstract_zero.jl")
-include("differentials/one.jl")
 include("differentials/thunks.jl")
 include("differentials/composite.jl")
+include("differentials/notimplemented.jl")
 
 include("differential_arithmetic.jl")
+include("accumulation.jl")
+include("projection.jl")
 
+include("config.jl")
 include("rules.jl")
 include("rule_definition_tools.jl")
-include("ruleset_loading.jl")
+
+include("deprecated.jl")
 
 end # module

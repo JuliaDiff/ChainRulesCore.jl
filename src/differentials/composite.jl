@@ -1,115 +1,135 @@
 """
-    Composite{P, T} <: AbstractDifferential
+    Tangent{P, T} <: AbstractTangent
 
 This type represents the differential for a `struct`/`NamedTuple`, or `Tuple`.
 `P` is the the corresponding primal type that this is a differential for.
 
-`Composite{P}` should have fields (technically properties), that match to a subset of the
+`Tangent{P}` should have fields (technically properties), that match to a subset of the
 fields of the primal type; and each should be a differential type matching to the primal
 type of that field.
-Fields of the P that are not present in the Composite are treated as `Zero`.
+Fields of the P that are not present in the Tangent are treated as `Zero`.
 
 `T` is an implementation detail representing the backing data structure.
 For Tuple it will be a Tuple, and for everything else it will be a `NamedTuple`.
 It should not be passed in by user.
 
-For `Composite`s of `Tuple`s, `iterate` and `getindex` are overloaded to behave similarly
+For `Tangent`s of `Tuple`s, `iterate` and `getindex` are overloaded to behave similarly
 to for a tuple.
-For `Composite`s of `struct`s, `getproperty` is overloaded to allow for accessing values
+For `Tangent`s of `struct`s, `getproperty` is overloaded to allow for accessing values
 via `comp.fieldname`.
-Any fields not explictly present in the `Composite` are treated as being set to `Zero()`.
-To make a `Composite` have all the fields of the primal the [`canonicalize`](@ref)
+Any fields not explictly present in the `Tangent` are treated as being set to `ZeroTangent()`.
+To make a `Tangent` have all the fields of the primal the [`canonicalize`](@ref)
 function is provided.
 """
-struct Composite{P, T} <: AbstractDifferential
+struct Tangent{P, T} <: AbstractTangent
     # Note: If T is a Tuple/Dict, then P is also a Tuple/Dict
     # (but potentially a different one, as it doesn't contain differentials)
     backing::T
 end
 
-function Composite{P}(; kwargs...) where P
+function Tangent{P}(; kwargs...) where P
     backing = (; kwargs...)  # construct as NamedTuple
-    return Composite{P, typeof(backing)}(backing)
+    return Tangent{P, typeof(backing)}(backing)
 end
 
-function Composite{P}(args...) where P
-    return Composite{P, typeof(args)}(args)
+function Tangent{P}(args...) where P
+    return Tangent{P, typeof(args)}(args)
 end
 
-function Composite{P}() where P<:Tuple
+function Tangent{P}() where P<:Tuple
     backing = ()
-    return Composite{P, typeof(backing)}(backing)
+    return Tangent{P, typeof(backing)}(backing)
 end
 
-function Composite{P}(d::Dict) where {P<:Dict}
-    return Composite{P, typeof(d)}(d)
+function Tangent{P}(d::Dict) where {P<:Dict}
+    return Tangent{P, typeof(d)}(d)
 end
 
-Base.:(==)(a::Composite, b::Composite) = backing(a) == backing(b)
+function Base.:(==)(a::Tangent{P, T}, b::Tangent{P, T}) where {P, T}
+    return backing(a) == backing(b)
+end
+function Base.:(==)(a::Tangent{P}, b::Tangent{P}) where {P, T}
+    all_fields = union(keys(backing(a)), keys(backing(b)))
+    return all(getproperty(a, f) == getproperty(b, f) for f in all_fields)
+end
+Base.:(==)(a::Tangent{P}, b::Tangent{Q}) where {P, Q} = false
 
-function Base.show(io::IO, comp::Composite{P}) where P
-    print(io, "Composite{")
+Base.hash(a::Tangent, h::UInt) = Base.hash(backing(canonicalize(a)), h)
+
+function Base.show(io::IO, comp::Tangent{P}) where P
+    print(io, "Tangent{")
     show(io, P)
     print(io, "}")
-    # allow Tuple or NamedTuple `show` to do the rendering of brackets etc
-    show(io, backing(comp))
+    if isempty(backing(comp))
+        print(io, "()")  # so it doesn't show `NamedTuple()`
+    else
+        # allow Tuple or NamedTuple `show` to do the rendering of brackets etc
+        show(io, backing(comp))
+    end
 end
 
-Base.convert(::Type{<:NamedTuple}, comp::Composite{<:Any, <:NamedTuple}) = backing(comp)
-Base.convert(::Type{<:Tuple}, comp::Composite{<:Any, <:Tuple}) = backing(comp)
-Base.convert(::Type{<:Dict}, comp::Composite{<:Dict, <:Dict}) = backing(comp)
+Base.getindex(comp::Tangent, idx) = getindex(backing(comp), idx)
 
-Base.getindex(comp::Composite, idx) = getindex(backing(comp), idx)
-Base.getproperty(comp::Composite, idx::Int) = getproperty(backing(comp), idx)  # for Tuple
-
+# for Tuple
+Base.getproperty(comp::Tangent, idx::Int) = unthunk(getproperty(backing(comp), idx))
 function Base.getproperty(
-    comp::Composite{P, <:NamedTuple{L}}, idx::Symbol
-) where {P, L}
-    # Need to check L directly, or else this does not constant-fold
-    idx ∈ L || return Zero()
-    return getproperty(backing(comp), idx)
+    comp::Tangent{P, T}, idx::Symbol
+) where {P, T<:NamedTuple}
+    hasfield(T, idx) || return ZeroTangent()
+    return unthunk(getproperty(backing(comp), idx))
 end
 
-Base.keys(comp::Composite) = keys(backing(comp))
-Base.propertynames(comp::Composite) = propertynames(backing(comp))
+Base.keys(comp::Tangent) = keys(backing(comp))
+Base.propertynames(comp::Tangent) = propertynames(backing(comp))
 
-Base.iterate(comp::Composite, args...) = iterate(backing(comp), args...)
-Base.length(comp::Composite) = length(backing(comp))
-Base.eltype(::Type{<:Composite{<:Any, T}}) where T = eltype(T)
+Base.haskey(comp::Tangent, key) = haskey(backing(comp), key)
+if isdefined(Base, :hasproperty)
+    Base.hasproperty(comp::Tangent, key::Symbol) = hasproperty(backing(comp), key)
+end
 
-function Base.map(f, comp::Composite{P, <:Tuple}) where P
+Base.iterate(comp::Tangent, args...) = iterate(backing(comp), args...)
+Base.length(comp::Tangent) = length(backing(comp))
+Base.eltype(::Type{<:Tangent{<:Any, T}}) where T = eltype(T)
+function Base.reverse(comp::Tangent)
+    rev_backing = reverse(backing(comp))
+    Tangent{typeof(rev_backing), typeof(rev_backing)}(rev_backing)
+end
+
+function Base.indexed_iterate(comp::Tangent{P,<:Tuple}, i::Int, state=1) where {P}
+    return Base.indexed_iterate(backing(comp), i, state)
+end
+
+function Base.map(f, comp::Tangent{P, <:Tuple}) where P
     vals::Tuple = map(f, backing(comp))
-    return Composite{P, typeof(vals)}(vals)
+    return Tangent{P, typeof(vals)}(vals)
 end
-function Base.map(f, comp::Composite{P, <:NamedTuple{L}}) where{P, L}
+function Base.map(f, comp::Tangent{P, <:NamedTuple{L}}) where{P, L}
     vals = map(f, Tuple(backing(comp)))
     named_vals = NamedTuple{L, typeof(vals)}(vals)
-    return Composite{P, typeof(named_vals)}(named_vals)
+    return Tangent{P, typeof(named_vals)}(named_vals)
 end
-function Base.map(f, comp::Composite{P, <:Dict}) where {P<:Dict}
-    return Composite{P}(Dict(k => f(v) for (k, v) in backing(comp)))
+function Base.map(f, comp::Tangent{P, <:Dict}) where {P<:Dict}
+    return Tangent{P}(Dict(k => f(v) for (k, v) in backing(comp)))
 end
 
-Base.conj(comp::Composite) = map(conj, comp)
-
-extern(comp::Composite) = backing(map(extern, comp))  # gives a NamedTuple or Tuple
-
+Base.conj(comp::Tangent) = map(conj, comp)
 
 """
     backing(x)
 
-Accesses the backing field of a `Composite`,
+Accesses the backing field of a `Tangent`,
 or destructures any other composite type into a `NamedTuple`.
 Identity function on `Tuple`. and `NamedTuple`s.
 
-This is an internal function used to simplify operations between `Composite`s and the
+This is an internal function used to simplify operations between `Tangent`s and the
 primal types.
 """
 backing(x::Tuple) = x
 backing(x::NamedTuple) = x
 backing(x::Dict) = x
-backing(x::Composite) = getfield(x, :backing)
+backing(x::Tangent) = getfield(x, :backing)
 
+# For generic structs
 function backing(x::T)::NamedTuple where T
     # note: all computation outside the if @generated happens at runtime.
     # so the first 4 lines of the branchs look the same, but can not be moved out.
@@ -134,35 +154,44 @@ function backing(x::T)::NamedTuple where T
 end
 
 """
-    canonicalize(comp::Composite{P}) -> Composite{P}
+    canonicalize(comp::Tangent{P}) -> Tangent{P}
 
-Return the canonical `Composite` for the primal type `P`.
-The property names of the returned `Composite` match the field names of the primal,
-and all fields of `P` not present in the input `comp` are explictly set to `Zero()`.
+Return the canonical `Tangent` for the primal type `P`.
+The property names of the returned `Tangent` match the field names of the primal,
+and all fields of `P` not present in the input `comp` are explictly set to `ZeroTangent()`.
 """
-function canonicalize(comp::Composite{P, <:NamedTuple{L}}) where {P,L}
+function canonicalize(comp::Tangent{P, <:NamedTuple{L}}) where {P,L}
     nil = _zeroed_backing(P)
     combined = merge(nil, backing(comp))
     if length(combined) !== fieldcount(P)
         throw(ArgumentError(
-            "Composite fields do not match primal fields.\n" *
-            "Composite fields: $L. Primal ($P) fields: $(fieldnames(P))"
+            "Tangent fields do not match primal fields.\n" *
+            "Tangent fields: $L. Primal ($P) fields: $(fieldnames(P))"
         ))
     end
-    return Composite{P, typeof(combined)}(combined)
+    return Tangent{P, typeof(combined)}(combined)
 end
 
 # Tuple composites are always in their canonical form
-canonicalize(comp::Composite{<:Tuple, <:Tuple}) = comp
+canonicalize(comp::Tangent{<:Tuple, <:Tuple}) = comp
+
+# Dict composite are always in their canonical form.
+canonicalize(comp::Tangent{<:Any, <:AbstractDict}) = comp
+
+# Tangents of unspecified primal types (indicated by specifying exactly `Any`)
+# all combinations of type-params are specified here to avoid ambiguities
+canonicalize(comp::Tangent{Any, <:NamedTuple{L}}) where {L} = comp
+canonicalize(comp::Tangent{Any, <:Tuple}) where {L} = comp
+canonicalize(comp::Tangent{Any, <:AbstractDict}) where {L} = comp
 
 """
     _zeroed_backing(P)
 
-Returns a NamedTuple with same fields as `P`, and all values `Zero()`.
+Returns a NamedTuple with same fields as `P`, and all values `ZeroTangent()`.
 """
 @generated function _zeroed_backing(::Type{P}) where P
     nil_base = ntuple(fieldcount(P)) do i
-        (fieldname(P, i), Zero())
+        (fieldname(P, i), ZeroTangent())
     end
     return (; nil_base...)
 end
@@ -200,13 +229,13 @@ construct(::Type{T}, fields::T) where T<:Tuple = fields
 elementwise_add(a::Tuple, b::Tuple) = map(+, a, b)
 
 function elementwise_add(a::NamedTuple{an}, b::NamedTuple{bn}) where {an, bn}
-    # Rule of Composite addition: any fields not present are implict hard Zeros
+    # Rule of Tangent addition: any fields not present are implict hard Zeros
 
     # Base on the `merge(:;NamedTuple, ::NamedTuple)` code from Base.
     # https://github.com/JuliaLang/julia/blob/592748adb25301a45bd6edef3ac0a93eed069852/base/namedtuple.jl#L220-L231
     if @generated
         names = Base.merge_names(an, bn)
-        
+
         vals = map(names) do field
             a_field = :(getproperty(a, $(QuoteNode(field))))
             b_field = :(getproperty(b, $(QuoteNode(field))))
@@ -250,7 +279,7 @@ elementwise_add(a::Dict, b::Dict) = merge(+, a, b)
 
 struct PrimalAdditionFailedException{P} <: Exception
     primal::P
-    differential::Composite{P}
+    differential::Tangent{P}
     original::Exception
 end
 
@@ -270,12 +299,3 @@ function Base.showerror(io::IO, err::PrimalAdditionFailedException{P}) where {P}
     printstyled(io, err.original; color=:yellow)
     println(io)
 end
-
-"""
-    NO_FIELDS
-
-Constant for the reverse-mode derivative with respect to a structure that has no fields.
-The most notable use for this is for the reverse-mode derivative with respect to the
-function itself, when that function is not a closure.
-"""
-const NO_FIELDS = Zero()

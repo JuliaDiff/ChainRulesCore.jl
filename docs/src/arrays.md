@@ -173,16 +173,16 @@ These identities are particularly useful:
 
 ```math
 \begin{align*}
-\frac{d}{dt} \left( \operatorname{real}(A) \right) &= \operatorname{real}(\dot{A})\\
-\frac{d}{dt} \left( \operatorname{conj}(A) \right) &= \operatorname{conj}(\dot{A})\\
-\frac{d}{dt} \left( A^T \right) &= \dot{A}^T\\
-\frac{d}{dt} \left( A^H \right) &= \dot{A}^H\\
+\frac{d}{dt} \left( \Re(A) \right) &= \Re(\dot{A})\\
+\frac{d}{dt} \left( A^* \right) &= \dot{A}^*\\
+\frac{d}{dt} \left( A^\mathsf{T} \right) &= \dot{A}^\mathsf{T}\\
+\frac{d}{dt} \left( A^\mathsf{H} \right) &= \dot{A}^\mathsf{H}\\
 \frac{d}{dt} \left( \sum_{j}  A_{i \ldots j \ldots k} \right) &=
     \sum_{j} \dot{A}_{i \ldots j \ldots k},
 \end{align*}
 ```
 
-where $\cdot^H = \operatorname{conj}(\cdot^T)$ is the conjugate transpose (the `adjoint` function).
+where $\cdot^*$ is the complex conjugate (`conj`), and $\cdot^\mathsf{H} = \left(\cdot^\mathsf{T}\right)^*$ is the conjugate transpose (the `adjoint` function).
 
 ## Reverse-mode rules
 
@@ -198,56 +198,48 @@ At any step in the program, if we have intermediates $X_m$, we can write down th
 ```math
 \begin{align*}
 \frac{ds}{dt}
-    &= \sum_m \operatorname{real}\left( \sum_{i,\ldots,j}
-           \operatorname{conj}\left( \frac{\partial s}{\partial (X_m)_{i,\ldots,j}} \right)
+    &= \sum_m \Re\left( \sum_{i,\ldots,j}
+           \left( \frac{\partial s}{\partial (X_m)_{i,\ldots,j}} \right)^*
            \frac{d (X_m)_{i,\ldots,j}}{dt}
        \right)\\
-    &= \sum_m \operatorname{real}\left( \sum_{i,\ldots,j}
-           \operatorname{conj} \left( (\overline{X}_m)_{i,\ldots,j} \right)
+    &= \sum_m \Re\left( \sum_{i,\ldots,j}
+           (\overline{X}_m)_{i,\ldots,j}^*
            (\dot{X}_m)_{i,\ldots,j}
        \right)\\
-    &= \sum_m \operatorname{real}\left( \operatorname{dot}\left(
-           \overline{X}_m, \dot{X}_m
-       \right) \right),
+    &= \sum_m \Re\ip{ \overline{X}_m }{ \dot{X}_m },
 \end{align*}
 ```
 
-where $\operatorname{conj}(\cdot)$ is the complex conjugate (`conj`), $\operatorname{real}(\cdot)$ is the real part of its argument (`real`), and $\operatorname{dot}(\cdot, \cdot)$ is the inner product (`LinearAlgebra.dot`).
+where $\Re(\cdot)$ is the real part of a number (`real`), and $\ip{\cdot}{\cdot}$ is the [Frobenius inner product](https://en.wikipedia.org/wiki/Frobenius_inner_product) (`LinearAlgebra.dot`).
 Because this equation follows at any step of the program, we can equivalently write 
 
 ```math
-\frac{ds}{dt} = \operatorname{real}\left( \operatorname{dot}\left(
-                    \overline{\Omega}, \dot{\Omega}
-                \right) \right),
+\frac{ds}{dt} = \Re\ip{ \overline{\Omega} }{ \dot{\Omega} },
 ```
 
 which gives the identity
 
 ```math
 \begin{equation} \label{pbident}
-\operatorname{real}\left( \operatorname{dot}\left(
-    \overline{\Omega}, \dot{\Omega}
-\right) \right) = 
-\sum_m \operatorname{real}\left( \operatorname{dot}\left(
-    \overline{X}_m, \dot{X}_m
-\right) \right).
+\Re\ip{ \overline{\Omega} }{ \dot{\Omega} } = \sum_m \Re\ip{ \overline{X}_m }{ \dot{X}_m }.
 \end{equation}
 ```
 
-For matrices and vectors, $\operatorname{dot}(A, B) = \operatorname{tr}(A^H B)$, and the identity simplifies to:
+For matrices and vectors, $\ip{A}{B} = \tr(A^\mathsf{H} B)$, and the identity simplifies to:
 
 ```math
 \begin{equation} \label{pbidentmat}
-\operatorname{real}\left( \operatorname{tr}\left(
-    \overline{\Omega}^H \dot{\Omega}
+\Re\left( \tr\left(
+    \overline{\Omega}^\mathsf{H} \dot{\Omega}
 \right) \right) =
-\sum_m \operatorname{real} \left( \operatorname{tr} \left(
-    \overline{X}_m^H \dot{X}_m
+\sum_m \Re \left( \tr \left(
+    \overline{X}_m^\mathsf{H} \dot{X}_m
 \right) \right),
 \end{equation}
 ```
 
-where $\operatorname{tr}(\cdot)$ is the matrix trace (`LinearAlgebra.tr`) function.
+where $\tr(\cdot)$ is the matrix trace (`LinearAlgebra.tr`) function.
+However, it is often cleaner and more general to work with the inner product.
 
 Our approach for deriving the adjoints $\overline{X}_m$ is then:
 
@@ -266,18 +258,16 @@ Note that the final expressions for the adjoints will not contain any $\dot{X}_m
     ```math
     \begin{align*}
     \frac{ds}{dt}
-        &= \operatorname{real}\left( \operatorname{dot}\left(
-               \overline{x} + i \overline{y}, \dot{x} + i \dot{y}
-           \right) \right) \\
-        &= \operatorname{real}\left(
-               \operatorname{conj} \left( \overline{x} + i \overline{y} \right)
+        &= \Re\ip{ \overline{x} + i \overline{y} }{ \dot{x} + i \dot{y} } \\
+        &= \Re\left(
+               \left( \overline{x} + i \overline{y} \right)^*
                \left( \dot{x} + i \dot{y} \right)
            \right) \\
-        &= \operatorname{real}\left(
+        &= \Re\left(
                \left( \overline{x} - i \overline{y} \right)
                \left( \dot{x} + i \dot{y} \right)
            \right) \\
-        &= \operatorname{real}\left(
+        &= \Re\left(
                \left( \overline{x} \dot{x} + \overline{y} \dot{y} \right) +
                i \left( \overline{x} \dot{y} - \overline{y} \dot{x} \right)
            \right)\\
@@ -286,16 +276,44 @@ Note that the final expressions for the adjoints will not contain any $\dot{X}_m
     ```
     which is exactly what the identity would produce if we had written the function as $f: (x, y) \mapsto (u, v)$.
 
-For matrices and vectors, several properties of the trace function come in handy:
+### Useful properties of the inner product
+
+Several properties of the Frobenius inner product come in handy.
+First, it is [linear](https://en.wikipedia.org/wiki/Linear_map) in its second argument and conjugate linear in its first.
+That is, for arrays $A, B, C, D$ and scalars $a$ and $b$,
 
 ```math
 \begin{align}
-\operatorname{tr}(A+B) &= \operatorname{tr}(A) + \operatorname{tr}(B) \label{trexpand}\\
-\operatorname{tr}(A^T) &= \operatorname{tr}(A) \nonumber\\
-\operatorname{tr}(A^H) &= \operatorname{conj}(\operatorname{tr}(A)) \nonumber\\
-\operatorname{tr}(AB) &= \operatorname{tr}(BA) \label{trperm}
+\ip{A+B}{C+D} &= \ip{A}{C} + \ip{B}{C} + \ip{A}{D} + \ip{B}{D} \label{iplinear}\\
+\ip{aA}{bB} &= a^* b \ip{A}{B} \nonumber
 \end{align}
 ```
+
+Second, swapping arguments is equivalent to conjugating the inner product:
+
+```math
+\begin{equation}
+\ip{A}{B} = \ip{B}{A}^* \label{ipconj}
+\end{equation}
+```
+
+Third, for matrices and vectors $A$, $B$, and $C$, we can move arguments from the left or right of one side to the other using the matrix adjoint:
+
+```math
+\begin{equation}
+\ip{A}{BCD} = \ip{B^\mathsf{H} A}{CD} = \ip{B^\mathsf{H} A D^\mathsf{H}}{C} \label{ipperm}
+\end{equation}
+```
+
+Fourth, the inner product of two arrays $A$ and $B$ is equivalent to the sum of the elementwise inner products of the two arrays:
+
+```math
+\begin{equation}
+\ip{A}{B} = \sum_{i,\ldots,k} \ip{A_{i,\ldots,k}}{B_{i,\ldots,k}} = \sum_{i,\ldots,k} A_{i,\ldots,k}^* B_{i,\ldots,k}
+\end{equation}
+```
+As a result, only elements that are nonzero on both sides contribute to the inner product.
+This property is especially useful when deriving rules involving structurally sparse arrays.
 
 Now let's derive a few pullbacks using this approach.
 
@@ -309,37 +327,18 @@ We above derived in \eqref{diffprod} the pushforward
 
 $$\dot{\Omega} = \dot{A} B + A \dot{B}$$
 
-Using \eqref{pbidentmat}, we now multiply by $\overline{\Omega}^H$ and take the real trace:
+Using \eqref{pbidentmat}, we now multiply by $\overline{\Omega}^\mathsf{H}$ and take the real trace:
 
 ```math
 \begin{align*}
-\operatorname{real}\left( \operatorname{tr} \left(
-        \overline{\Omega}^H \dot{\Omega}
-\right) \right)
-    &= \operatorname{real}\left( \operatorname{tr} \left( \overline{\Omega}^H ~\left(
-           \dot{A} B + A \dot{B}
-       \right) \right) \right)
+\Re\ip{\overline{\Omega}}{\dot{\Omega}}
+    &= \Re \ip{\overline \Omega}{\dot{A} B + A \dot{B}}
            && \text{substitute } \dot{\Omega} \text{ from } \eqref{diffprod}\\
-    &= \operatorname{real}\left( \operatorname{tr} \left(
-           \overline{\Omega}^H \dot{A} B
-       \right) \right) +
-       \operatorname{real}\left( \operatorname{tr} \left(
-           \overline{\Omega}^H  A \dot{B}
-       \right) \right)
-           && \text{expand using } \eqref{trexpand} \\
-    &= \operatorname{real}\left( \operatorname{tr} \left(
-           B \overline{\Omega}^H \dot{A}
-       \right) \right) +
-       \operatorname{real}\left( \operatorname{tr} \left(
-           \overline{\Omega}^H A \dot{B}
-       \right) \right)
-           && \text{rearrange the left term using } \eqref{trperm}\\
-    &= \operatorname{real}\left( \operatorname{tr} \left(
-           \overline{A}^H  \dot{A}
-       \right) \right) +
-       \operatorname{real}\left( \operatorname{tr} \left(
-           \overline{B}^H \dot{B}
-       \right) \right)
+    &= \Re \ip{\overline \Omega}{\dot{A} B} + \Re \ip{\overline \Omega}{A \dot{B}}
+           && \text{expand using } \eqref{iplinear} \\
+    &= \Re \ip{\overline \Omega B^\mathsf{H}}{\dot{A}} + \Re \ip{A^\mathsf{H} \overline \Omega}{\dot{B}}
+           && \text{rearrange the left term using } \eqref{ipperm}\\
+    &= \Re \ip{\overline A}{\dot{A}} + \Re \ip{\overline B}{\dot{B}}
            && \text{right-hand side of } \eqref{pbidentmat}
 \end{align*}
 ```
@@ -347,14 +346,7 @@ Using \eqref{pbidentmat}, we now multiply by $\overline{\Omega}^H$ and take the 
 That's it!
 The expression is in the desired form to solve for the adjoints by comparing the last two lines:
 
-```math
-\begin{align*}
-B \overline{\Omega}^H \dot{A} &= \overline{A}^H  \dot{A}, \quad
-    && \overline{A} = \overline{\Omega} B^H\\
-\overline{\Omega}^H A \dot{B} &= \overline{B}^H \dot{B}, \quad
-    && \overline{B} = A^H \overline{\Omega}
-\end{align*}
-```
+$$\overline A = \overline \Omega B^\mathsf{H}, \qquad \overline B = A^\mathsf{H} \overline \Omega$$
 
 Using ChainRules's notation, we would implement the `rrule` as
 
@@ -363,7 +355,7 @@ function rrule(::typeof(*), A::Matrix{<:RealOrComplex}, B::Matrix{<:RealOrComple
     function times_pullback(ΔΩ)
         ∂A = @thunk(ΔΩ * B')
         ∂B = @thunk(A' * ΔΩ)
-        return (NO_FIELDS, ∂A, ∂B)
+        return (NoTangent(), ∂A, ∂B)
     end
     return A * B, times_pullback
 end
@@ -383,20 +375,12 @@ Using \eqref{pbidentmat},
 
 ```math
 \begin{align*}
-\operatorname{real}\left( \operatorname{tr} \left(
-    \overline{\Omega}^H \dot{\Omega}
-\right) \right)
-    &= \operatorname{real}\left( \operatorname{tr} \left(
-           -\overline{\Omega}^H \Omega \dot{A} \Omega
-       \right) \right)
+\Re\ip{\overline{\Omega}}{\dot{\Omega}}
+    &= \Re\ip{\overline{\Omega}}{-\Omega \dot{A} \Omega}
            && \text{substitute } \eqref{invdiff}\\
-    &= \operatorname{real}\left( \operatorname{tr} \left(
-           -\Omega \overline{\Omega}^H \Omega \dot{A}
-       \right) \right)
-           && \text{rearrange using } \eqref{trperm}\\
-    &= \operatorname{real}\left( \operatorname{tr} \left(
-           \overline{A}^H  \dot{A}
-       \right) \right)
+    &= \Re\ip{-\Omega^\mathsf{H} \overline{\Omega} \Omega^\mathsf{H}}{\dot{A}}
+           && \text{rearrange using } \eqref{ipperm}\\
+    &= \Re\ip{\overline{A}}{\dot{A}}
            && \text{right-hand side of } \eqref{pbidentmat}
 \end{align*}
 ```
@@ -404,8 +388,7 @@ Using \eqref{pbidentmat},
 we can now solve for $\overline{A}$:
 
 ```math
-\overline{A} = \left( -\Omega \overline{\Omega}^H \Omega \right)^H
-             = -\Omega^H \overline{\Omega} \Omega^H
+\overline{A} = -\Omega^\mathsf{H} \overline{\Omega} \Omega^\mathsf{H}
 ```
 
 We can implement the resulting `rrule` as
@@ -415,7 +398,7 @@ function rrule(::typeof(inv), A::Matrix{<:RealOrComplex})
     Ω = inv(A)
     function inv_pullback(ΔΩ)
         ∂A = -Ω' * ΔΩ * Ω'
-        return (NO_FIELDS, ∂A)
+        return (NoTangent(), ∂A)
     end
     return Ω, inv_pullback
 end
@@ -435,9 +418,7 @@ which we write as
 
 ```math
 \Omega_{i1k} = \sum_{j} |X_{ijk}|^2
-             = \sum_{j} \operatorname{real} \left(
-                  \operatorname{conj} \left( X_{ijk} \right) X_{ijk}
-               \right)
+             = \sum_{j} \Re \ip{X_{ijk}}{X_{ijk}}
 ```
 
 The pushforward from \eqref{pf} is
@@ -445,28 +426,19 @@ The pushforward from \eqref{pf} is
 ```math
 \begin{align}
 \dot{\Omega}_{i1k}
-    &= \sum_j \operatorname{real}\left(
-           \operatorname{conj} \left( \dot{X}_{ijk} \right) X_{ijk} +
-           \operatorname{conj} \left( X_{ijk} \right) \dot{X}_{ijk} \right) \nonumber\\
-    &= \sum_j \operatorname{real}\left(
-            \operatorname{conj}\left(
-                \operatorname{conj} \left( X_{ijk} \right) \dot{X}_{ijk}
-            \right) +
-            \operatorname{conj}(X_{ijk}) \dot{X}_{ijk}
-       \right) \nonumber\\
-    &= \sum_j 2 \operatorname{real}\left(
-           \operatorname{conj} \left( X_{ijk} \right) \dot{X}_{ijk}
-       \right), \label{sumabspf}
+    &= \sum_j \Re\ip{\dot{X}_{ijk}}{X_{ijk}} + \ip{X_{ijk}}{\dot{X}_{ijk}} \nonumber\\
+    &= \sum_j \Re\ip{X_{ijk}}{\dot{X}_{ijk}}^* + \ip{X_{ijk}}{\dot{X}_{ijk}} \nonumber\\
+    &= \sum_j 2 \Re\ip{X_{ijk}}{\dot{X}_{ijk}}, \label{sumabspf}
 \end{align}
 ```
 
 where in the last step we have used the fact that for all real $a$ and $b$,
 
 ```math
-(a + i b) + \operatorname{conj}(a + i b)
+(a + i b) + (a + i b)^*
     = (a + i b) + (a - i b)
     = 2 a
-    = 2 \operatorname{real} (a + i b).
+    = 2 \Re (a + i b).
 ```
 
 Because none of this derivation depended on the index (or indices), we implement `frule` generically as
@@ -486,49 +458,36 @@ end
 ```
 
 We can now derive the reverse-mode rule.
-The array form of \eqref{pbident} is
+The elementwise form of \eqref{pbident} is
 
 ```math
 \begin{align*}
-\operatorname{real}\left( \operatorname{dot}\left(
-    \overline{\Omega}, \dot{\Omega}
-\right) \right)
-    &= \operatorname{real} \left( \sum_{ik}
-           \operatorname{conj} \left( \overline{\Omega}_{i1k} \right) \dot{\Omega}_{i1k}
-       \right)
+\Re\ip{ \overline{\Omega} }{ \dot{\Omega} }
+    &= \Re \left( \sum_{ik} \overline{\Omega}_{i1k}^*
+           \dot{\Omega}_{i1k} \right)
            && \text{expand left-hand side of } \eqref{pbident}\\
-    &= \operatorname{real} \left(\sum_{ijk}
-           \operatorname{conj} \left( \overline{\Omega}_{i1k} \right)
-           2 \operatorname{real}\left(
-               \operatorname{conj} \left( X_{ijk} \right) \dot{X}_{ijk}
-           \right)
+    &= \Re \left(\sum_{ijk} \overline{\Omega}_{i1k}^*
+           2 \Re\left( X_{ijk}^* \dot{X}_{ijk} \right)
        \right)
            && \text{substitute } \eqref{sumabspf}\\
-    &= \operatorname{real} \left( \sum_{ijk}
+    &= \Re \left( \sum_{ijk}
            \left(
-               2 \operatorname{real} \left( \overline{\Omega}_{i1k} \right)
-               \operatorname{conj} \left( X_{ijk} \right)
+               2 \Re \left( \overline{\Omega}_{i1k} \right)
+               X_{ijk}^*
            \right) \dot{X}_{ijk}
        \right)
-           && \text{bring } \dot{X}_{ijk} \text{ outside of } \operatorname{real}\\
-    &= \operatorname{real} \left( \sum_{ijk}
-           \operatorname{conj} \left( \overline{X}_{ijk} \right) \dot{X}_{i1k}
-       \right)
-           && \text{expand right-hand side of } \eqref{pbident}
+           && \text{bring } \dot{X}_{ijk} \text{ outside of } \Re\\
+    &= \sum_{ijk} \Re\ip{2 \Re \left( \overline{\Omega}_{i1k} \right) X_{ijk}}{\dot{X}_{ijk}}
+           && \text{rewrite as an inner product}\\
+    &= \sum_{ijk} \Re\ip{\overline{X}_{ijk}}{\dot{X}_{i1k}}
+           && \text{right-hand side of } \eqref{pbident}
 \end{align*}
 ```
 
 We now solve for $\overline{X}$:
 
 ```math
-\begin{align*}
-\overline{X}_{ijk}
-    &= \operatorname{conj}\left(
-            2 \operatorname{real} \left( \overline{\Omega}_{i1k} \right)
-            \operatorname{conj} \left( X_{ijk} \right)
-        \right)\\
-    &= 2\operatorname{real} \left( \overline{\Omega}_{i1k} \right) X_{ijk}
-\end{align*}
+\overline{X}_{ijk} = 2\Re \left( \overline{\Omega}_{i1k} \right) X_{ijk}
 ```
 
 Like the `frule`, this `rrule` can be implemented generically:
@@ -536,9 +495,9 @@ Like the `frule`, this `rrule` can be implemented generically:
 ```julia
 function rrule(::typeof(sum), ::typeof(abs2), X::Array{<:RealOrComplex}; dims = :)
     function sum_abs2_pullback(ΔΩ)
-        ∂abs2 = DoesNotExist()
+        ∂abs2 = NoTangent()
         ∂X = @thunk(2 .* real.(ΔΩ) .* X)
-        return (NO_FIELDS, ∂abs2, ∂X)
+        return (NoTangent(), ∂abs2, ∂X)
     end
     return sum(abs2, X; dims = dims), sum_abs2_pullback
 end
@@ -574,7 +533,7 @@ To make this easier, let's break the computation into more manageable steps:
 ```math
 \begin{align*}
 d &= \det(A)\\
-a &= |d| = \sqrt{\operatorname{real} \left( \operatorname{conj}(d) d \right)}\\
+a &= |d| = \sqrt{\Re \left( d^* d \right)}\\
 l &= \log a\\
 s &= \frac{d}{a}
 \end{align*}
@@ -583,9 +542,9 @@ s &= \frac{d}{a}
 We'll make frequent use of the identities:
 
 $$d = a s$$
-$$\operatorname{conj}(s) s = \frac{\operatorname{conj}(d) d}{a^2} = \frac{a^2}{a^2} = 1$$
+$$s^* s = \frac{d^* d}{a^2} = \frac{a^2}{a^2} = 1$$
 
-It will also be useful to define $b = \operatorname{tr}\left( A^{-1} \dot{A} \right)$.
+It will also be useful to define $b = \tr\left( A^{-1} \dot{A} \right)$.
 
 For $\dot{d}$, we use the pushforward for the determinant given in section 2.2.4 of [^Giles2008ext]:
 
@@ -596,45 +555,45 @@ Now we'll compute the pushforwards for the remaining steps.
 ```math
 \begin{align*}
 \dot{a} &= \frac{1}{2 a} \frac{d}{dt}
-                         \operatorname{real}\left( \operatorname{conj}(d) d \right)\\
-        &= \frac{2}{2 a} \operatorname{real} \left( \operatorname{conj}(d) \dot{d} \right)\\
-        &= \operatorname{real} \left( \operatorname{conj}(s) \dot{d} \right)
+                         \Re\left( d^* d \right)\\
+        &= \frac{2}{2 a} \Re \left( d^* \dot{d} \right)\\
+        &= \Re \left( s^* \dot{d} \right)
             && \text{use } d = a s \\
-        &= \operatorname{real} \left( \operatorname{conj}(s) d b \right)
+        &= \Re \left( s^* d b \right)
             && \text{substitute } \dot{d} \\
 \dot{l} &= a^{-1} \dot{a}\\
-        &= a^{-1} \operatorname{real} \left( \operatorname{conj}(s) d b \right)
+        &= a^{-1} \Re \left( s^* d b \right)
             && \text{substitute } \dot{a}\\
-        &= \operatorname{real} \left( \operatorname{conj}(s) s b \right)
+        &= \Re \left( s^* s b \right)
             && \text{use } d = a s \\
-        &= \operatorname{real} \left(b \right)
-            && \text{use } \operatorname{conj}(s) s = 1\\
+        &= \Re \left(b \right)
+            && \text{use } s^* s = 1\\
 \dot{s} &= a^{-1} \dot{d} - a^{-2} d \dot{a}\\
         &= a^{-1} \left( \dot{d} - \dot{a} s \right)
             && \text{use } d = a s \\
         &= a^{-1} \left(
-               \dot{d} - \operatorname{real} \left( \operatorname{conj}(s) \dot{d} \right) s
+               \dot{d} - \Re \left( s^* \dot{d} \right) s
            \right)
             && \text{substitute } \dot{a}\\
         &= a^{-1} \left(
                \dot{d} - \left(
-                   \operatorname{conj}(s) \dot{d} -
-                   i \operatorname{imag} \left( \operatorname{conj}(s) \dot{d} \right)
+                   s^* \dot{d} -
+                   i \Im \left( s^* \dot{d} \right)
                \right) s
            \right)
-            && \text{use } \operatorname{real}(x) = x - i \operatorname{imag}(x)\\
+            && \text{use } \Re(x) = x - i \Im(x)\\
         &= a^{-1} \left(
-               \dot{d} - \left( \operatorname{conj}(s) s \right) \dot{d} +
-               i \operatorname{imag} \left( \operatorname{conj}(s) \dot{d} \right) s 
+               \dot{d} - \left( s^* s \right) \dot{d} +
+               i \Im \left( s^* \dot{d} \right) s 
                \right)\\
-        &= i a^{-1} \operatorname{imag} \left( \operatorname{conj}(s) \dot{d} \right) s
-            && \text{use } \operatorname{conj}(s) s = 1\\
-        &= i a^{-1} \operatorname{imag} \left( \operatorname{conj}(s) d b \right) s
+        &= i a^{-1} \Im \left( s^* \dot{d} \right) s
+            && \text{use } s^* s = 1\\
+        &= i a^{-1} \Im \left( s^* d b \right) s
             && \text{substitute } \dot{d}\\
-        &= i \operatorname{imag} \left( \operatorname{conj}(s) s b \right) s
+        &= i \Im \left( s^* s b \right) s
             && \text{use } d = a s \\
-        &= i \operatorname{imag}(b) s
-            && \text{use } \operatorname{conj}(s) s = 1
+        &= i \Im(b) s
+            && \text{use } s^* s = 1
 \end{align*}
 ```
 
@@ -643,9 +602,9 @@ In summary, after all of that work, the final pushforward is quite simple:
 
 ```math
 \begin{align}
-b &= \operatorname{tr} \left( A^{-1} \dot{A} \right) \label{logabsdet_b} \\
-\dot{l} &= \operatorname{real}(b) \label{logabsdet_ldot}\\
-\dot{s} &= i \operatorname{imag}(b) s \label{logabsdet_sdot}\\
+b &= \tr \left( A^{-1} \dot{A} \right) \label{logabsdet_b} \\
+\dot{l} &= \Re(b) \label{logabsdet_ldot}\\
+\dot{s} &= i \Im(b) s \label{logabsdet_sdot}\\
 \end{align}
 ```
 
@@ -662,9 +621,9 @@ function frule((_, ΔA), ::typeof(logabsdet), A::Matrix{<:RealOrComplex})
     ∂l = real(b)
     # for real A, ∂s will always be zero (because imag(b) = 0)
     # this is type-stable because the eltype is known
-    ∂s = eltype(A) <: Real ? Zero() : im * imag(b) * s
-    # tangents of tuples are of type Composite{<:Tuple}
-    ∂Ω = Composite{typeof(Ω)}(∂l, ∂s)
+    ∂s = eltype(A) <: Real ? ZeroTangent() : im * imag(b) * s
+    # tangents of tuples are of type Tangent{<:Tuple}
+    ∂Ω = Tangent{typeof(Ω)}(∂l, ∂s)
     return (Ω, ∂Ω)
 end
 ```
@@ -673,60 +632,47 @@ end
 
 ```math
 \begin{align*}
-&\operatorname{real}\left( \operatorname{tr}\left(
-    \overline{l}^H \dot{l}
-\right) \right) +
-\operatorname{real}\left( \operatorname{tr}\left(
-    \overline{s}^H \dot{s}
-\right) \right)
+&\Re\ip{\overline{l}}{\dot{l}} + \Re\ip{\overline{s}}{\dot{s}}
     && \text{left-hand side of } \eqref{pbidentmat}\\
-&= \operatorname{real}\left( 
-       \operatorname{conj} \left( \overline{l} \right) \dot{l} +
-       \operatorname{conj} \left( \overline{s} \right) \dot{s}
-   \right) \\
-&= \operatorname{real}\left( 
-       \operatorname{conj} \left( \overline{l} \right) \operatorname{real}(b) +
-       i \operatorname{conj} \left( \overline{s} \right) s \operatorname{imag}(b)
+&= \Re\left( \overline{l}^* \dot{l} + \overline{s}^* \dot{s} \right) \\
+&= \Re\left( 
+       \overline{l}^* \Re(b) + i \overline{s}^* s \Im(b)
    \right)
        && \text{substitute } \eqref{logabsdet_ldot} \text{ and } \eqref{logabsdet_sdot} \\
-&= \operatorname{real}\left( 
-       \operatorname{real}\left( \overline{l} \right) \operatorname{real}(b) -
-       \operatorname{imag} \left(
-           \operatorname{conj} \left( \overline{s} \right) s
-       \right) \operatorname{imag}(b)
+&= \Re\left( 
+       \Re\left( \overline{l} \right) \Re(b) -
+       \Im \left( \overline{s}^* s \right) \Im(b)
    \right)
        && \text{discard imaginary parts} \\
-&= \operatorname{real}\left(
+&= \Re\left(
        \left(
-           \operatorname{real} \left( \overline{l} \right) +
-           i \operatorname{imag} \left(
-               \operatorname{conj} \left( \overline{s} \right) s
-           \right)
+           \Re \left( \overline{l} \right) +
+           i \Im \left( \overline{s}^* s \right)
        \right) b
    \right)
        && \text{gather parts of } b \\
-&= \operatorname{real}\left(
+&= \Re\left(
        \left(
-           \operatorname{real} \left( \overline{l} \right) +
-           i \operatorname{imag} \left(
-               \operatorname{conj} \left( \overline{s} \right) s
-           \right)
+           \Re \left( \overline{l} \right) +
+           i \Im \left( \overline{s}^* s \right)
        \right)
-       \operatorname{tr}(A^{-1} \dot{A})
+       \tr(A^{-1} \dot{A})
    \right)
        && \text{substitute } b \text{ from } \eqref{logabsdet_b} \\
-&= \operatorname{real}\left( \operatorname{tr} \left(
+&= \Re\left( \tr \left(
        \left(
-           \operatorname{real} \left( \overline{l} \right) +
-           i \operatorname{imag} \left(
-               \operatorname{conj} \left( \overline{s} \right) s
-           \right)
+           \Re \left( \overline{l} \right) +
+           i \Im \left( \overline{s}^* s \right)
        \right)
        A^{-1} \dot{A}
    \right) \right)
-       && \text{bring scalar within } \operatorname{tr} \\
-&= \operatorname{real}\left( \operatorname{tr} \left( \overline{A}^H \dot{A} \right) \right)
-       && \text{right-hand side of } \eqref{pbidentmat}\\
+       && \text{bring scalar within } \tr \\
+&= \Re\ip{
+        \left(
+            \Re \left( \overline{l} \right) + i \Im \left( s^* \overline{s} \right)
+        \right) A^{-\mathsf{H}}
+    }{\dot{A}} && \text{rewrite as inner product}\\
+&= \Re\ip{\overline{A}}{\dot{A}} && \text{right-hand side of } \eqref{pbidentmat}\\
 \end{align*}
 ```
 
@@ -734,14 +680,10 @@ Now we solve for $\overline{A}$:
 
 ```math
 \begin{align*}
-\overline{A} &= \left( \left(
-    \operatorname{real} \left( \overline{l} \right) +
-    i \operatorname{imag} \left( \operatorname{conj} \left( \overline{s} \right) s \right)
-\right) A^{-1} \right)^H\\
-&= \left(
-    \operatorname{real} \left( \overline{l} \right) +
-    i \operatorname{imag} \left( \operatorname{conj} \left( s \right) \overline{s} \right)
-\right) A^{-H}
+\overline{A} = \left(
+    \Re \left( \overline{l} \right) +
+    i \Im \left( s^* \overline{s} \right)
+\right) A^{-\mathsf{H}}
 \end{align*}
 ```
 
@@ -760,7 +702,7 @@ function rrule(::typeof(logabsdet), A::Matrix{<:RealOrComplex})
         imagf = f - real(f)  # 0 for real A and Δs, im * imag(f) for complex A and/or Δs
         g = real(Δl) + imagf
         ∂A = g * inv(F)'  # == g * inv(A)'
-        return (NO_FIELDS, ∂A)
+        return (NoTangent(), ∂A)
     end
     return (Ω, logabsdet_pullback)
 end
@@ -773,18 +715,107 @@ end
     What about $\dot{s}$?
     Well, $s = \frac{d}{|d|}$ is point on the unit circle in the complex plane.
     Multiplying a complex number by $i$ rotates it counter-clockwise by 90°.
-    So the expression for $\dot{s}$ takes a real number, $\operatorname{imag}(b)$, multiplies by $s$ to make it parallel to $s$, then multiplies by $i$ to make it perpendicular to $s$, that is, perfectly tangent to the unit complex circle at $s$.
+    So the expression for $\dot{s}$ takes a real number, $\Im(b)$, multiplies by $s$ to make it parallel to $s$, then multiplies by $i$ to make it perpendicular to $s$, that is, perfectly tangent to the unit complex circle at $s$.
 
     For the pullback, it again follows that only the real part of $\overline{l}$ is pulled back.
 
-    ``\operatorname{conj}(s)`` rotates a number parallel to $s$ to the real line.
-    So $\operatorname{conj}(s) \overline{s}$ rotates $\overline{s}$ so that its imaginary part is the part that was tangent to the complex circle at $s$, while the real part is the part that was not tangent.
+    ``s^*`` rotates a number parallel to $s$ to the real line.
+    So $s^* \overline{s}$ rotates $\overline{s}$ so that its imaginary part is the part that was tangent to the complex circle at $s$, while the real part is the part that was not tangent.
     Then the pullback isolates the imaginary part, which effectively is a projection.
     That is, any part of the adjoint $\overline{s}$ that is not tangent to the complex circle at $s$ will not contribute to $\overline{A}$.
+
+## Implicit functions
+
+Sometimes a function is only defined implicitly, and internally some solver or iterative algorithm is used to compute the result.
+We can still in some cases derive rules by considering only the implicit functions and not the internals.
+One example is the solution $X$ to the Sylvester equation
+
+$$A X + X B = -C$$
+
+for inputs $A$, $B$, and $C$.
+We can also write this solution as $X = \operatorname{sylvester}(A, B, C)$, which in Julia is computed using `LinearAlgebra.sylvester(A, B, C)`.
+
+### Forward-mode Rule
+
+We start by differentiating the implicit function:
+
+$$\dot{A} X + A \dot{X} + \dot{X} B + X \dot{B} = -\dot{C}$$
+
+Then we isolate the terms with $\dot{X}$ on one side:
+```math
+\begin{align}
+A \dot{X} + \dot{X} B
+    &= -\dot{C} - \dot{A} X - X \dot{B} \label{sylpfimplicit}\\
+    &= -(\dot{C} + \dot{A} X + X \dot{B}) \nonumber
+\end{align}
+```
+
+So the pushforward is the solution to a different Sylvester equation:
+
+$$\dot{X} = \operatorname{sylvester}(A, B, \dot{C} + \dot{A} X + X \dot{B})$$
+
+The `frule` can be implemented as
+
+```julia
+function frule((_, ΔA, ΔB, ΔC), ::typeof(sylvester), A, B, C)
+    X = sylvester(A, B, C)
+    return X, sylvester(A, B, ΔC + ΔA * X + X * ΔB)
+end
+```
+
+### Reverse-mode Rule
+
+Like with the pushforward, it's easiest to work with the implicit function.
+We start by introducing some dummy $-Z$ and taking its inner product with both sides of \eqref{sylpfimplicit}:
+
+$$\ip{-Z}{A \dot{X} + \dot{X} B} = \ip{-Z}{-\dot{C} - \dot{A} X - X \dot{B}}.$$
+
+Then we expand
+
+$$\ip{-Z}{A \dot{X}} + \ip{-Z}{\dot{X} B} = \ip{Z}{\dot{C}} + \ip{Z}{\dot{A} X} + \ip{Z}{X \dot{B}}.$$
+
+Now permute:
+
+$$\ip{-A^\mathsf{H} Z}{\dot{X}} + \ip{-Z B^\mathsf{H}}{\dot{X}} = \ip{Z}{\dot{C}} + \ip{Z X^\mathsf{H}}{\dot{A}} + \ip{X^\mathsf{H} Z}{X \dot{B}}.$$
+
+Then combine:
+
+$$\ip{-(A^\mathsf{H} Z + Z B^\mathsf{H})}{\dot{X}} = \ip{Z X^\mathsf{H}}{\dot{A}} + \ip{X^\mathsf{H} Z}{X \dot{B}} + \ip{Z}{\dot{C}}.$$
+
+This is almost exactly the identity we need to solve for $\overline{A}$, $\overline{B}$, and $\overline{C}$.
+To manipulate it to the right form, we need only define $A^\mathsf{H} Z + Z B^\mathsf{H} = -\overline{X}$.
+This _yet another_ Sylvester equation, so letting $Z = \overline{C}$, our final pullback is:
+
+```math
+\begin{align*}
+\overline{C} &= \operatorname{sylvester}(A^\mathsf{H}, B^\mathsf{H}, \overline{X})\\
+             &= \operatorname{sylvester}(B, A, \overline{X}^\mathsf{H})^\mathsf{H}\\
+\overline{A} &= \overline{C} X^\mathsf{H}\\
+\overline{B} &= X^\mathsf{H} \overline{C}\\
+\end{align*}
+```
+
+The `rrule` can be implemented as
+
+```julia
+function rrule(::typeof(sylvester), A, B, C)
+    X = sylvester(A, B, C)
+    function sylvester_pullback(ΔX)
+        ∂C = copy(sylvester(B, A, copy(ΔX'))')
+        return NoTangent(), @thunk(∂C * X'), @thunk(X' * ∂C), ∂C
+    end
+    return X, sylvester_pullback
+end
+```
+
+Note, however, that the Sylvester equation is usually solved using the Schur decomposition of $A$ and $B$.
+These Schur decompositions can be reused to solve the Sylvester equations in the pushforward and pullback.
+See the [implementation in ChainRules](https://github.com/JuliaDiff/ChainRules.jl/blob/v0.7.57/src/rulesets/LinearAlgebra/dense.jl#L243-L286) for details.
 
 ## More examples
 
 For more instructive examples of array rules, see [^Giles2008ext] (real vector and matrix rules) and the [LinearAlgebra rules in ChainRules](https://github.com/JuliaDiff/ChainRules.jl/tree/master/src/rulesets/LinearAlgebra).
+For differentiating the LU decomposition, see [this blog post by Seth Axen](https://sethaxen.com/blog/2021/02/differentiating-the-lu-decomposition/).
 
 ## References
 

@@ -1,4 +1,4 @@
-# How do chain rules work for complex functions?
+# [How do chain rules work for complex functions?](@id complexfunctions)
 
 ChainRules follows the convention that `frule` applied to a function ``f(x + i y) = u(x,y) + i v(x,y)`` with perturbation ``\Delta x + i \Delta y`` returns the value and
 ```math
@@ -38,7 +38,7 @@ and `rrule` corresponds to
 \begin{pmatrix}
 \tfrac{\partial u}{\partial x} & \tfrac{\partial u}{\partial y} \\
 \tfrac{\partial v}{\partial x} & \tfrac{\partial v}{\partial y} \\
-\end{pmatrix}^T
+\end{pmatrix}^\mathsf{T}
 \begin{pmatrix}
 \Delta u \\ \Delta v
 \end{pmatrix}
@@ -47,8 +47,8 @@ and `rrule` corresponds to
 The Jacobian of ``f:\mathbb{C} \to \mathbb{C}`` interpreted as a function ``\mathbb{R}^2 \to \mathbb{R}^2`` can hence be evaluated using either of the following functions.
 ```julia
 function jacobian_via_frule(f,z)
-    du_dx, dv_dx = reim(frule((Zero(), 1),f,z)[2])
-    du_dy, dv_dy = reim(frule((Zero(),im),f,z)[2])
+    du_dx, dv_dx = reim(frule((ZeroTangent(), 1),f,z)[2])
+    du_dy, dv_dy = reim(frule((ZeroTangent(),im),f,z)[2])
     return [
         du_dx  du_dy
         dv_dx  dv_dy
@@ -67,11 +67,11 @@ function jacobian_via_rrule(f,z)
 end
 ```
 
-If ``f(z)`` is holomorphic, then the derivative part of `frule` can be implemented as ``f'(z) \, \Delta z`` and the derivative part of `rrule` can be implemented as ``\operatorname{conj}\bigl(f'(z)\bigr) \, \Delta f``.
+If ``f(z)`` is holomorphic, then the derivative part of `frule` can be implemented as ``f'(z) \, \Delta z`` and the derivative part of `rrule` can be implemented as ``\bigl(f'(z)\bigr)^* \, \Delta f``, where ``\cdot^*`` is the complex conjugate.
 Consequently, holomorphic derivatives can be evaluated using either of the following functions.
 ```julia
 function holomorphic_derivative_via_frule(f,z)
-    fz,df_dz = frule((Zero(),1),f,z)
+    fz,df_dz = frule((ZeroTangent(),1),f,z)
     return df_dz
 end
 ```

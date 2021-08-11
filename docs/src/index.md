@@ -71,7 +71,7 @@ even though they are not present in seperate forms in the code.
     While `rrule` takes only the arguments to the original function (the primal arguments) and returns a function (the pullback) that operates with the derivative information, the `frule` does it all at once.
     This is because the `frule` fuses the primal computation and the pushforward.
     This is an optimization that allows `frule`s to contain single large operations that perform both the primal computation and the pushforward at the same time (for example solving an ODE).
-This operation is only possible in forward mode (where `frule` is used) because the derivative information needed by the pushforward available with the `frule` is invoked -- it is about the primal function's inputs.
+    This operation is only possible in forward mode (where `frule` is used) because the derivative information needed by the pushforward available with the `frule` is invoked -- it is about the primal function's inputs.
     In contrast, in reverse mode the derivative information needed by the pullback is about the primal function's output.
     Thus the reverse mode returns the pullback function which the caller (usually an AD system) keeps hold of until derivative information about the output is available.
 
@@ -237,7 +237,7 @@ If the function is `y = f(x)` often the pushforward will be written `ẏ = last(
     The `∂y` are similar in type/structure to the original function's output `Y`.
     In particular if that function returned a tuple then `∂y` will be a tuple of the same size.
 
-### Self derivative `Δself`, `∂self`, `s̄elf`, `ṡelf` etc
+### [Self derivative `Δself`, `∂self`, `s̄elf`, `ṡelf` etc](@id self_derivative)
 
 !!! terminology "Δself, ∂self, s̄elf, ṡelf"
     It is the derivatives with respect to the internal fields of the function.
@@ -255,7 +255,7 @@ For example a closure has the fields it closes over; a callable object (i.e. a f
 **Thus every function is treated as having the extra implicit argument `self`, which captures those fields.**
 So every `pushforward` takes in an extra argument, which is ignored unless the original function has fields.
 It is common to write `function foo_pushforward(_, Δargs...)` in the case when `foo` does not have fields.
-Similarly every `pullback` returns an extra `∂self`, which for things without fields is the constant `NO_FIELDS`, indicating there are no fields within the function itself.
+Similarly every `pullback` returns an extra `∂self`, which for things without fields is `NoTangent()`, indicating there are no fields within the function itself.
 
 
 ### Pushforward / Pullback summary
@@ -283,14 +283,14 @@ If we would like to know the directional derivative of `f` for an input change o
 
 ```julia
 direction = (1.5, 0.4, -1) # (ȧ, ḃ, ċ)
-y, ẏ = frule((Zero(), direction...), f, a, b, c)
+y, ẏ = frule((ZeroTangent(), direction...), f, a, b, c)
 ```
 
 On the basis directions one gets the partial derivatives of `y`:
 ```julia
-y, ∂y_∂a = frule((Zero(), 1, 0, 0), f, a, b, c)
-y, ∂y_∂b = frule((Zero(), 0, 1, 0), f, a, b, c)
-y, ∂y_∂c = frule((Zero(), 0, 0, 1), f, a, b, c)
+y, ∂y_∂a = frule((ZeroTangent(), 1, 0, 0), f, a, b, c)
+y, ∂y_∂b = frule((ZeroTangent(), 0, 1, 0), f, a, b, c)
+y, ∂y_∂c = frule((ZeroTangent(), 0, 0, 1), f, a, b, c)
 ```
 
 Similarly, the most trivial use of `rrule` and returned `pullback` is to calculate the [gradient](https://en.wikipedia.org/wiki/Gradient):
@@ -301,26 +301,26 @@ y, f_pullback = rrule(f, a, b, c)
 s̄elf, ā, b̄, c̄ = ∇f
 ```
 Then we have that `∇f` is the _gradient_ of `f` at `(a, b, c)`.
-And we thus have the partial derivatives ``\overline{\mathrm{self}}, = \dfrac{∂f}{∂\mathrm{self}}``, ``\overline{a} = \dfrac{∂f}{∂a}``, ``\overline{b} = \dfrac{∂f}{∂b}``, ``\overline{c} = \dfrac{∂f}{∂c}``, including the and the self-partial derivative, ``\overline{\mathrm{self}}``.
+And we thus have the partial derivatives ``\overline{\mathrm{self}} = \dfrac{∂f}{∂\mathrm{self}}``, ``\overline{a} = \dfrac{∂f}{∂a}``, ``\overline{b} = \dfrac{∂f}{∂b}``, ``\overline{c} = \dfrac{∂f}{∂c}``, including the [self-partial derivative](@ref self_derivative), ``\overline{\mathrm{self}}``.
 
 ## Differentials
 
 The values that come back from pullbacks or pushforwards are not always the same type as the input/outputs of the primal function.
 They are differentials, which correspond roughly to something able to represent the difference between two values of the primal types.
 A differential might be such a regular type, like a `Number`, or a `Matrix`, matching to the original type;
-or it might be one of the [`AbstractDifferential`](@ref ChainRulesCore.AbstractDifferential) subtypes.
+or it might be one of the [`AbstractTangent`](@ref ChainRulesCore.AbstractTangent) subtypes.
 
 Differentials support a number of operations.
 Most importantly: `+` and `*`, which let them act as mathematical objects.
 
-The most important `AbstractDifferential`s when getting started are the ones about avoiding work:
+The most important `AbstractTangent`s when getting started are the ones about avoiding work:
 
  - [`Thunk`](@ref): this is a deferred computation. A thunk is a [word for a zero argument closure](https://en.wikipedia.org/wiki/Thunk). A computation wrapped in a `@thunk` doesn't get evaluated until [`unthunk`](@ref) is called on the thunk. `unthunk` is a no-op on non-thunked inputs.
- - [`One`](@ref), [`Zero`](@ref): There are special representations of `1` and `0`. They do great things around avoiding expanding `Thunks` in multiplication and (for `Zero`) addition.
+ - [`ZeroTangent`](@ref): It is a special representation of `0`. It does great things around avoiding expanding `Thunks` in addition.
 
-### Other `AbstractDifferential`s:
- - [`Composite{P}`](@ref Composite): this is the differential for tuples and  structs. Use it like a `Tuple` or `NamedTuple`. The type parameter `P` is for the primal type.
- - [`DoesNotExist`](@ref): Zero-like, represents that the operation on this input is not differentiable. Its primal type is normally `Integer` or `Bool`.
+### Other `AbstractTangent`s:
+ - [`Tangent{P}`](@ref Tangent): this is the differential for tuples and  structs. Use it like a `Tuple` or `NamedTuple`. The type parameter `P` is for the primal type.
+ - [`NoTangent`](@ref): Zero-like, represents that the operation on this input is not differentiable. Its primal type is normally `Integer` or `Bool`.
  - [`InplaceableThunk`](@ref): it is like a `Thunk` but it can do in-place `add!`.
 
  -------------------------------
@@ -345,7 +345,7 @@ end
 
 # Define rules (alternatively get them for free via `using ChainRules`)
 @scalar_rule(sin(x), cos(x))
-@scalar_rule(+(x, y), (One(), One()))
+@scalar_rule(+(x, y), (1.0, 1.0))
 @scalar_rule(asin(x), inv(sqrt(1 - x^2)))
 # output
 
@@ -371,12 +371,12 @@ x̄                         # ∂c/∂x = ∂foo/∂x
 #### Find dfoo/dx via frules
 x = 3;
 ẋ = 1;              # ∂x/∂x
-nofields = Zero();  # ∂self/∂self
+nofields = ZeroTangent();  # ∂self/∂self
 
-a, ȧ = frule((nofields, ẋ), sin, x);             # ∂a/∂x = ∂a/∂x ⋅ ∂x/∂x 
-b, ḃ = frule((nofields, Zero(), ȧ), +, 0.2, a);  # ∂b/∂x = ∂b/∂a ⋅ ∂a/∂x
-c, ċ = frule((nofields, ḃ), asin, b);            # ∂c/∂x = ∂c/∂b ⋅ ∂b/∂x
-ċ                                                # ∂c/∂x = ∂foo/∂x
+a, ȧ = frule((nofields, ẋ), sin, x);                    # ∂a/∂x = ∂a/∂x ⋅ ∂x/∂x 
+b, ḃ = frule((nofields, ZeroTangent(), ȧ), +, 0.2, a);  # ∂b/∂x = ∂b/∂a ⋅ ∂a/∂x
+c, ċ = frule((nofields, ḃ), asin, b);                   # ∂c/∂x = ∂c/∂b ⋅ ∂b/∂x
+ċ                                                       # ∂c/∂x = ∂foo/∂x
 # output
 -1.0531613736418153
 ```
