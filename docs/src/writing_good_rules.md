@@ -229,6 +229,86 @@ Note that the function does not have to be $\mathbb{R} \rightarrow \mathbb{R}$.
 In fact, any number of scalar arguments is supported, as is returning a tuple of scalars.
 
 See docstrings for the comprehensive usage instructions.
+
+
+### Be careful about pullbacks closures calling other methods of themselves
+
+Due to [JuliaLang/Julia#40990](https://github.com/JuliaLang/julia/issues/40990), a closure calling another (or the same) method of itself often comes out uninferable (and thus effectively type-unstable).
+This can be avoided by moving the pullback outside the function.
+For example:
+
+```julia
+double_it(x::AbstractArray) = 2 .* x
+
+function ChainRulesCore.rrule(::typeof(double_it), x)
+    double_it_pullback(ȳ::AbstractArray) = (NoTangent(), 2 .* ȳ)
+    double_it_pullback(ȳ::AbstractThunk) = double_it_pullback(unthunk(ȳ))
+    return double_it(x), double_it_pullback
+end
+```
+Ends up infering a return type of `Any`
+```julia
+julia> _, pullback = rrule(double_it, [2.0, 3.0])
+([4.0, 6.0], var"#double_it_pullback#8"(Core.Box(var"#double_it_pullback#8"(#= circular reference @-2 =#))))
+
+julia> @code_warntype pullback(@thunk([10.0, 10.0]))
+Variables
+  #self#::var"#double_it_pullback#8"
+  ȳ::Core.Const(Thunk(var"#9#10"()))
+  double_it_pullback::Union{}
+
+Body::Any
+1 ─ %1 = Core.getfield(#self#, :double_it_pullback)::Core.Box
+│   %2 = Core.isdefined(%1, :contents)::Bool
+└──      goto #3 if not %2
+2 ─      goto #4
+3 ─      Core.NewvarNode(:(double_it_pullback))
+└──      double_it_pullback
+4 ┄ %7 = Core.getfield(%1, :contents)::Any
+│   %8 = Main.unthunk(ȳ)::Vector{Float64}
+│   %9 = (%7)(%8)::Any
+└──      return %9
+```
+
+This can be solved by moving the pullbacks outside the function so they are not closures, and thus to not run into this upstream issue.
+In this case that is fairly simple, since this example doesn't close over anything (if it did then would need a closure calling an outside function that calls itself).
+
+```julia
+_double_it_pullback(ȳ::AbstractArray) = (NoTangent(), 2 .* ȳ)
+_double_it_pullback(ȳ::AbstractThunk) = _double_it_pullback(unthunk(ȳ))
+
+function ChainRulesCore.rrule(::typeof(double_it), x)
+    return double_it(x), _double_it_pullback
+end
+```
+This infers just fine:
+```julia
+julia> _, pullback = rrule(double_it, [2.0, 3.0])
+([4.0, 6.0], _double_it_pullback)
+
+julia> @code_warntype pullback(@thunk([10.0, 10.0]))
+Variables
+  #self#::Core.Const(_double_it_pullback)
+  ȳ::Core.Const(Thunk(var"#7#8"()))
+
+Body::Tuple{NoTangent, Vector{Float64}}
+1 ─ %1 = Main.unthunk(ȳ)::Vector{Float64}
+│   %2 = Main._double_it_pullback(%1)::Core.PartialStruct(Tuple{NoTangent, Vector{Float64}}, Any[Core.Const(NoTangent()), Vector{Float64}])
+└──      return %2
+```
+
+Though in this particular case, it can also be solved by taking advantage of duck-typing and just writing one method.
+Thus avoiding the call that confuses the compiler.
+`Thunk`s duck-type as the type they wrap in most cases: including broadcast multiplication.
+
+```julia
+function ChainRulesCore.rrule(::typeof(double_it), x)
+    double_it_pullback(ȳ) = (NoTangent(), 2 .* ȳ)
+    return double_it(x), double_it_pullback
+end
+```
+This infers perfectly.
+
 ## Write tests
 
 [ChainRulesTestUtils.jl](https://github.com/JuliaDiff/ChainRulesTestUtils.jl)
