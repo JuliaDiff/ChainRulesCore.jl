@@ -231,10 +231,10 @@ In fact, any number of scalar arguments is supported, as is returning a tuple of
 See docstrings for the comprehensive usage instructions.
 
 
-### Be careful about pullbacks closures calling other methods of themselves
+## Be careful about pullback closures calling other methods of themselves
 
 Due to [JuliaLang/Julia#40990](https://github.com/JuliaLang/julia/issues/40990), a closure calling another (or the same) method of itself often comes out uninferable (and thus effectively type-unstable).
-This can be avoided by moving the pullback outside the function.
+This can be avoided by moving the pullback definition outside the function, so that it is no longer a closure.
 For example:
 
 ```julia
@@ -271,7 +271,7 @@ Body::Any
 ```
 
 This can be solved by moving the pullbacks outside the function so they are not closures, and thus to not run into this upstream issue.
-In this case that is fairly simple, since this example doesn't close over anything (if it did then would need a closure calling an outside function that calls itself).
+In this case that is fairly simple, since this example doesn't close over anything (if it did then would need a closure calling an outside function that calls itself. See [this example](https://github.com/JuliaDiff/ChainRules.jl/blob/773039a2dc0a1938f61cf26012b1223c942bc18f/src/rulesets/LinearAlgebra/structured.jl#L107-L116).).
 
 ```julia
 _double_it_pullback(ȳ::AbstractArray) = (NoTangent(), 2 .* ȳ)
