@@ -191,7 +191,8 @@ If you find linear operators from Base/stdlibs that are not supported, consider 
 ### Natural tangents
 Natural tangent types are the types you might feel the tangent should be.
 These are a purely human notion, they are the types the user wants to use because they make the math easy.
-If a primal type `P` overloads subtraction (`-(::P,::P)`) then that generally returns a  natural tangent type for `P`; but this is not required to be defined.
+There is currently no formal definition of what consistutes a natural tangent, but there are a few heuristics.
+For example, if a primal type `P` overloads subtraction (`-(::P,::P)`) then that generally returns a  natural tangent type for `P`; but this is not required to be defined.
 
 Common cases for types that represent a [vector-space](https://en.wikipedia.org/wiki/Vector_space) (e.g. `Float64`, `Array{Float64}`) is that the natural tangent type is the same as the primal type.
 However, this is not always the case.
