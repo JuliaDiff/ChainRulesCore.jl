@@ -122,8 +122,43 @@ Some more background information on these types can be found in [the design note
 In many cases these all all tangents can be treated the same: tangent types overload a bunch of linear-operators, and the majority of functions used inside a pullback are linear operators.
 If you find linear operators from Base/stdlibs that are not supported, consider openning an issue or PR on the [ChainRulesCorejl repo](https://github.com/JuliaDiff/ChainRulesCore.jl/).
 
-TODO TODO TODO Write this breaking down the 3 categories of 
-_natural tangents_, _structural tangents_, and _thunks_.
+### Natural tangents
+Natural tangent types are the types you might feel the tangent should be.
+These are a purely human notion, they are the types the user wants to use because they make the math easy.
+If a primal type `P` overloads subtraction (`-(::P,::P)`) then that generally returns a  natural tangent type for `P`; but this is not required to be defined.
+
+Common cases for types that represent a [vector-space](https://en.wikipedia.org/wiki/Vector_space) (e.g. `Float64`, `Array{Float64}`) is that the natural tangent type is the same as the primal type.
+However, this is not always the case.
+For example for a [`PDiagMat`](https://github.com/JuliaStats/PDMats.jl) a natural tangent is `Diagonal` since there is no requirement that a positive definite diagonal matrix has a positive definite tangent.
+Another example is for a `DateTime`, any `Period` subtype, such as `Millisecond` or `Nanosecond` is a natural differential.
+There are often many different natural tangent types for a given primal type.
+However, they are generally closely related and duck-type the same.
+For example, for most `AbstractArray` subtypes, most other `AbstractArray`s (of right size and element type) can be considered as natural tangent types.
+
+Not all types have natural tangent types.
+For example there is no natural differential for a `Tuple`.
+It is not a `Tuple` since that doesn't have any method for `+`.
+Similar is true for many `struct`s.
+For those cases there is only a structural differential.
+
+### Structural tangents
+
+Structural tangents are tangent types that shadow the structure of the primal type.
+They are represented by the [`Tangent`](@ref) type.
+They can represent any composite type, such as a tuple, or a structure (or a `NamedTuple`) etc.
+
+
+!!! info "Do I have to support the structural tangents as well?"
+    Technically, you might not actually have to write rules to accept structural tangents; if the AD system never has to decompose down to the level of getfield.
+    This is common for types that don't support user getfield/getproperty access, and that have a lot of rules for the ways they are accessed (such cases include many `AbstractArray` subtypes).
+    You likely should support it just in case.
+    But if it is causing struggles, then you can leave it off til someone complains.
+
+### Thunks
+
+A thunk (either a [`Thunk`](@ref), or a [`InplaceableThunk`](@ref)), represents a delayed computation.
+They can be thought of as a wrapper of the value the computation returns.
+In this sense they wrap either a natural or structural tangent.
 
 !!! warning "You should to support AbstractThunk inputs even if you don't use thunks"
      Unfortunately the AD sytems do not know what rules support thunks and what do not.
