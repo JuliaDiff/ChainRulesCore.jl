@@ -217,8 +217,8 @@ They can represent any composite type, such as a tuple, or a structure (or a `Na
 
 !!! info "Do I have to support the structural tangents as well?"
     Technically, you might not actually have to write rules to accept structural tangents; if the AD system never has to decompose down to the level of getfield.
-    This is common for types that don't support user getfield/getproperty access, and that have a lot of rules for the ways they are accessed (such cases include many `AbstractArray` subtypes).
-    You likely should support it just in case.
+    This is common for types that don't support user getfield/getproperty access, and that have a lot of rules for the ways they are accessed (such cases include some `AbstractArray` subtypes).
+    You really should support it just in case; especially if the primal type in question is not restricted to a well-tested concrete type.
     But if it is causing struggles, then you can leave it off til someone complains.
 
 ### Thunks
