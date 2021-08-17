@@ -189,7 +189,10 @@ In many cases all these tangents can be treated the same: tangent types overload
 If you find linear operators from Base/stdlibs that are not supported, consider opening an issue or a PR on the [ChainRulesCore.jl repo](https://github.com/JuliaDiff/ChainRulesCore.jl/).
 
 ### Natural tangents
-Natural tangent types are the types you might feel the tangent should be.
+Natural tangent types are the types you might feel the tangent should be, to represent a small change in the primal value.
+For example, if the primal is a `Float32`, the natural tangent is also a `Float32`.
+Slightly more complex, for a `ComplexF64` the natural tangent is again also a `ComplexF64`, we almost never want to use the structural tangent `Tangent{ComplexF64}(re=..., im=...)` which is defined.
+For other cases, this gets a little more complicated, see below.
 These are a purely human notion, they are the types the user wants to use because they make the math easy.
 There is currently no formal definition of what constitutes a natural tangent, but there are a few heuristics.
 For example, if a primal type `P` overloads subtraction (`-(::P,::P)`) then that generally returns a natural tangent type for `P`; but this is not required to be defined.
