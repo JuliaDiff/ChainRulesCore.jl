@@ -181,18 +181,18 @@ end
 to define the rules.
 
 ## Ensure your pullback can accept the right types
-As a rule the number of types you need to accept in a pullback is theoretically unlimitted, but practically highly constrained to inline with the primal return type.
+As a rule the number of types you need to accept in a pullback is theoretically unlimitted, but practically highly constrained to be in line with the primal return type.
 The three kinds of inputs you will practically need to accept one or more of: _natural tangents_, _structural tangents_, and _thunks_.
 You do not in general have to handle `AbstractZero`s as the AD system will not call the pullback if the input is a zero, since the output will also be.
 Some more background information on these types can be found in [the design notes](@ref manytypes).
-In many cases these all all tangents can be treated the same: tangent types overload a bunch of linear-operators, and the majority of functions used inside a pullback are linear operators.
-If you find linear operators from Base/stdlibs that are not supported, consider openning an issue or PR on the [ChainRulesCorejl repo](https://github.com/JuliaDiff/ChainRulesCore.jl/).
+In many cases all these tangents can be treated the same: tangent types overload a bunch of linear-operators, and the majority of functions used inside a pullback are linear operators.
+If you find linear operators from Base/stdlibs that are not supported, consider opening an issue or a PR on the [ChainRulesCore.jl repo](https://github.com/JuliaDiff/ChainRulesCore.jl/).
 
 ### Natural tangents
 Natural tangent types are the types you might feel the tangent should be.
 These are a purely human notion, they are the types the user wants to use because they make the math easy.
-There is currently no formal definition of what consistutes a natural tangent, but there are a few heuristics.
-For example, if a primal type `P` overloads subtraction (`-(::P,::P)`) then that generally returns a  natural tangent type for `P`; but this is not required to be defined.
+There is currently no formal definition of what constitutes a natural tangent, but there are a few heuristics.
+For example, if a primal type `P` overloads subtraction (`-(::P,::P)`) then that generally returns a natural tangent type for `P`; but this is not required to be defined.
 
 Common cases for types that represent a [vector-space](https://en.wikipedia.org/wiki/Vector_space) (e.g. `Float64`, `Array{Float64}`) is that the natural tangent type is the same as the primal type.
 However, this is not always the case.
@@ -216,8 +216,8 @@ They can represent any composite type, such as a tuple, or a structure (or a `Na
 
 
 !!! info "Do I have to support the structural tangents as well?"
-    Technically, you might not actually have to write rules to accept structural tangents; if the AD system never has to decompose down to the level of getfield.
-    This is common for types that don't support user getfield/getproperty access, and that have a lot of rules for the ways they are accessed (such cases include some `AbstractArray` subtypes).
+    Technically, you might not actually have to write rules to accept structural tangents; if the AD system never has to decompose down to the level of `getfield`.
+    This is common for types that don't support user `getfield`/`getproperty` access, and that have a lot of rules for the ways they are accessed (such cases include some `AbstractArray` subtypes).
     You really should support it just in case; especially if the primal type in question is not restricted to a well-tested concrete type.
     But if it is causing struggles, then you can leave it off til someone complains.
 
@@ -228,7 +228,7 @@ They can be thought of as a wrapper of the value the computation returns.
 In this sense they wrap either a natural or structural tangent.
 
 !!! warning "You should to support AbstractThunk inputs even if you don't use thunks"
-     Unfortunately the AD sytems do not know what rules support thunks and what do not.
+     Unfortunately the AD sytems do not know which rules support thunks and which do not.
      So all rules have to; at least if they want to play nice with arbitary AD systems.
      Luckily it is not hard: much of the time they will duck-type as the object they wrap.
      If not, then just add a [`unthunk`](@ref) after the start of your pullback.
