@@ -195,7 +195,7 @@ Slightly more complex, for a `ComplexF64` the natural tangent is again also a `C
 For other cases, this gets a little more complicated, see below.
 These are a purely human notion, they are the types the user wants to use because they make the math easy.
 There is currently no formal definition of what constitutes a natural tangent, but there are a few heuristics.
-For example, if a primal type `P` overloads subtraction (`-(::P,::P)`) then that generally returns a natural tangent type for `P`; but this is not required to be defined.
+For example, if a primal type `P` overloads subtraction (`-(::P,::P)`) then that generally returns a natural tangent type for `P`; but this is not required to be defined and sometimes it is defined poorly.
 
 Common cases for types that represent a [vector-space](https://en.wikipedia.org/wiki/Vector_space) (e.g. `Float64`, `Array{Float64}`) is that the natural tangent type is the same as the primal type.
 However, this is not always the case.
