@@ -34,6 +34,11 @@ The `ZeroTangent()` object exists as an alternative to directly returning `0` or
 It allows more optimal computation when chaining pullbacks/pushforwards, to avoid work.
 They should be used where possible.
 
+However, sometimes for performance reasons this is not ideal.
+Especially, if it is to replace a scalar, and is in a type-unstable way.
+It causes problems if mapping over such pullbacks/pushforwards.
+This woull be solved once [JuliaLang/julia#38241](https://github.com/JuliaLang/julia/issues/38241) has been addressed.
+
 ## Use `Thunk`s appropriately
 
 If work is only required for one of the returned differentials, then it should be wrapped in a `@thunk` (potentially using a `begin`-`end` block).
