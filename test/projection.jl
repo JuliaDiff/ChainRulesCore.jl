@@ -117,15 +117,19 @@ Base.zero(x::Dual) = Dual(zero(x.value), zero(x.partial))
 
     @testset "Base: Ref" begin
         pref = ProjectTo(Ref(2.0))
-        @test_skip pref(Ref(3 + im)).x === 3.0
+        @test pref(Ref(3 + im)).x === 3.0
+        @test pref(Tangent{Base.RefValue}(x = 3 + im)).x === 3.0
         @test pref(4).x === 4.0  # also re-wraps scalars
-        @test_skip pref(Ref{Any}(5.0)) isa Tangent{<:Base.RefValue}
+        @test pref(Ref{Any}(5.0)) isa Tangent{<:Base.RefValue}
+
         pref2 = ProjectTo(Ref{Any}(6 + 7im))
-        @test_skip pref2(Ref(8)).x === 8.0 + 0.0im
+        @test pref2(Ref(8)).x === 8.0 + 0.0im
+        @test pref2(Tangent{Base.RefValue}(x = 8)).x === 8.0 + 0.0im
 
         prefvec = ProjectTo(Ref([1, 2, 3 + 4im]))  # recurses into contents
-        @test_skip prefvec(Ref(1:3)).x isa Vector{ComplexF64}
-        @test_skip @test_throws DimensionMismatch prefvec(Ref{Any}(1:5))
+        @test prefvec(Ref(1:3)).x isa Vector{ComplexF64}
+        @test prefvec(Tangent{Base.RefValue}(x = 1:3)).x isa Vector{ComplexF64}
+        @test_skip @test_throws DimensionMismatch prefvec(Tangent{Base.RefValue}(x = 1:5))
 
         @test ProjectTo(Ref(true)) isa ProjectTo{NoTangent}
         @test ProjectTo(Ref([false]')) isa ProjectTo{NoTangent}

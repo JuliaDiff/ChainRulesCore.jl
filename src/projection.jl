@@ -266,6 +266,7 @@ function ProjectTo(x::Ref)
     end
 end
 (project::ProjectTo{Ref})(dx::Tangent) = Tangent{project.type}(; x=project.x(dx.x))
+(project::ProjectTo{Ref})(dx::Ref) = Tangent{project.type}(; x=project.x(dx[]))
 # Since this works like a zero-array in broadcasting, it should also accept a number:
 (project::ProjectTo{Ref})(dx::Number) = Tangent{project.type}(; x=project.x(dx))
 
