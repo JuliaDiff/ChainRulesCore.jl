@@ -70,7 +70,7 @@
         @test ComplexF64(1.5, z) === Complex{Float64}(1.5, 0.0)
 
         @test convert(Bool, ZeroTangent()) === false
-        @test convert(Int64, ZeroTangent()) === 0
+        @test convert(Int64, ZeroTangent()) === Int64(0)
         @test convert(Float32, ZeroTangent()) === 0.0f0
         @test convert(ComplexF64, ZeroTangent()) === 0.0 + 0.0im
     end
