@@ -132,9 +132,8 @@ const _PZ = ProjectTo{<:AbstractZero}
 ProjectTo{P}(::NamedTuple{T, <:Tuple{_PZ, Vararg{<:_PZ}}}) where {P,T} = ProjectTo{NoTangent}()
 
 # Tangent
-# This may be produced from e.g. x=range(1,2,length=3). There need not be any
-# AbstractArray representation of such a tangent, so we just pass it along,
-# and trust that projection on fields before the constructor will act if necessary.
+# We haven't entirely figured out when to convert Tangents to "natural" representations such as
+# dx::AbstractArray (when both are possible), or the reverse. So for now we just pass them through:
 (::ProjectTo{T})(dx::Tangent{<:T}) where {T} = dx
 
 #####
