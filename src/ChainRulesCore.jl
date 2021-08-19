@@ -15,6 +15,7 @@ export ProjectTo, canonicalize, unthunk  # differential operations
 export add!!  # gradient accumulation operations
 # differentials
 export Tangent, NoTangent, InplaceableThunk, Thunk, ZeroTangent, AbstractZero, AbstractThunk
+export Bijections, to_natural, to_structural
 
 include("compat.jl")
 include("debug_mode.jl")
@@ -28,6 +29,7 @@ include("differentials/notimplemented.jl")
 include("differential_arithmetic.jl")
 include("accumulation.jl")
 include("projection.jl")
+include("structural_natural_bijections.jl")
 
 include("config.jl")
 include("rules.jl")

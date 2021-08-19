@@ -17,6 +17,7 @@ using Test
 
     include("accumulation.jl")
     include("projection.jl")
+    include("structural_natural_bijections.jl")
 
     include("rules.jl")
     include("rule_definition_tools.jl")
