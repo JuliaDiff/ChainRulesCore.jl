@@ -33,16 +33,24 @@ Base.zero(x::Dual) = Dual(zero(x.value), zero(x.partial))
         @test ProjectTo(1.0f0 + 2im)(3) === 3.0f0 + 0im
         @test ProjectTo(big(1.0))(2) === 2
         @test ProjectTo(1.0)(2) === 2.0
+
+        # Tangents
+        ProjectTo(1.0f0 + 2im)(Tangent{ComplexF64}(re=1, im=NoTangent())) === 1.0f0 + 0.0f0im
     end
 
     @testset "Dual" begin # some weird Real subtype that we should basically leave alone
         @test ProjectTo(1.0)(Dual(1.0, 2.0)) isa Dual
         @test ProjectTo(1.0)(Dual(1, 2)) isa Dual
+
+        # real & complex
         @test ProjectTo(1.0 + 1im)(Dual(1.0, 2.0)) isa Complex{<:Dual}
         @test ProjectTo(1.0 + 1im)(
             Complex(Dual(1.0, 2.0), Dual(1.0, 2.0))
         ) isa Complex{<:Dual}
         @test ProjectTo(1.0)(Complex(Dual(1.0, 2.0), Dual(1.0, 2.0))) isa Dual
+
+        # Tangent
+        @test ProjectTo(Dual(1.0, 2.0))(Tangent{Dual}(; value=1.0)) isa Tangent
     end
 
     @testset "Base: arrays of numbers" begin
@@ -100,7 +108,7 @@ Base.zero(x::Dual) = Dual(zero(x.value), zero(x.partial))
         @test ProjectTo(Bool[]) isa ProjectTo{NoTangent}
     end
 
-    @testset "Base: zero-arrays & Ref" begin
+    @testset "Base: zero-arrays" begin
         pzed = ProjectTo(fill(1.0))
         @test pzed(fill(3.14)) == fill(3.14)  # easy
         @test pzed(fill(3)) == fill(3.0)      # broadcast type change must not produce number
@@ -110,17 +118,26 @@ Base.zero(x::Dual) = Dual(zero(x.value), zero(x.partial))
         @test_throws DimensionMismatch ProjectTo([1])(3.14 + im) # other array projectors don't accept numbers
         @test_throws DimensionMismatch ProjectTo(hcat([1, 2]))(3.14)
         @test pzed isa ProjectTo{AbstractArray}
+    end
 
+    @testset "Base: Ref" begin
         pref = ProjectTo(Ref(2.0))
-        @test pref(Ref(3 + im))[] === 3.0
-        @test pref(4)[] === 4.0  # also re-wraps scalars
-        @test pref(Ref{Any}(5.0)) isa Base.RefValue{Float64}
+        @test pref(Ref(3 + im)).x === 3.0
+        @test pref(Tangent{Base.RefValue}(x = 3 + im)).x === 3.0
+        @test pref(4).x === 4.0  # also re-wraps scalars
+        @test pref(Ref{Any}(5.0)) isa Tangent{<:Base.RefValue}
+
         pref2 = ProjectTo(Ref{Any}(6 + 7im))
-        @test pref2(Ref(8))[] === 8.0 + 0.0im
+        @test pref2(Ref(8)).x === 8.0 + 0.0im
+        @test pref2(Tangent{Base.RefValue}(x = 8)).x === 8.0 + 0.0im
 
         prefvec = ProjectTo(Ref([1, 2, 3 + 4im]))  # recurses into contents
-        @test prefvec(Ref(1:3)) isa Base.RefValue{Vector{ComplexF64}}
-        @test_throws DimensionMismatch prefvec(Ref{Any}(1:5))
+        @test prefvec(Ref(1:3)).x isa Vector{ComplexF64}
+        @test prefvec(Tangent{Base.RefValue}(x = 1:3)).x isa Vector{ComplexF64}
+        @test_skip @test_throws DimensionMismatch prefvec(Tangent{Base.RefValue}(x = 1:5))
+
+        @test ProjectTo(Ref(true)) isa ProjectTo{NoTangent}
+        @test ProjectTo(Ref([false]')) isa ProjectTo{NoTangent}
     end
 
     #####
@@ -167,6 +184,9 @@ Base.zero(x::Dual) = Dual(zero(x.value), zero(x.partial))
 
         # issue #410
         @test padj([NoTangent() NoTangent() NoTangent()]) === NoTangent()
+
+        @test ProjectTo(adj([true, false]))([1 2]) isa AbstractZero
+        @test ProjectTo(adj([[true], [false]])) isa ProjectTo{<:AbstractZero}
     end
 
     @testset "LinearAlgebra: dense structured matrices" begin
@@ -284,11 +304,12 @@ Base.zero(x::Dual) = Dual(zero(x.value), zero(x.partial))
     @testset "AbstractZero" begin
         pz = ProjectTo(ZeroTangent())
         pz(0) == NoTangent()
-        @test_broken pz(ZeroTangent()) === ZeroTangent()  # not sure how NB this is to preserve
+        @test pz(ZeroTangent()) === ZeroTangent()  # not sure how NB this is to preserve
         @test pz(NoTangent()) === NoTangent()
 
         pb = ProjectTo(true) # Bool is categorical
         @test pb(2) === NoTangent()
+        @test pb(ZeroTangent()) isa AbstractZero  # was a method ambiguity!
 
         # all projectors preserve Zero, and specific type, via one fallback method:
         @test ProjectTo(pi)(ZeroTangent()) === ZeroTangent()
@@ -303,6 +324,19 @@ Base.zero(x::Dual) = Dual(zero(x.value), zero(x.partial))
         pth = ProjectTo(4 + 5im)(th)
         @test pth isa Thunk
         @test unthunk(pth) === 6.0 + 0.0im
+    end
+
+    @testset "Tangent" begin
+        x = 1:3.0
+        dx = Tangent{typeof(x)}(; step=0.1, ref=NoTangent());
+        @test ProjectTo(x)(dx) isa Tangent
+        @test ProjectTo(x)(dx).step === 0.1
+        @test ProjectTo(x)(dx).offset isa AbstractZero
+
+        pref = ProjectTo(Ref(2.0))
+        dy = Tangent{typeof(Ref(2.0))}(x = 3+4im)
+        @test pref(dy) isa Tangent{<:Base.RefValue}
+        @test pref(dy).x === 3.0
     end
 
     @testset "display" begin

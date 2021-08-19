@@ -59,22 +59,14 @@ function generic_projector(x::T; kw...) where {T}
     fields_nt::NamedTuple = backing(x)
     fields_proj = map(_maybe_projector, fields_nt)
     # We can't use `T` because if we have `Foo{Matrix{E}}` it should be allowed to make a
-    # `Foo{Diagaonal{E}}` etc. We assume it has a default constructor that has all fields
-    # but if it doesn't `construct` will give a good error message.
+    # `Foo{Diagaonal{E}}` etc. Official API for this? https://github.com/JuliaLang/julia/issues/35543
     wrapT = T.name.wrapper
-    # Official API for this? https://github.com/JuliaLang/julia/issues/35543
     return ProjectTo{wrapT}(; fields_proj..., kw...)
 end
 
 function generic_projection(project::ProjectTo{T}, dx::T) where {T}
     sub_projects = backing(project)
     sub_dxs = backing(dx)
-    return construct(T, map(_maybe_call, sub_projects, sub_dxs))
-end
-
-function (project::ProjectTo{T})(dx::Tangent) where {T}
-    sub_projects = backing(project)
-    sub_dxs = backing(canonicalize(dx))
     return construct(T, map(_maybe_call, sub_projects, sub_dxs))
 end
 
@@ -123,7 +115,6 @@ ProjectTo{AbstractArray}(element = ProjectTo{Float64}(), axes = (Base.OneTo(2), 
 ProjectTo(::Any) # just to attach docstring
 
 # Generic
-(::ProjectTo{T})(dx::T) where {T} = dx  # not always correct but we have special cases for when it isn't
 (::ProjectTo{T})(dx::AbstractZero) where {T} = dx
 (::ProjectTo{T})(dx::NotImplemented) where {T} = dx
 
@@ -133,7 +124,17 @@ ProjectTo(::Any) # just to attach docstring
 # Zero
 ProjectTo(::AbstractZero) = ProjectTo{NoTangent}()  # Any x::Zero in forward pass makes this one projector,
 (::ProjectTo{NoTangent})(dx) = NoTangent()          # but this is the projection only for nonzero gradients,
-(::ProjectTo{NoTangent})(::NoTangent) = NoTangent() # and this one solves an ambiguity.
+(::ProjectTo{NoTangent})(dx::AbstractZero) = dx     # and this one solves an ambiguity.
+
+# Also, any explicit construction with fields, where all fields project to zero, itself
+# projects to zero. This simplifies projectors for wrapper types like Diagonal([true, false]).
+const _PZ = ProjectTo{<:AbstractZero}
+ProjectTo{P}(::NamedTuple{T, <:Tuple{_PZ, Vararg{<:_PZ}}}) where {P,T} = ProjectTo{NoTangent}()
+
+# Tangent
+# We haven't entirely figured out when to convert Tangents to "natural" representations such as
+# dx::AbstractArray (when both are possible), or the reverse. So for now we just pass them through:
+(::ProjectTo{T})(dx::Tangent{<:T}) where {T} = dx
 
 #####
 ##### `Base`
@@ -165,13 +166,16 @@ end
 (::ProjectTo{T})(dx::Integer) where {T<:Complex{<:AbstractFloat}} = convert(T, dx)
 
 # Other numbers, including e.g. ForwardDiff.Dual and Symbolics.Sym, should pass through.
-# We assume (lacking evidence to the contrary) that it is the right subspace of numebers
-# The (::ProjectTo{T})(::T) method doesn't work because we are allowing a different
-# Number type that might not be a subtype of the `project_type`.
+# We assume (lacking evidence to the contrary) that it is the right subspace of numebers.
 (::ProjectTo{<:Number})(dx::Number) = dx
 
 (project::ProjectTo{<:Real})(dx::Complex) = project(real(dx))
 (project::ProjectTo{<:Complex})(dx::Real) = project(complex(dx))
+
+# Tangents: we prefer to reconstruct numbers, but only safe to try when their constructor
+# understands, including a mix of Zeros & reals. Other cases, we just let through:
+(project::ProjectTo{<:Complex})(dx::Tangent{<:Complex}) = project(Complex(dx.re, dx.im))
+(::ProjectTo{<:Number})(dx::Tangent{<:Number}) = dx
 
 # Arrays
 # If we don't have a more specialized `ProjectTo` rule, we just assume that there is
@@ -179,13 +183,12 @@ end
 
 # For arrays of numbers, just store one projector:
 function ProjectTo(x::AbstractArray{T}) where {T<:Number}
-    element = T <: Irrational ? ProjectTo{Real}() : ProjectTo(zero(T))
-    if element isa ProjectTo{<:AbstractZero}
-        return ProjectTo{NoTangent}() # short-circuit if all elements project to zero
-    else
-        return ProjectTo{AbstractArray}(; element=element, axes=axes(x))
-    end
+    return ProjectTo{AbstractArray}(; element=_eltype_projectto(T), axes=axes(x))
 end
+ProjectTo(x::AbstractArray{Bool}) = ProjectTo{NoTangent}()
+
+_eltype_projectto(::Type{T}) where {T<:Number} = ProjectTo(zero(T))
+_eltype_projectto(::Type{<:Irrational}) = ProjectTo{Real}()
 
 # In other cases, store a projector per element:
 function ProjectTo(xs::AbstractArray)
@@ -241,11 +244,6 @@ function (project::ProjectTo{AbstractArray})(dx::Number) # ... so we restore fro
     return fill(project.element(dx))
 end
 
-# Ref -- works like a zero-array, also allows restoration from a number:
-ProjectTo(x::Ref) = ProjectTo{Ref}(; x=ProjectTo(x[]))
-(project::ProjectTo{Ref})(dx::Ref) = Ref(project.x(dx[]))
-(project::ProjectTo{Ref})(dx::Number) = Ref(project.x(dx))
-
 function _projection_mismatch(axes_x::Tuple, size_dx::Tuple)
     size_x = map(length, axes_x)
     return DimensionMismatch(
@@ -254,14 +252,31 @@ function _projection_mismatch(axes_x::Tuple, size_dx::Tuple)
 end
 
 #####
+##### `Base`, part II: return of the Tangent
+#####
+
+# Ref
+function ProjectTo(x::Ref)
+    sub = ProjectTo(x[])  # should we worry about isdefined(Ref{Vector{Int}}(), :x)? 
+    if sub isa ProjectTo{<:AbstractZero}
+        return ProjectTo{NoTangent}()
+    else
+        return ProjectTo{Ref}(; type=typeof(x), x=sub)
+    end
+end
+(project::ProjectTo{Ref})(dx::Tangent{<:Ref}) = Tangent{project.type}(; x=project.x(dx.x))
+(project::ProjectTo{Ref})(dx::Ref) = Tangent{project.type}(; x=project.x(dx[]))
+# Since this works like a zero-array in broadcasting, it should also accept a number:
+(project::ProjectTo{Ref})(dx::Number) = Tangent{project.type}(; x=project.x(dx))
+
+#####
 ##### `LinearAlgebra`
 #####
 
+using LinearAlgebra: AdjointAbsVec, TransposeAbsVec, AdjOrTransAbsVec
+
 # Row vectors
-function ProjectTo(x::LinearAlgebra.AdjointAbsVec)
-    sub = ProjectTo(parent(x))
-    return ProjectTo{Adjoint}(; parent=sub)
-end
+ProjectTo(x::AdjointAbsVec) = ProjectTo{Adjoint}(; parent=ProjectTo(parent(x)))
 # Note that while [1 2; 3 4]' isa Adjoint, we use ProjectTo{Adjoint} only to encode AdjointAbsVec.
 # Transposed matrices are, like PermutedDimsArray, just a storage detail,
 # but row vectors behave differently, for example [1,2,3]' * [1,2,3] isa Number
@@ -276,10 +291,7 @@ function (project::ProjectTo{Adjoint})(dx::AbstractArray)
     return adjoint(project.parent(dy))
 end
 
-function ProjectTo(x::LinearAlgebra.TransposeAbsVec)
-    sub = ProjectTo(parent(x))
-    return ProjectTo{Transpose}(; parent=sub)
-end
+ProjectTo(x::LinearAlgebra.TransposeAbsVec) = ProjectTo{Transpose}(; parent=ProjectTo(parent(x)))
 function (project::ProjectTo{Transpose})(dx::LinearAlgebra.AdjOrTransAbsVec)
     return transpose(project.parent(transpose(dx)))
 end
@@ -292,11 +304,7 @@ function (project::ProjectTo{Transpose})(dx::AbstractArray)
 end
 
 # Diagonal
-function ProjectTo(x::Diagonal)
-    sub = ProjectTo(x.diag)
-    sub isa ProjectTo{<:AbstractZero} && return sub # TODO not necc if Diagonal(NoTangent()) worked
-    return ProjectTo{Diagonal}(; diag=sub)
-end
+ProjectTo(x::Diagonal) = ProjectTo{Diagonal}(; diag=ProjectTo(x.diag))
 (project::ProjectTo{Diagonal})(dx::AbstractMatrix) = Diagonal(project.diag(diag(dx)))
 (project::ProjectTo{Diagonal})(dx::Diagonal) = Diagonal(project.diag(dx.diag))
 
@@ -308,7 +316,8 @@ for (SymHerm, chk, fun) in (
     @eval begin
         function ProjectTo(x::$SymHerm)
             sub = ProjectTo(parent(x))
-            sub isa ProjectTo{<:AbstractZero} && return sub  # TODO not necc if Hermitian(NoTangent()) etc. worked
+            # Because the projector stores uplo, ProjectTo(Symmetric(rand(3,3) .> 0)) isn't automatically trivial:
+            sub isa ProjectTo{<:AbstractZero} && return sub
             return ProjectTo{$SymHerm}(; uplo=LinearAlgebra.sym_uplo(x.uplo), parent=sub)
         end
         function (project::ProjectTo{$SymHerm})(dx::AbstractArray)
@@ -333,12 +342,7 @@ end
 # Triangular
 for UL in (:UpperTriangular, :LowerTriangular, :UnitUpperTriangular, :UnitLowerTriangular) # UpperHessenberg
     @eval begin
-        function ProjectTo(x::$UL)
-            sub = ProjectTo(parent(x))
-            # TODO not nesc if UnitUpperTriangular(NoTangent()) etc. worked
-            sub isa ProjectTo{<:AbstractZero} && return sub
-            return ProjectTo{$UL}(; parent=sub)
-        end
+        ProjectTo(x::$UL) = ProjectTo{$UL}(; parent=ProjectTo(parent(x)))
         (project::ProjectTo{$UL})(dx::AbstractArray) = $UL(project.parent(dx))
         function (project::ProjectTo{$UL})(dx::Diagonal)
             sub = project.parent
