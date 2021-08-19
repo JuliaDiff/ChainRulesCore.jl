@@ -41,11 +41,16 @@ Base.zero(x::Dual) = Dual(zero(x.value), zero(x.partial))
     @testset "Dual" begin # some weird Real subtype that we should basically leave alone
         @test ProjectTo(1.0)(Dual(1.0, 2.0)) isa Dual
         @test ProjectTo(1.0)(Dual(1, 2)) isa Dual
+
+        # real & complex
         @test ProjectTo(1.0 + 1im)(Dual(1.0, 2.0)) isa Complex{<:Dual}
         @test ProjectTo(1.0 + 1im)(
             Complex(Dual(1.0, 2.0), Dual(1.0, 2.0))
         ) isa Complex{<:Dual}
         @test ProjectTo(1.0)(Complex(Dual(1.0, 2.0), Dual(1.0, 2.0))) isa Dual
+
+        # Tangent
+        @test ProjectTo(Dual(1.0, 2.0))(Tangent{Dual}(; value=1.0)) isa Tangent
     end
 
     @testset "Base: arrays of numbers" begin
