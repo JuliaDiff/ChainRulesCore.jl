@@ -299,11 +299,12 @@ Base.zero(x::Dual) = Dual(zero(x.value), zero(x.partial))
     @testset "AbstractZero" begin
         pz = ProjectTo(ZeroTangent())
         pz(0) == NoTangent()
-        @test_broken pz(ZeroTangent()) === ZeroTangent()  # not sure how NB this is to preserve
+        @test pz(ZeroTangent()) === ZeroTangent()  # not sure how NB this is to preserve
         @test pz(NoTangent()) === NoTangent()
 
         pb = ProjectTo(true) # Bool is categorical
         @test pb(2) === NoTangent()
+        @test pb(ZeroTangent()) isa AbstractZero  # was a method ambiguity!
 
         # all projectors preserve Zero, and specific type, via one fallback method:
         @test ProjectTo(pi)(ZeroTangent()) === ZeroTangent()
