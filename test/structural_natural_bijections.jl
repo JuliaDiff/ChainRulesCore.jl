@@ -59,6 +59,8 @@ LinearAlgebra.Hermitian(X::AbstractMatrix, uplo::Char) = Hermitian(X, Symbol(upl
     check_bijections(LowerTriangular(X), Tangent{LowerTriangular}(data=dX))
     check_bijections(Symmetric(X), Tangent{Symmetric}(data=dX))
     check_bijections(Hermitian(X), Tangent{Hermitian}(data=dX))
+    check_bijections(Adjoint(X), Tangent{Adjoint}(parent=dX))
+    check_bijections(Transpose(X), Tangent{Transpose}(parent=dX))
 
     # These tests don't work. I haven't managed to figure out a natural tangent which
     # satisfies all of my tests for this ScaledVector type.

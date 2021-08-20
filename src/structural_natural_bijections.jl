@@ -64,3 +64,19 @@ to_natural(b::Bijections{P}, t::Tangent) where {P<:Hermitian} = Hermitian(t.data
 function to_structural(b::Bijections{P}, n::Hermitian) where {P<:Hermitian}
     return Tangent{P}(data=n.data)
 end
+
+# Adjoint
+Bijections(::P) where {P<:Adjoint} = Bijections{P, Nothing}(nothing)
+
+to_natural(b::Bijections{P}, t::Tangent) where {P<:Adjoint} = Adjoint(t.parent)
+
+to_structural(b::Bijections{P}, t::Adjoint) where {P<:Adjoint} = Tangent{P}(parent=t.parent)
+
+# Transpose
+Bijections(::P) where {P<:Transpose} = Bijections{P, Nothing}(nothing)
+
+to_natural(b::Bijections{P}, t::Tangent) where {P<:Transpose} = Transpose(t.parent)
+
+function to_structural(b::Bijections{P}, t::Transpose) where {P<:Transpose}
+    return Tangent{P}(parent=t.parent)
+end
