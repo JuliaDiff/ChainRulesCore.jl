@@ -64,6 +64,9 @@ LinearAlgebra.Hermitian(X::AbstractMatrix, uplo::Char) = Hermitian(X, Symbol(upl
     check_bijections(Hermitian(X), Tangent{Hermitian}(data=dX))
     check_bijections(Adjoint(X), Tangent{Adjoint}(parent=dX))
     check_bijections(Transpose(X), Tangent{Transpose}(parent=dX))
+    check_bijections(
+        SymTridiagonal(dx, dx[1:end-1]), Tangent{SymTridiagonal}(dv=dx, ev=dx[1:end-1]),
+    )
     check_bijections(UpperHessenberg(X), Tangent{UpperHessenberg}(data=dX))
 
     # These tests don't work. I haven't managed to figure out a natural tangent which

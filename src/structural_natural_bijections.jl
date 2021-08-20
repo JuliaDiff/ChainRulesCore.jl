@@ -92,6 +92,17 @@ function to_structural(b::Bijections{P}, t::Transpose) where {P<:Transpose}
     return Tangent{P}(parent=t.parent)
 end
 
+# SymTridiagonal
+Bijections(::P) where {P<:SymTridiagonal} = Bijections{P, Nothing}(nothing)
+
+function to_natural(b::Bijections{P}, t::Tangent) where {P<:SymTridiagonal}
+    return SymTridiagonal(t.dv, t.ev)
+end
+
+function to_structural(b::Bijections{P}, n::SymTridiagonal) where {P<:SymTridiagonal}
+    return Tangent{P}(dv=n.dv, ev=n.ev)
+end
+
 # UpperHessenberg
 Bijections(::P) where {P<:UpperHessenberg} = Bijections{P, Nothing}(nothing)
 
