@@ -19,6 +19,68 @@ The obvious answer, would be to write a rule that throws an error if input at a 
 Another option is to return some error signally value like `NaN`.
 Which you *can* do.
 However, this is not useful.
+
+Let us explore what is useful:
+# Case Studies
+
+```@setup nondiff
+using Plots
+gr(framestyle=:origin, legend=false)
+```
+### Derivative is defined in usual sense
+```@example nondiff
+plot(x->x^3)
+```
+This is the standard case, one can returned the derivative that is defined according to school room calculus.
+An interesting thing a bout `x->x^3` is that at `x=0` the derivative is defined,
+but neither the sub-derivative nor super-derivative is defined.
+
+### Local Minima / Maxima
+
+```@example nondiff
+plot(abs)
+```
+
+### Piecewise slope change
+```@example nondiff
+plot(x-> x < 0 ? x : 5x)
+```
+
+### Zero almost everywhere
+
+```@example nondiff
+plot(round)
+```
+
+### Non-finite and same on both sides
+```@example nondiff
+plot(x->inv(x^2))
+plot!(; xlims=(-1,1), ylims=(-100,100)) #hide
+```
+
+### Non-finite and differing on both sides
+```@example nondiff
+plot(inv)
+plot!(; xlims=(-1,1), ylims=(-100,100)) #hide
+```
+
+### Not defined on one-side
+```@example nondiff
+plot(x->exp(2log(x)))
+```
+
+We do not have to worry about what to return for the side where it is not defined.
+As we will never be asked for the derivative at e.g. `x=-2.5` since the primal function errors.
+But we do need to worry about at the boundary -- if that boundary point doesn't error.
+
+### Not defined on one side, non-finite on the other
+```@example nondiff
+plot(log)
+```
+
+### sub/super-differential convention
+**TODO: Incorperate this with rest of the document.
+
 Instead we introduce what we call the **sub/super-differential convention**:
 
 > It is always permissible to return any element of the sub/super-differential.
@@ -31,7 +93,7 @@ Or equivalently but considering the trivial singleton sub/super-differential sep
 
 We will justify this further below, but first let us discuss what it means.
 
-## What is the sub/super-differential?
+### What is the sub/super-differential?
 
 The subderivative is defined only for locally convex functions, whereas the super-derivative is defined only for locally concave functions.
 For our purpose we basically never care which we are working with and so write sub/super-derivative.
