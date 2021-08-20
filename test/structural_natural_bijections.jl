@@ -8,9 +8,9 @@ function check_bijections(primal, structural::Tangent)
     b = Bijections(primal)
     
     # Check that adding tangents is the same in structural or natural.
-    sum_1 = 0.8 * structural + 0.3 * structural
+    sum_1 = to_natural(b, 0.8 * structural + 0.3 * structural)
     natural = to_natural(b, structural)
-    sum_2 = to_structural(b, 0.8 * natural + 0.3 * natural)
+    sum_2 = 0.8 * natural + 0.3 * natural
     @test sum_1 == sum_2
 
     # Check that adding the structural tangent to the primal has the same effect as adding
