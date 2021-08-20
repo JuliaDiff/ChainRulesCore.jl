@@ -1,8 +1,5 @@
 using ChainRulesCore: backing
 
-# Need to be able to compare `Tangent`s to verify correctness of definition of natural.
-Base.:(==)(t::Tangent, s::Tangent) = (backing(t) == backing(s))
-
 # This function specifies what we require of a natural tangent. Works for flat spaces.
 function check_bijections(primal, structural::Tangent)
     b = Bijections(primal)
@@ -18,7 +15,7 @@ function check_bijections(primal, structural::Tangent)
     @test primal + structural == primal + to_natural(b, structural)
 
     # Check that to_structural inverts to_natural.
-    @test to_structural(b, to_natural(b, structural)) == structural
+    @test to_natural(b, to_structural(b, natural)) == natural
 end
 
 struct ScaledVector <: AbstractVector{Float64}
