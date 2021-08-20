@@ -107,15 +107,17 @@ function to_structural(b::Bijections{P}, n::SymTridiagonal) where {P<:SymTridiag
     return Tangent{P}(dv=n.dv, ev=n.ev)
 end
 
-# UpperHessenberg
-Bijections(::P) where {P<:UpperHessenberg} = Bijections{P, Nothing}(nothing)
+if VERSION >= v"1.3"
+    # UpperHessenberg
+    Bijections(::P) where {P<:UpperHessenberg} = Bijections{P, Nothing}(nothing)
 
-function to_natural(b::Bijections{P}, t::Tangent) where {P<:UpperHessenberg}
-    return UpperHessenberg(t.data)
-end
+    function to_natural(b::Bijections{P}, t::Tangent) where {P<:UpperHessenberg}
+        return UpperHessenberg(t.data)
+    end
 
-function to_structural(b::Bijections{P}, n::UpperHessenberg) where {P<:UpperHessenberg}
-    return Tangent{P}(data=n.data)
+    function to_structural(b::Bijections{P}, n::UpperHessenberg) where {P<:UpperHessenberg}
+        return Tangent{P}(data=n.data)
+    end
 end
 
 # UniformScaling
