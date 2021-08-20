@@ -59,18 +59,22 @@ function to_structural(b::Bijections{P}, n::LowerTriangular) where {P<:LowerTria
 end
 
 # Symmetric
-Bijections(::P) where {P<:Symmetric} = Bijections{P, Nothing}(nothing)
+Bijections(p::P) where {P<:Symmetric} = Bijections{P, Char}(p.uplo)
 
-to_natural(b::Bijections{P}, t::Tangent) where {P<:Symmetric} = Symmetric(t.data)
+function to_natural(b::Bijections{P}, t::Tangent) where {P<:Symmetric}
+    return Symmetric(t.data, Symbol(b.info))
+end
 
 function to_structural(b::Bijections{P}, n::Symmetric) where {P<:Symmetric}
     return Tangent{P}(data=n.data)
 end
 
 # Hermitian
-Bijections(::P) where {P<:Hermitian} = Bijections{P, Nothing}(nothing)
+Bijections(p::P) where {P<:Hermitian} = Bijections{P, Char}(p.uplo)
 
-to_natural(b::Bijections{P}, t::Tangent) where {P<:Hermitian} = Hermitian(t.data)
+function to_natural(b::Bijections{P}, t::Tangent) where {P<:Hermitian}
+    return Hermitian(t.data, Symbol(b.info))
+end
 
 function to_structural(b::Bijections{P}, n::Hermitian) where {P<:Hermitian}
     return Tangent{P}(data=n.data)

@@ -61,7 +61,9 @@ LinearAlgebra.Hermitian(X::AbstractMatrix, uplo::Char) = Hermitian(X, Symbol(upl
     check_bijections(UpperTriangular(X), Tangent{UpperTriangular}(data=dX))
     check_bijections(LowerTriangular(X), Tangent{LowerTriangular}(data=dX))
     check_bijections(Symmetric(X), Tangent{Symmetric}(data=dX))
+    check_bijections(Symmetric(X, :L), Tangent{Symmetric}(data=dX))
     check_bijections(Hermitian(X), Tangent{Hermitian}(data=dX))
+    check_bijections(Hermitian(X, :L), Tangent{Hermitian}(data=dX))
     check_bijections(Adjoint(X), Tangent{Adjoint}(parent=dX))
     check_bijections(Transpose(X), Tangent{Transpose}(parent=dX))
     check_bijections(
