@@ -113,3 +113,14 @@ end
 function to_structural(b::Bijections{P}, n::UpperHessenberg) where {P<:UpperHessenberg}
     return Tangent{P}(data=n.data)
 end
+
+# UniformScaling
+Bijections(::P) where {P<:UniformScaling} = Bijections{P, Nothing}(nothing)
+
+function to_natural(b::Bijections{P}, t::Tangent) where {P<:UniformScaling}
+    return UniformScaling(t.λ)
+end
+
+function to_structural(b::Bijections{P}, n::UniformScaling) where {P<:UniformScaling}
+    return Tangent{P}(λ=n.λ)
+end

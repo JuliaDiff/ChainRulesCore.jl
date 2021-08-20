@@ -68,6 +68,7 @@ LinearAlgebra.Hermitian(X::AbstractMatrix, uplo::Char) = Hermitian(X, Symbol(upl
         SymTridiagonal(dx, dx[1:end-1]), Tangent{SymTridiagonal}(dv=dx, ev=dx[1:end-1]),
     )
     check_bijections(UpperHessenberg(X), Tangent{UpperHessenberg}(data=dX))
+    check_bijections(UniformScaling(randn()), Tangent{UniformScaling}(λ=randn()))
 
     # These tests don't work. I haven't managed to figure out a natural tangent which
     # satisfies all of my tests for this ScaledVector type.
