@@ -91,3 +91,14 @@ to_natural(b::Bijections{P}, t::Tangent) where {P<:Transpose} = Transpose(t.pare
 function to_structural(b::Bijections{P}, t::Transpose) where {P<:Transpose}
     return Tangent{P}(parent=t.parent)
 end
+
+# UpperHessenberg
+Bijections(::P) where {P<:UpperHessenberg} = Bijections{P, Nothing}(nothing)
+
+function to_natural(b::Bijections{P}, t::Tangent) where {P<:UpperHessenberg}
+    return UpperHessenberg(t.data)
+end
+
+function to_structural(b::Bijections{P}, n::UpperHessenberg) where {P<:UpperHessenberg}
+    return Tangent{P}(data=n.data)
+end
