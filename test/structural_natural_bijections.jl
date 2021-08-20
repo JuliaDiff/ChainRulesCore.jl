@@ -54,6 +54,9 @@ LinearAlgebra.Hermitian(X::AbstractMatrix, uplo::Char) = Hermitian(X, Symbol(upl
     X = randn(5, 5)
     dX = randn(5, 5)
 
+    check_bijections(
+        Bidiagonal(x, x[1:end-1], 'U'), Tangent{Bidiagonal}(dv=dx, ev=dx[1:end-1]),
+    )
     check_bijections(Diagonal(x), Tangent{Diagonal}(diag=dx))
     check_bijections(UpperTriangular(X), Tangent{UpperTriangular}(data=dX))
     check_bijections(LowerTriangular(X), Tangent{LowerTriangular}(data=dX))

@@ -18,6 +18,17 @@ tangent, just its representation.
 """
 to_structural(b::Bijections, n)
 
+# Bidiagonal
+Bijections(p::P) where {P<:Bidiagonal} = Bijections{P, Char}(p.uplo)
+
+function to_natural(b::Bijections{P}, t::Tangent) where {P<:Bidiagonal}
+    return Bidiagonal(t.dv, t.ev, b.info)
+end
+
+function to_structural(b::Bijections{P}, n::Bidiagonal) where {P<:Bidiagonal}
+    return Tangent{P}(dv=n.dv, ev=n.ev)
+end
+
 # Diagonal
 Bijections(::P) where {P<:Diagonal} = Bijections{P, Nothing}(nothing)
 
