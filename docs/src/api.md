@@ -46,6 +46,12 @@ Private = false
 ProjectTo
 ```
 
+## Structural-Natural Bijections
+```@docs
+to_natural
+to_structural
+```
+
 ## Internal
 ```@docs
 ChainRulesCore.AbstractTangent
