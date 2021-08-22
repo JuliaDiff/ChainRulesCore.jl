@@ -1,0 +1,158 @@
+# Fallbacks for destructure
+destructure(X::AbstractArray) = collect(X)
+
+pushforward_of_destructure(X) = dX -> frule((NoTangent(), dX), destructure, X)[2]
+
+pullback_of_destructure(X) = dY -> rrule(destructure, X)[2](dY)[2]
+
+# Restructure machinery.
+struct Restructure{P, D}
+    data::D
+end
+
+pullback_of_restructure(X) = dY -> rrule(Restructure(X), destructure(X))[2](dY)[2]
+
+
+
+
+
+# Array
+destructure(X::Array) = X
+
+frule((_, dX)::Tuple{Any, AbstractArray}, ::typeof(destructure), X::Array) = X, dX
+
+function rrule(::typeof(destructure), X::Array)
+    destructure_pullback(dXm::AbstractArray) = NoTangent(), dXm
+    return X, destructure_pullback
+end
+
+Restructure(X::P) where {P<:Array} = Restructure{P, Nothing}(nothing)
+
+(r::Restructure{P})(X::Array) where {P<:Array} = X
+
+function frule(
+    (_, dX)::Tuple{Any, AbstractArray}, ::Restructure{P}, X::Array,
+) where {P<:Array}
+    return X, dX
+end
+
+function rrule(::Restructure{P}, X::Array) where {P<:Array}
+    restructure_pullback(dY::AbstractArray) = NoTangent(), dY
+    return X, restructure_pullback
+end
+
+
+
+
+
+# Diagonal
+destructure(X::Diagonal) = collect(X)
+
+function frule((_, dX)::Tuple{Any, Tangent}, ::typeof(destructure), X::Diagonal)
+    des_diag, d_des_diag = frule((NoTangent(), dX.diag), destructure, X.diag)
+    return collect(X), Diagonal(d_des_diag)
+end
+
+function rrule(::typeof(destructure), X::P) where {P<:Diagonal}
+    _, des_diag_pb = rrule(destructure, X.diag)
+    function destructure_pullback(dY::AbstractMatrix)
+        d_des_diag = diag(dY)
+        _, d_diag = des_diag_pb(d_des_diag)
+        return NoTangent(), Tangent{P}(diag=d_diag)
+    end
+    return destructure(X), destructure_pullback
+end
+
+Restructure(X::P) where {P<:Diagonal} = Restructure{P, Nothing}(nothing)
+
+function (r::Restructure{P})(X::Array) where {P<:Diagonal}
+    @assert isdiag(X) # for illustration. Remove in actual because numerics.
+    return Diagonal(diag(X))
+end
+
+function frule(
+    (_, dX)::Tuple{Any, AbstractArray}, ::Restructure{P}, X::Array,
+) where {P<:Diagonal}
+    return Diagoonal(diag(X)), Tangent{P}(diag=diag(dX))
+end
+
+function rrule(::Restructure{P}, X::Array) where {P<:Diagonal}
+    restructure_pullback(dY::Tangent) = NoTangent(), Diagonal(dY.diag)
+    return X, restructure_pullback
+end
+
+
+
+
+
+# Symmetric
+function destructure(X::Symmetric)
+    des_data = destructure(X.data)
+    if X.uplo == 'U'
+        U = UpperTriangular(des_data)
+        return U + U' - Diagonal(des_data)
+    else
+        L = LowerTriangular(des_data)
+        return L' + L - Diagonal(X.data)
+    end
+end
+
+# This gives you the natural tangent!
+function frule((_, dx)::Tuple{Any, Tangent}, ::typeof(destructure), x::Symmetric)
+    des_data, d_des_data = frule((NoTangent(), dx.data), destructure, x.data)
+
+    if x.uplo == 'U'
+        dU = UpperTriangular(d_des_data)
+        return destructure(x), dU + dU' - Diagonal(d_des_data)
+    else
+        dL = LowerTriangular(d_des_data)
+        return destructure(x), dL + dL' - Diagonal(d_des_data)
+    end
+end
+
+function rrule(::typeof(destructure), X::P) where {P<:Symmetric}
+    function destructure_pullback(dXm::AbstractMatrix)
+        U = UpperTriangular(dXm)
+        L = LowerTriangular(dXm)
+        if X.uplo == 'U'
+            return NoTangent(), Tangent{P}(data=U + L' - Diagonal(dXm))
+        else
+            return NoTangent(), Tangent{P}(data=U' + L - Diagonal(dXm))
+        end
+    end
+    return destructure(X), destructure_pullback
+end
+
+Restructure(X::P) where {P<:Symmetric} = Restructure{P, P}(X)
+
+# In generic-abstractarray-rrule land, assume getindex was used, so the
+# strict-lower-triangle was never touched.
+function (r::Restructure{P})(X::Array) where {P<:Symmetric}
+    strict_lower_triangle_of_data = LowerTriangular(r.data.data) - Diagonal(r.data.data)
+    return Symmetric(UpperTriangular(X) + strict_lower_triangle_of_data)
+end
+
+function frule(
+    (_, dX)::Tuple{Any, AbstractArray}, r::Restructure{P}, X::Array,
+) where {P<:Symmetric}
+    return r(X), Tangent{P}(data=UpperTriangular(X))
+end
+
+function rrule(r::Restructure{P}, X::Array) where {P<:Symmetric}
+    function restructure_pullback(dY::Tangent)
+        d_restructure = Tangent{Restructure{P}}(data=Tangent{P}(data=tril(dY.data)))
+        return d_restructure, UpperTriangular(dY.data)
+    end
+    return r(X), restructure_pullback
+end
+
+
+
+# Cholesky -- you get to choose whatever destructuring operation is helpful for a given
+# type. This one is helpful for writing generic pullbacks for `cholesky`, the output of
+# which is a Cholesky.
+# I've not completed the implementation, but it would just require a pushforward and a
+# pullback.
+destructure(C::Cholesky) = Cholesky(destructure(C.factors), C.uplo, C.info)
+
+# Restructure(C::P) where {P<:Cholesky} = Restructure{P, Nothing}()

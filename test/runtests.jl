@@ -1,6 +1,7 @@
 using Base.Broadcast: broadcastable
 using BenchmarkTools
 using ChainRulesCore
+using FiniteDifferences
 using LinearAlgebra
 using LinearAlgebra.BLAS: ger!, gemv!, gemv, scal!
 using StaticArrays
@@ -8,19 +9,20 @@ using SparseArrays
 using Test
 
 @testset "ChainRulesCore" begin
-    @testset "differentials" begin
-        include("differentials/abstract_zero.jl")
-        include("differentials/thunks.jl")
-        include("differentials/composite.jl")
-        include("differentials/notimplemented.jl")
-    end
+    # @testset "differentials" begin
+    #     include("differentials/abstract_zero.jl")
+    #     include("differentials/thunks.jl")
+    #     include("differentials/composite.jl")
+    #     include("differentials/notimplemented.jl")
+    # end
 
-    include("accumulation.jl")
-    include("projection.jl")
+    # include("accumulation.jl")
 
-    include("rules.jl")
-    include("rule_definition_tools.jl")
-    include("config.jl")
+    # include("rules.jl")
+    # include("rule_definition_tools.jl")
+    # include("config.jl")
 
-    include("deprecated.jl")
+    include("destructure.jl")
+
+    # include("deprecated.jl")
 end
