@@ -27,6 +27,7 @@ include("differentials/notimplemented.jl")
 
 include("differential_arithmetic.jl")
 include("accumulation.jl")
+include("projection.jl")
 
 include("config.jl")
 include("rules.jl")

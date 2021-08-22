@@ -50,7 +50,7 @@ destructure(X::Diagonal) = collect(X)
 
 function frule((_, dX)::Tuple{Any, Tangent}, ::typeof(destructure), X::Diagonal)
     des_diag, d_des_diag = frule((NoTangent(), dX.diag), destructure, X.diag)
-    return collect(X), Diagonal(d_des_diag)
+    return collect(X), collect(Diagonal(d_des_diag))
 end
 
 function rrule(::typeof(destructure), X::P) where {P<:Diagonal}
@@ -73,7 +73,7 @@ end
 function frule(
     (_, dX)::Tuple{Any, AbstractArray}, ::Restructure{P}, X::Array,
 ) where {P<:Diagonal}
-    return Diagoonal(diag(X)), Tangent{P}(diag=diag(dX))
+    return Diagonal(diag(X)), Tangent{P}(diag=diag(dX))
 end
 
 function rrule(::Restructure{P}, X::Array) where {P<:Diagonal}
@@ -135,16 +135,18 @@ end
 function frule(
     (_, dX)::Tuple{Any, AbstractArray}, r::Restructure{P}, X::Array,
 ) where {P<:Symmetric}
-    return r(X), Tangent{P}(data=UpperTriangular(X))
+    return r(X), Tangent{P}(data=UpperTriangular(dX))
 end
 
 function rrule(r::Restructure{P}, X::Array) where {P<:Symmetric}
     function restructure_pullback(dY::Tangent)
         d_restructure = Tangent{Restructure{P}}(data=Tangent{P}(data=tril(dY.data)))
-        return d_restructure, UpperTriangular(dY.data)
+        return d_restructure, collect(UpperTriangular(dY.data))
     end
     return r(X), restructure_pullback
 end
+
+
 
 
 
