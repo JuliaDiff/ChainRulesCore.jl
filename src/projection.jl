@@ -421,6 +421,9 @@ ProjectTo(x::Diagonal) = ProjectTo{Diagonal}(; diag=ProjectTo(x.diag))
 (project::ProjectTo{Diagonal})(dx::AbstractMatrix) = Diagonal(project.diag(diag(dx)))
 (project::ProjectTo{Diagonal})(dx::Diagonal) = Diagonal(project.diag(dx.diag))
 
+(project::ProjectTo{Diagonal})(dx::Tangent{T}) where T = (@show T; Diagonal(project.diag(dx.diag)))
+# (project::ProjectTo{Diagonal})(dx::Tangent{<:Diagonal, NamedTuple{(:diag,), <:Tuple{AbstractVector}}}) = Diagonal(project.diag(@show dx.diag))
+
 # Symmetric
 for (SymHerm, chk, fun) in
     ((:Symmetric, :issymmetric, :transpose), (:Hermitian, :ishermitian, :adjoint))
@@ -455,6 +458,7 @@ for UL in (:UpperTriangular, :LowerTriangular, :UnitUpperTriangular, :UnitLowerT
     @eval begin
         ProjectTo(x::$UL) = ProjectTo{$UL}(; parent=ProjectTo(parent(x)))
         (project::ProjectTo{$UL})(dx::AbstractArray) = $UL(project.parent(dx))
+        # Another subspace which is not a subtype, like Diagonal inside Symmetric above, equally unsure
         function (project::ProjectTo{$UL})(dx::Diagonal)
             sub = project.parent
             sub_one = ProjectTo{project_type(sub)}(;
@@ -462,6 +466,8 @@ for UL in (:UpperTriangular, :LowerTriangular, :UnitUpperTriangular, :UnitLowerT
             )
             return Diagonal(sub_one(dx.diag))
         end
+        # Convert "structural" `Tangent`s to array-like "natural" tangents
+        (project::ProjectTo{$UL})(dx::Tangent{<:$UL, NamedTuple{(:data,), <:Tuple{AbstractMatrix}}}) = $UL(dx.data)
     end
 end
 
