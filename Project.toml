@@ -10,7 +10,7 @@ SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 [compat]
 BenchmarkTools = "0.5"
 Compat = "2, 3"
-FiniteDifferences = "0.10"
+FiniteDifferences = "0.12"
 OffsetArrays = "1"
 StaticArrays = "0.11, 0.12, 1"
 julia = "1"
