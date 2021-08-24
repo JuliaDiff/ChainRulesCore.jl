@@ -32,8 +32,10 @@ gr(framestyle=:origin, legend=false)
 plot(x->x^3)
 ```
 This is the standard case, one can returned the derivative that is defined according to school room calculus.
-An interesting thing a bout `x->x^3` is that at `x=0` the derivative is defined,
-but neither the sub-derivative nor super-derivative is defined.
+Here we would reasonably say that at `x=0` the derivative is `3*0^2=0`. 
+
+
+An interesting thing about `x->x^3` is that at `x=0` the derivative is defined, but neither the sub-derivative nor super-derivative is defined.
 
 ### Local Minima / Maxima
 
@@ -41,24 +43,48 @@ but neither the sub-derivative nor super-derivative is defined.
 plot(abs)
 ```
 
+`abs` is the classic example of a function where the derivative is not defines as the limit from above is not equal to the limit from below
+
+$$\mathrm{abs}'(0) = \lim_{h->0^-} \dfrac{\mathrm{abs}(0)-\mathrm{abs}(0-h)}{0-h} = -1$$
+$$\mathrm{abs}'(0) = \lim_{h->0^+} \dfrac{abs(0)-\mathrm{abs}(0-h)}{0-h} = 1$$
+
+Now, as discussed in the introduction the AD system would on it's own choose either 1 or -1, depending on implementation.
+
+We however have a potentially much nicer answer available to use: 0.
+
+This has a number of advantages.
+- It follows the rule that derivatives are zero at local minima (and maxima).
+- If you leave a gradient decent optimizer running it will eventually actually converge absolutely to the point -- where as with it being 1 or -1 it would never outright converge it would always flee.
+
+Further:
+- It is a perfectly nice member of the [subderivative](https://en.wikipedia.org/wiki/Subderivative).
+- It is the mean of the derivative on each side; which means that it will agree with central finite differencing at the point.
 ### Piecewise slope change
 ```@example nondiff
 plot(x-> x < 0 ? x : 5x)
 ```
 
-### Zero almost everywhere
+### Derivative zero almost everywhere
 
 ```@example nondiff
-plot(round)
+plot(ceil)
 ```
 
-### Non-finite and same on both sides
+### Primal finite, and derivative nonfinite and same on both sides
+
+```@example nondiff
+plot(cbrt)
+```
+
+
+(derivative nonfinite and different on each side is not possible with a finite and defined primal.)
+### Primal and derivative Non-finite and same on both sides
 ```@example nondiff
 plot(x->inv(x^2))
 plot!(; xlims=(-1,1), ylims=(-100,100)) #hide
 ```
 
-### Non-finite and differing on both sides
+### Primal and gradient Non-finite and differing on both sides
 ```@example nondiff
 plot(inv)
 plot!(; xlims=(-1,1), ylims=(-100,100)) #hide
