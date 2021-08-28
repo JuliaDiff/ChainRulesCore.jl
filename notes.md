@@ -18,7 +18,7 @@ Apologies in advance for the lenght. I've tried to condense where possible, but 
 
 ## Cutting to the Chase
 
-Rule-implementers would write rules that look like this:
+Under the proposed system, rule-implementers would write rules that look like this:
 ```julia
 function rrule(config::RuleConfig, ::typeof(*), A::AbstractMatrix, B::AbstractMatrix)
 
