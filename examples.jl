@@ -55,7 +55,7 @@ my_sum(x::AbstractArray) = sum(x)
 
 function ChainRulesCore.rrule(config::RuleConfig, ::typeof(my_sum), x::AbstractArray)
     y = my_sum(x)
-    natural_pullback_my_sum(ȳ::Real) = NoTangent(), fill(ȳ, size(x))
+    natural_pullback_my_sum(ȳ::Real) = NoTangent(), fill(ȳ, size(x)) # Fill also fine here.
     return y, wrap_natural_pullback(config, natural_pullback_my_sum, y, x)
 end
 
@@ -155,7 +155,7 @@ test_approx(dx, dx_fd)
 
 
 # Example 4: ScaledVector. This is an interesting example because I truly had no idea how to
-# specify a natural tangent for this before.
+# specify a natural tangent prior to this work.
 
 # Implement AbstractArray interface.
 struct ScaledMatrix <: AbstractMatrix{Float64}
