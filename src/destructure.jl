@@ -1,22 +1,32 @@
 # Fallbacks for destructure
 destructure(X::AbstractArray) = collect(X)
 
-pushforward_of_destructure(X) = dX -> frule((NoTangent(), dX), destructure, X)[2]
-
-pullback_of_destructure(X) = dY -> rrule(destructure, X)[2](dY)[2]
+function pullback_of_destructure(config::RuleConfig, X)
+    return dY -> rrule_via_ad(config, destructure, X)[2](dY)[2]
+end
 
 # Restructure machinery.
 struct Restructure{P, D}
     data::D
 end
 
-pullback_of_restructure(X) = dY -> rrule(Restructure(X), destructure(X))[2](dY)[2]
-
+function pullback_of_restructure(config::RuleConfig, X)
+    return dY -> rrule_via_ad(config, Restructure(X), destructure(X))[2](dY)[2]
+end
 
 
 
 
 # Array
+function pullback_of_destructure(config::RuleConfig, X::Array{<:Real})
+    pullback_destructure_Array(X̄::AbstractArray{<:Real}) = X̄
+    return pullback_destructure_Array
+end
+
+function pullback_of_restructure(config::RuleConfig, X::Array{<:Real})
+    pullback_restructure_Array(X̄::AbstractArray{<:Real}) = X̄
+end
+
 destructure(X::Array) = X
 
 frule((_, dX)::Tuple{Any, AbstractArray}, ::typeof(destructure), X::Array) = X, dX
@@ -46,6 +56,16 @@ end
 
 
 # Diagonal
+function pullback_of_destructure(config::RuleConfig, D::P) where {P<:Diagonal}
+    pullback_destructure_Diagonal(D̄::AbstractArray) = Tangent{P}(diag=diag(D̄))
+    return pullback_destructure_Diagonal
+end
+
+function pullback_of_restructure(config::RuleConfig, D::P) where {P<:Diagonal}
+    pullback_restructure_Diagonal(D̄::Tangent) = Diagonal(D̄.diag)
+    return pullback_restructure_Diagonal
+end
+
 destructure(X::Diagonal) = collect(X)
 
 function frule((_, dX)::Tuple{Any, Tangent}, ::typeof(destructure), X::Diagonal)
@@ -86,6 +106,27 @@ end
 
 
 # Symmetric
+function pullback_of_destructure(config::RuleConfig, S::P) where {P<:Symmetric}
+    function destructure_pullback_Symmetric(dXm::AbstractMatrix)
+        U = UpperTriangular(dXm)
+        L = LowerTriangular(dXm)
+        if S.uplo == 'U'
+            return Tangent{P}(data=U + L' - Diagonal(dXm))
+        else
+            return Tangent{P}(data=U' + L - Diagonal(dXm))
+        end
+    end
+    return destructure_pullback_Symmetric
+end
+
+# Assume upper-triangular for now.
+function pullback_of_restructure(config::RuleConfig, S::P) where {P<:Symmetric}
+    function restructure_pullback_Symmetric(dY::Tangent)
+        return collect(UpperTriangular(dY.data))
+    end
+    return restructure_pullback_Symmetric
+end
+
 function destructure(X::Symmetric)
     des_data = destructure(X.data)
     if X.uplo == 'U'
