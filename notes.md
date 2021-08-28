@@ -195,15 +195,15 @@ function rrule(config::RuleConfig, ::typeof(*), A::AbstractMatrix, B::AbstractMa
     function my_mul_generic_pullback(C̄)
 
         # Recover natural cotangent.
-        _, C̄_nat = restructure_C_pb(C̄)
+        C̄_nat = restructure_C_pb(C̄)
 
         # Compute pullback using natural cotangent of C.
         Ā_nat = C̄_nat * B'
         B̄_nat = A' * C̄_nat
 
         # Transform natural cotangents w.r.t. A and B into structural (if non-primitive).
-        _, Ā = destructure_A_pb(Ā_nat)
-        _, B̄ = destructure_B_pb(B̄_nat)
+        Ā = destructure_A_pb(Ā_nat)
+        B̄ = destructure_B_pb(B̄_nat)
         return NoTangent(), Ā, B̄
     end
 
