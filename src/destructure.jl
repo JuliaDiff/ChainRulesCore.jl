@@ -1,6 +1,8 @@
 # Fallbacks for destructure
 destructure(X::AbstractArray) = collect(X)
 
+pushforward_of_destructure(X) = dX -> frule((NoTangent(), dX), destructure, X)[2]
+
 function pullback_of_destructure(config::RuleConfig, X)
     return dY -> rrule_via_ad(config, destructure, X)[2](dY)[2]
 end
@@ -18,15 +20,28 @@ end
 
 
 # Array
-function pullback_of_destructure(config::RuleConfig, X::Array{<:Real})
+
+function pullback_of_destructure(X::Array{<:Real})
     pullback_destructure_Array(X̄::AbstractArray{<:Real}) = X̄
     return pullback_destructure_Array
 end
 
-function pullback_of_restructure(config::RuleConfig, X::Array{<:Real})
+
+function pullback_of_restructure(X::Array{<:Real})
     pullback_restructure_Array(X̄::AbstractArray{<:Real}) = X̄
+    return pullback_restructure_Array
 end
 
+function pullback_of_destructure(config::RuleConfig, X::Array{<:Real})
+    return pullback_of_destructure(X)
+end
+
+function pullback_of_restructure(config::RuleConfig, X::Array{<:Real})
+    return pullback_of_destructure(X)
+end
+
+
+# Stuff below here for Array to move to tests.
 destructure(X::Array) = X
 
 frule((_, dX)::Tuple{Any, AbstractArray}, ::typeof(destructure), X::Array) = X, dX
@@ -56,16 +71,25 @@ end
 
 
 # Diagonal
-function pullback_of_destructure(config::RuleConfig, D::P) where {P<:Diagonal}
+function pullback_of_destructure(D::P) where {P<:Diagonal}
     pullback_destructure_Diagonal(D̄::AbstractArray) = Tangent{P}(diag=diag(D̄))
     return pullback_destructure_Diagonal
 end
 
-function pullback_of_restructure(config::RuleConfig, D::P) where {P<:Diagonal}
+function pullback_of_restructure(D::P) where {P<:Diagonal}
     pullback_restructure_Diagonal(D̄::Tangent) = Diagonal(D̄.diag)
     return pullback_restructure_Diagonal
 end
 
+function pullback_of_destructure(config::RuleConfig, X::Diagonal)
+    return pullback_of_destructure(X)
+end
+
+function pullback_of_restructure(config::RuleConfig, X::Diagonal)
+    return pullback_of_destructure(X)
+end
+
+# Stuff below here for Diagonal to move to tests.
 destructure(X::Diagonal) = collect(X)
 
 function frule((_, dX)::Tuple{Any, Tangent}, ::typeof(destructure), X::Diagonal)
@@ -106,7 +130,7 @@ end
 
 
 # Symmetric
-function pullback_of_destructure(config::RuleConfig, S::P) where {P<:Symmetric}
+function pullback_of_destructure(S::P) where {P<:Symmetric}
     function destructure_pullback_Symmetric(dXm::AbstractMatrix)
         U = UpperTriangular(dXm)
         L = LowerTriangular(dXm)
@@ -120,13 +144,22 @@ function pullback_of_destructure(config::RuleConfig, S::P) where {P<:Symmetric}
 end
 
 # Assume upper-triangular for now.
-function pullback_of_restructure(config::RuleConfig, S::P) where {P<:Symmetric}
+function pullback_of_restructure(S::P) where {P<:Symmetric}
     function restructure_pullback_Symmetric(dY::Tangent)
         return collect(UpperTriangular(dY.data))
     end
     return restructure_pullback_Symmetric
 end
 
+function pullback_of_destructure(config::RuleConfig, X::Symmetric)
+    return pullback_of_destructure(X)
+end
+
+function pullback_of_restructure(config::RuleConfig, X::Symmetric)
+    return pullback_of_destructure(X)
+end
+
+# Stuff below here for Symmetric to move to tests.
 function destructure(X::Symmetric)
     des_data = destructure(X.data)
     if X.uplo == 'U'
@@ -193,9 +226,7 @@ end
 
 # Cholesky -- you get to choose whatever destructuring operation is helpful for a given
 # type. This one is helpful for writing generic pullbacks for `cholesky`, the output of
-# which is a Cholesky.
-# I've not completed the implementation, but it would just require a pushforward and a
-# pullback.
+# which is a Cholesky. Not completed. Probably won't be included in initial merge.
 destructure(C::Cholesky) = Cholesky(destructure(C.factors), C.uplo, C.info)
 
 # Restructure(C::P) where {P<:Cholesky} = Restructure{P, Nothing}()
