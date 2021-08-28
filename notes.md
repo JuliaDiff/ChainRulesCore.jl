@@ -54,6 +54,16 @@ This comes with some wrinkles for some types, including `Symmetric`. More on thi
 
 In the proposed system, natural (co)tangents remain confined to `rrule`s, and rule authors can choose to work with either natural, structural, or a mixture of (co)tangents.
 
+Other than the headlines at the top, additional benefits of (a correct implementation of) this approach include:
+1. no chance of trying to sum tangents failing because one is natural and the other structural,
+1. no risk of obstructing AD,
+1. rand_tangent can just use structural tangents, simplifying its implementation and improving its reliability,
+1. we can probably finally make `to_vec` treat things structurally (although we also need to extend it in other ways), which will also deal with reliability / simplicity of implementation problems,
+1. generic constructor for composite types easy to implement,
+1. due to the utility functionality, all of the examples that I've encountered so far are very concise.
+
+The potential downside is additional conversions between natural and structural tangents. Most of the time, these are free. When they're not, you ideally want to minimise them. I'm not sure how often this is going to be a problem, but it's something we're essentially ignoring at the minute (as far as I know), so we're probably going to have to incur some additional cost even if we don't go down the route proposed here.
+
 
 
 
@@ -212,6 +222,20 @@ Almost all of the boilerplate in the above example can be removed by utilising t
 
 
 
+## Gotchas
+
+There does seem to be something that goes wrong when primals access non-public fields of types (array authors are obviously allowed to do this), but the generic rrules assume that only the AbstractArray API is used.
+I don't think this differs from what we're doing at the minute, so probably we're suffering from this already and just haven't hit it yet.
+See the third example in `examples.jl`, involving a `Symmetric`.
+
+This is a particularly interesting case because `parent` is exported from `Base`, effectively making the field of a `Symmetric` part of its public API.
+
+I'm not really sure how to think about this but, as I say, I suspect we're already suffering from it, so I'm not going to worry about it for now.
+
+
+
+
+
 ## Summary
 
 The above lays out a mechanism or writing generic rrules for AbstractArrays, out of which drops what I believe to be a good candidate for a precise definition of the natural (co)tangent of any particular AbstractArray.
@@ -220,5 +244,7 @@ There are a lot more examples in `examples.jl` that I would encourage people to 
 Additionally, `pullback_of_destructure` and `pullback_of_restructure` are implemented in `src`, while `destructure` and `Restructure` themselves are typically defined in the tests so that it's possible to verify consistency.
 
 I've presented this work specifically in the context of `AbstractArray`s, but the general scheme could probably be extended to other types by finding other canonical types (like `Array`) on which people's intuition about what ought to happen holds.
+
+The implementation are also limited to arrays of real numbers to avoid the need to recursively apply `destructure` / `restructure`. This could be done in practice if it were thought helpful.
 
 I'm sure there's stuff above which is unclear -- please let me know if so. There's more to say about a lot of this stuff, but I'll discuss as they come up in the interest of keeping this is as brief as possible.
