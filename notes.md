@@ -149,7 +149,7 @@ function rrule(config::RuleConfig, ::typeof(*), A::AbstractMatrix, B::AbstractMa
     return C, my_mul_generic_pullback
 end
 ```
-I've just written out by hand the rrule for differentiating through the equivalent function.
+All I've done is write out the rrule for differentiating through the equivalent function by hand.
 We'll optimise this implementation shortly to avoid e.g. having to densify primals, and computing the same function twice.
 `my_mul` in `examples.jl` verifies the correctness of the above implementation.
 
