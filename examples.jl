@@ -132,7 +132,7 @@ test_approx(x̄, x̄_fd)
 
 
 
-# SYMMETRIC TEST - FAILS BECAUSE HIDDEN ELEMENTS IN LOWER-DIAGONAL ACCESSED IN PRIMAL!
+# SYMMETRIC TEST - FAILS BECAUSE PRIVATE ELEMENTS IN LOWER-DIAGONAL ACCESSED IN PRIMAL!
 # I would be surprised if we're doing this consistently at the minute though.
 
 a = randn()
