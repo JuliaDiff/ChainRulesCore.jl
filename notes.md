@@ -62,7 +62,7 @@ Other than the headlines at the top, additional benefits of (a correct implement
 1. generic constructor for composite types easy to implement,
 1. due to the utility functionality, all of the examples that I've encountered so far are very concise.
 
-The potential downside is additional conversions between natural and structural tangents. Most of the time, these are free. When they're not, you ideally want to minimise them. I'm not sure how often this is going to be a problem, but it's something we're essentially ignoring at the minute (as far as I know), so we're probably going to have to incur some additional cost even if we don't go down the route proposed here.
+The potential downside is additional conversions between natural and structural tangents. Most of the time, these are free. When they're not, you ideally want to minimise them. I'm not sure how often this is going to be a problem, but it's something we're essentially ignoring at the minute (as far as I know), so we're probably going to have to incur some additional cost at some point even if we don't go down the route proposed here.
 
 
 
