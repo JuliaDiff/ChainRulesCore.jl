@@ -176,7 +176,7 @@ For example, this means that a `Diagonal{Float64}` is a valid (co)tangent for an
 
 
 
-## Optimising rrules using Natural Pullbacks
+## Optimising rrules for the equivalent function
 
 The basic example layed out above was very sub-optimal. Consider the following (equivalent) re-write
 ```julia
