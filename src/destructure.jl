@@ -26,7 +26,6 @@ function pullback_of_destructure(X::Array{<:Real})
     return pullback_destructure_Array
 end
 
-
 function pullback_of_restructure(X::Array{<:Real})
     pullback_restructure_Array(X̄::AbstractArray{<:Real}) = X̄
     return pullback_restructure_Array
@@ -37,7 +36,7 @@ function pullback_of_destructure(config::RuleConfig, X::Array{<:Real})
 end
 
 function pullback_of_restructure(config::RuleConfig, X::Array{<:Real})
-    return pullback_of_destructure(X)
+    return pullback_of_restructure(X)
 end
 
 
@@ -86,7 +85,7 @@ function pullback_of_destructure(config::RuleConfig, X::Diagonal)
 end
 
 function pullback_of_restructure(config::RuleConfig, X::Diagonal)
-    return pullback_of_destructure(X)
+    return pullback_of_restructure(X)
 end
 
 # Stuff below here for Diagonal to move to tests.
@@ -156,7 +155,7 @@ function pullback_of_destructure(config::RuleConfig, X::Symmetric)
 end
 
 function pullback_of_restructure(config::RuleConfig, X::Symmetric)
-    return pullback_of_destructure(X)
+    return pullback_of_restructure(X)
 end
 
 # Stuff below here for Symmetric to move to tests.
