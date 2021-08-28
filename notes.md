@@ -98,7 +98,7 @@ First consider a specific case -- we'll optimise the implementation later, and p
 
 Consider a function `f(x::AbstractArray) -> y::AbstractArray`. Lets assume that there's just one method, so we can be sure that a generic fallback will be hit, regardless the concrete type of the argument.
 
-The intuition behind the recipe is to find a function which is equivalent to `f`, whose rules we know how to write safely. If we can find such a function, AD-ing it will clearly give the correct answer -- the following lays out an approach to doing this.
+The intuition behind the recipe is to find a function which is equivalent to `f`, whose rules we know how to write safely. If we can find such a function, AD-ing it will clearly give the correct answer (the same as running AD on `f` itself) -- the following lays out an approach to doing this.
 
 The recipe is:
 1. Map `x` to an `Array`, `x_dense`, using `getindex`. Call this operation `destructure` (it's essentially `collect`).
