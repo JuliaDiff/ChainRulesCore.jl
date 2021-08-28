@@ -1,6 +1,6 @@
 # A General Mechanism for Generic Rules for AbstractArrays
 
-That we don't have a general formalism for deriving natural derivatives has been discussed quite a bit recently. As has our lack of understanding of the precise relationship between the generic rrules we're writing, and what AD would do. This PR proposes a recipe for deriving generic rules, which leads to a possible formalism for natural derivatives. This formalism can be applied to any AbstractArray, and AD can be in principle be used to obtain default values for the natural tangent. Moreover, there's some utility functionality proposed to make working with this formalism straightforward for rule-writers.
+That we don't have a general formalism for deriving natural (co)tangents has been discussed quite a bit recently. As has our lack of understanding of the precise relationship between the generic rrules we're writing, and what AD would do. This PR proposes a recipe for deriving generic rules, which leads to a possible formalism for natural derivatives. This formalism can be applied to any AbstractArray, and AD can be in principle be used to obtain default values for the natural tangent. Moreover, there's some utility functionality proposed to make working with this formalism straightforward for rule-writers.
 
 
 I want reviewers to determine whether they agree that the proposed recipe
