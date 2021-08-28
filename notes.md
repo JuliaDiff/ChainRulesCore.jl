@@ -84,7 +84,7 @@ I'm intentionally not trying to define precisely what a primitive is, but will a
 
 Assume that structural tangents are a valid representation of a tangent of any non-primitive composite type, convenience for rule-writing aside.
 
-More generally, assume that if an AD successfully runs on a given function under the above assumptions, they give the answer desired (the "correct" answer). Consequently, the core goals of the proposed recipe are to make it
+More generally, assume that if an AD successfully runs on a given function under the above assumptions, they give the answer desired (the "correct" answer). Consequently, two core goals of the proposed recipe are to make it
 1. easy to never write a rule which prevents an AD from differentiating a programme that they already know how to differentiate,
 2. make it easy to write rules using intuitive representations of tangents.
 
