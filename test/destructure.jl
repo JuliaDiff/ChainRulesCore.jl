@@ -49,6 +49,9 @@ function check_destructure(x::AbstractArray, ȳ, ẋ)
     pf_des = pushforward_of_destructure(x)
     pb_des = pullback_of_destructure(x)
 
+    # I thought that maybe the pushforward of destructure would be equivalent to the
+    # pullback of restructure, but that doesn't seem to hold. Not sure why / whether I
+    # should have thought it might be a thing in the first place.
     ẋ_dense = pf_des(ẋ)
     # @test ẋ_dense ≈ pf_des(pb_des(ẋ_dense))
 
