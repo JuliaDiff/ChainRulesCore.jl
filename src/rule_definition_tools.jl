@@ -569,10 +569,10 @@ function wrap_natural_pullback(config, natural_pullback, C, A, B)
 
     # Wrap natural_pullback to make it play nicely with AD.
     function generic_pullback(C̄)
-        _, C̄_natural = restructure_C_pb(C̄)
+        C̄_natural = restructure_C_pb(C̄)
         f̄, Ā_natural, B̄_natural = natural_pullback(C̄_natural)
-        _, Ā = destructure_A_pb(Ā_natural)
-        _, B̄ = destructure_B_pb(B̄_natural)
+        Ā = destructure_A_pb(Ā_natural)
+        B̄ = destructure_B_pb(B̄_natural)
         return f̄, Ā, B̄
     end
     return generic_pullback
@@ -582,9 +582,9 @@ function wrap_natural_pullback(config, natural_pullback, B, A)
     destructure_input_pb = pullback_of_destructure(config, A)
     restructure_output_pb = pullback_of_restructure(config, B)
     function generic_pullback(B̄)
-        _, B̄_natural = restructure_output_pb(B̄)
+        B̄_natural = restructure_output_pb(B̄)
         f̄, Ā_natural = natural_pullback(B̄_natural)
-        _, Ā = destructure_input_pb(Ā_natural)
+        Ā = destructure_input_pb(Ā_natural)
         return f̄, Ā
     end
     return generic_pullback
