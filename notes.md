@@ -1,13 +1,60 @@
 # A General Mechanism for Generic Rules for AbstractArrays
 
-That we don't have a general formalism for deriving natural derivatives has been discussed quite a bit recently. As has our lack of understanding of the precise relationship between the generic rrules we're writing, and what AD would do. This PR proposes a recipe for deriving generic rules, which leads to a possible formalism for natural derivatives. This formalism can be applied to any AbstractArray, and AD can be in principle be used to obtain default values for the natural tangent.
+That we don't have a general formalism for deriving natural derivatives has been discussed quite a bit recently. As has our lack of understanding of the precise relationship between the generic rrules we're writing, and what AD would do. This PR proposes a recipe for deriving generic rules, which leads to a possible formalism for natural derivatives. This formalism can be applied to any AbstractArray, and AD can be in principle be used to obtain default values for the natural tangent. Moreover, there's some utility functionality proposed to make working with this formalism straightforward for rule-writers.
+
 
 I want reviewers to determine whether they agree that the proposed recipe
 1. is sufficient for implementing generic rrules on AbstractArrays,
 2. is correct, in the sense that it produces the same answer as AD, and 
 3. the definition of natural tangents proposed indeed applies to any AbstractArray, and broadly agrees with our intuitions about what a natural tangent should be.
 
+I think it should be doable without making breaking changes since it just involves a changing the output types of some rules, which isn't something that we consider breaking provided that they represent the same thing. I'd prefer we worry about this if we think this is a good idea though.
+
 This is a long read. I've tried to condense where possible.
+
+
+
+
+
+## Cutting to the Chase
+
+Rule-implementers would write rules that look like this:
+```julia
+function rrule(config::RuleConfig, ::typeof(*), A::AbstractMatrix, B::AbstractMatrix)
+
+    # Do the primal computation.
+    C = A * B
+
+    # "natural pullback": write intuitive pullback, closing over stuff in the usual manner.
+    function natural_pullback_for_mul(C̄_natural)
+        Ā_natural = C̄_natural * B'
+        B̄_natural = A' * C̄_natural
+        return NoTangent(), Ā_natural, B̄_natural
+    end
+
+    # Make a call to utility functionality which transforms cotangents of C, A, and B.
+    # Rule-writing without this utility has similar requirements to `ProjectTo`.
+    return C, wrap_natural_pullback(config, natural_pullback_for_mul, C, A, B)
+end
+```
+I'm proposing to coin the term "natural pullback" for pullbacks written within this system, as they're rules written involving natural (co)tangents.
+
+Authors will have to implement two functions for their `AbstractArray` type `P`:
+```julia
+pullback_of_destructure(::P)
+pullback_of_restructure(::P)
+```
+which are the pullbacks of two functions, `destructure` and `(::Restructure)`, that we'll define later.
+
+The proposed candidates for natural (co)tangents are obtained as follows:
+1. natural tangents are obtained from structural tangents via the pushforward of `destructure`,
+2. natural cotangents are obtained from structural cotangents via the pullback of `(::Restructure)`.
+
+This comes with some wrinkles for some types, including `Symmetric`. More on this later.
+
+In the proposed system, natural (co)tangents remain confined to `rrule`s, and rule authors can choose to work with either natural, structural, or a mixture of (co)tangents.
+
+
 
 
 
@@ -46,7 +93,7 @@ The intuition behind the recipe is to find a function which is equivalent to `f`
 The recipe is:
 1. Map `x` to an `Array`, `x_dense`, using `getindex`. Call this operation `destructure`.
 2. Apply `f` to `x_dense` to obtain `y_dense`.
-3. Map `y_dense` onto `y`. Call this operation `restructure`.
+3. Map `y_dense` onto `y`. Call this operation `(::Restructure)`.
 
 I'm going to define equivalence of output structurally -- two `AbstractArray`s are equal if
 1. they are primitives, and whatever notion of equality we have for them holds, or
@@ -54,15 +101,124 @@ I'm going to define equivalence of output structurally -- two `AbstractArray`s a
 
 The reason for this notion of equality is that AD (as proposed above) treats concrete subtypes of AbstractArray no differently from any other composite type.
 
-Step 2 of the recipe is possible to easily write an rrule for, because we know that its arguments are `Array`s. Step 1 is clearly defined for any `AbstractArray`, so we can implement e.g. a pullback for `destructure` which accepts an `Array` and returns a `Tangent`.
+The most literal implementation of this for a function like `*` is therefore something like the following:
+```julia
+function rrule(config::RuleConfig, ::typeof(*), A::AbstractMatrix, B::AbstractMatrix)
 
-Step 3 is the trickier step. We'll get on to it later.
+    # Produce dense versions of A and B, and the pullbacks of this operation.
+    A_dense, destructure_A_pb = rrule(destructure, A)
+    B_dense, destructure_B_pb = rrule(destructure, B)
 
-The PR shows how to implement steps 1 and 3 for `Array`s (trivial), `Diagonal`s, and `Symmetric`s.
+    # Compute dense primal.
+    C_dense = A_dense * B_dense
+
+    # Compute structured primal without densifying to ensure that we get structured `C` back
+    # if that's what the primal would do.
+    C = A * B
+
+    # Construct pullback of Restructure. We generally need to extract some information from
+    # C in order to find the structured version.
+    _, restructure_C_pb = rrule_via_ad(config, Restructure(C), C_dense)
+
+    function my_mul_generic_pullback(C̄)
+
+        # Recover natural cotangent.
+        _, C̄_nat = restructure_C_pb(C̄)
+
+        # Compute pullback using natural cotangent of C.
+        Ā_nat = C̄_nat * B_dense'
+        B̄_nat = A_dense' * C̄_nat
+
+        # Transform natural cotangents w.r.t. A and B into structural (if non-primitive).
+        _, Ā = destructure_A_pb(Ā_nat)
+        _, B̄ = destructure_B_pb(B̄_nat)
+        return NoTangent(), Ā, B̄
+    end
+
+    # The output that we want is `C`, not `C_dense`, so return `C`.
+    return C, my_mul_generic_pullback
+end
+```
+I've just written out by hand the rrule for differentiating through the equivalent function.
+We'll optimise this implementation shortly to avoid e.g. having to densify primals, and computing the same function twice.
+`my_mul` in `examples.jl` verifies the correctness of the above implementation.
+
+
+`destructure` is quite straightforward to define -- essentially equivalent to `collect`. I'm confident that this is always going to be simple to define, because `collect` is always easy to define.
+
+`Restructure(C)(C_dense)` is a bit trickier. It's the function which takes an `Array` `C_dense` and transforms it into `C`. This feels like a slightly odd thing to do, since we already have `C`, but it's necessary to already know what `C` is in order to construct this function in general -- for example, over-parametrised matrices require this (see the `ScaledMatrix` example in the tests / examples). I'm _reasonably_ confident that this is always going to be possible to define, but I might have missed something.
+
+The PR shows how to implement steps 1 and 3 for `Array`s, `Diagonal`s, `Symmetric`s, and a custom `AbstractArray` `ScaledMatrix`.
 
 
 
-### The Internals of `f` matter for consistency with AD
 
-Must only use the AbstractArrays API (no access to internal fields, just uses `getindex` and
-`size`).
+
+## Acceptable (Co)Tangents for `Array`
+
+Any `AbstractArray` is an acceptable (co)tangent for an `Array` (provided it's the right size, and its elements are appropriate (co)tangents for the elements of the primal `Array`).
+I'm going to assume this is true, because I can't see any obvious reason why it wouldn't be. 
+If anyone feels otherwise, please say.
+
+For example, this means that a `Diagonal{Float64}` is a valid (co)tangent for an `Array{Float64}`.
+
+
+
+
+
+## Optimising rrules using Natural Pullbacks
+
+The basic example layed out above was very sub-optimal. Consider the following (equivalent) re-write
+```julia
+function rrule(config::RuleConfig, ::typeof(*), A::AbstractMatrix, B::AbstractMatrix)
+
+    # Produce pullbacks of destructure.
+    destructure_A_pb = pullback_of_destructure(config, A)
+    destructure_B_pb = pullback_of_destructure(config, B)
+
+    # Primal computation.
+    C = A * B
+
+    # Find pullback of restructure.
+    restructure_C_pb = pullback_of_restructure(config, C)
+
+    function my_mul_generic_pullback(C̄)
+
+        # Recover natural cotangent.
+        _, C̄_nat = restructure_C_pb(C̄)
+
+        # Compute pullback using natural cotangent of C.
+        Ā_nat = C̄_nat * B'
+        B̄_nat = A' * C̄_nat
+
+        # Transform natural cotangents w.r.t. A and B into structural (if non-primitive).
+        _, Ā = destructure_A_pb(Ā_nat)
+        _, B̄ = destructure_B_pb(B̄_nat)
+        return NoTangent(), Ā, B̄
+    end
+
+    return C, my_mul_generic_pullback
+end
+```
+A few observations:
+1. All dense primals are gone. In the pullback, they only appeared in places where they can be safely replaced with the primals themselves because they're doing array-like things. `C_dense` appeared in the construction of `restructure_C_pb`, however, we were using a sub-optimal implementation of that function. Much of the time, `restructure_of_pb` doesn't require `C_dense` in order to know what the pullback would look like and, if it does, it can be obtained from `C`.
+2. All direct calls to `rrule_via_ad` have been replaced with calls to functions which are defined to returns the things we actually need (the pullbacks). These typically have efficient (and easy to write) implementations.
+
+Roughly speaking, the above implementation has only one additional operation than our existing rrules involving `ProjectTo`, which is a call to `restructure_C_pb`, which handles converting a structural tangent for `C̄` into the corresponding natural. Currently we require users to do this by hand, and no clear guidance is provided regarding the correct way to handle this conversion, in contrast to the clarity provided here.
+
+Almost all of the boilerplate in the above example can be removed by utilising the `wrap_natural_pullback` utility function defined in the PR.
+
+
+
+
+
+## Summary
+
+The above lays out a mechanism or writing generic rrules for AbstractArrays, out of which drops what I believe to be a good candidate for a precise definition of the natural (co)tangent of any particular AbstractArray.
+
+There are a lot more examples in `examples.jl` that I would encourage people to work through. Moreover, the `Symmetric` results are a little odd, but I think make sense.
+Additionally, `pullback_of_destructure` and `pullback_of_restructure` are implemented in `src`, while `destructure` and `Restructure` themselves are typically defined in the tests so that it's possible to verify consistency.
+
+I've presented this work specifically in the context of `AbstractArray`s, but the general scheme could probably be extended to other types by finding other canonical types (like `Array`) on which people's intuition about what ought to happen holds.
+
+I'm sure there's stuff above which is unclear -- please let me know if so. There's more to say about a lot of this stuff, but I'll discuss as they come up in the interest of keeping this is as brief as possible.

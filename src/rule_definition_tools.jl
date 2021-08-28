@@ -547,3 +547,45 @@ function _constrain_and_name(arg::Expr, _)
     error("malformed arguments: $arg")
 end
 _constrain_and_name(name::Symbol, constraint) = Expr(:(::), name, constraint)  # add type
+
+
+
+# This comment is for reviewing purposes, and will need to be replaced later.
+# This will often make life really easy. Just requires that pullback_of_restructure is
+# defined for C, and pullback_of_destructure for A and B. Could be generalised to make
+# different assumptions (e.g. some arguments don't require destructuring, output doesn't
+# require restructuring, etc). Would need to be generalised to arbitrary numbers of
+# arguments (clearly doable -- at worst requires a generated function).
+# I'm assuming that functions don't need to have the destructure pullback applied to them,
+# but this probably won't always be true.
+function wrap_natural_pullback(config, natural_pullback, C, A, B)
+
+    # Generate enclosing pullbacks. Notice that C / A / B only appear here, and aren't
+    # part of the closure returned. This means that they don't need to be carried around,
+    # which is good.
+    destructure_A_pb = pullback_of_destructure(config, A)
+    destructure_B_pb = pullback_of_destructure(config, B)
+    restructure_C_pb = pullback_of_restructure(config, C)
+
+    # Wrap natural_pullback to make it play nicely with AD.
+    function generic_pullback(C̄)
+        _, C̄_natural = restructure_C_pb(C̄)
+        f̄, Ā_natural, B̄_natural = natural_pullback(C̄_natural)
+        _, Ā = destructure_A_pb(Ā_natural)
+        _, B̄ = destructure_B_pb(B̄_natural)
+        return f̄, Ā, B̄
+    end
+    return generic_pullback
+end
+
+function wrap_natural_pullback(config, natural_pullback, B, A)
+    destructure_input_pb = pullback_of_destructure(config, A)
+    restructure_output_pb = pullback_of_restructure(config, B)
+    function generic_pullback(B̄)
+        _, B̄_natural = restructure_output_pb(B̄)
+        f̄, Ā_natural = natural_pullback(B̄_natural)
+        _, Ā = destructure_input_pb(Ā_natural)
+        return f̄, Ā
+    end
+    return generic_pullback
+end
