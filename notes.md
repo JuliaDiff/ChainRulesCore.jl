@@ -8,9 +8,9 @@ I want reviewers to determine whether they agree that the proposed recipe
 2. is correct, in the sense that it produces the same answer as AD, and 
 3. the definition of natural tangents proposed indeed applies to any AbstractArray, and broadly agrees with our intuitions about what a natural tangent should be.
 
-I think it should be doable without making breaking changes since it just involves a changing the output types of some rules, which isn't something that we consider breaking provided that they represent the same thing. I'd prefer we worry about this if we think this is a good idea though.
+I think what is proposed should be doable without making breaking changes since it just involves a changing the output types of some rules, which isn't something that we consider breaking provided that they represent the same thing. I'd prefer we worry about this later if we think this is a good idea though.
 
-This is a long read. I've tried to condense where possible.
+Apologies in advance for the lenght. I've tried to condense where possible, but there's a decent amount of content to get through.
 
 
 
@@ -50,7 +50,7 @@ The proposed candidates for natural (co)tangents are obtained as follows:
 1. natural tangents are obtained from structural tangents via the pushforward of `destructure`,
 2. natural cotangents are obtained from structural cotangents via the pullback of `(::Restructure)`.
 
-This comes with some wrinkles for some types, including `Symmetric`. More on this later.
+Our current `ProjectTo` functionality is roughly the same as the pullback of `destructure`.
 
 In the proposed system, natural (co)tangents remain confined to `rrule`s, and rule authors can choose to work with either natural, structural, or a mixture of (co)tangents.
 
@@ -74,7 +74,7 @@ Imagine a clean-slate version of Zygote / Diffractor, in which any rules writen 
 1. necessary to define what AD should do (e.g. `+` or `*` on `Float64`s, `getindex` on `Array`s, `getfield` on composite types, etc), or
 2. produce _exactly_ the same answer that AD would produce -- crucially they always return a structural tangent for a non-primitive composite type.
 
-Moreover, assume that users provide structural tangents -- we'll show how to remove this particular assumption later.
+Moreover, assume that users provide structural tangents -- this restriction could be removed by AD authors by shoving a call to `destructure` at the end of their AD if that's something they want to do.
 
 The consequence of the above is that we can safely assume that the input and output of any rule will be either
 1. a structural tangent (if the primal is a non-primitive composite type)
@@ -84,8 +84,8 @@ I'm intentionally not trying to define precisely what a primitive is, but will a
 
 Assume that structural tangents are a valid representation of a tangent of any non-primitive composite type, convenience for rule-writing aside.
 
-More generally, assume that if Zygote / Diffractor successfully run on a given function under the above assumptions, they give the answer desired (the "correct" answer). Consequently, the core goals of the proposed recipe are to make it possible to both
-1. never write a rule which prevents Zygote / Diffractor from differentiating a programme that they already know how to differentiate,
+More generally, assume that if an AD successfully runs on a given function under the above assumptions, they give the answer desired (the "correct" answer). Consequently, the core goals of the proposed recipe are to make it
+1. easy to never write a rule which prevents an AD from differentiating a programme that they already know how to differentiate,
 2. make it easy to write rules using intuitive representations of tangents.
 
 
@@ -94,14 +94,14 @@ More generally, assume that if Zygote / Diffractor successfully run on a given f
 
 ## The Formalism
 
-First consider a specific case -- we'll both generalise and optimise the implementation later.
+First consider a specific case -- we'll optimise the implementation later, and provide more general examples in `examples.jl`.
 
 Consider a function `f(x::AbstractArray) -> y::AbstractArray`. Lets assume that there's just one method, so we can be sure that a generic fallback will be hit, regardless the concrete type of the argument.
 
 The intuition behind the recipe is to find a function which is equivalent to `f`, whose rules we know how to write safely. If we can find such a function, AD-ing it will clearly give the correct answer -- the following lays out an approach to doing this.
 
 The recipe is:
-1. Map `x` to an `Array`, `x_dense`, using `getindex`. Call this operation `destructure`.
+1. Map `x` to an `Array`, `x_dense`, using `getindex`. Call this operation `destructure` (it's essentially `collect`).
 2. Apply `f` to `x_dense` to obtain `y_dense`.
 3. Map `y_dense` onto `y`. Call this operation `(::Restructure)`.
 
@@ -111,7 +111,7 @@ I'm going to define equivalence of output structurally -- two `AbstractArray`s a
 
 The reason for this notion of equality is that AD (as proposed above) treats concrete subtypes of AbstractArray no differently from any other composite type.
 
-The most literal implementation of this for a function like `*` is therefore something like the following:
+A very literal implementation of this for a function like `*` is something like the following:
 ```julia
 function rrule(config::RuleConfig, ::typeof(*), A::AbstractMatrix, B::AbstractMatrix)
 
@@ -213,10 +213,11 @@ end
 A few observations:
 1. All dense primals are gone. In the pullback, they only appeared in places where they can be safely replaced with the primals themselves because they're doing array-like things. `C_dense` appeared in the construction of `restructure_C_pb`, however, we were using a sub-optimal implementation of that function. Much of the time, `restructure_of_pb` doesn't require `C_dense` in order to know what the pullback would look like and, if it does, it can be obtained from `C`.
 2. All direct calls to `rrule_via_ad` have been replaced with calls to functions which are defined to returns the things we actually need (the pullbacks). These typically have efficient (and easy to write) implementations.
+3. `C̄_nat` could be any old `AbstractArray`. For example, `pullback_of_restructure` for a `Diagonal` returns a `Diagonal`. This is good -- it means we might occassionally get faster computations in the pullback. 
 
-Roughly speaking, the above implementation has only one additional operation than our existing rrules involving `ProjectTo`, which is a call to `restructure_C_pb`, which handles converting a structural tangent for `C̄` into the corresponding natural. Currently we require users to do this by hand, and no clear guidance is provided regarding the correct way to handle this conversion, in contrast to the clarity provided here.
+Roughly speaking, the above implementation has only one additional operation than our existing rrules involving `ProjectTo`, which is a call to `restructure_C_pb`, which handles converting a structural tangent for `C̄` into the corresponding natural. Currently we require users to do this by hand, and no clear guidance is provided regarding the correct way to handle this conversion, in contrast to the clarity provided here. In this sense, all that the above is doing is providing a well-defined mechanism by which users can obtain natural cotangents from structural cotangents, so it should ease the burden on rule-implementers.
 
-Almost all of the boilerplate in the above example can be removed by utilising the `wrap_natural_pullback` utility function defined in the PR.
+Almost all of the boilerplate in the above example can be removed by utilising the `wrap_natural_pullback` utility function defined in the PR, as in the example at the top of this note.
 
 
 
@@ -238,13 +239,15 @@ I'm not really sure how to think about this but, as I say, I suspect we're alrea
 
 ## Summary
 
-The above lays out a mechanism or writing generic rrules for AbstractArrays, out of which drops what I believe to be a good candidate for a precise definition of the natural (co)tangent of any particular AbstractArray.
+The above lays out a mechanism for writing generic rrules for AbstractArrays, out of which drops what I believe to be a good candidate for a precise definition of the natural (co)tangent of any particular AbstractArray.
 
 There are a lot more examples in `examples.jl` that I would encourage people to work through. Moreover, the `Symmetric` results are a little odd, but I think make sense.
-Additionally, `pullback_of_destructure` and `pullback_of_restructure` are implemented in `src`, while `destructure` and `Restructure` themselves are typically defined in the tests so that it's possible to verify consistency.
+Additionally, implementations of `destructure` and `Restructure` can be moved to the tests because they're really just used to verify the correctness of manually implementations of their pullbacks.
 
-I've presented this work specifically in the context of `AbstractArray`s, but the general scheme could probably be extended to other types by finding other canonical types (like `Array`) on which people's intuition about what ought to happen holds.
+I've presented this work in the context of `AbstractArray`s, but the general scheme could probably be extended to other types by finding other canonical types (like `Array`) on which people's intuition about what ought to happen holds.
 
-The implementation are also limited to arrays of real numbers to avoid the need to recursively apply `destructure` / `restructure`. This could be done in practice if it were thought helpful.
+The implementation are also limited to arrays of real numbers to avoid the need to recursively apply `destructure` / `restructure`. This restriction could be dropped in practice, and recursive definitions applied.
 
-I'm sure there's stuff above which is unclear -- please let me know if so. There's more to say about a lot of this stuff, but I'll discuss as they come up in the interest of keeping this is as brief as possible.
+I'm sure there's stuff above which is unclear -- please let me know if so. There's more to say about a lot of this stuff, but I'll stop here in the interest of keeping this concise.
+
+Please now go and look at `examples.jl`.
