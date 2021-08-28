@@ -111,7 +111,7 @@ I'm going to define equivalence of output structurally -- two `AbstractArray`s a
 
 The reason for this notion of equality is that AD (as proposed above) treats concrete subtypes of AbstractArray no differently from any other composite type.
 
-A very literal implementation of this for a function like `*` is something like the following:
+Applying this recipe, a very literal implementation for the `rrule` of the equivalent function for `*` is something like the following:
 ```julia
 function rrule(config::RuleConfig, ::typeof(*), A::AbstractMatrix, B::AbstractMatrix)
 
