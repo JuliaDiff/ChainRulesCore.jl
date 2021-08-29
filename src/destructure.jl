@@ -205,6 +205,10 @@ function (r::Restructure{P})(X::Array) where {P<:Symmetric}
     return Symmetric(UpperTriangular(X) + strict_lower_triangle_of_data)
 end
 
+# We get to assume that `issymmetric(X)` is (at least roughly) true, so we could also
+# implement restructure as Symmetric((X + X') / 2), provided that we then take care of the
+# lower triangle as above.
+
 function frule(
     (_, dX)::Tuple{Any, AbstractArray}, r::Restructure{P}, X::Array,
 ) where {P<:Symmetric}
