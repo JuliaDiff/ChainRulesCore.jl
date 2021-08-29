@@ -136,7 +136,6 @@ let
     test_approx(y, (my_diag ∘ my_scale)(a, x))
     test_approx(ā, ā_fd)
     test_approx(x̄, x̄_fd)
-
 end
 
 
@@ -312,7 +311,7 @@ function pullback_of_restructure(config::RuleConfig, x::Fill)
     return pullback_restructure_Fill
 end
 
-
+# An example which uses `pullback_of_destructure(::Fill)` because `Fill` is an input.
 let
     A = randn(2, 3)
     v = randn()
@@ -333,6 +332,23 @@ let
     test_approx(v̄, v̄_fd)
 end
 
+# Another example using `pullback_of_destructure(::Fill)`.
+let
+    foo_my_sum(v) = my_sum(Fill(v, 4, 3))
+    v = randn()
+
+    c, pb = Zygote.pullback(foo_my_sum, v)
+    @assert c ≈ foo_my_sum(v)
+
+    c̄ = randn()
+    v̄ = pb(c̄)
+
+    v̄_fd = FiniteDifferences.j′vp(central_fdm(5, 1), foo_my_sum, c̄, v);
+
+    test_approx(v̄, v̄_fd)
+end
+
+# An example using `pullback_of_restructure(::Fill)`.
 let
     foo_my_scale(a, v) = my_sum(my_scale(a, Fill(v, 3, 4)))
     a = randn()
@@ -348,4 +364,54 @@ let
 
     test_approx(ā, ā_fd)
     test_approx(v̄, v̄_fd)
+end
+
+
+
+
+# Example 6: SArray
+# This example demonstrates that within this framework we can easily work with structural
+# tangents for `SArray`s. Unclear that we _want_ to do this, but it's nice to know that
+# it's an option requiring minimal work.
+# Notice that this should be performant, since `pullback_of_destructure` and
+# `pullback_of_restructure` should be performant, and the operations in the pullback
+# will all happen on `SArray`s.
+
+using StaticArrays
+
+function pullback_of_destructure(config::RuleConfig, x::P) where {P<:SArray}
+    pullback_destructure_SArray(X̄::AbstractArray) = Tangent{P}(data=X̄)
+    return pullback_destructure_SArray
+end
+
+function pullback_of_restructure(
+    config::RuleConfig, x::SArray{S, T, N, L},
+) where {S, T, N, L}
+    pullback_restructure_SArray(x̄::Tangent) = SArray{S, T, N, L}(x̄.data)
+    return pullback_restructure_SArray
+end
+
+# destructure + restructure example with `my_mul`.
+let
+    A = SMatrix{2, 2}(randn(4)...)
+    B = SMatrix{2, 1}(randn(2)...)
+    C, pb = Zygote.pullback(my_mul, A, B)
+
+    @assert C ≈ my_mul(A, B)
+
+    C̄ = Tangent{typeof(C)}(data=(randn(2)..., ))
+    Ā_, B̄_ = pb(C̄)
+
+    # Manually convert Ā_ and B̄_ to Tangents from Zygote types.
+    Ā = Tangent{typeof(A)}(data=Ā_.data)
+    B̄ = Tangent{typeof(B)}(data=B̄_.data)
+
+    Ā_fd_, B̄_fd_ = FiniteDifferences.j′vp(central_fdm(5, 1), my_mul, C̄, A, B)
+
+    # Manually convert Ā_fd and B̄_fd into Tangents from to_vec output.
+    Ā_fd = Tangent{typeof(A)}(data=Ā_fd_)
+    B̄_fd = Tangent{typeof(B)}(data=B̄_fd_)
+
+    test_approx(Ā, Ā_fd)
+    test_approx(B̄, B̄_fd)
 end
