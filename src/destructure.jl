@@ -227,6 +227,27 @@ end
 
 
 
+# UpperTriangular
+function pullback_of_destructure(U::P) where {P<:UpperTriangular{<:Real, <:StridedMatrix}}
+    pullback_destructure(Ū::AbstractArray) = Tangent{P}(data=UpperTriangular(Ū))
+    return pullback_destructure
+end
+
+function pullback_of_restructure(U::P) where {P<:UpperTriangular}
+    pullback_restructure(Ū::Tangent) = UpperTriangular(Ū.data)
+    return pullback_restructure
+end
+
+function pullback_of_destructure(config::RuleConfig, U::UpperTriangular)
+    return pullback_of_destructure(U)
+end
+
+function pullback_of_restructure(config::RuleConfig, U::UpperTriangular)
+    return pullback_of_restructure(U)
+end
+
+
+
 # Cholesky -- you get to choose whatever destructuring operation is helpful for a given
 # type. This one is helpful for writing generic pullbacks for `cholesky`, the output of
 # which is a Cholesky. Not completed. Probably won't be included in initial merge.

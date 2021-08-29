@@ -42,6 +42,36 @@ let
     test_approx(dB, dB_fd)
 end
 
+# Zygote doesn't like the structural tangent here because of an @adjoint
+my_upper_triangular(X) = UpperTriangular(X)
+
+function rrule(::typeof(my_upper_triangular), X::Matrix{<:Real})
+    pullback_my_upper_triangular(Ū::Tangent) = NoTangent(), Ū.data
+    return my_upper_triangular(X), pullback_my_upper_triangular
+end
+
+let
+    foo_my_mul(U_data, B) = my_mul(my_upper_triangular(U_data), B)
+    U_data = randn(3, 3)
+    B = randn(3, 4)
+    C, pb = Zygote.pullback(foo_my_mul, U_data, B)
+
+    @assert C ≈ foo_my_mul(U_data, B)
+
+    C̄ = randn(3, 4)
+    Ū_data, B̄ = pb(C̄)
+
+    Ū_data_fd, B̄_fd = FiniteDifferences.j′vp(central_fdm(5, 1), foo_my_mul, C̄, U_data, B)
+
+    test_approx(Ū_data, Ū_data_fd)
+    test_approx(B̄, B̄_fd)
+
+    display(Ū_data_fd)
+    println()
+    display(Ū_data)
+    println()
+end
+
 
 
 # pullbacks for `Real`s so that they play nicely with the utility functionality.
