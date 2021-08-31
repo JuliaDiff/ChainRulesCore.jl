@@ -445,3 +445,155 @@ let
     test_approx(Ā, Ā_fd)
     test_approx(B̄, B̄_fd)
 end
+
+
+
+
+
+# Example 7: WoodburyPDMat
+# WoodburyPDMat doesn't currently know anything about AD. I have no intention of
+# implementing any of the functionality here on it, because it's just fine as it is.
+# However, it _is_ any interesting case-study, because it's an example where addition in
+# natural (co)tangent space disagrees with addition in structural space. Since we know that
+# the notion of addition we have on structural tangents is the desirable one, this indicates
+# that we don't always want to add natural tangents.
+# It's also interesting because, as with the `ScaledMatrix` example, I had no idea how to
+# find a natural (co)tangent prior to this PR. It's a comparatively complicated example,
+# and destructure and restructure are non-linear in the fields of `x`, which is another
+# interesting property.
+# I've only bothered deriving stuff for destructure because restructure is really quite
+# complicated and I don't have the time right now to work through the example.
+# It does serve to show that it's not always going to be easy for authors of complicated
+# array types to make their type work with the natural pullback machinery. At least we
+# understand what an author would have to do though, even if it's not straightforward to
+# do all of the time.
+
+using PDMatsExtras: WoodburyPDMat
+import ChainRulesCore: destructure, Restructure
+
+# What destructure would do if we actually implemented it.
+# destructure(x::WoodburyPDMat) = x.A * x.D * x.A' + x.S
+
+# This is an interesting pullback, because it looks like the destructuring mechanism
+# is required here to ensure that the fields `D` and `S` are handled appropriately.
+# A would also be necessary in general, but I'm assuming it's just a `Matrix{<:Real}` for
+# now.
+function pullback_of_destructure(config::RuleConfig, x::P) where {P<:WoodburyPDMat}
+    println("Hitting pullback")
+    pb_destructure_D = pullback_of_destructure(x.D)
+    pb_destructure_S = pullback_of_destructure(x.S)
+    function pullback_destructure_WoodburyPDMat(x̄::AbstractArray)
+        S̄ = pb_destructure_S(x̄)
+        D̄ = pb_destructure_D(x.A' * x̄ * x.A)
+        Ā = (x̄ + x̄') * x.A * x.D
+        return Tangent{P}(A=Ā, D=D̄, S=S̄)
+    end
+    return pullback_destructure_WoodburyPDMat
+end
+
+# Check my_sum correctness. Doesn't require Restructure since the output is a Real.
+let
+    A = randn(4, 2)
+    d = rand(2) .+ 1
+    s = rand(4) .+ 1
+
+    foo(A, d, s) = my_sum(WoodburyPDMat(A, Diagonal(d), Diagonal(s)))
+
+    Y, pb = Zygote.pullback(foo, A, d, s)
+    test_approx(Y, foo(A, d, s))
+
+    Ȳ = randn()
+    Ā, d̄, s̄ = pb(Ȳ)
+
+    Ā_fd, d̄_fd, s̄_fd = FiniteDifferences.j′vp(central_fdm(5, 1), foo, Ȳ, A, d, s)
+
+    test_approx(Ā, Ā_fd)
+    test_approx(d̄, d̄_fd)
+    test_approx(s̄, s̄_fd)
+end
+
+# Check my_mul correctness. Doesn't require Restructure since the output is an Array.
+# This is a truly awful implementation (generic fallback for my_mul, and getindex is really
+# very expensive for WoodburyPDMat), but it ought to work.
+let
+    A = randn(4, 2)
+    d = rand(2) .+ 1
+    s = rand(4) .+ 1
+    b = randn()
+
+    # Multiply some interesting types together.
+    foo(A, d, s, b) = my_mul(WoodburyPDMat(A, Diagonal(d), Diagonal(s)), Fill(b, 4, 3))
+
+    Y, pb = Zygote.pullback(foo, A, d, s, b)
+    test_approx(Y, foo(A, d, s, b))
+
+    Ȳ = randn(4, 3)
+    Ā, d̄, s̄, b̄ = pb(Ȳ)
+
+    Ā_fd, d̄_fd, s̄_fd, b̄_fd = FiniteDifferences.j′vp(central_fdm(5, 1), foo, Ȳ, A, d, s, b)
+
+    test_approx(Ā, Ā_fd)
+    test_approx(d̄, d̄_fd)
+    test_approx(s̄, s̄_fd)
+    test_approx(b̄, b̄_fd)
+end
+
+
+# THIS EXAMPLE DOESN'T WORK.
+# I'm not really sure why, but it's not the responsibility of this PR because I'm just
+# trying to opt out of the generic rrule for my_scale, because there's a specialised
+# implementation available.
+# I've tried all of the opt-outs I can think of, but no luck -- it keeps hitting
+# ChainRules for me :(
+
+# Opt-out and refresh.
+ChainRulesCore.@opt_out rrule(::typeof(my_scale), ::Real, ::WoodburyPDMat)
+ChainRulesCore.@opt_out rrule(::typeof(*), ::Real, ::WoodburyPDMat)
+
+ChainRulesCore.@opt_out rrule(::typeof(my_scale), ::WoodburyPDMat, ::Real)
+ChainRulesCore.@opt_out rrule(::typeof(*), ::WoodburyPDMat, ::Real)
+
+ChainRulesCore.@opt_out rrule(::Zygote.ZygoteRuleConfig, ::typeof(my_scale), ::Real, ::WoodburyPDMat)
+ChainRulesCore.@opt_out rrule(::Zygote.ZygoteRuleConfig, ::typeof(my_scale), ::WoodburyPDMat, ::Real)
+ChainRulesCore.@opt_out rrule(::Zygote.ZygoteRuleConfig, ::typeof(*), ::Real, ::WoodburyPDMat)
+ChainRulesCore.@opt_out rrule(::Zygote.ZygoteRuleConfig, ::typeof(*), ::WoodburyPDMat, ::Real)
+Zygote.refresh()
+
+# Something currently produces a `Diagonal` cotangent somewhere, so have to add this
+# accumulate rule.
+Zygote.accum(x::NamedTuple{(:diag, )}, y::Diagonal) = (diag=x.diag + y.diag, )
+
+# Something else is a producing a `Matrix`...
+Zygote.accum(x::NamedTuple{(:diag, )}, y::Matrix) = (diag=x.diag + diag(y), )
+
+# This should just hit [this code](https://github.com/invenia/PDMatsExtras.jl/blob/b7b3a2035682465f1471c2d2e1e017b9fd75cec0/src/woodbury_pd_mat.jl#L92)
+let
+    α = rand()
+    A = randn(4, 2)
+    d = rand(2) .+ 10
+    s = rand(4) .+ 1
+
+    # Multiply some interesting types together.
+    foo(α, A, d, s) = my_scale(α, WoodburyPDMat(A, Diagonal(d), Diagonal(s)))
+
+    Y, pb = Zygote.pullback(foo, α, A, d, s)
+    test_approx(Y, foo(α, A, d, s))
+
+    Ȳ = (
+        A=randn(4, 2),
+        D=(diag=randn(2),),
+        S=(diag=randn(4),),
+    )
+    ᾱ, Ā, d̄, s̄ = pb(Ȳ)
+
+    # FiniteDifferences doesn't play nicely with structural tangents for Diagonals,
+    # so I would have to do things manually to properly test this one. Not going to do that
+    # because I've not actually used any hand-written rules here, other than the
+    # Zygote.accum calls above, which look fine to me.
+    # ᾱ_fd, Ā_fd, d̄_fd, s̄_fd = FiniteDifferences.j′vp(central_fdm(5, 1), foo, Ȳ, α, A, d, s)
+
+    # test_approx(ᾱ, ᾱ_fd)
+    # test_approx(Ā, Ā_fd)
+    # test_approx(d̄, d̄_fd)
+    # test_approx(s̄, s̄_fd)
+end
