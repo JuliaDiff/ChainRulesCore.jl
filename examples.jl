@@ -562,6 +562,8 @@ ChainRulesCore.@opt_out rrule(::Zygote.ZygoteRuleConfig, ::typeof(*), ::Real, ::
 ChainRulesCore.@opt_out rrule(::Zygote.ZygoteRuleConfig, ::typeof(*), ::WoodburyPDMat, ::Real)
 Zygote.refresh()
 
+# Not sure why these accum rules are needed, as the code which follows doesn't look to me
+# like it should have an accumulations in it...
 # Something currently produces a `Diagonal` cotangent somewhere, so have to add this
 # accumulate rule.
 Zygote.accum(x::NamedTuple{(:diag, )}, y::Diagonal) = (diag=x.diag + y.diag, )
