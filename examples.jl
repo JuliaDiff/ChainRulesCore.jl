@@ -453,10 +453,10 @@ end
 # Example 7: WoodburyPDMat
 # WoodburyPDMat doesn't currently know anything about AD. I have no intention of
 # implementing any of the functionality here on it, because it's just fine as it is.
-# However, it _is_ any interesting case-study, because it's an example where addition in
+# ~~However, it _is_ any interesting case-study, because it's an example where addition in
 # natural (co)tangent space disagrees with addition in structural space. Since we know that
 # the notion of addition we have on structural tangents is the desirable one, this indicates
-# that we don't always want to add natural tangents.
+# that we don't always want to add natural tangents.~~ See below.
 # It's also interesting because, as with the `ScaledMatrix` example, I had no idea how to
 # find a natural (co)tangent prior to this PR. It's a comparatively complicated example,
 # and destructure and restructure are non-linear in the fields of `x`, which is another
@@ -467,6 +467,9 @@ end
 # array types to make their type work with the natural pullback machinery. At least we
 # understand what an author would have to do though, even if it's not straightforward to
 # do all of the time.
+# edit: natural tangents should always add properly. Ignore what is said in the para above
+# about them not adding properly here. It's still interesting for the other reasons listed
+# though.
 
 using PDMatsExtras: WoodburyPDMat
 import ChainRulesCore: destructure, Restructure
