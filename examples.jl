@@ -16,6 +16,7 @@ using ChainRulesCore: RuleConfig, wrap_natural_pullback
 my_mul(A::AbstractMatrix, B::AbstractMatrix) = A * B
 
 function rrule(config::RuleConfig, ::typeof(my_mul), A::AbstractMatrix, B::AbstractMatrix)
+    println("my_mul generic rrule")
     C = A * B
     natural_pullback_for_mul(C̄) = NoTangent(), C̄ * B', A' * C̄
     return C, wrap_natural_pullback(config, natural_pullback_for_mul, C, A, B)
@@ -550,26 +551,16 @@ end
 # ChainRules for me :(
 
 # Opt-out and refresh.
-ChainRulesCore.@opt_out rrule(::typeof(my_scale), ::Real, ::WoodburyPDMat)
-ChainRulesCore.@opt_out rrule(::typeof(*), ::Real, ::WoodburyPDMat)
+using ChainRules: CommutativeMulNumber
+@opt_out rrule(::RuleConfig, ::typeof(my_scale), ::Real, ::WoodburyPDMat)
+@opt_out rrule(::typeof(*), ::WoodburyPDMat{<:CommutativeMulNumber}, ::CommutativeMulNumber)
+@opt_out rrule(::typeof(*), ::CommutativeMulNumber, ::WoodburyPDMat{<:CommutativeMulNumber})
 
-ChainRulesCore.@opt_out rrule(::typeof(my_scale), ::WoodburyPDMat, ::Real)
-ChainRulesCore.@opt_out rrule(::typeof(*), ::WoodburyPDMat, ::Real)
+# This should probably go in ChainRules anyway.
+@opt_out rrule(::typeof(*), ::CommutativeMulNumber, ::Diagonal{<:CommutativeMulNumber})
+@opt_out rrule(::typeof(*), ::Diagonal{<:CommutativeMulNumber}, ::CommutativeMulNumber)
 
-ChainRulesCore.@opt_out rrule(::Zygote.ZygoteRuleConfig, ::typeof(my_scale), ::Real, ::WoodburyPDMat)
-ChainRulesCore.@opt_out rrule(::Zygote.ZygoteRuleConfig, ::typeof(my_scale), ::WoodburyPDMat, ::Real)
-ChainRulesCore.@opt_out rrule(::Zygote.ZygoteRuleConfig, ::typeof(*), ::Real, ::WoodburyPDMat)
-ChainRulesCore.@opt_out rrule(::Zygote.ZygoteRuleConfig, ::typeof(*), ::WoodburyPDMat, ::Real)
 Zygote.refresh()
-
-# Not sure why these accum rules are needed, as the code which follows doesn't look to me
-# like it should have an accumulations in it...
-# Something currently produces a `Diagonal` cotangent somewhere, so have to add this
-# accumulate rule.
-Zygote.accum(x::NamedTuple{(:diag, )}, y::Diagonal) = (diag=x.diag + y.diag, )
-
-# Something else is a producing a `Matrix`...
-Zygote.accum(x::NamedTuple{(:diag, )}, y::Matrix) = (diag=x.diag + diag(y), )
 
 # This should just hit [this code](https://github.com/invenia/PDMatsExtras.jl/blob/b7b3a2035682465f1471c2d2e1e017b9fd75cec0/src/woodbury_pd_mat.jl#L92)
 let
@@ -591,14 +582,122 @@ let
     )
     ᾱ, Ā, d̄, s̄ = pb(Ȳ)
 
-    # FiniteDifferences doesn't play nicely with structural tangents for Diagonals,
-    # so I would have to do things manually to properly test this one. Not going to do that
-    # because I've not actually used any hand-written rules here, other than the
-    # Zygote.accum calls above, which look fine to me.
-    # ᾱ_fd, Ā_fd, d̄_fd, s̄_fd = FiniteDifferences.j′vp(central_fdm(5, 1), foo, Ȳ, α, A, d, s)
+    # No need to test correctness with FiniteDifferences because I've just opted out of
+    # rules, so if the code runs, it ought to be correct. If it's not correct, it must be a
+    # bug from somewhere other than here.
+end
 
-    # test_approx(ᾱ, ᾱ_fd)
-    # test_approx(Ā, Ā_fd)
-    # test_approx(d̄, d̄_fd)
-    # test_approx(s̄, s̄_fd)
+
+
+# Example 8: Kronecker.jl
+# This is a good example of a package where you want to opt out of basically all rules
+# which apply to functions that Kronecker has implemented, but you also really want to
+# ensure that the generic fallbacks work for operations that you don't care about so much
+# (as discussed in various locations, typically if someone cares about the performance of
+# an operations on a Kronecker matrix, they'll have implemented a specialised method to do
+# it.)
+# I have absolutely no idea how to implement restructure for this type.
+
+using Kronecker
+using Kronecker: KroneckerProduct
+
+# destructure(X::KroneckerProduct) = kron(X.A, X.B)
+
+# Just differentiate the implementation of `kron` from the stdlib to produce the pullback.
+# Again, I'm assuming that X.A and X.B are dense matrix-like things for now, but will
+# generalise at some point.
+function pullback_of_destructure(config::RuleConfig, X::T) where {T<:KroneckerProduct}
+    A = X.A
+    B = X.B
+    function pullback_destructure_KroneckerProduct(X̄::AbstractMatrix)
+        println("pullback_destructure_KroneckerProduct")
+        m = length(X̄)
+        Ā = zero(A)
+        B̄ = zero(B)
+        for j in reverse(1:size(A, 2))
+            for l in reverse(1:size(B, 2))
+                for i in reverse(1:size(A, 1))
+                    for k in reverse(1:size(B, 1))
+                        Ā[i, j] += X̄[m] * B[k, l]
+                        B̄[k, l] += X̄[m] * A[i, j]
+                        m -= 1
+                    end
+                end
+            end
+        end
+        return Tangent{T}(A=Ā, B=B̄)
+    end
+    return pullback_destructure_KroneckerProduct
+end
+
+# Check my_sum correctness. Doesn't require Restructure since the output is a Real.
+let
+    A = randn(4, 2)
+    B = randn(3, 5)
+    c̄ = randn()
+
+    foo(A, B) = my_sum(kronecker(A, B))
+
+    c, pb = Zygote.pullback(foo, A, B)
+    test_approx(c, foo(A, B))
+
+    Ā, B̄ = pb(c̄)
+
+    Ā_fd, B̄_fd = FiniteDifferences.j′vp(central_fdm(5, 1), foo, c̄, A, B)
+
+    test_approx(Ā, Ā_fd)
+    test_approx(B̄, B̄_fd)
+end
+
+# Kronecker doesn't implement their efficient `KroneckerProduct * AbstractMatrix` operation
+# in a mutation-free manner (at present), so the best we can do without implementing a rule
+# is make use of the generic fallback. This is the kind of operation that you would probably
+# want to implement a rule for / implement in an AD-friendly manner in reality.
+let
+    A = randn(4, 2)
+    B = randn(3, 5)
+    X = randn(10, 2)
+
+    # Multiply some interesting types together.
+    foo(A, B, X) = my_mul(kronecker(A, B), X)
+
+    C, pb = Zygote.pullback(foo, A, B, X)
+    test_approx(C, foo(A, B, X))
+
+    C̄ = randn(12, 2)
+    Ā, B̄, X̄ = pb(C̄)
+
+    Ā_fd, B̄_fd, X̄_fd = FiniteDifferences.j′vp(central_fdm(5, 1), foo, C̄, A, B, X)
+
+    test_approx(Ā, Ā_fd)
+    test_approx(B̄, B̄_fd)
+    test_approx(X̄, X̄_fd)
+end
+
+# Opt-out for multiplying two KroneckerProducts together.
+using ChainRules: CommutativeMulNumber
+@opt_out rrule(::typeof(*), ::AbstractKroneckerProduct{<:CommutativeMulNumber}, ::AbstractKroneckerProduct{<:CommutativeMulNumber})
+@opt_out rrule(::RuleConfig, ::typeof(my_mul), ::AbstractKroneckerProduct, ::AbstractKroneckerProduct)
+
+let
+    A = randn(4, 2)
+    B = randn(3, 5)
+    C = randn(2, 3)
+    D = randn(5, 3)
+
+    # Multiply some interesting types together.
+    foo(A, B, C, D) = my_mul(kronecker(A, B), kronecker(C, D))
+
+    Z, pb = Zygote.pullback(foo, A, B, C, D)
+    test_approx(Z, foo(A, B, C, D))
+
+    Z̄ = (A=randn(size(Z.A)), B=randn(size(Z.B)))
+    Ā, B̄, C̄, D̄ = pb(Z̄)
+
+    Ā_fd, B̄_fd, C̄_fd, D̄_fd = FiniteDifferences.j′vp(central_fdm(5, 1), foo, Z̄, A, B, C, D)
+
+    test_approx(Ā, Ā_fd)
+    test_approx(B̄, B̄_fd)
+    test_approx(C̄, C̄_fd)
+    test_approx(D̄, D̄_fd)
 end
