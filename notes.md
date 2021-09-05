@@ -233,6 +233,8 @@ This is a particularly interesting case because `parent` is exported from `Base`
 
 I'm not really sure how to think about this but, as I say, I suspect we're already suffering from it, so I'm not going to worry about it for now.
 
+edit: I think it's best just to think of this "junk" data in the lower triangle as a side-effect. We can't generally guarantee anything in the presence of side effects, so it's no surprise that this is causing some problems. This is part of a more general problem (that we're currently dealing with on an ad-hoc basis in to_vec, and probably need to think more generally about).
+
 
 
 
