@@ -64,6 +64,16 @@ Further:
 plot(x-> x < 0 ? x : 5x)
 ```
 
+Here was have 3 main options, all are good.
+We could say there derivative at 0 is
+ - 1: which agrees with backwards finite differencing
+ - 5: which agrees with fowards finite differencing
+ - 3: which is the mean of `[1, 5]`, and agrees with central finite differencing
+
+All of these options are perfectly nice members of the [subderivative](https://en.wikipedia.org/wiki/Subderivative).
+Saying it is `3` is the arguably the nicest, but it is also the most expensive to compute; and it will 
+ 
+
 ### Derivative zero almost everywhere
 
 ```@example nondiff
@@ -75,9 +85,7 @@ plot(ceil)
 ```@example nondiff
 plot(cbrt)
 ```
-
-
-(derivative nonfinite and different on each side is not possible with a finite and defined primal.)
+s(derivative nonfinite and different on each side is not possible with a finite and defined primal.)
 ### Primal and derivative Non-finite and same on both sides
 ```@example nondiff
 plot(x->inv(x^2))
