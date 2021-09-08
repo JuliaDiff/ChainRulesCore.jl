@@ -90,7 +90,7 @@ macro scalar_rule(call, maybe_setup, partials...)
 
     # Generate variables to store derivatives named dfi/dxj
     derivatives = map(keys(partials)) do i
-        syms = map(j -> Symbol("∂f", i, "/∂x", j)), keys(inputs)
+        syms = map(j -> Symbol("∂f", i, "/∂x", j), keys(inputs))
         return Expr(:tuple, syms...)
     end
 
