@@ -159,8 +159,9 @@ end
 Compute the derivative of scalar function `f` with inputs `xs...` and output `Ω`.
 This is used within the implementation of [`@scalar_rule`](@ref) and is not
 considered part of the stable API.
-If the output is scalar, return a tuple with partial derivatives with respect to the `xs`.
-If the output is a tuple, return a tuple of tuples.
+It returns a tuple of tuples with the partial derivatives of `f` with respect to the `xs`.
+The derivative of the `i`-th component of `f` with respect to the `j`-th input can be accessed
+as `Df[i][j]`, where `Df = derivatives_given_output(Ω, f, xs...)`.
 """
 function derivatives_given_output end
 
