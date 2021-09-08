@@ -156,12 +156,20 @@ end
 """
     derivatives_given_output(Ω, f, xs...)
 
-Compute the derivative of scalar function `f` at primal input point `xs...`, given that it had primal output `Ω`.
-This is used within the implementation of [`@scalar_rule`](@ref) and is not
-considered part of the stable API.
-It returns a tuple of tuples with the partial derivatives of `f` with respect to the `xs`.
-The derivative of the `i`-th component of `f` with respect to the `j`-th input can be accessed
-as `Df[i][j]`, where `Df = derivatives_given_output(Ω, f, xs...)`.
+Compute the derivative of scalar function `f` at primal input point `xs...`,
+given that it had primal output `Ω`.
+Return a tuple of tuples with the partial derivatives of `f` with respect to the `xs...`.
+The derivative of the `i`-th component of `f` with respect to the `j`-th input can be
+accessed as `Df[i][j]`, where `Df = derivatives_given_output(Ω, f, xs...)`.
+
+!!! warning "Experimental"
+    This function is experimental and not part of the stable API.
+    At the moment, it can be considered an implementation detail of the macro
+    [`@scalar_rule`](@ref), in which it is used.
+    In the future, the exact semantics of this function will stabilize, and it
+    will be added to the stable API.
+    When that happens, this warning will be removed.
+
 """
 function derivatives_given_output end
 
