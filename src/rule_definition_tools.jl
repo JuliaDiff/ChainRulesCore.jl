@@ -156,7 +156,7 @@ end
 """
     derivatives_given_output(Ω, f, xs...)
 
-Compute the derivative of scalar function `f` with inputs `xs...` and output `Ω`.
+Compute the derivative of scalar function `f` at primal input point `xs...`, given that it had primal output `Ω`.
 This is used within the implementation of [`@scalar_rule`](@ref) and is not
 considered part of the stable API.
 It returns a tuple of tuples with the partial derivatives of `f` with respect to the `xs`.
