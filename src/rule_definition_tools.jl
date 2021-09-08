@@ -88,8 +88,15 @@ macro scalar_rule(call, maybe_setup, partials...)
     )
     f = call.args[1]
 
-    frule_expr = scalar_frule_expr(__source__, f, call, setup_stmts, inputs, partials)
-    rrule_expr = scalar_rrule_expr(__source__, f, call, setup_stmts, inputs, partials)
+    # Generate variables to store derivatives named 
+    derivatives = map(keys(partials)) do i
+        syms = map(j -> gensym("df$(i)/dx$(j)"), keys(inputs))
+        return Expr(:tuple, syms...)
+    end
+
+    derivative_expr = scalar_derivative_expr(__source__, f, setup_stmts, inputs, partials)
+    frule_expr = scalar_frule_expr(__source__, f, call, [], inputs, derivatives)
+    rrule_expr = scalar_rrule_expr(__source__, f, call, [], inputs, derivatives)
 
     # Final return: building the expression to insert in the place of this macro
     code = quote
@@ -99,6 +106,7 @@ macro scalar_rule(call, maybe_setup, partials...)
             ))
         end
 
+        $(derivative_expr)
         $(frule_expr)
         $(rrule_expr)
     end
@@ -145,6 +153,26 @@ function _normalize_scalarrules_macro_input(call, maybe_setup, partials)
     return call, setup_stmts, inputs, partials
 end
 
+"""
+    derivatives_given_output(Ω, f, xs...)
+
+Compute the derivative of scalar function `f` with inputs `xs...` and output `Ω`.
+This is used within the implementation of [`@scalar_rule`](@ref) and is not
+considered part of the stable API.
+If the output is scalar, return a tuple with partial derivatives with respect to the `xs`.
+If the output is a tuple, return a tuple of tuples.
+"""
+function derivatives_given_output end
+
+function scalar_derivative_expr(__source__, f, setup_stmts, inputs, partials)
+    return @strip_linenos quote
+        function ChainRulesCore.derivatives_given_output($(esc(:Ω)), ::Core.Typeof($f), $(inputs...))
+            $(__source__)
+            $(setup_stmts...)
+            return $(esc(Expr(:tuple, partials...)))
+        end
+    end
+end
 
 function scalar_frule_expr(__source__, f, call, setup_stmts, inputs, partials)
     n_outputs = length(partials)
@@ -173,6 +201,7 @@ function scalar_frule_expr(__source__, f, call, setup_stmts, inputs, partials)
             $(__source__)
             $(esc(:Ω)) = $call
             $(setup_stmts...)
+            $(esc(Expr(:tuple, partials...))) = ChainRulesCore.derivatives_given_output($(esc(:Ω)), $f, $(inputs...))
             return $(esc(:Ω)), $pushforward_returns
         end
     end
@@ -210,6 +239,7 @@ function scalar_rrule_expr(__source__, f, call, setup_stmts, inputs, partials)
             $(__source__)
             $(esc(:Ω)) = $call
             $(setup_stmts...)
+            $(esc(Expr(:tuple, partials...))) = ChainRulesCore.derivatives_given_output($(esc(:Ω)), $f, $(inputs...))
             return $(esc(:Ω)), $pullback
         end
     end
