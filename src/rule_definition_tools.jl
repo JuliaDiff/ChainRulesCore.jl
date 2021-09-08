@@ -88,9 +88,9 @@ macro scalar_rule(call, maybe_setup, partials...)
     )
     f = call.args[1]
 
-    # Generate variables to store derivatives named 
+    # Generate variables to store derivatives named dfi/dxj
     derivatives = map(keys(partials)) do i
-        syms = map(j -> gensym("df$(i)/dx$(j)"), keys(inputs))
+        syms = map(j -> esc(gensym(Symbol("df", i, "/dx", j))), keys(inputs))
         return Expr(:tuple, syms...)
     end
 
@@ -143,10 +143,10 @@ function _normalize_scalarrules_macro_input(call, maybe_setup, partials)
     # For consistency in code that follows we make all partials tuple expressions
     partials = map(partials) do partial
         if Meta.isexpr(partial, :tuple)
-            partial
+            Expr(:tuple, map(esc, partial.args)...)
         else
             length(inputs) == 1 || error("Invalid use of `@scalar_rule`")
-            Expr(:tuple, partial)
+            Expr(:tuple, esc(partial))
         end
     end
 
@@ -169,7 +169,7 @@ function scalar_derivative_expr(__source__, f, setup_stmts, inputs, partials)
         function ChainRulesCore.derivatives_given_output($(esc(:Ω)), ::Core.Typeof($f), $(inputs...))
             $(__source__)
             $(setup_stmts...)
-            return $(esc(Expr(:tuple, partials...)))
+            return $(Expr(:tuple, partials...))
         end
     end
 end
@@ -201,7 +201,7 @@ function scalar_frule_expr(__source__, f, call, setup_stmts, inputs, partials)
             $(__source__)
             $(esc(:Ω)) = $call
             $(setup_stmts...)
-            $(esc(Expr(:tuple, partials...))) = ChainRulesCore.derivatives_given_output($(esc(:Ω)), $f, $(inputs...))
+            $(Expr(:tuple, partials...)) = ChainRulesCore.derivatives_given_output($(esc(:Ω)), $f, $(inputs...))
             return $(esc(:Ω)), $pushforward_returns
         end
     end
@@ -239,7 +239,7 @@ function scalar_rrule_expr(__source__, f, call, setup_stmts, inputs, partials)
             $(__source__)
             $(esc(:Ω)) = $call
             $(setup_stmts...)
-            $(esc(Expr(:tuple, partials...))) = ChainRulesCore.derivatives_given_output($(esc(:Ω)), $f, $(inputs...))
+            $(Expr(:tuple, partials...)) = ChainRulesCore.derivatives_given_output($(esc(:Ω)), $f, $(inputs...))
             return $(esc(:Ω)), $pullback
         end
     end
@@ -270,9 +270,9 @@ function propagation_expr(Δs, ∂s, _conj=false, proj=identity)
     # This is basically Δs ⋅ ∂s
     _∂s = map(∂s) do ∂s_i
         if _conj
-            :(conj($(esc(∂s_i))))
+            :(conj($∂s_i))
         else
-            esc(∂s_i)
+            ∂s_i
         end
     end
 
