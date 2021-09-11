@@ -235,6 +235,9 @@ end
             @test ẏ == Tangent{typeof(y)}(50f0, 100f0)
             # make sure type is exactly as expected:
             @test ẏ isa Tangent{Tuple{Irrational{:π}, Float64}, Tuple{Float32, Float32}}
+
+            xs, Ω = (3,), (3, 6)
+            @test ChainRulesCore.derivatives_given_output(Ω, simo, xs...) == ((1f0,), (2f0,))
         end
 
         @testset "@scalar_rule projection" begin
@@ -298,7 +301,7 @@ module IsolatedModuleForTestingScoping
     module IsolatedSubmodule
         # check that rules defined in isolated module without imports can be called
         # without errors
-        using ChainRulesCore: frule, rrule, ZeroTangent, NoTangent
+        using ChainRulesCore: frule, rrule, ZeroTangent, NoTangent, derivatives_given_output
         using ..IsolatedModuleForTestingScoping: fixed, fixed_kwargs, my_id
         using Test
 
@@ -328,6 +331,8 @@ module IsolatedModuleForTestingScoping
             y, f_pullback = rrule(my_id, x)
             @test y == x
             @test f_pullback(Δy) == (NoTangent(), Δy)
+
+            @test derivatives_given_output(y, my_id, x) == ((1.0,),)
         end
     end
 end
