@@ -123,6 +123,25 @@ struct NoSuperType end
         @test pzed isa ProjectTo{AbstractArray}
     end
 
+    @testset "Base: Tuple" begin
+        pt1 = ProjectTo((1.0,))
+        @test pt1((1+im,)) == Tangent{Tuple{Float64}}(1.0,)
+        @test pt1(pt1((1,))) == pt1(pt1((1,)))            # accepts correct Tangent
+        @test pt1(Tangent{Any}(1)) == pt1((1,))           # accepts Tangent{Any}
+        @test pt1([1,]) == Tangent{Tuple{Float64}}(1.0,)  # accepts Vector
+        @test pt1(1+im) == Tangent{Tuple{Float64}}(1.0,)  # accepts Number
+        @test pt1(NoTangent()) === NoTangent()
+        @test pt1(ZeroTangent()) === ZeroTangent()
+
+        pt1([1,2]) # not an error, NTuple just takes N
+        @test_throws Exception pt1([]) # ArgumentError: too few elements for tuple type Tuple
+
+        pt3 = ProjectTo(([1,2,3], false, :gamma))
+        @test pt3((1:3, 4, 5)) == Tangent{Tuple{Vector{Int}, Bool, Symbol}}([1.0, 2.0, 3.0], NoTangent(), 5)
+
+        @test ProjectTo((true, [false])) isa ProjectTo{NoTangent}
+    end
+
     @testset "Base: Ref" begin
         pref = ProjectTo(Ref(2.0))
         @test pref(Ref(3 + im)).x === 3.0

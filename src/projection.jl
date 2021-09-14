@@ -262,6 +262,29 @@ end
 ##### `Base`, part II: return of the Tangent
 #####
 
+# Tuple
+function ProjectTo(xs::Tuple)
+    elements = map(xs) do x
+        x isa Union{Number, AbstractArray{<:Number}} ? ProjectTo(x) : identity
+    end
+    if all(p -> p isa ProjectTo{<:AbstractZero}, elements)
+        ProjectTo{NoTangent}()  # short-circuit if all elements project to zero
+    else
+        return ProjectTo{Tuple}(; type=typeof(xs), elements=elements)
+    end
+end
+
+(project::ProjectTo{Tuple})(dx::Tangent) = project(backing(dx))
+function (project::ProjectTo{Tuple})(dx::Tuple)
+    if length(dx) != length(project.elements)
+        throw(_projection_mismatch(axes(project.elements), size(dx)))
+    end
+    dz = map((f, y) -> f(y), project.elements, dx)
+    return Tangent{project.type}(dz...)
+end
+(project::ProjectTo{Tuple})(dx) = project(NTuple{length(project.elements)}(dx))
+(::ProjectTo{Tuple})(dx::AbstractZero) = dx  # else ambiguous
+
 # Ref
 function ProjectTo(x::Ref)
     sub = ProjectTo(x[])  # should we worry about isdefined(Ref{Vector{Int}}(), :x)? 
