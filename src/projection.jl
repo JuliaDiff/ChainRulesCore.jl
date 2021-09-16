@@ -84,7 +84,8 @@ Returns a `ProjectTo{T}` functor which projects a differential `dx` onto the
 relevant tangent space for `x`.
 
 At present this undersands only `x::Number`, `x::AbstractArray` and `x::Ref`.
-It should not be called on arguments of an `rrule` method which accepts other types.
+Called on unknown types it will now simply return `identity`, thus can be safely
+applied to arbitrary `rrule` arguments.
 
 # Examples
 ```jldoctest
@@ -112,7 +113,7 @@ julia> ProjectTo([1 2; 3 4]')  # no special structure, integers are promoted to 
 ProjectTo{AbstractArray}(element = ProjectTo{Float64}(), axes = (Base.OneTo(2), Base.OneTo(2)))
 ```
 """
-ProjectTo(::Any) # just to attach docstring
+ProjectTo(::Any) = identity
 
 # Generic
 (::ProjectTo{T})(dx::AbstractZero) where {T} = dx
@@ -142,6 +143,11 @@ ProjectTo{P}(::NamedTuple{T, <:Tuple{_PZ, Vararg{<:_PZ}}}) where {P,T} = Project
 
 # Bool
 ProjectTo(::Bool) = ProjectTo{NoTangent}()  # same projector as ProjectTo(::AbstractZero) above
+
+# Other never-differentiable types
+for T in [:Symbol, :Char, :AbstractString, :RoundingMode, :IndexStyle]
+    @eval ProjectTo(::$T) = ProjectTo{NoTangent}()
+end
 
 # Numbers
 ProjectTo(::Real) = ProjectTo{Real}()
