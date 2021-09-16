@@ -264,10 +264,8 @@ end
 
 # Tuple
 function ProjectTo(xs::Tuple)
-    elements = map(xs) do x
-        x isa Union{Number, AbstractArray{<:Number}} ? ProjectTo(x) : identity
-    end
-    if all(p -> p isa ProjectTo{<:AbstractZero}, elements)
+    elements = map(ProjectTo, xs)
+    if elements isa Tuple{Vararg{ProjectTo{<:AbstractZero}}}
         ProjectTo{NoTangent}()  # short-circuit if all elements project to zero
     else
         return ProjectTo{Tuple}(; type=Val(typeof(xs)), elements=elements)
@@ -284,8 +282,16 @@ function (project::ProjectTo{Tuple})(dx::Tuple)
     dz = map((f, y) -> f(y), project.elements, dx)
     return Tangent{_val(project.type)}(dz...)
 end
-(project::ProjectTo{Tuple})(dx) = project(NTuple{length(project.elements)}(dx))
-(::ProjectTo{Tuple})(dx::AbstractZero) = dx  # else ambiguous
+function (project::ProjectTo{Tuple})(dx::AbstractArray)
+    for d in 1:ndims(dx)
+        if size(dx, d) != get(size(project.elements), d, 1)
+            throw(_projection_mismatch(axes(project.elements), size(dx)))
+        end
+    end
+    dz = ntuple(i -> project.elements[i](dx[i]), length(project.elements))
+    return Tangent{_val(project.type)}(dz...)
+end
+# (::ProjectTo{Tuple})(dx::AbstractZero) = dx  # else ambiguous
 
 # Ref
 function ProjectTo(x::Ref)
