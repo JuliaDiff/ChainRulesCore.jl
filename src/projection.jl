@@ -270,9 +270,11 @@ function ProjectTo(xs::Tuple)
     if all(p -> p isa ProjectTo{<:AbstractZero}, elements)
         ProjectTo{NoTangent}()  # short-circuit if all elements project to zero
     else
-        return ProjectTo{Tuple}(; type=typeof(xs), elements=elements)
+        return ProjectTo{Tuple}(; type=Val(typeof(xs)), elements=elements)
     end
 end
+
+_val(::Val{val}) where {val} = val
 
 (project::ProjectTo{Tuple})(dx::Tangent) = project(backing(dx))
 function (project::ProjectTo{Tuple})(dx::Tuple)
@@ -280,7 +282,7 @@ function (project::ProjectTo{Tuple})(dx::Tuple)
         throw(_projection_mismatch(axes(project.elements), size(dx)))
     end
     dz = map((f, y) -> f(y), project.elements, dx)
-    return Tangent{project.type}(dz...)
+    return Tangent{_val(project.type)}(dz...)
 end
 (project::ProjectTo{Tuple})(dx) = project(NTuple{length(project.elements)}(dx))
 (::ProjectTo{Tuple})(dx::AbstractZero) = dx  # else ambiguous
@@ -291,13 +293,13 @@ function ProjectTo(x::Ref)
     if sub isa ProjectTo{<:AbstractZero}
         return ProjectTo{NoTangent}()
     else
-        return ProjectTo{Ref}(; type=typeof(x), x=sub)
+        return ProjectTo{Ref}(; type=Val(typeof(x)), x=sub)
     end
 end
-(project::ProjectTo{Ref})(dx::Tangent{<:Ref}) = Tangent{project.type}(; x=project.x(dx.x))
-(project::ProjectTo{Ref})(dx::Ref) = Tangent{project.type}(; x=project.x(dx[]))
+(project::ProjectTo{Ref})(dx::Tangent{<:Ref}) = Tangent{_val(project.type)}(; x=project.x(dx.x))
+(project::ProjectTo{Ref})(dx::Ref) = Tangent{_val(project.type)}(; x=project.x(dx[]))
 # Since this works like a zero-array in broadcasting, it should also accept a number:
-(project::ProjectTo{Ref})(dx::Number) = Tangent{project.type}(; x=project.x(dx))
+(project::ProjectTo{Ref})(dx::Number) = Tangent{_val(project.type)}(; x=project.x(dx))
 
 #####
 ##### `LinearAlgebra`
