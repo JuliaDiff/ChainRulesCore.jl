@@ -54,9 +54,20 @@ end
 
         @test keys(Tangent{Tuple{Float64,}}(2.0)) == Base.OneTo(1)
         @test propertynames(Tangent{Tuple{Float64,}}(2.0)) == (1,)
+        @test getindex(Tangent{Tuple{Float64,}}(2.0), 1) == 2.0
+        @test getindex(Tangent{Tuple{Float64,}}(@thunk 2.0^2), 1) == 4.0
         @test getproperty(Tangent{Tuple{Float64,}}(2.0), 1) == 2.0
         @test getproperty(Tangent{Tuple{Float64,}}(@thunk 2.0^2), 1) == 4.0
-        @test getproperty(Tangent{Tuple{Float64,}}(a=(@thunk 2.0^2),), :a) == 4.0
+
+        @test getindex(Tangent{NamedTuple{(:a, :b), Float64}}(a=(@thunk 2.0^2),), :a) == 4.0
+        @test getindex(Tangent{NamedTuple{(:a, :b), Float64}}(a=(@thunk 2.0^2),), :b) == ZeroTangent()
+        @test getindex(Tangent{NamedTuple{(:a, :b), Float64}}(b=(@thunk 2.0^2),), 1) == ZeroTangent()
+        @test getindex(Tangent{NamedTuple{(:a, :b), Float64}}(b=(@thunk 2.0^2),), 2) == 4.0
+
+        @test getproperty(Tangent{NamedTuple{(:a, :b), Float64}}(a=(@thunk 2.0^2),), :a) == 4.0
+        @test getproperty(Tangent{NamedTuple{(:a, :b), Float64}}(a=(@thunk 2.0^2),), :b) == ZeroTangent()
+        @test getproperty(Tangent{NamedTuple{(:a, :b), Float64}}(b=(@thunk 2.0^2),), 1) == ZeroTangent()
+        @test getproperty(Tangent{NamedTuple{(:a, :b), Float64}}(b=(@thunk 2.0^2),), 2) == 4.0
 
         # TODO: uncomment this once https://github.com/JuliaLang/julia/issues/35516
         @test_broken haskey(Tangent{Tuple{Float64}}(2.0), 1) == true
