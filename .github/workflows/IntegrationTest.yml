@@ -25,6 +25,11 @@ jobs:
           - {user: PumasAI, repo: DataInterpolations.jl}
           - {user: dfdx, repo: Yota.jl}
           - {user: JuliaStats, repo: StatsFuns.jl}
+        # Diffractor needs to run on Julia nightly
+        include:
+          - julia-version: nightly
+            os: ubuntu-latest
+            package: {user: JuliaDiff, repo: Diffractor.jl}
 
     steps:
       - uses: actions/checkout@v2
