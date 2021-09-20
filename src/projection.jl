@@ -83,8 +83,9 @@ _maybe_call(f, x) = f
 Returns a `ProjectTo{T}` functor which projects a differential `dx` onto the
 relevant tangent space for `x`.
 
-At present this undersands only `x::Number`, `x::AbstractArray` and `x::Ref`.
-Called on unknown types it will now simply return `identity`, thus can be safely
+Custom `ProjectTo` methods are provided for many subtypes of `Number` (to e.g. ensure precision),
+and `AbstractArray` (to e.g. ensure sparsity structure is maintained by tangent).
+Called on unknown types it will (as of v1.5.0) simply return `identity`, thus can be safely
 applied to arbitrary `rrule` arguments.
 
 # Examples
@@ -145,7 +146,7 @@ ProjectTo{P}(::NamedTuple{T, <:Tuple{_PZ, Vararg{<:_PZ}}}) where {P,T} = Project
 ProjectTo(::Bool) = ProjectTo{NoTangent}()  # same projector as ProjectTo(::AbstractZero) above
 
 # Other never-differentiable types
-for T in [:Symbol, :Char, :AbstractString, :RoundingMode, :IndexStyle]
+for T in (:Symbol, :Char, :AbstractString, :RoundingMode, :IndexStyle)
     @eval ProjectTo(::$T) = ProjectTo{NoTangent}()
 end
 
