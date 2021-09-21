@@ -68,15 +68,25 @@ function Base.show(io::IO, comp::Tangent{P}) where P
     end
 end
 
-Base.getindex(comp::Tangent, idx) = getindex(backing(comp), idx)
-
-# for Tuple
-Base.getproperty(comp::Tangent, idx::Int) = unthunk(getproperty(backing(comp), idx))
-function Base.getproperty(
-    comp::Tangent{P, T}, idx::Symbol
-) where {P, T<:NamedTuple}
+function Base.getindex(comp::Tangent{P, T}, idx::Int) where {P, T<:Union{Tuple, NamedTuple}}
+    back = backing(canonicalize(comp))
+    return unthunk(getfield(back, idx))
+end
+function Base.getindex(comp::Tangent{P, T}, idx::Symbol) where {P, T<:NamedTuple}
     hasfield(T, idx) || return ZeroTangent()
-    return unthunk(getproperty(backing(comp), idx))
+    return unthunk(getfield(backing(comp), idx))
+end
+function Base.getindex(comp::Tangent, idx) where {P, T<:AbstractDict}
+    return unthunk(getindex(backing(comp), idx))
+end
+
+function Base.getproperty(comp::Tangent, idx::Int)
+    back = backing(canonicalize(comp))
+    return unthunk(getfield(back, idx))
+end
+function Base.getproperty(comp::Tangent{P, T}, idx::Symbol) where {P, T<:NamedTuple}
+    hasfield(T, idx) || return ZeroTangent()
+    return unthunk(getfield(backing(comp), idx))
 end
 
 Base.keys(comp::Tangent) = keys(backing(comp))
