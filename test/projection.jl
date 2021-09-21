@@ -11,6 +11,9 @@ Base.real(x::Dual) = x
 Base.float(x::Dual) = Dual(float(x.value), float(x.partial))
 Base.zero(x::Dual) = Dual(zero(x.value), zero(x.partial))
 
+# Trivial struct
+struct NoSuperType end
+
 @testset "projection" begin
 
     #####
@@ -24,7 +27,6 @@ Base.zero(x::Dual) = Dual(zero(x.value), zero(x.partial))
         @test ProjectTo(2.0+3.0im)(1+1im) === 1.0+1.0im
         @test ProjectTo(2.0)(1+1im) === 1.0
         
-
         # storage
         @test ProjectTo(1)(pi) === pi
         @test ProjectTo(1 + im)(pi) === ComplexF64(pi)
@@ -94,9 +96,10 @@ Base.zero(x::Dual) = Dual(zero(x.value), zero(x.partial))
         @test y1[1] == [1 2]
         @test !(y1 isa Adjoint) && !(y1[1] isa Adjoint)
 
-        # arrays of unknown things
-        @test_throws MethodError ProjectTo([:x, :y])
-        @test_throws MethodError ProjectTo(Any[:x, :y])
+        # arrays of other things
+        @test ProjectTo([:x, :y]) isa ProjectTo{NoTangent}
+        @test ProjectTo(Any['x', "y"]) isa ProjectTo{NoTangent}
+        @test ProjectTo([(1,2), (3,4), (5,6)]) isa ProjectTo{AbstractArray}
 
         @test ProjectTo(Any[1, 2])(1:2) == [1.0, 2.0]  # projects each number.
         @test Tuple(ProjectTo(Any[1, 2 + 3im])(1:2)) === (1.0, 2.0 + 0.0im)
@@ -138,6 +141,12 @@ Base.zero(x::Dual) = Dual(zero(x.value), zero(x.partial))
 
         @test ProjectTo(Ref(true)) isa ProjectTo{NoTangent}
         @test ProjectTo(Ref([false]')) isa ProjectTo{NoTangent}
+    end
+
+    @testset "Base: non-diff" begin
+        @test ProjectTo(:a)(1) == NoTangent()
+        @test ProjectTo('b')(2) == NoTangent()
+        @test ProjectTo("cde")(345) == NoTangent()
     end
 
     #####
@@ -300,6 +309,10 @@ Base.zero(x::Dual) = Dual(zero(x.value), zero(x.partial))
     #####
     ##### `ChainRulesCore`
     #####
+
+    @testset "pass-through" begin
+        @test ProjectTo(NoSuperType()) === identity
+    end
 
     @testset "AbstractZero" begin
         pz = ProjectTo(ZeroTangent())
