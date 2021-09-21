@@ -1,3 +1,7 @@
+# This unwraps Val, which is used for storing some types, because:
+# (;type = Type{typeof((1,2))}) isa NamedTuple{(:type,), Tuple{DataType}}
+_val(::Val{val}) where {val} = val
+
 """
     (p::ProjectTo{T})(dx)
 
@@ -272,8 +276,6 @@ function ProjectTo(xs::Tuple)
     end
 end
 
-_val(::Val{val}) where {val} = val
-
 (project::ProjectTo{Tuple})(dx::Tangent) = project(backing(dx))
 function (project::ProjectTo{Tuple})(dx::Tuple)
     if length(dx) != length(project.elements)
@@ -284,14 +286,13 @@ function (project::ProjectTo{Tuple})(dx::Tuple)
 end
 function (project::ProjectTo{Tuple})(dx::AbstractArray)
     for d in 1:ndims(dx)
-        if size(dx, d) != get(size(project.elements), d, 1)
+        if size(dx, d) != get(length(project.elements), d, 1)
             throw(_projection_mismatch(axes(project.elements), size(dx)))
         end
     end
     dz = ntuple(i -> project.elements[i](dx[i]), length(project.elements))
     return Tangent{_val(project.type)}(dz...)
 end
-# (::ProjectTo{Tuple})(dx::AbstractZero) = dx  # else ambiguous
 
 # Ref
 function ProjectTo(x::Ref)
