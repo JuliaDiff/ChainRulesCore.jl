@@ -33,6 +33,8 @@ include("config.jl")
 include("rules.jl")
 include("rule_definition_tools.jl")
 
+include("destructure.jl")
+
 include("deprecated.jl")
 
 end # module
