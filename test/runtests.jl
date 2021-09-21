@@ -9,10 +9,10 @@ using Test
 
 @testset "ChainRulesCore" begin
     @testset "differentials" begin
-        include("differentials/abstract_zero.jl")
-        include("differentials/thunks.jl")
-        include("differentials/composite.jl")
-        include("differentials/notimplemented.jl")
+        include("tangent_types/abstract_zero.jl")
+        include("tangent_types/thunks.jl")
+        include("tangent_types/tangent.jl")
+        include("tangent_types/notimplemented.jl")
     end
 
     include("accumulation.jl")
