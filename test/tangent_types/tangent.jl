@@ -86,15 +86,15 @@ end
 
         # Test indexed_iterate
         ctup = Tangent{Tuple{Float64,Int64}}(2.0, 3)
-        _unpack2tuple = function(comp)
-            a, b = comp
+        _unpack2tuple = function(tangent)
+            a, b = tangent
             return (a, b)
         end
         @inferred _unpack2tuple(ctup)
         @test _unpack2tuple(ctup) === (2.0, 3)
 
         # Test getproperty is inferrable
-        _unpacknamedtuple = comp -> (comp.x, comp.y)
+        _unpacknamedtuple = tangent -> (tangent.x, tangent.y)
         if VERSION ≥ v"1.2"
             @inferred _unpacknamedtuple(Tangent{Foo}(x=2, y=3.0))
             @inferred _unpacknamedtuple(Tangent{Foo}(y=3.0))
@@ -111,7 +111,7 @@ end
 
         d = Dict(:x => 1, :y => 2.0)
         cdict = Tangent{Foo, typeof(d)}(d)
-        @test_throws MethodError reverse(Tangent{Foo}()) 
+        @test_throws MethodError reverse(Tangent{Foo}())
     end
 
     @testset "unset properties" begin
@@ -344,7 +344,7 @@ end
         @testset "Internals don't allocate a ton" begin
             bk = (; x=1.0, y=2.0)
             VERSION >= v"1.5" && @test (@ballocated(ChainRulesCore.construct($Foo, $bk))) <= 32
-            
+
             # weaker version of the above (which should pass on all versions)
             @test (@ballocated(ChainRulesCore.construct($Foo, $bk))) <= 48
             @test (@ballocated ChainRulesCore.elementwise_add($bk, $bk)) <= 48

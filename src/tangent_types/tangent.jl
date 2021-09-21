@@ -16,7 +16,7 @@ It should not be passed in by user.
 For `Tangent`s of `Tuple`s, `iterate` and `getindex` are overloaded to behave similarly
 to for a tuple.
 For `Tangent`s of `struct`s, `getproperty` is overloaded to allow for accessing values
-via `comp.fieldname`.
+via `tangent.fieldname`.
 Any fields not explictly present in the `Tangent` are treated as being set to `ZeroTangent()`.
 To make a `Tangent` have all the fields of the primal the [`canonicalize`](@ref)
 function is provided.
@@ -56,80 +56,80 @@ Base.:(==)(a::Tangent{P}, b::Tangent{Q}) where {P, Q} = false
 
 Base.hash(a::Tangent, h::UInt) = Base.hash(backing(canonicalize(a)), h)
 
-function Base.show(io::IO, comp::Tangent{P}) where P
+function Base.show(io::IO, tangent::Tangent{P}) where P
     print(io, "Tangent{")
     show(io, P)
     print(io, "}")
-    if isempty(backing(comp))
+    if isempty(backing(tangent))
         print(io, "()")  # so it doesn't show `NamedTuple()`
     else
         # allow Tuple or NamedTuple `show` to do the rendering of brackets etc
-        show(io, backing(comp))
+        show(io, backing(tangent))
     end
 end
 
-function Base.getindex(comp::Tangent{P, T}, idx::Int) where {P, T<:Union{Tuple, NamedTuple}}
-    back = backing(canonicalize(comp))
+function Base.getindex(tangent::Tangent{P, T}, idx::Int) where {P, T<:Union{Tuple, NamedTuple}}
+    back = backing(canonicalize(tangent))
     return unthunk(getfield(back, idx))
 end
-function Base.getindex(comp::Tangent{P, T}, idx::Symbol) where {P, T<:NamedTuple}
+function Base.getindex(tangent::Tangent{P, T}, idx::Symbol) where {P, T<:NamedTuple}
     hasfield(T, idx) || return ZeroTangent()
-    return unthunk(getfield(backing(comp), idx))
+    return unthunk(getfield(backing(tangent), idx))
 end
-function Base.getindex(comp::Tangent, idx) where {P, T<:AbstractDict}
-    return unthunk(getindex(backing(comp), idx))
+function Base.getindex(tangent::Tangent, idx) where {P, T<:AbstractDict}
+    return unthunk(getindex(backing(tangent), idx))
 end
 
-function Base.getproperty(comp::Tangent, idx::Int)
-    back = backing(canonicalize(comp))
+function Base.getproperty(tangent::Tangent, idx::Int)
+    back = backing(canonicalize(tangent))
     return unthunk(getfield(back, idx))
 end
-function Base.getproperty(comp::Tangent{P, T}, idx::Symbol) where {P, T<:NamedTuple}
+function Base.getproperty(tangent::Tangent{P, T}, idx::Symbol) where {P, T<:NamedTuple}
     hasfield(T, idx) || return ZeroTangent()
-    return unthunk(getfield(backing(comp), idx))
+    return unthunk(getfield(backing(tangent), idx))
 end
 
-Base.keys(comp::Tangent) = keys(backing(comp))
-Base.propertynames(comp::Tangent) = propertynames(backing(comp))
+Base.keys(tangent::Tangent) = keys(backing(tangent))
+Base.propertynames(tangent::Tangent) = propertynames(backing(tangent))
 
-Base.haskey(comp::Tangent, key) = haskey(backing(comp), key)
+Base.haskey(tangent::Tangent, key) = haskey(backing(tangent), key)
 if isdefined(Base, :hasproperty)
-    Base.hasproperty(comp::Tangent, key::Symbol) = hasproperty(backing(comp), key)
+    Base.hasproperty(tangent::Tangent, key::Symbol) = hasproperty(backing(tangent), key)
 end
 
-Base.iterate(comp::Tangent, args...) = iterate(backing(comp), args...)
-Base.length(comp::Tangent) = length(backing(comp))
+Base.iterate(tangent::Tangent, args...) = iterate(backing(tangent), args...)
+Base.length(tangent::Tangent) = length(backing(tangent))
 Base.eltype(::Type{<:Tangent{<:Any, T}}) where T = eltype(T)
-function Base.reverse(comp::Tangent)
-    rev_backing = reverse(backing(comp))
+function Base.reverse(tangent::Tangent)
+    rev_backing = reverse(backing(tangent))
     Tangent{typeof(rev_backing), typeof(rev_backing)}(rev_backing)
 end
 
-function Base.indexed_iterate(comp::Tangent{P,<:Tuple}, i::Int, state=1) where {P}
-    return Base.indexed_iterate(backing(comp), i, state)
+function Base.indexed_iterate(tangent::Tangent{P,<:Tuple}, i::Int, state=1) where {P}
+    return Base.indexed_iterate(backing(tangent), i, state)
 end
 
-function Base.map(f, comp::Tangent{P, <:Tuple}) where P
-    vals::Tuple = map(f, backing(comp))
+function Base.map(f, tangent::Tangent{P, <:Tuple}) where P
+    vals::Tuple = map(f, backing(tangent))
     return Tangent{P, typeof(vals)}(vals)
 end
-function Base.map(f, comp::Tangent{P, <:NamedTuple{L}}) where{P, L}
-    vals = map(f, Tuple(backing(comp)))
+function Base.map(f, tangent::Tangent{P, <:NamedTuple{L}}) where{P, L}
+    vals = map(f, Tuple(backing(tangent)))
     named_vals = NamedTuple{L, typeof(vals)}(vals)
     return Tangent{P, typeof(named_vals)}(named_vals)
 end
-function Base.map(f, comp::Tangent{P, <:Dict}) where {P<:Dict}
-    return Tangent{P}(Dict(k => f(v) for (k, v) in backing(comp)))
+function Base.map(f, tangent::Tangent{P, <:Dict}) where {P<:Dict}
+    return Tangent{P}(Dict(k => f(v) for (k, v) in backing(tangent)))
 end
 
-Base.conj(comp::Tangent) = map(conj, comp)
+Base.conj(tangent::Tangent) = map(conj, tangent)
 
 """
     backing(x)
 
 Accesses the backing field of a `Tangent`,
-or destructures any other composite type into a `NamedTuple`.
-Identity function on `Tuple`. and `NamedTuple`s.
+or destructures any other struct type into a `NamedTuple`.
+Identity function on `Tuple`s and `NamedTuple`s.
 
 This is an internal function used to simplify operations between `Tangent`s and the
 primal types.
@@ -145,7 +145,7 @@ function backing(x::T)::NamedTuple where T
     # so the first 4 lines of the branchs look the same, but can not be moved out.
     # see https://github.com/JuliaLang/julia/issues/34283
     if @generated
-        !isstructtype(T) && throw(DomainError(T, "backing can only be use on composite types"))
+        !isstructtype(T) && throw(DomainError(T, "backing can only be used on struct types"))
         nfields = fieldcount(T)
         names = fieldnames(T)
         types = fieldtypes(T)
@@ -153,7 +153,7 @@ function backing(x::T)::NamedTuple where T
         vals = Expr(:tuple, ntuple(ii->:(getfield(x, $ii)), nfields)...)
         return :(NamedTuple{$names, Tuple{$(types...)}}($vals))
     else
-        !isstructtype(T) && throw(DomainError(T, "backing can only be use on composite types"))
+        !isstructtype(T) && throw(DomainError(T, "backing can only be used on struct types"))
         nfields = fieldcount(T)
         names = fieldnames(T)
         types = fieldtypes(T)
@@ -164,15 +164,15 @@ function backing(x::T)::NamedTuple where T
 end
 
 """
-    canonicalize(comp::Tangent{P}) -> Tangent{P}
+    canonicalize(tangent::Tangent{P}) -> Tangent{P}
 
 Return the canonical `Tangent` for the primal type `P`.
 The property names of the returned `Tangent` match the field names of the primal,
-and all fields of `P` not present in the input `comp` are explictly set to `ZeroTangent()`.
+and all fields of `P` not present in the input `tangent` are explictly set to `ZeroTangent()`.
 """
-function canonicalize(comp::Tangent{P, <:NamedTuple{L}}) where {P,L}
+function canonicalize(tangent::Tangent{P, <:NamedTuple{L}}) where {P,L}
     nil = _zeroed_backing(P)
-    combined = merge(nil, backing(comp))
+    combined = merge(nil, backing(tangent))
     if length(combined) !== fieldcount(P)
         throw(ArgumentError(
             "Tangent fields do not match primal fields.\n" *
@@ -182,17 +182,17 @@ function canonicalize(comp::Tangent{P, <:NamedTuple{L}}) where {P,L}
     return Tangent{P, typeof(combined)}(combined)
 end
 
-# Tuple composites are always in their canonical form
-canonicalize(comp::Tangent{<:Tuple, <:Tuple}) = comp
+# Tuple tangents are always in their canonical form
+canonicalize(tangent::Tangent{<:Tuple, <:Tuple}) = tangent
 
-# Dict composite are always in their canonical form.
-canonicalize(comp::Tangent{<:Any, <:AbstractDict}) = comp
+# Dict tangents are always in their canonical form.
+canonicalize(tangent::Tangent{<:Any, <:AbstractDict}) = tangent
 
 # Tangents of unspecified primal types (indicated by specifying exactly `Any`)
 # all combinations of type-params are specified here to avoid ambiguities
-canonicalize(comp::Tangent{Any, <:NamedTuple{L}}) where {L} = comp
-canonicalize(comp::Tangent{Any, <:Tuple}) where {L} = comp
-canonicalize(comp::Tangent{Any, <:AbstractDict}) where {L} = comp
+canonicalize(tangent::Tangent{Any, <:NamedTuple{L}}) where {L} = tangent
+canonicalize(tangent::Tangent{Any, <:Tuple}) where {L} = tangent
+canonicalize(tangent::Tangent{Any, <:AbstractDict}) where {L} = tangent
 
 """
     _zeroed_backing(P)
@@ -213,7 +213,7 @@ Constructs an object of type `T`, with the given fields.
 Fields must be correct in name and type, and `T` must have a default constructor.
 
 This internally is called to construct structs of the primal type `T`,
-after an operation such as the addition of a primal to a composite.
+after an operation such as the addition of a primal to a tangent
 
 It should be overloaded, if `T` does not have a default constructor,
 or if `T` needs to maintain some invarients between its fields.
