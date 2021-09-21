@@ -19,13 +19,13 @@ export Tangent, NoTangent, InplaceableThunk, Thunk, ZeroTangent, AbstractZero, A
 include("compat.jl")
 include("debug_mode.jl")
 
-include("differentials/abstract_differential.jl")
-include("differentials/abstract_zero.jl")
-include("differentials/thunks.jl")
-include("differentials/composite.jl")
-include("differentials/notimplemented.jl")
+include("tangent_types/abstract_tangent.jl")
+include("tangent_types/abstract_zero.jl")
+include("tangent_types/thunks.jl")
+include("tangent_types/tangent.jl")
+include("tangent_types/notimplemented.jl")
 
-include("differential_arithmetic.jl")
+include("tangent_arithmetic.jl")
 include("accumulation.jl")
 include("projection.jl")
 

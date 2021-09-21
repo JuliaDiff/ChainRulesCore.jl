@@ -165,6 +165,6 @@ Base.:+(a::Tangent{P}, b::P) where P = b + a
 # In general one doesn't have to represent multiplications of 2 differentials
 # Only of a differential and a scaling factor (generally `Real`)
 for T in (:Any,)
-    @eval Base.:*(s::$T, comp::Tangent) = map(x->s*x, comp)
-    @eval Base.:*(comp::Tangent, s::$T) = map(x->x*s, comp)
+    @eval Base.:*(s::$T, tangent::Tangent) = map(x->s*x, tangent)
+    @eval Base.:*(tangent::Tangent, s::$T) = map(x->x*s, tangent)
 end

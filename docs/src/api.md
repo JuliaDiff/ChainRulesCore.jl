@@ -18,12 +18,12 @@ Private = false
 ```@autodocs
 Modules = [ChainRulesCore]
 Pages = [
-    "differentials/abstract_zero.jl",
-    "differentials/one.jl",
-    "differentials/composite.jl",
-    "differentials/thunks.jl",
-    "differentials/abstract_differential.jl",
-    "differentials/notimplemented.jl",
+    "tangent_types/abstract_zero.jl",
+    "tangent_types/one.jl",
+    "tangent_types/tangent.jl",
+    "tangent_types/thunks.jl",
+    "tangent_types/abstract_tangent.jl",
+    "tangent_types/notimplemented.jl",
 ]
 Private = false
 ```
