@@ -1,6 +1,6 @@
 <img src="https://rawcdn.githack.com/JuliaDiff/ChainRulesCore.jl/b0b8dbf26807f8f6bc1a3c073b6720b8d90a8cd4/docs/src/assets/logo.svg" width="256"/>
 
-# ChainRulesCore 
+# ChainRulesCore  
 
 [![Build Status](https://github.com/JuliaDiff/ChainRulesCore.jl/workflows/CI/badge.svg)](https://github.com/JuliaDiff/ChainRulesCore.jl/actions?query=workflow:CI)
 [![Coverage](https://codecov.io/gh/JuliaDiff/ChainRulesCore.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaDiff/ChainRulesCore.jl)
