@@ -96,7 +96,7 @@ function rrule(::typeof(*), A::AbstractMatrix, B::AbstractMatrix)
     function times_pullback(ȳ)
         dA = ȳ * B'
         dB = A' * ȳ
-        return NoTangent(), project_A(dA), project_B(dB)
+        return NoTangent(), @thunk(project_A(dA)), @thunk(project_B(dB))
     end
     return A * B, times_pullback
 end
@@ -230,9 +230,9 @@ A thunk (either a [`Thunk`](@ref), or a [`InplaceableThunk`](@ref)), represents 
 They can be thought of as a wrapper of the value the computation returns.
 In this sense they wrap either a natural or structural tangent.
 
-!!! warning "You should to support AbstractThunk inputs even if you don't use thunks"
+!!! warning "You should support AbstractThunk inputs even if you don't use thunks"
      Unfortunately the AD sytems do not know which rules support thunks and which do not.
-     So all rules have to; at least if they want to play nice with arbitary AD systems.
+     So all rules have to; at least if they want to play nicely with arbitary AD systems.
      Luckily it is not hard: much of the time they will duck-type as the object they wrap.
      If not, then just add a [`unthunk`](@ref) after the start of your pullback.
      (Even when they do duck-type, if they are used multiple times then unthunking at the start will prevent them from being recomputed.)
