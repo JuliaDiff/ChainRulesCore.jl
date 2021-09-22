@@ -59,6 +59,7 @@ makedocs(
         "Design" => [
             "Changing the Primal" => "design/changing_the_primal.md",
             "Many Differential Types" => "design/many_differentials.md",
+            "The AbstractArray Dilemma" => "design/abstract_array_dilemma.md",
         ],
         "API" => "api.md",
     ],
