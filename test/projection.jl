@@ -294,6 +294,15 @@ struct NoSuperType end
     ##### `OffsetArrays`
     #####
 
+# function ProjectTo(x::OffsetArray{T,N}) where {T<:Number,N}
+#     # As usual:
+#     element = ChainRulesCore._eltype_projectto(T)
+#     S = ChainRulesCore.project_type(element)
+#     # But don't save N? Avoids fast path?
+#     # Or perhaps the default constructor can check whether axes(x) is NTuple{N,OneTo}?
+#     return ProjectTo{AbstractArray{S}}(; element=element, axes=axes(x))
+# end
+
     @testset "OffsetArrays" begin
         # While there is no code for this, the rule that it checks axes(x) == axes(dx) else
         # reshape means that it restores offsets. (It throws an error on nontrivial size mismatch.)
