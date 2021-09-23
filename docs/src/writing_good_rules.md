@@ -232,7 +232,7 @@ In this sense they wrap either a natural or structural tangent.
 
 !!! warning "You should support AbstractThunk inputs even if you don't use thunks"
      Unfortunately the AD sytems do not know which rules support thunks and which do not.
-     So all rules have to; at least if they want to play nicely with arbitary AD systems.
+     So all rules have to; at least if they want to play nicely with arbitrary AD systems.
      Luckily it is not hard: much of the time they will duck-type as the object they wrap.
      If not, then just add a [`unthunk`](@ref) after the start of your pullback.
      (Even when they do duck-type, if they are used multiple times then unthunking at the start will prevent them from being recomputed.)
