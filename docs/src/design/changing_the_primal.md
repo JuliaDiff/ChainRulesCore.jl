@@ -240,7 +240,7 @@ pullback_at(pb::PullbackMemory{typeof(σ)}, ȳ) = ȳ * pb.y / (1 + pb.ex)
 That now looks much simpler; `pullback_at` only ever has 2 arguments.
 
 One way we could make it nicer to use is by making `PullbackMemory` a callable object.
-Conceptually the `PullbackMemory` is a fixed thing it the contents of the tape for a particular operation.
+Conceptually, for a particular evaluation of an operation, the `PullbackMemory` is fixed.
 It is fully determined by the end of the primal pass.
 The during the gradient (reverse) pass the `PullbackMemory` is used to successively compute the `ȳ`  argument.
 So it makes sense to make `PullbackMemory` a callable object that acts on the sensitivity.
