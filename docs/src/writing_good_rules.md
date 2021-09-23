@@ -28,6 +28,9 @@ julia> rrule(foo, 2)
 ==#
 ```
 
+While this is more verbose, it ensures that if an error is thrown during the `pullback` the [`gensym`](https://docs.julialang.org/en/v1/base/base/#Base.gensym) name of the local function will include the name you gave it.
+This makes it a lot simpler to debug from the stacktrace.
+
 ## Use `ZeroTangent()` as the return value
 
 The `ZeroTangent()` object exists as an alternative to directly returning `0` or `zeros(n)`.
@@ -101,6 +104,18 @@ function rrule(::typeof(*), A::AbstractMatrix, B::AbstractMatrix)
     return A * B, times_pullback
 end
 ```
+
+!!! note "It is often good to `@thunk` your projections"
+    The above example is potentially a good place for using a [`@thunk`](@ref).
+    This is not required, but can in some cases be more computationally efficient, see [Use `Thunk`s appropriately](@ref).
+    When combining thunks and projections, `@thunk()` must be the outermost call.
+
+    A more optimized implementation of the matrix-matrix multiplication example would have
+    ```julia
+    times_pullback(ȳ) = NoTangent(), @thunk(project_A(ȳ * B')), @thunk(project_B(A' * ȳ))
+    ```
+    within the `rrule`. This defers both the evaluation of the product rule and
+    the projection until(/if) the tangent gets used.
 
 ## Structs: constructors and functors
 
@@ -230,9 +245,9 @@ A thunk (either a [`Thunk`](@ref), or a [`InplaceableThunk`](@ref)), represents 
 They can be thought of as a wrapper of the value the computation returns.
 In this sense they wrap either a natural or structural tangent.
 
-!!! warning "You should to support AbstractThunk inputs even if you don't use thunks"
+!!! warning "You should support AbstractThunk inputs even if you don't use thunks"
      Unfortunately the AD sytems do not know which rules support thunks and which do not.
-     So all rules have to; at least if they want to play nice with arbitary AD systems.
+     So all rules have to; at least if they want to play nicely with arbitrary AD systems.
      Luckily it is not hard: much of the time they will duck-type as the object they wrap.
      If not, then just add a [`unthunk`](@ref) after the start of your pullback.
      (Even when they do duck-type, if they are used multiple times then unthunking at the start will prevent them from being recomputed.)
@@ -247,23 +262,22 @@ In this sense they wrap either a natural or structural tangent.
 
 ## Use `@not_implemented` appropriately
 
-One can use [`@not_implemented`](@ref) to mark missing differentials.
-This is helpful if the function has multiple inputs or outputs, and one has worked out analytically and implemented some but not all differentials.
+You can use [`@not_implemented`](@ref) to mark missing differentials.
+This is helpful if the function has multiple inputs or outputs, and you have worked out analytically and implemented some but not all differentials.
 
 It is recommended to include a link to a GitHub issue about the missing differential in the debugging information:
 ```julia
 @not_implemented(
-"""
-derivatives of Bessel functions with respect to the order are not implemented:
-https://github.com/JuliaMath/SpecialFunctions.jl/issues/160
-"""
+    """
+    derivatives of Bessel functions with respect to the order are not implemented:
+    https://github.com/JuliaMath/SpecialFunctions.jl/issues/160
+    """
 )
 ```
 
 Do not use `@not_implemented` if the differential does not exist mathematically (use `NoTangent()` instead).
 
-While this is more verbose, it ensures that if an error is thrown during the `pullback` the [`gensym`](https://docs.julialang.org/en/v1/base/base/#Base.gensym) name of the local function will include the name you gave it.
-This makes it a lot simpler to debug from the stacktrace.
+Note: [ChainRulesTestUtils.jl](https://github.com/JuliaDiff/ChainRulesTestUtils.jl) marks `@not_implemented` differentials as "test broken".
 
 ## Use rule definition tools
 
@@ -387,7 +401,7 @@ Take a look at the documentation or the existing [ChainRules.jl](https://github.
 
 !!! warning
     Don't use analytical derivations for derivatives in the tests.
-    Those are what you use to define the rules, and so can not be confidently used in the test.
+    Those are what you use to define the rules, and so cannot be confidently used in the test.
     If you misread/misunderstood them, then your tests/implementation will have the same mistake.
     Use finite differencing methods instead, as they are based on the primal computation.
 
@@ -401,10 +415,10 @@ In principle, a perfect AD system only needs rules for basic operations and can 
 In practice, performance needs to be considered as well.
 
 Some functions use `ccall` internally, for example [`^`](https://github.com/JuliaLang/julia/blob/v1.5.3/base/math.jl#L886).
-These functions can not be differentiated through by AD systems, and need custom rules.
+These functions cannot be differentiated through by AD systems, and need custom rules.
 
 Other functions can in principle be differentiated through by an AD system, but there exists a mathematical insight that can dramatically improve the computation of the derivative.
-An example is numerical integration, where writing a rule removes the need to perform AD through numerical integration.
+An example is numerical integration, where writing a rule implementing the [fundamental theorem of calculus](https://en.wikipedia.org/wiki/Fundamental_theorem_of_calculus) removes the need to perform AD through numerical integration.
 
 Furthermore, AD systems make different trade-offs in performance due to their design.
 This means that a certain rule will help one AD system, but not improve (and also not harm) another.
@@ -416,7 +430,7 @@ This may be resolved in the future by [allowing AD systems to opt-in or opt-out 
 
 ### Patterns that need rules in [Zygote.jl](https://github.com/FluxML/Zygote.jl)
 
-There are a few classes of functions that Zygote can not differentiate through.
+There are a few classes of functions that Zygote cannot differentiate through.
 Custom rules will need to be written for these to make AD work.
 
 Other patterns can be AD'ed through, but the backward pass performance can be greatly improved by writing a rule.
