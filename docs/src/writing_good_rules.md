@@ -96,11 +96,23 @@ function rrule(::typeof(*), A::AbstractMatrix, B::AbstractMatrix)
     function times_pullback(ȳ)
         dA = ȳ * B'
         dB = A' * ȳ
-        return NoTangent(), @thunk(project_A(dA)), @thunk(project_B(dB))
+        return NoTangent(), project_A(dA), project_B(dB)
     end
     return A * B, times_pullback
 end
 ```
+
+!!! note "It is often good to `@thunk` your projections"
+    The above example is potentially a good place for using a [`@thunk`](@ref).
+    This is not required, but can in some cases be more computationally efficient, see [Use `Thunk`s appropriately](@ref).
+    When combining thunks and projections, `@thunk()` must be the outermost call.
+
+    A more optimized implementation of the matrix-matrix multiplication example would have
+    ```julia
+    times_pullback(ȳ) = NoTangent(), @thunk(project_A(ȳ * B')), @thunk(project_B(A' * ȳ))
+    ```
+    within the `rrule`. This defers both the evaluation of the product rule and
+    the projection until(/if) the tangent gets used.
 
 ## Structs: constructors and functors
 
