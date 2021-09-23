@@ -262,21 +262,22 @@ In this sense they wrap either a natural or structural tangent.
 
 ## Use `@not_implemented` appropriately
 
-One can use [`@not_implemented`](@ref) to mark missing differentials.
-This is helpful if the function has multiple inputs or outputs, and one has worked out analytically and implemented some but not all differentials.
+You can use [`@not_implemented`](@ref) to mark missing differentials.
+This is helpful if the function has multiple inputs or outputs, and you have worked out analytically and implemented some but not all differentials.
 
 It is recommended to include a link to a GitHub issue about the missing differential in the debugging information:
 ```julia
 @not_implemented(
-"""
-derivatives of Bessel functions with respect to the order are not implemented:
-https://github.com/JuliaMath/SpecialFunctions.jl/issues/160
-"""
+    """
+    derivatives of Bessel functions with respect to the order are not implemented:
+    https://github.com/JuliaMath/SpecialFunctions.jl/issues/160
+    """
 )
 ```
 
 Do not use `@not_implemented` if the differential does not exist mathematically (use `NoTangent()` instead).
 
+Note: [ChainRulesTestUtils.jl](https://github.com/JuliaDiff/ChainRulesTestUtils.jl) marks `@not_implemented` differentials as "test broken".
 
 ## Use rule definition tools
 
