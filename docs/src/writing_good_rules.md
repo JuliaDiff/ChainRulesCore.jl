@@ -401,7 +401,7 @@ Take a look at the documentation or the existing [ChainRules.jl](https://github.
 
 !!! warning
     Don't use analytical derivations for derivatives in the tests.
-    Those are what you use to define the rules, and so can not be confidently used in the test.
+    Those are what you use to define the rules, and so cannot be confidently used in the test.
     If you misread/misunderstood them, then your tests/implementation will have the same mistake.
     Use finite differencing methods instead, as they are based on the primal computation.
 
@@ -415,7 +415,7 @@ In principle, a perfect AD system only needs rules for basic operations and can 
 In practice, performance needs to be considered as well.
 
 Some functions use `ccall` internally, for example [`^`](https://github.com/JuliaLang/julia/blob/v1.5.3/base/math.jl#L886).
-These functions can not be differentiated through by AD systems, and need custom rules.
+These functions cannot be differentiated through by AD systems, and need custom rules.
 
 Other functions can in principle be differentiated through by an AD system, but there exists a mathematical insight that can dramatically improve the computation of the derivative.
 An example is numerical integration, where writing a rule removes the need to perform AD through numerical integration.
@@ -430,7 +430,7 @@ This may be resolved in the future by [allowing AD systems to opt-in or opt-out 
 
 ### Patterns that need rules in [Zygote.jl](https://github.com/FluxML/Zygote.jl)
 
-There are a few classes of functions that Zygote can not differentiate through.
+There are a few classes of functions that Zygote cannot differentiate through.
 Custom rules will need to be written for these to make AD work.
 
 Other patterns can be AD'ed through, but the backward pass performance can be greatly improved by writing a rule.
