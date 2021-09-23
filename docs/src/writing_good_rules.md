@@ -28,6 +28,9 @@ julia> rrule(foo, 2)
 ==#
 ```
 
+While this is more verbose, it ensures that if an error is thrown during the `pullback` the [`gensym`](https://docs.julialang.org/en/v1/base/base/#Base.gensym) name of the local function will include the name you gave it.
+This makes it a lot simpler to debug from the stacktrace.
+
 ## Use `ZeroTangent()` as the return value
 
 The `ZeroTangent()` object exists as an alternative to directly returning `0` or `zeros(n)`.
@@ -274,8 +277,6 @@ https://github.com/JuliaMath/SpecialFunctions.jl/issues/160
 
 Do not use `@not_implemented` if the differential does not exist mathematically (use `NoTangent()` instead).
 
-While this is more verbose, it ensures that if an error is thrown during the `pullback` the [`gensym`](https://docs.julialang.org/en/v1/base/base/#Base.gensym) name of the local function will include the name you gave it.
-This makes it a lot simpler to debug from the stacktrace.
 
 ## Use rule definition tools
 
