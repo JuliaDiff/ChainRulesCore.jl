@@ -418,7 +418,7 @@ Some functions use `ccall` internally, for example [`^`](https://github.com/Juli
 These functions cannot be differentiated through by AD systems, and need custom rules.
 
 Other functions can in principle be differentiated through by an AD system, but there exists a mathematical insight that can dramatically improve the computation of the derivative.
-An example is numerical integration, where writing a rule removes the need to perform AD through numerical integration.
+An example is numerical integration, where writing a rule implementing the [fundamental theorem of calculus](https://en.wikipedia.org/wiki/Fundamental_theorem_of_calculus) removes the need to perform AD through numerical integration.
 
 Furthermore, AD systems make different trade-offs in performance due to their design.
 This means that a certain rule will help one AD system, but not improve (and also not harm) another.
