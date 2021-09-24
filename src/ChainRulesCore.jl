@@ -32,9 +32,8 @@ include("projection.jl")
 include("config.jl")
 include("rules.jl")
 include("rule_definition_tools.jl")
+include("ignore_gradients.jl")
 
 include("deprecated.jl")
-
-include("utils.jl")
 
 end # module
