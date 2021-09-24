@@ -8,20 +8,20 @@ using SparseArrays
 using Test
 
 @testset "ChainRulesCore" begin
-    #@testset "differentials" begin
-    #    include("tangent_types/abstract_zero.jl")
-    #    include("tangent_types/thunks.jl")
-    #    include("tangent_types/tangent.jl")
-    #    include("tangent_types/notimplemented.jl")
-    #end
+    @testset "differentials" begin
+        include("tangent_types/abstract_zero.jl")
+        include("tangent_types/thunks.jl")
+        include("tangent_types/tangent.jl")
+        include("tangent_types/notimplemented.jl")
+    end
 
-    #include("accumulation.jl")
-    #include("projection.jl")
+    include("accumulation.jl")
+    include("projection.jl")
 
-    #include("rules.jl")
-    #include("rule_definition_tools.jl")
-    #include("config.jl")
+    include("rules.jl")
+    include("rule_definition_tools.jl")
+    include("config.jl")
     include("ignore_gradients.jl")
 
-    #include("deprecated.jl")
+    include("deprecated.jl")
 end
