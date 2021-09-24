@@ -46,6 +46,12 @@ Private = false
 ProjectTo
 ```
 
+## Ignoring gradients
+```@docs
+ignore_gradients
+@ignore_gradients
+```
+
 ## Internal
 ```@docs
 ChainRulesCore.AbstractTangent
