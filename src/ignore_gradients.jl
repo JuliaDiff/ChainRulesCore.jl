@@ -9,7 +9,8 @@ closure. The forward pass is executed normally.
 Using this incorrectly, for example by including calculations in the closure, could lead
 to incorrect gradients. A possible use case is logging of quantities in the forward pass.
 """
-ignore_gradients(f) = f()
+ignore_gradients(f::Function) = f()
+ignore_gradients(x) = x
 
 @non_differentiable ignore_gradients(f)
 
