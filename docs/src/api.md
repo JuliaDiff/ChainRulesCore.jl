@@ -48,8 +48,8 @@ ProjectTo
 
 ## Ignoring gradients
 ```@docs
-ignore_gradients
-@ignore_gradients
+ignore_derivatives
+@ignore_derivatives
 ```
 
 ## Internal
