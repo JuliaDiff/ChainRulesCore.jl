@@ -5,9 +5,9 @@
 There exists code that is not meant to be differentiated through, for example logging.
 In some cases, AD systems might work perfectly well with that code, but in others they might not.
 A convenience function `ignore_gradients` is provided to get around this issue.
-It captures the functionality of both `Zygote.ignore` and `Zygote.dropgrad`
+It captures the functionality of both `Zygote.ignore` and `Zygote.dropgrad`.
 
-For example, Zygote will break if you try to store intermediate values like so because it does not support mutation.
+For example, Zygote does not support mutation, so it will break if you try to store intermediate values as in the following example:
 ```julia
 somes = []
 things = []

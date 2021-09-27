@@ -11,7 +11,8 @@ ignore_gradients() do
 end
 ```
 
-Using this incorrectly could lead to incorrect gradients. E.g.
+Using this incorrectly could lead to incorrect gradients.
+For example, the following function will have zero gradients with respect to its argument:
 ```julia
 function wrong_grads(x)
     y = ones(3)
@@ -31,7 +32,7 @@ Tells the AD system to ignore the gradients of the argument. Can be used to avoi
 unnecessary computation of gradients.
 
 ```julia
-ignore_gradient(x) * w
+ignore_gradients(x) * w
 ```
 """
 ignore_gradients(x) = x
@@ -41,7 +42,7 @@ ignore_gradients(x) = x
 """
     @ignore_gradients (...)
 
-Tell the AD system to ignore the expression. Equivalent to `ignore_gradients() do (...) end`.
+Tells the AD system to ignore the expression. Equivalent to `ignore_gradients() do (...) end`.
 """
 macro ignore_gradients(ex)
     return :(ChainRulesCore.ignore_gradients() do
