@@ -41,3 +41,6 @@ It is also possible to use this on individual objects, e.g.
 ignore_gradients(a) + b
 ```
 will ignore the gradients for `a` only.
+
+Passing in instances of functors (callable structs), `ignore_gradients(functor)`, will make them behave like normal structs, i.e. propagate without being called and dropping their gradients.
+If you want to call a functor in the primal computation, wrap it in a closure: `ignore_gradients(() -> functor())`
