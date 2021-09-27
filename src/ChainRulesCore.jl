@@ -13,6 +13,7 @@ export frule_via_ad, rrule_via_ad
 export @non_differentiable, @opt_out, @scalar_rule, @thunk, @not_implemented
 export ProjectTo, canonicalize, unthunk  # differential operations
 export add!!  # gradient accumulation operations
+export ignore_derivatives, @ignore_derivatives
 # differentials
 export Tangent, NoTangent, InplaceableThunk, Thunk, ZeroTangent, AbstractZero, AbstractThunk
 
@@ -32,6 +33,7 @@ include("projection.jl")
 include("config.jl")
 include("rules.jl")
 include("rule_definition_tools.jl")
+include("ignore_derivatives.jl")
 
 include("deprecated.jl")
 
