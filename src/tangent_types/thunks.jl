@@ -59,12 +59,41 @@ LinearAlgebra.UpperTriangular(a::AbstractThunk) = UpperTriangular(unthunk(a))
 LinearAlgebra.Symmetric(a::AbstractThunk, uplo=:U) = Symmetric(unthunk(a), uplo)
 LinearAlgebra.Hermitian(a::AbstractThunk, uplo=:U) = Hermitian(unthunk(a), uplo)
 
-function LinearAlgebra.diagm(kv::Pair{<:Integer,<:AbstractThunk}...)
-    return diagm((k => unthunk(v) for (k, v) in kv)...)
+# diagm: not we only dispatch if occurs in first three positions do a few positions,
+# since we will incur type-piracy if we were to  unthunk any mix of thunk and nonthunked 
+# Pairs. In practice using more than 3 is rare. and used can always manually if needed.
+# Basically below we are generating dispatches for each mix of pairs of either
+# AbstractVector or AbstractThunk, for first 3 positions.
+"`unthunk`s the value part of a series of key-value pairs"
+_unthunk_vals(kvs::Pair...) = (k => unthunk(v) for (k, v) in kvs)
+for num_args in 1:3
+    for swaps in Iterators.product(fill((true,false), num_args)...)
+        any(swaps) || continue  # this should hit default
+        arg_names = Symbol.(:kv, 1:num_args)
+        args_sig = map(arg_names, swaps) do name, swap
+            if swap
+                :($name :: Pair{<:Integer,<:AbstractThunk})
+            else
+                :($name :: Pair{<:Integer,<:AbstractVector})
+            end
+        end
+        @eval function LinearAlgebra.diagm(
+            $(args_sig...),
+            kvs::Union{Pair{<:Integer,<:AbstractThunk},Pair{<:Integer,<:AbstractVector}}...
+        )
+            return diagm(_unthunk_vals($(arg_names...), kvs...)...)
+        end
+        @eval function LinearAlgebra.diagm(
+            m::Integer, n::Integer,
+            $(args_sig...),
+            kvs::Union{Pair{<:Integer,<:AbstractThunk},Pair{<:Integer,<:AbstractVector}}...
+        )
+            return diagm(m, n, _unthunk_vals($(arg_names...), kvs...)...)
+        end
+    end
 end
-function LinearAlgebra.diagm(m, n, kv::Pair{<:Integer,<:AbstractThunk}...)
-    return diagm(m, n, (k => unthunk(v) for (k, v) in kv)...)
-end
+
+
 LinearAlgebra.tril(a::AbstractThunk) = tril(unthunk(a))
 LinearAlgebra.tril(a::AbstractThunk, k) = tril(unthunk(a), k)
 LinearAlgebra.triu(a::AbstractThunk) = triu(unthunk(a))

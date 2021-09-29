@@ -125,8 +125,12 @@
     @testset "LinearAlgebra" begin
         v = [1.0, 2.0, 3.0]
         tv = @thunk(v)
+        v2 = [10.0, 20.0]
+        tv2 = @thunk(v2)
         a = [1.0 2.0; 3.0 4.0]
         t = @thunk(a)
+
+        
         @test Array(a) == Array(t)
         @test Matrix(a) == Matrix(t)
         @test Diagonal(a) == Diagonal(t)
@@ -135,10 +139,24 @@
         @test Symmetric(a) == Symmetric(t)
         @test Hermitian(a) == Hermitian(t)
 
+        @test diagm(0=>v) == diagm(0=>tv)
+        @test diagm(0=>v, 1=>v2) == diagm(0=>tv, 1=>tv2)
+        @test diagm(0=>v, 1=>v2) == diagm(0=>v, 1=>tv2)
+        @test diagm(0=>v, 1=>v2, -1=>v2) == diagm(0=>v, 1=>v2, -1=>tv2)
+        # Check against accidential type piracy
+        # https://github.com/JuliaDiff/ChainRulesCore.jl/issues/472
+        
+        @test Base.which(diagm, Tuple{}()).module != ChainRulesCore
         if VERSION >= v"1.2"
-            @test diagm(0 => v) == diagm(0 => tv)
-            @test diagm(3, 4, 0 => v) == diagm(3, 4, 0 => tv)
+            @test diagm(3, 4, 0=>v) == diagm(3, 4, 0=>tv)          
+            @test diagm(3, 4, 0=>v, 1=>tv2) == diagm(3, 4, 0=>tv, 1=>tv2)
+            @test diagm(3, 4, 0=>v, 1=>tv2) == diagm(3, 4, 0=>v, 1=>tv2)           
+            @test diagm(3, 4, 0=>v, 1=>v2, -1=>v2) == diagm(3, 4, 0=>v, 1=>v2, -1=>tv2)
+            # Check against accidential type piracy
+            # https://github.com/JuliaDiff/ChainRulesCore.jl/issues/472
+            @test Base.which(diagm, Tuple{Int, Int}).module != ChainRulesCore
         end
+
         @test tril(a) == tril(t)
         @test tril(a, 1) == tril(t, 1)
         @test triu(a) == triu(t)
@@ -178,5 +196,7 @@
 
         @test scal!(2, 2.0, v, 1) == scal!(2, @thunk(2.0), v, 1)
         @test_throws MutateThunkException LAPACK.trsyl!('C', 'C', m, m, @thunk(m))
+
+        
     end
 end
