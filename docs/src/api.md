@@ -10,7 +10,10 @@ Private = false
 ## Rule Definition Tools
 ```@autodocs
 Modules = [ChainRulesCore]
-Pages = ["rule_definition_tools.jl"]
+Pages = [
+    "rule_definition_tools.jl",
+    "utils.jl",
+]
 Private = false
 ```
 

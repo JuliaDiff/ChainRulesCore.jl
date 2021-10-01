@@ -87,3 +87,6 @@ end
     There are various notions of complex derivatives (holomorphic and Wirtinger derivatives, Jacobians, gradients, etc.) which differ in subtle but important ways.
     The goal of ChainRules is to provide the basic differentiation rules upon which these derivatives can be implemented, but it does not implement these derivatives itself.
     It is recommended that you carefully check how the above definitions of `frule` and `rrule` translate into your specific notion of complex derivative, since getting this wrong will quietly give you wrong results.
+
+!!! note
+    If you implement `rrule` for a non-holomorphic function, [`realconjtimes`](@ref) and [`imagconjtimes`](@ref) can be useful.
