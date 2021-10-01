@@ -22,6 +22,7 @@ using Test
     include("rule_definition_tools.jl")
     include("config.jl")
     include("ignore_derivatives.jl")
+    include("utils.jl")
 
     include("deprecated.jl")
 end
