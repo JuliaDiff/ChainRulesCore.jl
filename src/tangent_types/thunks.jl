@@ -59,12 +59,17 @@ LinearAlgebra.UpperTriangular(a::AbstractThunk) = UpperTriangular(unthunk(a))
 LinearAlgebra.Symmetric(a::AbstractThunk, uplo=:U) = Symmetric(unthunk(a), uplo)
 LinearAlgebra.Hermitian(a::AbstractThunk, uplo=:U) = Hermitian(unthunk(a), uplo)
 
-function LinearAlgebra.diagm(kv::Pair{<:Integer,<:AbstractThunk}...)
-    return diagm((k => unthunk(v) for (k, v) in kv)...)
+function LinearAlgebra.diagm(
+    kv::Pair{<:Integer,<:AbstractThunk}, kvs::Pair{<:Integer,<:AbstractThunk}...
+)
+    return diagm((k => unthunk(v) for (k, v) in (kv, kvs...))...)
 end
-function LinearAlgebra.diagm(m, n, kv::Pair{<:Integer,<:AbstractThunk}...)
-    return diagm(m, n, (k => unthunk(v) for (k, v) in kv)...)
+function LinearAlgebra.diagm(
+    m, n, kv::Pair{<:Integer,<:AbstractThunk}, kvs::Pair{<:Integer,<:AbstractThunk}...
+)
+    return diagm(m, n, (k => unthunk(v) for (k, v) in (kv, kvs...))...) 
 end
+
 LinearAlgebra.tril(a::AbstractThunk) = tril(unthunk(a))
 LinearAlgebra.tril(a::AbstractThunk, k) = tril(unthunk(a), k)
 LinearAlgebra.triu(a::AbstractThunk) = triu(unthunk(a))
