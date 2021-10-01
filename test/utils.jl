@@ -8,24 +8,29 @@ end
 Base.real(x::CustomComplex) = x.re
 Base.imag(x::CustomComplex) = x.im
 
-Base.conj(x::CustomComplex) = CustomComplex(x.re, -x.im)
-
-Base.:*(a::CustomComplex, b::Number) = CustomComplex(reim((a.re + a.im * im) * b)...)
-Base.:*(a::Number, b::CustomComplex) = b * a
-function Base.:*(a::CustomComplex, b::CustomComplex)
-    return CustomComplex(reim((a.re + a.im * im) * (b.re + b.im * im))...)
+function LinearAlgebra.dot(a::CustomComplex, b::Number)
+    return CustomComplex(reim((a.re - a.im * im) * b)...)
+end
+function LinearAlgebra.dot(a::Number, b::CustomComplex)
+    return CustomComplex(reim(conj(a) * (b.re + b.im * im))...)
+end
+function LinearAlgebra.dot(a::CustomComplex, b::CustomComplex)
+    return CustomComplex(reim((a.re - a.im * im) * (b.re + b.im * im))...)
 end
 
 @testset "utils.jl" begin
-    @testset "conjtimes" begin
-        inputs = (randn(), randn(ComplexF64), CustomComplex(reim(randn(ComplexF64))...))
-        for x in inputs, y in inputs
-            @test realconjtimes(x, y) == real(conj(x) * y)
+    @testset "dot" begin
+        scalars = (randn(), randn(ComplexF64), CustomComplex(reim(randn(ComplexF64))...))
+        arrays = (randn(10), randn(ComplexF64, 10))
+        for inputs in (scalars, arrays)
+            for x in inputs, y in inputs
+                @test realdot(x, y) == real(dot(x, y))
 
-            if x isa Real && y isa Real
-                @test imagconjtimes(x, y) === ZeroTangent()
-            else
-                @test imagconjtimes(x, y) == imag(conj(x) * y)
+                if eltype(x) <: Real && eltype(y) <: Real
+                    @test imagdot(x, y) === ZeroTangent()
+                else
+                    @test imagdot(x, y) == imag(dot(x, y))
+                end
             end
         end
     end

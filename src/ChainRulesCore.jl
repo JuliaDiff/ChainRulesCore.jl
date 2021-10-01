@@ -17,7 +17,7 @@ export ignore_derivatives, @ignore_derivatives
 # differentials
 export Tangent, NoTangent, InplaceableThunk, Thunk, ZeroTangent, AbstractZero, AbstractThunk
 # helpers for rules with complex numbers
-export realconjtimes, imagconjtimes
+export realdot, imagdot
 
 include("compat.jl")
 include("debug_mode.jl")

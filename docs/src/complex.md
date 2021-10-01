@@ -89,4 +89,4 @@ end
     It is recommended that you carefully check how the above definitions of `frule` and `rrule` translate into your specific notion of complex derivative, since getting this wrong will quietly give you wrong results.
 
 !!! note
-    If you implement `rrule` for a non-holomorphic function, [`realconjtimes`](@ref) and [`imagconjtimes`](@ref) can be useful.
+    If you implement `rrule` for a non-holomorphic function, [`realdot`](@ref) and [`imagdot`](@ref) can be useful.
