@@ -13,6 +13,7 @@ See also: [`imagdot`](@ref)
 @inline realdot(x::Real, y::Complex) = x * real(y)
 @inline realdot(x::Complex, y::Real) = real(x) * y
 @inline realdot(x::Real, y::Real) = x * y
+@inline realdot(x::AbstractArray{<:Real}, y::AbstractArray{<:Real}) = dot(x, y)
 
 """
     imagdot(x, y)
