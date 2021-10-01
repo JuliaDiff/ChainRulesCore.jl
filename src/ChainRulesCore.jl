@@ -16,6 +16,8 @@ export add!!  # gradient accumulation operations
 export ignore_derivatives, @ignore_derivatives
 # differentials
 export Tangent, NoTangent, InplaceableThunk, Thunk, ZeroTangent, AbstractZero, AbstractThunk
+# helpers for rules with complex numbers
+export realconjtimes, imagconjtimes
 
 include("compat.jl")
 include("debug_mode.jl")
@@ -34,6 +36,7 @@ include("config.jl")
 include("rules.jl")
 include("rule_definition_tools.jl")
 include("ignore_derivatives.jl")
+include("utils.jl")
 
 include("deprecated.jl")
 
