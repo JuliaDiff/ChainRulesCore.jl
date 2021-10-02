@@ -16,54 +16,37 @@ Notice:
 
 # we propagate `NotImplemented` (e.g., in `@scalar_rule`)
 # this requires the following definitions (see also #337)
-Base.:+(x::NotImplemented, ::ZeroTangent) = x
-Base.:+(::ZeroTangent, x::NotImplemented) = x
 Base.:+(x::NotImplemented, ::NotImplemented) = x
-Base.:*(::NotImplemented, ::ZeroTangent) = ZeroTangent()
-Base.:*(::ZeroTangent, ::NotImplemented) = ZeroTangent()
-for T in (:NoTangent, :AbstractThunk, :Tangent, :Any)
+Base.:*(x::NotImplemented, ::NotImplemented) = x
+LinearAlgebra.dot(x::NotImplemented, ::NotImplemented) = x
+# `NotImplemented` always "wins" +
+for T in (:ZeroTangent, :NoTangent, :AbstractThunk, :Tangent, :Any)
     @eval Base.:+(x::NotImplemented, ::$T) = x
     @eval Base.:+(::$T, x::NotImplemented) = x
-    @eval Base.:*(x::NotImplemented, ::$T) = x
 end
-Base.muladd(x::NotImplemented, y, z) = x
-Base.muladd(::NotImplemented, ::ZeroTangent, z) = z
-Base.muladd(x::NotImplemented, y, ::ZeroTangent) = x
-Base.muladd(::NotImplemented, ::ZeroTangent, ::ZeroTangent) = ZeroTangent()
-Base.muladd(x, y::NotImplemented, z) = y
-Base.muladd(::ZeroTangent, ::NotImplemented, z) = z
-Base.muladd(x, y::NotImplemented, ::ZeroTangent) = y
-Base.muladd(::ZeroTangent, ::NotImplemented, ::ZeroTangent) = ZeroTangent()
-Base.muladd(x, y, z::NotImplemented) = z
-Base.muladd(::ZeroTangent, y, z::NotImplemented) = z
-Base.muladd(x, ::ZeroTangent, z::NotImplemented) = z
-Base.muladd(::ZeroTangent, ::ZeroTangent, z::NotImplemented) = z
-Base.muladd(x::NotImplemented, ::NotImplemented, z) = x
-Base.muladd(x::NotImplemented, ::NotImplemented, ::ZeroTangent) = x
-Base.muladd(x::NotImplemented, y, ::NotImplemented) = x
-Base.muladd(::NotImplemented, ::ZeroTangent, z::NotImplemented) = z
-Base.muladd(x, y::NotImplemented, ::NotImplemented) = y
-Base.muladd(::ZeroTangent, ::NotImplemented, z::NotImplemented) = z
-Base.muladd(x::NotImplemented, ::NotImplemented, ::NotImplemented) = x
-LinearAlgebra.dot(::NotImplemented, ::ZeroTangent) = ZeroTangent()
-LinearAlgebra.dot(::ZeroTangent, ::NotImplemented) = ZeroTangent()
+# `NotImplemented` "loses" * and dot against NoTangent and ZeroTangent
+# this can be used to ignore partial derivatives that are not implemented
+for T in (:ZeroTangent, :NoTangent)
+    @eval Base.:*(::NotImplemented, ::$T) = $T()
+    @eval Base.:*(::$T, ::NotImplemented) = $T()
+    @eval LinearAlgebra.dot(::NotImplemented, ::$T) = $T()
+    @eval LinearAlgebra.dot(::$T, ::NotImplemented) = $T()
+end
+# `NotImplemented` "wins" * and dot for other types
+for T in (:AbstractThunk, :Tangent, :Any)
+    @eval Base.:*(x::NotImplemented, ::$T) = x
+    @eval Base.:*(::$T, x::NotImplemented) = x
+    @eval LinearAlgebra.dot(x::NotImplemented, ::$T) = x
+    @eval LinearAlgebra.dot(::$T, x::NotImplemented) = x
+end
 
 # other common operations throw an exception
 Base.:+(x::NotImplemented) = throw(NotImplementedException(x))
 Base.:-(x::NotImplemented) = throw(NotImplementedException(x))
-Base.:-(x::NotImplemented, ::ZeroTangent) = throw(NotImplementedException(x))
-Base.:-(::ZeroTangent, x::NotImplemented) = throw(NotImplementedException(x))
 Base.:-(x::NotImplemented, ::NotImplemented) = throw(NotImplementedException(x))
-Base.:*(x::NotImplemented, ::NotImplemented) = throw(NotImplementedException(x))
-function LinearAlgebra.dot(x::NotImplemented, ::NotImplemented)
-    return throw(NotImplementedException(x))
-end
-for T in (:NoTangent, :AbstractThunk, :Tangent, :Any)
+for T in (:ZeroTangent, :NoTangent, :AbstractThunk, :Tangent, :Any)
     @eval Base.:-(x::NotImplemented, ::$T) = throw(NotImplementedException(x))
     @eval Base.:-(::$T, x::NotImplemented) = throw(NotImplementedException(x))
-    @eval Base.:*(::$T, x::NotImplemented) = throw(NotImplementedException(x))
-    @eval LinearAlgebra.dot(x::NotImplemented, ::$T) = throw(NotImplementedException(x))
-    @eval LinearAlgebra.dot(::$T, x::NotImplemented) = throw(NotImplementedException(x))
 end
 
 Base.:+(::NoTangent, ::NoTangent) = NoTangent()
