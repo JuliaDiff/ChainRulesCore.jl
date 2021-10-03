@@ -16,6 +16,7 @@
             @test ni + a === ni
             @test a + ni === ni
         end
+        @test +ni === ni
         @test ni + ni2 === ni
         @test ni2 + ni === ni2
 
@@ -44,7 +45,6 @@
 
         # unsupported operations
         E = ChainRulesCore.NotImplementedException
-        @test_throws E +ni
         @test_throws E -ni
         for a in (rand(), NoTangent(), ZeroTangent(), true, @thunk(x^2))
             @test_throws E ni - a

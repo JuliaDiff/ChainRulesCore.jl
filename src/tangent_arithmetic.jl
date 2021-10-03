@@ -40,8 +40,8 @@ for T in (:AbstractThunk, :Tangent, :Any)
     @eval LinearAlgebra.dot(::$T, x::NotImplemented) = x
 end
 
-# other common operations throw an exception
-Base.:+(x::NotImplemented) = throw(NotImplementedException(x))
+# subtraction throws an exception: in AD we add tangents but do not subtract them
+# subtraction happens eg. in gradient descent which can't be performed with `NotImplemented`
 Base.:-(x::NotImplemented) = throw(NotImplementedException(x))
 Base.:-(x::NotImplemented, ::NotImplemented) = throw(NotImplementedException(x))
 for T in (:ZeroTangent, :NoTangent, :AbstractThunk, :Tangent, :Any)
