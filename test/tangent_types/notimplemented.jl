@@ -6,13 +6,14 @@
         ni2 = ChainRulesCore.NotImplemented(
             @__MODULE__, LineNumberNode(@__LINE__, @__FILE__), "error2"
         )
-        x, y, z = rand(3)
+        x = rand()
+        thunk = @thunk(x^2)
 
         # conjugate
         @test conj(ni) === ni
 
         # addition
-        for a in (rand(), NoTangent(), ZeroTangent(), true, @thunk(x^2))
+        for a in (true, x, NoTangent(), ZeroTangent(), thunk)
             @test ni + a === ni
             @test a + ni === ni
         end
@@ -21,7 +22,7 @@
         @test ni2 + ni === ni2
 
         # multiplication and dot product
-        for a in (rand(), true, @thunk(x^2))
+        for a in (true, x, thunk)
             @test ni * a === ni
             @test a * ni === ni
             @test dot(ni, a) === ni
@@ -39,20 +40,20 @@
         @test dot(ni2, ni) === ni2
 
         # broadcasting
-        @test ni .* rand() === ni
-        @test rand() .* ni === ni
+        @test ni .* x === ni
+        @test x .* ni === ni
         @test broadcastable(ni) isa Ref{typeof(ni)}
 
         # unsupported operations
         E = ChainRulesCore.NotImplementedException
         @test_throws E -ni
-        for a in (rand(), NoTangent(), ZeroTangent(), true, @thunk(x^2))
+        for a in (true, x, NoTangent(), ZeroTangent(), thunk)
             @test_throws E ni - a
             @test_throws E a - ni
         end
         @test_throws E ni - ni2
-        @test_throws E ni / rand()
-        @test_throws E rand() / ni
+        @test_throws E ni / x
+        @test_throws E x / ni
         @test_throws E ni / ni2
         @test_throws E zero(ni)
         @test_throws E zero(typeof(ni))
