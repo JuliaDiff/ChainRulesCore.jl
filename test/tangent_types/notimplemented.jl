@@ -6,78 +6,54 @@
         ni2 = ChainRulesCore.NotImplemented(
             @__MODULE__, LineNumberNode(@__LINE__, @__FILE__), "error2"
         )
+        x = rand()
+        thunk = @thunk(x^2)
 
-        # supported operations (for `@scalar_rule`)
-        x, y, z = rand(3)
+        # conjugate
         @test conj(ni) === ni
-        @test muladd(ni, y, z) === ni
-        @test muladd(ni, ZeroTangent(), z) == z
-        @test muladd(ni, y, ZeroTangent()) === ni
-        @test muladd(ni, ZeroTangent(), ZeroTangent()) == ZeroTangent()
-        @test muladd(ni, ni2, z) === ni
-        @test muladd(ni, ni2, ZeroTangent()) === ni
-        @test muladd(ni, y, ni2) === ni
-        @test muladd(ni, ZeroTangent(), ni2) === ni2
-        @test muladd(x, ni, z) === ni
-        @test muladd(ZeroTangent(), ni, z) == z
-        @test muladd(x, ni, ZeroTangent()) === ni
-        @test muladd(ZeroTangent(), ni, ZeroTangent()) == ZeroTangent()
-        @test muladd(x, ni, ni2) === ni
-        @test muladd(ZeroTangent(), ni, ni2) === ni2
-        @test muladd(x, y, ni) === ni
-        @test muladd(ZeroTangent(), y, ni) === ni
-        @test muladd(x, ZeroTangent(), ni) === ni
-        @test muladd(ZeroTangent(), ZeroTangent(), ni) === ni
-        @test ni + rand() === ni
-        @test ni + ZeroTangent() === ni
-        @test ni + NoTangent() === ni
-        @test ni + true === ni
-        @test ni + @thunk(x^2) === ni
-        @test rand() + ni === ni
-        @test ZeroTangent() + ni === ni
-        @test NoTangent() + ni === ni
-        @test true + ni === ni
-        @test @thunk(x^2) + ni === ni
+
+        # addition
+        for a in (true, x, NoTangent(), ZeroTangent(), thunk)
+            @test ni + a === ni
+            @test a + ni === ni
+        end
+        @test +ni === ni
         @test ni + ni2 === ni
-        @test ni * rand() === ni
-        @test ni * ZeroTangent() == ZeroTangent()
-        @test ZeroTangent() * ni == ZeroTangent()
-        @test dot(ni, ZeroTangent()) == ZeroTangent()
-        @test dot(ZeroTangent(), ni) == ZeroTangent()
-        @test ni .* rand() === ni
+        @test ni2 + ni === ni2
+
+        # multiplication and dot product
+        for a in (true, x, thunk)
+            @test ni * a === ni
+            @test a * ni === ni
+            @test dot(ni, a) === ni
+            @test dot(a, ni) === ni
+        end
+        for a in (NoTangent(), ZeroTangent())
+            @test ni * a === a
+            @test a * ni === a
+            @test dot(ni, a) === a
+            @test dot(a, ni) === a
+        end
+        @test ni * ni2 === ni
+        @test ni2 * ni === ni2
+        @test dot(ni, ni2) === ni
+        @test dot(ni2, ni) === ni2
+
+        # broadcasting
+        @test ni .* x === ni
+        @test x .* ni === ni
         @test broadcastable(ni) isa Ref{typeof(ni)}
 
         # unsupported operations
         E = ChainRulesCore.NotImplementedException
-        @test_throws E +ni
         @test_throws E -ni
-        @test_throws E ni - rand()
-        @test_throws E ni - ZeroTangent()
-        @test_throws E ni - NoTangent()
-        @test_throws E ni - true
-        @test_throws E ni - @thunk(x^2)
-        @test_throws E rand() - ni
-        @test_throws E ZeroTangent() - ni
-        @test_throws E NoTangent() - ni
-        @test_throws E true - ni
-        @test_throws E @thunk(x^2) - ni
+        for a in (true, x, NoTangent(), ZeroTangent(), thunk)
+            @test_throws E ni - a
+            @test_throws E a - ni
+        end
         @test_throws E ni - ni2
-        @test_throws E rand() * ni
-        @test_throws E NoTangent() * ni
-        @test_throws E true * ni
-        @test_throws E @thunk(x^2) * ni
-        @test_throws E ni * ni2
-        @test_throws E dot(ni, rand())
-        @test_throws E dot(ni, NoTangent())
-        @test_throws E dot(ni, true)
-        @test_throws E dot(ni, @thunk(x^2))
-        @test_throws E dot(rand(), ni)
-        @test_throws E dot(NoTangent(), ni)
-        @test_throws E dot(true, ni)
-        @test_throws E dot(@thunk(x^2), ni)
-        @test_throws E dot(ni, ni2)
-        @test_throws E ni / rand()
-        @test_throws E rand() / ni
+        @test_throws E ni / x
+        @test_throws E x / ni
         @test_throws E ni / ni2
         @test_throws E zero(ni)
         @test_throws E zero(typeof(ni))
