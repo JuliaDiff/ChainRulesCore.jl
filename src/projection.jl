@@ -211,7 +211,7 @@ end
 function (project::ProjectTo{AbstractArray})(dx::AbstractArray{S,M}) where {S,M}
     # First deal with shape. The rule is that we reshape to add or remove trivial dimensions
     # like dx = ones(4,1), where x = ones(4), but throw an error on dx = ones(1,4) etc.
-    dy = if axes(dx) == project.axes
+    dy = if axes(dx) === project.axes
         dx
     else
         for d in 1:max(M, length(project.axes))
