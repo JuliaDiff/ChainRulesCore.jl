@@ -175,11 +175,11 @@ end
         end
 
         @testset "NamedTuples" begin
-            nt1 = (; a = 1.5, b = 0.0)
-            nt2 = (; a = 0.0, b = 2.5)
-            nt_sum = (a = 1.5, b = 2.5)
-            @test (Tangent{typeof(nt1)}(; nt1...) + Tangent{typeof(nt2)}(; nt2...)) ==
-                  Tangent{typeof(nt_sum)}(; nt_sum...)
+            NTTangent(nt) = Tangent{typeof(nt)}(; nt...)
+            t1 = NTTangent((; a = 1.5, b = 0.0))
+            t2 = NTTangent((; a = 0.0, b = 2.5))
+            t_sum = NTTangent((a = 1.5, b = 2.5))
+            @test t1 + t2 == t_sum
         end
 
         @testset "Dicts" begin

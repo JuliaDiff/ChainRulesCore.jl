@@ -583,8 +583,7 @@ function _split_primal_name(primal_name)
 
         primal_name_sig = :(::$Core.Typeof($primal_name))
         return primal_name_sig, primal_name
-        # e.g. (::T)(x, y)
-    elseif Meta.isexpr(primal_name, :(::))
+    elseif Meta.isexpr(primal_name, :(::))  # e.g. (::T)(x, y)
         _primal_name = gensym(Symbol(:instance_, primal_name.args[end]))
         primal_name_sig = Expr(:(::), _primal_name, primal_name.args[end])
         return primal_name_sig, _primal_name
