@@ -131,8 +131,7 @@ ProjectTo(::AbstractZero) = ProjectTo{NoTangent}()  # Any x::Zero in forward pas
 # Also, any explicit construction with fields, where all fields project to zero, itself
 # projects to zero. This simplifies projectors for wrapper types like Diagonal([true, false]).
 const _PZ = ProjectTo{<:AbstractZero}
-ProjectTo{P}(::NamedTuple{T,<:Tuple{_PZ,Vararg{<:_PZ}}}) where {P,T} =
-    ProjectTo{NoTangent}()
+ProjectTo{P}(::NamedTuple{T, <:Tuple{_PZ, Vararg{<:_PZ}}}) where {P,T} = ProjectTo{NoTangent}()
 
 # Tangent
 # We haven't entirely figured out when to convert Tangents to "natural" representations such as
@@ -165,14 +164,12 @@ for T in (Float16, Float32, Float64, ComplexF16, ComplexF32, ComplexF64)
 end
 
 # In these cases we can just `convert` as we know we are dealing with plain and simple types
-(::ProjectTo{T})(dx::AbstractFloat) where {T<:AbstractFloat} = convert(T, dx)
-(::ProjectTo{T})(dx::Integer) where {T<:AbstractFloat} = convert(T, dx)  #needed to avoid ambiguity
+(::ProjectTo{T})(dx::AbstractFloat) where T<:AbstractFloat = convert(T, dx)
+(::ProjectTo{T})(dx::Integer) where T<:AbstractFloat = convert(T, dx)  #needed to avoid ambiguity
 # simple Complex{<:AbstractFloat}} cases
-(::ProjectTo{T})(dx::Complex{<:AbstractFloat}) where {T<:Complex{<:AbstractFloat}} =
-    convert(T, dx)
+(::ProjectTo{T})(dx::Complex{<:AbstractFloat}) where {T<:Complex{<:AbstractFloat}} = convert(T, dx)
 (::ProjectTo{T})(dx::AbstractFloat) where {T<:Complex{<:AbstractFloat}} = convert(T, dx)
-(::ProjectTo{T})(dx::Complex{<:Integer}) where {T<:Complex{<:AbstractFloat}} =
-    convert(T, dx)
+(::ProjectTo{T})(dx::Complex{<:Integer}) where {T<:Complex{<:AbstractFloat}} = convert(T, dx)
 (::ProjectTo{T})(dx::Integer) where {T<:Complex{<:AbstractFloat}} = convert(T, dx)
 
 # Other numbers, including e.g. ForwardDiff.Dual and Symbolics.Sym, should pass through.
@@ -193,7 +190,7 @@ end
 
 # For arrays of numbers, just store one projector:
 function ProjectTo(x::AbstractArray{T}) where {T<:Number}
-    return ProjectTo{AbstractArray}(; element = _eltype_projectto(T), axes = axes(x))
+    return ProjectTo{AbstractArray}(; element=_eltype_projectto(T), axes=axes(x))
 end
 ProjectTo(x::AbstractArray{Bool}) = ProjectTo{NoTangent}()
 
@@ -207,7 +204,7 @@ function ProjectTo(xs::AbstractArray)
         return ProjectTo{NoTangent}()  # short-circuit if all elements project to zero
     else
         # Arrays of arrays come here, and will apply projectors individually:
-        return ProjectTo{AbstractArray}(; elements = elements, axes = axes(xs))
+        return ProjectTo{AbstractArray}(; elements=elements, axes=axes(xs))
     end
 end
 
@@ -217,7 +214,7 @@ function (project::ProjectTo{AbstractArray})(dx::AbstractArray{S,M}) where {S,M}
     dy = if axes(dx) == project.axes
         dx
     else
-        for d = 1:max(M, length(project.axes))
+        for d in 1:max(M, length(project.axes))
             if size(dx, d) != length(get(project.axes, d, 1))
                 throw(_projection_mismatch(project.axes, size(dx)))
             end
@@ -247,11 +244,9 @@ end
 # although really Ref() is probably a better structure.
 function (project::ProjectTo{AbstractArray})(dx::Number) # ... so we restore from numbers
     if !(project.axes isa Tuple{})
-        throw(
-            DimensionMismatch(
-                "array with ndims(x) == $(length(project.axes)) >  0 cannot have dx::Number",
-            ),
-        )
+        throw(DimensionMismatch(
+            "array with ndims(x) == $(length(project.axes)) >  0 cannot have dx::Number",
+        ))
     end
     return fill(project.element(dx))
 end
@@ -259,7 +254,7 @@ end
 function _projection_mismatch(axes_x::Tuple, size_dx::Tuple)
     size_x = map(length, axes_x)
     return DimensionMismatch(
-        "variable with size(x) == $size_x cannot have a gradient with size(dx) == $size_dx",
+        "variable with size(x) == $size_x cannot have a gradient with size(dx) == $size_dx"
     )
 end
 
@@ -273,13 +268,13 @@ function ProjectTo(x::Ref)
     if sub isa ProjectTo{<:AbstractZero}
         return ProjectTo{NoTangent}()
     else
-        return ProjectTo{Ref}(; type = typeof(x), x = sub)
+        return ProjectTo{Ref}(; type=typeof(x), x=sub)
     end
 end
-(project::ProjectTo{Ref})(dx::Tangent{<:Ref}) = Tangent{project.type}(; x = project.x(dx.x))
-(project::ProjectTo{Ref})(dx::Ref) = Tangent{project.type}(; x = project.x(dx[]))
+(project::ProjectTo{Ref})(dx::Tangent{<:Ref}) = Tangent{project.type}(; x=project.x(dx.x))
+(project::ProjectTo{Ref})(dx::Ref) = Tangent{project.type}(; x=project.x(dx[]))
 # Since this works like a zero-array in broadcasting, it should also accept a number:
-(project::ProjectTo{Ref})(dx::Number) = Tangent{project.type}(; x = project.x(dx))
+(project::ProjectTo{Ref})(dx::Number) = Tangent{project.type}(; x=project.x(dx))
 
 #####
 ##### `LinearAlgebra`
@@ -288,7 +283,7 @@ end
 using LinearAlgebra: AdjointAbsVec, TransposeAbsVec, AdjOrTransAbsVec
 
 # Row vectors
-ProjectTo(x::AdjointAbsVec) = ProjectTo{Adjoint}(; parent = ProjectTo(parent(x)))
+ProjectTo(x::AdjointAbsVec) = ProjectTo{Adjoint}(; parent=ProjectTo(parent(x)))
 # Note that while [1 2; 3 4]' isa Adjoint, we use ProjectTo{Adjoint} only to encode AdjointAbsVec.
 # Transposed matrices are, like PermutedDimsArray, just a storage detail,
 # but row vectors behave differently, for example [1,2,3]' * [1,2,3] isa Number
@@ -303,8 +298,7 @@ function (project::ProjectTo{Adjoint})(dx::AbstractArray)
     return adjoint(project.parent(dy))
 end
 
-ProjectTo(x::LinearAlgebra.TransposeAbsVec) =
-    ProjectTo{Transpose}(; parent = ProjectTo(parent(x)))
+ProjectTo(x::LinearAlgebra.TransposeAbsVec) = ProjectTo{Transpose}(; parent=ProjectTo(parent(x)))
 function (project::ProjectTo{Transpose})(dx::LinearAlgebra.AdjOrTransAbsVec)
     return transpose(project.parent(transpose(dx)))
 end
@@ -317,22 +311,21 @@ function (project::ProjectTo{Transpose})(dx::AbstractArray)
 end
 
 # Diagonal
-ProjectTo(x::Diagonal) = ProjectTo{Diagonal}(; diag = ProjectTo(x.diag))
+ProjectTo(x::Diagonal) = ProjectTo{Diagonal}(; diag=ProjectTo(x.diag))
 (project::ProjectTo{Diagonal})(dx::AbstractMatrix) = Diagonal(project.diag(diag(dx)))
 (project::ProjectTo{Diagonal})(dx::Diagonal) = Diagonal(project.diag(dx.diag))
 
 # Symmetric
-for (SymHerm, chk, fun) in
-    ((:Symmetric, :issymmetric, :transpose), (:Hermitian, :ishermitian, :adjoint))
+for (SymHerm, chk, fun) in (
+    (:Symmetric, :issymmetric, :transpose),
+    (:Hermitian, :ishermitian, :adjoint),
+    )
     @eval begin
         function ProjectTo(x::$SymHerm)
             sub = ProjectTo(parent(x))
             # Because the projector stores uplo, ProjectTo(Symmetric(rand(3,3) .> 0)) isn't automatically trivial:
             sub isa ProjectTo{<:AbstractZero} && return sub
-            return ProjectTo{$SymHerm}(;
-                uplo = LinearAlgebra.sym_uplo(x.uplo),
-                parent = sub,
-            )
+            return ProjectTo{$SymHerm}(; uplo=LinearAlgebra.sym_uplo(x.uplo), parent=sub)
         end
         function (project::ProjectTo{$SymHerm})(dx::AbstractArray)
             dy = project.parent(dx)
@@ -345,8 +338,9 @@ for (SymHerm, chk, fun) in
         # not clear how broadly it's worthwhile to try to support this.
         function (project::ProjectTo{$SymHerm})(dx::Diagonal)
             sub = project.parent # this is going to be unhappy about the size
-            sub_one =
-                ProjectTo{project_type(sub)}(; element = sub.element, axes = (sub.axes[1],))
+            sub_one = ProjectTo{project_type(sub)}(;
+                element=sub.element, axes=(sub.axes[1],)
+            )
             return Diagonal(sub_one(dx.diag))
         end
     end
@@ -355,12 +349,13 @@ end
 # Triangular
 for UL in (:UpperTriangular, :LowerTriangular, :UnitUpperTriangular, :UnitLowerTriangular) # UpperHessenberg
     @eval begin
-        ProjectTo(x::$UL) = ProjectTo{$UL}(; parent = ProjectTo(parent(x)))
+        ProjectTo(x::$UL) = ProjectTo{$UL}(; parent=ProjectTo(parent(x)))
         (project::ProjectTo{$UL})(dx::AbstractArray) = $UL(project.parent(dx))
         function (project::ProjectTo{$UL})(dx::Diagonal)
             sub = project.parent
-            sub_one =
-                ProjectTo{project_type(sub)}(; element = sub.element, axes = (sub.axes[1],))
+            sub_one = ProjectTo{project_type(sub)}(;
+                element=sub.element, axes=(sub.axes[1],)
+            )
             return Diagonal(sub_one(dx.diag))
         end
     end
@@ -397,7 +392,7 @@ end
 # another strategy is just to use the AbstractArray method
 function ProjectTo(x::Tridiagonal{T}) where {T<:Number}
     notparent = invoke(ProjectTo, Tuple{AbstractArray{T2}} where {T2<:Number}, x)
-    return ProjectTo{Tridiagonal}(; notparent = notparent)
+    return ProjectTo{Tridiagonal}(; notparent=notparent)
 end
 function (project::ProjectTo{Tridiagonal})(dx::AbstractArray)
     dy = project.notparent(dx)
@@ -416,9 +411,7 @@ using SparseArrays
 
 function ProjectTo(x::SparseVector{T}) where {T<:Number}
     return ProjectTo{SparseVector}(;
-        element = ProjectTo(zero(T)),
-        nzind = x.nzind,
-        axes = axes(x),
+        element=ProjectTo(zero(T)), nzind=x.nzind, axes=axes(x)
     )
 end
 function (project::ProjectTo{SparseVector})(dx::AbstractArray)
@@ -457,11 +450,11 @@ end
 
 function ProjectTo(x::SparseMatrixCSC{T}) where {T<:Number}
     return ProjectTo{SparseMatrixCSC}(;
-        element = ProjectTo(zero(T)),
-        axes = axes(x),
-        rowval = rowvals(x),
-        nzranges = nzrange.(Ref(x), axes(x, 2)),
-        colptr = x.colptr,
+        element=ProjectTo(zero(T)),
+        axes=axes(x),
+        rowval=rowvals(x),
+        nzranges=nzrange.(Ref(x), axes(x, 2)),
+        colptr=x.colptr,
     )
 end
 # You need not really store nzranges, you can get them from colptr -- TODO
@@ -481,7 +474,7 @@ function (project::ProjectTo{SparseMatrixCSC})(dx::AbstractArray)
         for i in project.nzranges[col]
             row = project.rowval[i]
             val = dy[row, col]
-            nzval[k+=1] = project.element(val)
+            nzval[k += 1] = project.element(val)
         end
     end
     m, n = map(length, project.axes)

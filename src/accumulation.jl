@@ -26,7 +26,7 @@ end
 
 add!!(x::AbstractArray, y::Thunk) = add!!(x, unthunk(y))
 
-function add!!(x::AbstractArray{<:Any,N}, y::AbstractArray{<:Any,N}) where {N}
+function add!!(x::AbstractArray{<:Any, N}, y::AbstractArray{<:Any, N}) where N
     return if is_inplaceable_destination(x)
         x .+= y
     else
@@ -75,8 +75,8 @@ end
 
 struct BadInplaceException <: Exception
     ithunk::InplaceableThunk
-    accumuland::Any
-    returned_value::Any
+    accumuland
+    returned_value
 end
 
 function Base.showerror(io::IO, err::BadInplaceException)
@@ -88,7 +88,7 @@ function Base.showerror(io::IO, err::BadInplaceException)
     if err.accumuland == err.returned_value
         println(
             io,
-            "Which in this case happenned to be equal. But they are not the same object.",
+            "Which in this case happenned to be equal. But they are not the same object."
         )
     end
 end

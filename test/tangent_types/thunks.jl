@@ -141,7 +141,7 @@
             # Check against accidential type piracy
             # https://github.com/JuliaDiff/ChainRulesCore.jl/issues/472
             @test Base.which(diagm, Tuple{}()).module != ChainRulesCore
-            @test Base.which(diagm, Tuple{Int,Int}).module != ChainRulesCore
+            @test Base.which(diagm, Tuple{Int, Int}).module != ChainRulesCore
         end
         @test tril(a) == tril(t)
         @test tril(a, 1) == tril(t, 1)
