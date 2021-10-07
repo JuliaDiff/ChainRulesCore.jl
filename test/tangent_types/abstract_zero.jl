@@ -9,7 +9,7 @@
         @test view(NoTangent(), 1, 2) == NoTangent()
 
         @test sum(ZeroTangent()) == ZeroTangent()
-        @test sum(NoTangent(); dims=2) == NoTangent()
+        @test sum(NoTangent(); dims = 2) == NoTangent()
     end
 
     @testset "ZeroTangent" begin

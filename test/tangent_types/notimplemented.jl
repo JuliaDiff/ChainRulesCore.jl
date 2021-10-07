@@ -1,10 +1,14 @@
 @testset "NotImplemented" begin
     @testset "NotImplemented" begin
         ni = ChainRulesCore.NotImplemented(
-            @__MODULE__, LineNumberNode(@__LINE__, @__FILE__), "error"
+            @__MODULE__,
+            LineNumberNode(@__LINE__, @__FILE__),
+            "error",
         )
         ni2 = ChainRulesCore.NotImplemented(
-            @__MODULE__, LineNumberNode(@__LINE__, @__FILE__), "error2"
+            @__MODULE__,
+            LineNumberNode(@__LINE__, @__FILE__),
+            "error2",
         )
         x = rand()
         thunk = @thunk(x^2)

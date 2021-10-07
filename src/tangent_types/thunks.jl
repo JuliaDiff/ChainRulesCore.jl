@@ -56,16 +56,20 @@ LinearAlgebra.Matrix(a::AbstractThunk) = Matrix(unthunk(a))
 LinearAlgebra.Diagonal(a::AbstractThunk) = Diagonal(unthunk(a))
 LinearAlgebra.LowerTriangular(a::AbstractThunk) = LowerTriangular(unthunk(a))
 LinearAlgebra.UpperTriangular(a::AbstractThunk) = UpperTriangular(unthunk(a))
-LinearAlgebra.Symmetric(a::AbstractThunk, uplo=:U) = Symmetric(unthunk(a), uplo)
-LinearAlgebra.Hermitian(a::AbstractThunk, uplo=:U) = Hermitian(unthunk(a), uplo)
+LinearAlgebra.Symmetric(a::AbstractThunk, uplo = :U) = Symmetric(unthunk(a), uplo)
+LinearAlgebra.Hermitian(a::AbstractThunk, uplo = :U) = Hermitian(unthunk(a), uplo)
 
 function LinearAlgebra.diagm(
-    kv::Pair{<:Integer,<:AbstractThunk}, kvs::Pair{<:Integer,<:AbstractThunk}...
+    kv::Pair{<:Integer,<:AbstractThunk},
+    kvs::Pair{<:Integer,<:AbstractThunk}...,
 )
     return diagm((k => unthunk(v) for (k, v) in (kv, kvs...))...)
 end
 function LinearAlgebra.diagm(
-    m, n, kv::Pair{<:Integer,<:AbstractThunk}, kvs::Pair{<:Integer,<:AbstractThunk}...
+    m,
+    n,
+    kv::Pair{<:Integer,<:AbstractThunk},
+    kvs::Pair{<:Integer,<:AbstractThunk}...,
 )
     return diagm(m, n, (k => unthunk(v) for (k, v) in (kv, kvs...))...)
 end
@@ -118,7 +122,7 @@ function LinearAlgebra.BLAS.scal!(n, a::AbstractThunk, X, incx)
     return LinearAlgebra.BLAS.scal!(n, unthunk(a), X, incx)
 end
 
-function LinearAlgebra.LAPACK.trsyl!(transa, transb, A, B, C::AbstractThunk, isgn=1)
+function LinearAlgebra.LAPACK.trsyl!(transa, transb, A, B, C::AbstractThunk, isgn = 1)
     return throw(MutateThunkException())
 end
 
@@ -196,6 +200,7 @@ end
 Base.show(io::IO, x::Thunk) = print(io, "Thunk($(repr(x.f)))")
 
 Base.convert(::Type{<:Thunk}, a::AbstractZero) = @thunk(a)
+
 
 """
     InplaceableThunk(add!::Function, val::Thunk)

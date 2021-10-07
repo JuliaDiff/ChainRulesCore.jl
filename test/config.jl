@@ -22,6 +22,7 @@ function ChainRulesCore.rrule_via_ad(config::MockReverseConfig, f, args...; kws.
     return f(args...; kws...), pullback_via_ad
 end
 
+
 struct MockBothConfig <: RuleConfig{Union{HasForwardsMode,HasReverseMode}}
     forward_calls::Vector
     reverse_calls::Vector
@@ -46,7 +47,10 @@ end
 
 @testset "config.jl" begin
     @testset "basic fall to two arg verion for $Config" for Config in (
-        MostBoringConfig, MockForwardsConfig, MockReverseConfig, MockBothConfig
+        MostBoringConfig,
+        MockForwardsConfig,
+        MockReverseConfig,
+        MockBothConfig,
     )
         counting_id_count = Ref(0)
         function counting_id(x)
@@ -75,21 +79,33 @@ end
     @testset "hitting forwards AD" begin
         do_thing_2(f, x) = f(x)
         function ChainRulesCore.frule(
-            config::RuleConfig{>:HasForwardsMode}, (_, df, dx), ::typeof(do_thing_2), f, x
+            config::RuleConfig{>:HasForwardsMode},
+            (_, df, dx),
+            ::typeof(do_thing_2),
+            f,
+            x,
         )
             return frule_via_ad(config, (df, dx), f, x)
         end
 
         @testset "$Config" for Config in (MostBoringConfig, MockReverseConfig)
             @test nothing === frule(
-                Config(), (NoTangent(), NoTangent(), 21.5), do_thing_2, identity, 32.1
+                Config(),
+                (NoTangent(), NoTangent(), 21.5),
+                do_thing_2,
+                identity,
+                32.1,
             )
         end
 
         @testset "$Config" for Config in (MockBothConfig, MockForwardsConfig)
             bconfig = Config()
             @test nothing !== frule(
-                bconfig, (NoTangent(), NoTangent(), 21.5), do_thing_2, identity, 32.1
+                bconfig,
+                (NoTangent(), NoTangent(), 21.5),
+                do_thing_2,
+                identity,
+                32.1,
             )
             @test bconfig.forward_calls == [(identity, (32.1,))]
         end
@@ -98,10 +114,14 @@ end
     @testset "hitting reverse AD" begin
         do_thing_3(f, x) = f(x)
         function ChainRulesCore.rrule(
-            config::RuleConfig{>:HasReverseMode}, ::typeof(do_thing_3), f, x
+            config::RuleConfig{>:HasReverseMode},
+            ::typeof(do_thing_3),
+            f,
+            x,
         )
             return (NoTangent(), rrule_via_ad(config, f, x)...)
         end
+
 
         @testset "$Config" for Config in (MostBoringConfig, MockForwardsConfig)
             @test nothing === rrule(Config(), do_thing_3, identity, 32.1)
@@ -160,28 +180,28 @@ end
     end
 
     @testset "fallbacks" begin
-        no_rule(x; kw="bye") = error()
+        no_rule(x; kw = "bye") = error()
         @test frule((1.0,), no_rule, 2.0) === nothing
-        @test frule((1.0,), no_rule, 2.0; kw="hello") === nothing
+        @test frule((1.0,), no_rule, 2.0; kw = "hello") === nothing
         @test frule(MostBoringConfig(), (1.0,), no_rule, 2.0) === nothing
-        @test frule(MostBoringConfig(), (1.0,), no_rule, 2.0; kw="hello") === nothing
+        @test frule(MostBoringConfig(), (1.0,), no_rule, 2.0; kw = "hello") === nothing
         @test rrule(no_rule, 2.0) === nothing
-        @test rrule(no_rule, 2.0; kw="hello") === nothing
+        @test rrule(no_rule, 2.0; kw = "hello") === nothing
         @test rrule(MostBoringConfig(), no_rule, 2.0) === nothing
-        @test rrule(MostBoringConfig(), no_rule, 2.0; kw="hello") === nothing
+        @test rrule(MostBoringConfig(), no_rule, 2.0; kw = "hello") === nothing
 
         # Test that incorrect use of the fallback rules correctly throws MethodError
         @test_throws MethodError frule()
-        @test_throws MethodError frule(; kw="hello")
+        @test_throws MethodError frule(; kw = "hello")
         @test_throws MethodError frule(sin)
-        @test_throws MethodError frule(sin; kw="hello")
+        @test_throws MethodError frule(sin; kw = "hello")
         @test_throws MethodError frule(MostBoringConfig())
-        @test_throws MethodError frule(MostBoringConfig(); kw="hello")
+        @test_throws MethodError frule(MostBoringConfig(); kw = "hello")
         @test_throws MethodError frule(MostBoringConfig(), sin)
-        @test_throws MethodError frule(MostBoringConfig(), sin; kw="hello")
+        @test_throws MethodError frule(MostBoringConfig(), sin; kw = "hello")
         @test_throws MethodError rrule()
-        @test_throws MethodError rrule(; kw="hello")
+        @test_throws MethodError rrule(; kw = "hello")
         @test_throws MethodError rrule(MostBoringConfig())
-        @test_throws MethodError rrule(MostBoringConfig(); kw="hello")
+        @test_throws MethodError rrule(MostBoringConfig(); kw = "hello")
     end
 end

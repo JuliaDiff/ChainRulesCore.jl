@@ -83,9 +83,8 @@ For examples, see ChainRules' `rulesets` directory.
 See also: [`frule`](@ref), [`rrule`](@ref).
 """
 macro scalar_rule(call, maybe_setup, partials...)
-    call, setup_stmts, inputs, partials = _normalize_scalarrules_macro_input(
-        call, maybe_setup, partials
-    )
+    call, setup_stmts, inputs, partials =
+        _normalize_scalarrules_macro_input(call, maybe_setup, partials)
     f = call.args[1]
 
     # Generate variables to store derivatives named dfi/dxj
@@ -99,11 +98,11 @@ macro scalar_rule(call, maybe_setup, partials...)
     rrule_expr = scalar_rrule_expr(__source__, f, call, [], inputs, derivatives)
 
     # Final return: building the expression to insert in the place of this macro
-    return code = quote
+    code = quote
         if !($f isa Type) && fieldcount(typeof($f)) > 0
             throw(
                 ArgumentError(
-                    "@scalar_rule cannot be used on closures/functors (such as $($f))"
+                    "@scalar_rule cannot be used on closures/functors (such as $($f))",
                 ),
             )
         end
@@ -113,6 +112,7 @@ macro scalar_rule(call, maybe_setup, partials...)
         $(rrule_expr)
     end
 end
+
 
 """
     _normalize_scalarrules_macro_input(call, maybe_setup, partials)
@@ -177,7 +177,9 @@ function derivatives_given_output end
 function scalar_derivative_expr(__source__, f, setup_stmts, inputs, partials)
     return @strip_linenos quote
         function ChainRulesCore.derivatives_given_output(
-            $(esc(:Ω)), ::Core.Typeof($f), $(inputs...)
+            $(esc(:Ω)),
+            ::Core.Typeof($f),
+            $(inputs...),
         )
             $(__source__)
             $(setup_stmts...)
@@ -199,9 +201,8 @@ function scalar_frule_expr(__source__, f, call, setup_stmts, inputs, partials)
     end
     if n_outputs > 1
         # For forward-mode we return a Tangent if output actually a tuple.
-        pushforward_returns = Expr(
-            :call, :(Tangent{typeof($(esc(:Ω)))}), pushforward_returns...
-        )
+        pushforward_returns =
+            Expr(:call, :(Tangent{typeof($(esc(:Ω)))}), pushforward_returns...)
     else
         pushforward_returns = first(pushforward_returns)
     end
@@ -213,9 +214,8 @@ function scalar_frule_expr(__source__, f, call, setup_stmts, inputs, partials)
             $(__source__)
             $(esc(:Ω)) = $call
             $(setup_stmts...)
-            $(Expr(:tuple, partials...)) = ChainRulesCore.derivatives_given_output(
-                $(esc(:Ω)), $f, $(inputs...)
-            )
+            $(Expr(:tuple, partials...)) =
+                ChainRulesCore.derivatives_given_output($(esc(:Ω)), $f, $(inputs...))
             return $(esc(:Ω)), $pushforward_returns
         end
     end
@@ -253,9 +253,8 @@ function scalar_rrule_expr(__source__, f, call, setup_stmts, inputs, partials)
             $(__source__)
             $(esc(:Ω)) = $call
             $(setup_stmts...)
-            $(Expr(:tuple, partials...)) = ChainRulesCore.derivatives_given_output(
-                $(esc(:Ω)), $f, $(inputs...)
-            )
+            $(Expr(:tuple, partials...)) =
+                ChainRulesCore.derivatives_given_output($(esc(:Ω)), $f, $(inputs...))
             return $(esc(:Ω)), $pullback
         end
     end
@@ -264,7 +263,7 @@ end
 # For context on why this is important, see
 # https://github.com/JuliaDiff/ChainRulesCore.jl/pull/276
 "Declares properly hygenic inputs for propagation expressions"
-_propagator_inputs(n) = [esc(gensym(Symbol(:Δ, i))) for i in 1:n]
+_propagator_inputs(n) = [esc(gensym(Symbol(:Δ, i))) for i = 1:n]
 
 "given the variable names, escaped but without types, makes setup expressions for projection operators"
 function _make_projectors(xs)
@@ -282,7 +281,7 @@ Specify `_conj = true` to conjugate the partials.
 Projector `proj` is a function that will be applied at the end;
     for `rrules` it is usually a `ProjectTo(x)`, for `frules` it is `identity`
 """
-function propagation_expr(Δs, ∂s, _conj=false, proj=identity)
+function propagation_expr(Δs, ∂s, _conj = false, proj = identity)
     # This is basically Δs ⋅ ∂s
     _∂s = map(∂s) do ∂s_i
         if _conj
@@ -296,7 +295,7 @@ function propagation_expr(Δs, ∂s, _conj=false, proj=identity)
     # Explicit multiplication is only performed for the first pair of partial and gradient.
     init_expr = :(*($(_∂s[1]), $(Δs[1])))
     summed_∂_mul_Δs =
-        foldl(Iterators.drop(zip(_∂s, Δs), 1); init=init_expr) do ex, (∂s_i, Δs_i)
+        foldl(Iterators.drop(zip(_∂s, Δs), 1); init = init_expr) do ex, (∂s_i, Δs_i)
             :(muladd($∂s_i, $Δs_i, $ex))
         end
     return :($proj($summed_∂_mul_Δs))
@@ -374,7 +373,7 @@ macro non_differentiable(sig_expr)
     primal_invoke = if !has_vararg
         :($(primal_name)($(unconstrained_args...)))
     else
-        normal_args = unconstrained_args[1:(end - 1)]
+        normal_args = unconstrained_args[1:end-1]
         var_arg = unconstrained_args[end]
         :($(primal_name)($(normal_args...), $(var_arg)...))
     end
@@ -409,7 +408,8 @@ function _nondiff_frule_expr(__source__, primal_sig_parts, primal_invoke)
             return ($(esc(_with_kwargs_expr(primal_invoke, kwargs))), NoTangent())
         end
         function ChainRulesCore.frule(
-            @nospecialize(::Any), $(map(esc, primal_sig_parts)...)
+            @nospecialize(::Any),
+            $(map(esc, primal_sig_parts)...),
         )
             $(__source__)
             # Julia functions always only have 1 output, so return a single NoTangent()
@@ -445,7 +445,9 @@ function _nondiff_rrule_expr(__source__, primal_sig_parts, primal_invoke)
     return @strip_linenos quote
         # Manually defined kw version to save compiler work. See explanation in rules.jl
         function (::Core.kwftype(typeof(rrule)))(
-            $(esc(kwargs))::Any, ::typeof(rrule), $(esc_primal_sig_parts...)
+            $(esc(kwargs))::Any,
+            ::typeof(rrule),
+            $(esc_primal_sig_parts...),
         )
             return ($(esc(_with_kwargs_expr(primal_invoke, kwargs))), $pullback_expr)
         end
@@ -455,6 +457,7 @@ function _nondiff_rrule_expr(__source__, primal_sig_parts, primal_invoke)
         end
     end
 end
+
 
 ############################################################################################
 # @opt_out
@@ -521,6 +524,8 @@ function _no_rule_target_rewrite!(call_target::Symbol)
     end
 end
 
+
+
 ############################################################################################
 # Helpers
 
@@ -575,6 +580,7 @@ function _split_primal_name(primal_name)
     if primal_name isa Symbol ||
        Meta.isexpr(primal_name, :(.)) ||
        Meta.isexpr(primal_name, :curly)
+
         primal_name_sig = :(::$Core.Typeof($primal_name))
         return primal_name_sig, primal_name
         # e.g. (::T)(x, y)
@@ -592,7 +598,7 @@ _unconstrain(arg::Symbol) = arg
 function _unconstrain(arg::Expr)
     Meta.isexpr(arg, :(::), 2) && return arg.args[1]  # drop constraint.
     Meta.isexpr(arg, :(...), 1) && return _unconstrain(arg.args[1])
-    return error("malformed arguments: $arg")
+    error("malformed arguments: $arg")
 end
 
 "turn both `a` and `::constraint` into `a::constraint` etc"
@@ -601,6 +607,6 @@ function _constrain_and_name(arg::Expr, _)
     Meta.isexpr(arg, :(::), 1) && return Expr(:(::), gensym(), arg.args[1]) # add name
     Meta.isexpr(arg, :(...), 1) &&
         return Expr(:(...), _constrain_and_name(arg.args[1], :Any))
-    return error("malformed arguments: $arg")
+    error("malformed arguments: $arg")
 end
 _constrain_and_name(name::Symbol, constraint) = Expr(:(::), name, constraint)  # add type

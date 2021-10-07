@@ -34,6 +34,7 @@ function add!!(x::AbstractArray{<:Any,N}, y::AbstractArray{<:Any,N}) where {N}
     end
 end
 
+
 """
     is_inplaceable_destination(x) -> Bool
 
@@ -62,6 +63,7 @@ end
 # TODO: https://github.com/JuliaDiff/ChainRulesCore.jl/issues/236
 is_inplaceable_destination(::LinearAlgebra.Hermitian) = false
 is_inplaceable_destination(::LinearAlgebra.Symmetric) = false
+
 
 function debug_add!(accumuland, t::InplaceableThunk)
     returned_value = t.add!(accumuland)

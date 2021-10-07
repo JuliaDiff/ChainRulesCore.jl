@@ -37,13 +37,13 @@ struct NonDiffCounterExample
 end
 
 module NonDiffModuleExample
-nondiff_2_1(x, y) = fill(7.5, 100)[x + y]
+nondiff_2_1(x, y) = fill(7.5, 100)[x+y]
 end
 
 @testset "rule_definition_tools.jl" begin
     @testset "@non_differentiable" begin
         @testset "two input one output function" begin
-            nondiff_2_1(x, y) = fill(7.5, 100)[x + y]
+            nondiff_2_1(x, y) = fill(7.5, 100)[x+y]
             @non_differentiable nondiff_2_1(::Any, ::Any)
             @test frule((ZeroTangent(), 1.2, 2.3), nondiff_2_1, 3, 2) == (7.5, NoTangent())
             res, pullback = rrule(nondiff_2_1, 3, 2)
@@ -93,7 +93,7 @@ end
         end
 
         @testset "kwargs" begin
-            kw_demo(x; kw=2.0) = x + kw
+            kw_demo(x; kw = 2.0) = x + kw
             @non_differentiable kw_demo(::Any)
 
             @testset "not setting kw" begin
@@ -107,13 +107,13 @@ end
             end
 
             @testset "setting kw" begin
-                @assert kw_demo(1.5; kw=3.0) == 4.5
+                @assert kw_demo(1.5; kw = 3.0) == 4.5
 
-                res, pullback = rrule(kw_demo, 1.5; kw=3.0)
+                res, pullback = rrule(kw_demo, 1.5; kw = 3.0)
                 @test res == 4.5
                 @test pullback(1.1) == (NoTangent(), NoTangent())
 
-                @test frule((ZeroTangent(), 11.1), kw_demo, 1.5; kw=3.0) ==
+                @test frule((ZeroTangent(), 11.1), kw_demo, 1.5; kw = 3.0) ==
                       (4.5, NoTangent())
             end
         end
@@ -196,9 +196,9 @@ end
         end
 
         @testset "Functors" begin
-            (f::NonDiffExample)(y) = fill(7.5, 100)[f.x + y]
+            (f::NonDiffExample)(y) = fill(7.5, 100)[f.x+y]
             @non_differentiable (::NonDiffExample)(::Any)
-            @test frule((Tangent{NonDiffExample}(; x=1.2), 2.3), NonDiffExample(3), 2) ==
+            @test frule((Tangent{NonDiffExample}(x = 1.2), 2.3), NonDiffExample(3), 2) ==
                   (7.5, NoTangent())
             res, pullback = rrule(NonDiffExample(3), 2)
             @test res == 7.5
@@ -208,7 +208,10 @@ end
         @testset "Module specified explicitly" begin
             @non_differentiable NonDiffModuleExample.nondiff_2_1(::Any, ::Any)
             @test frule(
-                (ZeroTangent(), 1.2, 2.3), NonDiffModuleExample.nondiff_2_1, 3, 2
+                (ZeroTangent(), 1.2, 2.3),
+                NonDiffModuleExample.nondiff_2_1,
+                3,
+                2,
             ) == (7.5, NoTangent())
             res, pullback = rrule(NonDiffModuleExample.nondiff_2_1, 3, 2)
             @test res == 7.5
@@ -261,7 +264,7 @@ end
             # https://github.com/JuliaDiff/ChainRulesCore.jl/pull/265
             # Symptom of these problems is creation of global variables and type instability
 
-            num_globals_before = length(names(ChainRulesCore; all=true))
+            num_globals_before = length(names(ChainRulesCore; all = true))
 
             simo2(x) = (x, 2x)
             @scalar_rule(simo2(x), 1.0, 2.0)
@@ -270,7 +273,7 @@ end
             @inferred simo2_pb(Tangent{Tuple{Float64,Float64}}(3.0, 6.0))
 
             # Test no new globals were created
-            @test length(names(ChainRulesCore; all=true)) == num_globals_before
+            @test length(names(ChainRulesCore; all = true)) == num_globals_before
 
             # Example in #265
             simo3(x) = sincos(x)
@@ -280,6 +283,7 @@ end
         end
     end
 end
+
 
 module IsolatedModuleForTestingScoping
 # check that rules can be defined by macros without any additional imports
@@ -319,7 +323,7 @@ using Test
         @test f_pullback(randn()) === (NoTangent(), NoTangent())
     end
 
-    y, f_pullback = rrule(fixed_kwargs, randn(); keyword=randn())
+    y, f_pullback = rrule(fixed_kwargs, randn(); keyword = randn())
     @test y === :abc
     @test f_pullback(randn()) === (NoTangent(), NoTangent())
 end
