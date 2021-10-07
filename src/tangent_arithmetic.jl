@@ -81,7 +81,7 @@ LinearAlgebra.dot(::ZeroTangent, ::NoTangent) = ZeroTangent()
 
 Base.muladd(::ZeroTangent, x, y) = y
 Base.muladd(x, ::ZeroTangent, y) = y
-Base.muladd(x, y, ::ZeroTangent) = x*y
+Base.muladd(x, y, ::ZeroTangent) = x * y
 
 Base.muladd(::ZeroTangent, ::ZeroTangent, y) = y
 Base.muladd(x, ::ZeroTangent, ::ZeroTangent) = ZeroTangent()
@@ -125,11 +125,11 @@ for T in (:Tangent, :Any)
     @eval Base.:*(a::$T, b::AbstractThunk) = a * unthunk(b)
 end
 
-function Base.:+(a::Tangent{P}, b::Tangent{P}) where P
+function Base.:+(a::Tangent{P}, b::Tangent{P}) where {P}
     data = elementwise_add(backing(a), backing(b))
-    return Tangent{P, typeof(data)}(data)
+    return Tangent{P,typeof(data)}(data)
 end
-function Base.:+(a::P, d::Tangent{P}) where P
+function Base.:+(a::P, d::Tangent{P}) where {P}
     net_backing = elementwise_add(backing(a), backing(d))
     if debug_mode()
         try
@@ -142,12 +142,12 @@ function Base.:+(a::P, d::Tangent{P}) where P
     end
 end
 Base.:+(a::Dict, d::Tangent{P}) where {P} = merge(+, a, backing(d))
-Base.:+(a::Tangent{P}, b::P) where P = b + a
+Base.:+(a::Tangent{P}, b::P) where {P} = b + a
 
 # We intentionally do not define, `Base.*(::Tangent, ::Tangent)` as that is not meaningful
 # In general one doesn't have to represent multiplications of 2 differentials
 # Only of a differential and a scaling factor (generally `Real`)
 for T in (:Any,)
-    @eval Base.:*(s::$T, tangent::Tangent) = map(x->s*x, tangent)
-    @eval Base.:*(tangent::Tangent, s::$T) = map(x->x*s, tangent)
+    @eval Base.:*(s::$T, tangent::Tangent) = map(x -> s * x, tangent)
+    @eval Base.:*(tangent::Tangent, s::$T) = map(x -> x * s, tangent)
 end

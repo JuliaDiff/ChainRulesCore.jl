@@ -45,7 +45,9 @@ ignore_derivatives(x) = x
 Tells the AD system to ignore the expression. Equivalent to `ignore_derivatives() do (...) end`.
 """
 macro ignore_derivatives(ex)
-    return :(ChainRulesCore.ignore_derivatives() do
-        $(esc(ex))
-    end)
+    return :(
+        ChainRulesCore.ignore_derivatives() do
+            $(esc(ex))
+        end
+    )
 end
