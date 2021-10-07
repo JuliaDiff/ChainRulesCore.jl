@@ -28,8 +28,7 @@ end
 
 mixed_vararg(x, y, z...) = x + y + sum(z)
 function ChainRulesCore.frule(
-    dargs::Tuple{Any, Any, Any, Vararg},
-    ::typeof(mixed_vararg), x, y, z...,
+    dargs::Tuple{Any,Any,Any,Vararg}, ::typeof(mixed_vararg), x, y, z...
 )
     Δx = dargs[2]
     Δy = dargs[3]
@@ -39,16 +38,18 @@ end
 
 type_constraints(x::Int, y::Float64) = x + y
 function ChainRulesCore.frule(
-    (_, Δx, Δy)::Tuple{Any, Int, Float64},
-    ::typeof(type_constraints), x::Int, y::Float64,
+    (_, Δx, Δy)::Tuple{Any,Int,Float64}, ::typeof(type_constraints), x::Int, y::Float64
 )
     return type_constraints(x, y), Δx + Δy
 end
 
 mixed_vararg_type_constaint(x::Float64, y::Real, z::Vararg{Float64}) = x + y + sum(z)
 function ChainRulesCore.frule(
-    dargs::Tuple{Any, Float64, Real, Vararg{Float64}},
-    ::typeof(mixed_vararg_type_constaint), x::Float64, y::Real, z::Vararg{Float64},
+    dargs::Tuple{Any,Float64,Real,Vararg{Float64}},
+    ::typeof(mixed_vararg_type_constaint),
+    x::Float64,
+    y::Real,
+    z::Vararg{Float64},
 )
     Δx = dargs[2]
     Δy = dargs[3]
@@ -76,8 +77,9 @@ _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
     @test hasmethod(rrule, Tuple{typeof(cool),String})
     # Ensure those are the *only* methods that have been defined
     cool_methods = Set(m.sig for m in methods(rrule) if _second(m.sig) == typeof(cool))
-    only_methods = Set([Tuple{typeof(rrule),typeof(cool),Number},
-                        Tuple{typeof(rrule),typeof(cool),String}])
+    only_methods = Set([
+        Tuple{typeof(rrule),typeof(cool),Number}, Tuple{typeof(rrule),typeof(cool),String}
+    ])
     @test cool_methods == only_methods
 
     frx, cool_pushforward = frule((dself, 1), cool, 1)
@@ -94,25 +96,24 @@ _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
     rrx, nice_pullback = rrule(nice, 1)
     @test (NoTangent(), ZeroTangent()) === nice_pullback(1)
 
-
     # Test that these run. Do not care about numerical correctness.
     @test frule((nothing, 1.0, 1.0, 1.0), varargs_function, 0.5, 0.5, 0.5) == (1.5, 3.0)
 
-    @test frule((nothing, 1.0, 2.0, 3.0, 4.0), mixed_vararg, 1.0, 2.0, 3.0, 4.0) == (10.0, 10.0)
+    @test frule((nothing, 1.0, 2.0, 3.0, 4.0), mixed_vararg, 1.0, 2.0, 3.0, 4.0) ==
+          (10.0, 10.0)
 
     @test frule((nothing, 3, 2.0), type_constraints, 5, 4.0) == (9.0, 5.0)
     @test frule((nothing, 3.0, 2.0im), type_constraints, 5, 4.0) == nothing
 
-    @test(frule(
-        (nothing, 3.0, 2.0, 1.0, 0.0),
-        mixed_vararg_type_constaint, 3.0, 2.0, 1.0, 0.0,
-    ) == (6.0, 6.0))
+    @test(
+        frule(
+            (nothing, 3.0, 2.0, 1.0, 0.0), mixed_vararg_type_constaint, 3.0, 2.0, 1.0, 0.0
+        ) == (6.0, 6.0)
+    )
 
     # violates type constraints, thus an frule should not be found.
-    @test frule(
-        (nothing, 3, 2.0, 1.0, 5.0),
-        mixed_vararg_type_constaint, 3, 2.0, 1.0, 0,
-    ) == nothing
+    @test frule((nothing, 3, 2.0, 1.0, 5.0), mixed_vararg_type_constaint, 3, 2.0, 1.0, 0) ==
+          nothing
 
     @test frule((nothing, nothing, 5.0), Core._apply, dummy_identity, 4.0) == (4.0, 5.0)
 
@@ -149,31 +150,34 @@ _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
         @test_skip ∂xr ≈ real(∂x)
     end
 
-
     @testset "@opt_out" begin
         first_oa(x, y) = x
         @scalar_rule(first_oa(x, y), (1, 0))
-        @opt_out ChainRulesCore.rrule(::typeof(first_oa), x::T, y::T) where T<:Float32
+        @opt_out ChainRulesCore.rrule(::typeof(first_oa), x::T, y::T) where {T<:Float32}
         @opt_out(
-            ChainRulesCore.frule(::Any, ::typeof(first_oa), x::T, y::T) where T<:Float32
+            ChainRulesCore.frule(::Any, ::typeof(first_oa), x::T, y::T) where {T<:Float32}
         )
 
         @testset "rrule" begin
             @test rrule(first_oa, 3.0, 4.0)[2](1) == (NoTangent(), 1, 0)
-            @test rrule(first_oa, 3f0, 4f0) === nothing
+            @test rrule(first_oa, 3.0f0, 4.0f0) === nothing
 
-            @test !isempty(Iterators.filter(methods(ChainRulesCore.no_rrule)) do m
-                m.sig <:Tuple{Any, typeof(first_oa), T, T} where T<:Float32
-            end)
+            @test !isempty(
+                Iterators.filter(methods(ChainRulesCore.no_rrule)) do m
+                    m.sig <: Tuple{Any,typeof(first_oa),T,T} where {T<:Float32}
+                end,
+            )
         end
 
         @testset "frule" begin
-            @test frule((NoTangent(), 1,0), first_oa, 3.0, 4.0) == (3.0, 1)
-            @test frule((NoTangent(), 1,0), first_oa, 3f0, 4f0) === nothing
+            @test frule((NoTangent(), 1, 0), first_oa, 3.0, 4.0) == (3.0, 1)
+            @test frule((NoTangent(), 1, 0), first_oa, 3.0f0, 4.0f0) === nothing
 
-            @test !isempty(Iterators.filter(methods(ChainRulesCore.no_frule)) do m
-                m.sig <:Tuple{Any, Any, typeof(first_oa), T, T} where T<:Float32
-            end)
+            @test !isempty(
+                Iterators.filter(methods(ChainRulesCore.no_frule)) do m
+                    m.sig <: Tuple{Any,Any,typeof(first_oa),T,T} where {T<:Float32}
+                end,
+            )
         end
     end
 end

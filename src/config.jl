@@ -64,7 +64,6 @@ that do not support performing forwards mode AD should be `RuleConfig{>:NoForwar
 """
 struct NoForwardsMode <: ForwardsModeCapability end
 
-
 """
     frule_via_ad(::RuleConfig{>:HasForwardsMode}, ȧrgs, f, args...; kwargs...)
 

@@ -21,42 +21,42 @@ Any fields not explictly present in the `Tangent` are treated as being set to `Z
 To make a `Tangent` have all the fields of the primal the [`canonicalize`](@ref)
 function is provided.
 """
-struct Tangent{P, T} <: AbstractTangent
+struct Tangent{P,T} <: AbstractTangent
     # Note: If T is a Tuple/Dict, then P is also a Tuple/Dict
     # (but potentially a different one, as it doesn't contain differentials)
     backing::T
 end
 
-function Tangent{P}(; kwargs...) where P
+function Tangent{P}(; kwargs...) where {P}
     backing = (; kwargs...)  # construct as NamedTuple
-    return Tangent{P, typeof(backing)}(backing)
+    return Tangent{P,typeof(backing)}(backing)
 end
 
-function Tangent{P}(args...) where P
-    return Tangent{P, typeof(args)}(args)
+function Tangent{P}(args...) where {P}
+    return Tangent{P,typeof(args)}(args)
 end
 
-function Tangent{P}() where P<:Tuple
+function Tangent{P}() where {P<:Tuple}
     backing = ()
-    return Tangent{P, typeof(backing)}(backing)
+    return Tangent{P,typeof(backing)}(backing)
 end
 
 function Tangent{P}(d::Dict) where {P<:Dict}
-    return Tangent{P, typeof(d)}(d)
+    return Tangent{P,typeof(d)}(d)
 end
 
-function Base.:(==)(a::Tangent{P, T}, b::Tangent{P, T}) where {P, T}
+function Base.:(==)(a::Tangent{P,T}, b::Tangent{P,T}) where {P,T}
     return backing(a) == backing(b)
 end
-function Base.:(==)(a::Tangent{P}, b::Tangent{P}) where {P, T}
+function Base.:(==)(a::Tangent{P}, b::Tangent{P}) where {P,T}
     all_fields = union(keys(backing(a)), keys(backing(b)))
     return all(getproperty(a, f) == getproperty(b, f) for f in all_fields)
 end
-Base.:(==)(a::Tangent{P}, b::Tangent{Q}) where {P, Q} = false
+Base.:(==)(a::Tangent{P}, b::Tangent{Q}) where {P,Q} = false
 
 Base.hash(a::Tangent, h::UInt) = Base.hash(backing(canonicalize(a)), h)
 
-function Base.show(io::IO, tangent::Tangent{P}) where P
+function Base.show(io::IO, tangent::Tangent{P}) where {P}
     print(io, "Tangent{")
     show(io, P)
     print(io, "}")
@@ -68,15 +68,15 @@ function Base.show(io::IO, tangent::Tangent{P}) where P
     end
 end
 
-function Base.getindex(tangent::Tangent{P, T}, idx::Int) where {P, T<:Union{Tuple, NamedTuple}}
+function Base.getindex(tangent::Tangent{P,T}, idx::Int) where {P,T<:Union{Tuple,NamedTuple}}
     back = backing(canonicalize(tangent))
     return unthunk(getfield(back, idx))
 end
-function Base.getindex(tangent::Tangent{P, T}, idx::Symbol) where {P, T<:NamedTuple}
+function Base.getindex(tangent::Tangent{P,T}, idx::Symbol) where {P,T<:NamedTuple}
     hasfield(T, idx) || return ZeroTangent()
     return unthunk(getfield(backing(tangent), idx))
 end
-function Base.getindex(tangent::Tangent, idx) where {P, T<:AbstractDict}
+function Base.getindex(tangent::Tangent, idx) where {P,T<:AbstractDict}
     return unthunk(getindex(backing(tangent), idx))
 end
 
@@ -84,7 +84,7 @@ function Base.getproperty(tangent::Tangent, idx::Int)
     back = backing(canonicalize(tangent))
     return unthunk(getfield(back, idx))
 end
-function Base.getproperty(tangent::Tangent{P, T}, idx::Symbol) where {P, T<:NamedTuple}
+function Base.getproperty(tangent::Tangent{P,T}, idx::Symbol) where {P,T<:NamedTuple}
     hasfield(T, idx) || return ZeroTangent()
     return unthunk(getfield(backing(tangent), idx))
 end
@@ -99,26 +99,26 @@ end
 
 Base.iterate(tangent::Tangent, args...) = iterate(backing(tangent), args...)
 Base.length(tangent::Tangent) = length(backing(tangent))
-Base.eltype(::Type{<:Tangent{<:Any, T}}) where T = eltype(T)
+Base.eltype(::Type{<:Tangent{<:Any,T}}) where {T} = eltype(T)
 function Base.reverse(tangent::Tangent)
     rev_backing = reverse(backing(tangent))
-    Tangent{typeof(rev_backing), typeof(rev_backing)}(rev_backing)
+    return Tangent{typeof(rev_backing),typeof(rev_backing)}(rev_backing)
 end
 
 function Base.indexed_iterate(tangent::Tangent{P,<:Tuple}, i::Int, state=1) where {P}
     return Base.indexed_iterate(backing(tangent), i, state)
 end
 
-function Base.map(f, tangent::Tangent{P, <:Tuple}) where P
+function Base.map(f, tangent::Tangent{P,<:Tuple}) where {P}
     vals::Tuple = map(f, backing(tangent))
-    return Tangent{P, typeof(vals)}(vals)
+    return Tangent{P,typeof(vals)}(vals)
 end
-function Base.map(f, tangent::Tangent{P, <:NamedTuple{L}}) where{P, L}
+function Base.map(f, tangent::Tangent{P,<:NamedTuple{L}}) where {P,L}
     vals = map(f, Tuple(backing(tangent)))
-    named_vals = NamedTuple{L, typeof(vals)}(vals)
-    return Tangent{P, typeof(named_vals)}(named_vals)
+    named_vals = NamedTuple{L,typeof(vals)}(vals)
+    return Tangent{P,typeof(named_vals)}(named_vals)
 end
-function Base.map(f, tangent::Tangent{P, <:Dict}) where {P<:Dict}
+function Base.map(f, tangent::Tangent{P,<:Dict}) where {P<:Dict}
     return Tangent{P}(Dict(k => f(v) for (k, v) in backing(tangent)))
 end
 
@@ -140,26 +140,28 @@ backing(x::Dict) = x
 backing(x::Tangent) = getfield(x, :backing)
 
 # For generic structs
-function backing(x::T)::NamedTuple where T
+function backing(x::T)::NamedTuple where {T}
     # note: all computation outside the if @generated happens at runtime.
     # so the first 4 lines of the branchs look the same, but can not be moved out.
     # see https://github.com/JuliaLang/julia/issues/34283
     if @generated
-        !isstructtype(T) && throw(DomainError(T, "backing can only be used on struct types"))
+        !isstructtype(T) &&
+            throw(DomainError(T, "backing can only be used on struct types"))
         nfields = fieldcount(T)
         names = fieldnames(T)
         types = fieldtypes(T)
 
-        vals = Expr(:tuple, ntuple(ii->:(getfield(x, $ii)), nfields)...)
-        return :(NamedTuple{$names, Tuple{$(types...)}}($vals))
+        vals = Expr(:tuple, ntuple(ii -> :(getfield(x, $ii)), nfields)...)
+        return :(NamedTuple{$names,Tuple{$(types...)}}($vals))
     else
-        !isstructtype(T) && throw(DomainError(T, "backing can only be used on struct types"))
+        !isstructtype(T) &&
+            throw(DomainError(T, "backing can only be used on struct types"))
         nfields = fieldcount(T)
         names = fieldnames(T)
         types = fieldtypes(T)
 
-        vals = ntuple(ii->getfield(x, ii), nfields)
-        return NamedTuple{names, Tuple{types...}}(vals)
+        vals = ntuple(ii -> getfield(x, ii), nfields)
+        return NamedTuple{names,Tuple{types...}}(vals)
     end
 end
 
@@ -170,36 +172,38 @@ Return the canonical `Tangent` for the primal type `P`.
 The property names of the returned `Tangent` match the field names of the primal,
 and all fields of `P` not present in the input `tangent` are explictly set to `ZeroTangent()`.
 """
-function canonicalize(tangent::Tangent{P, <:NamedTuple{L}}) where {P,L}
+function canonicalize(tangent::Tangent{P,<:NamedTuple{L}}) where {P,L}
     nil = _zeroed_backing(P)
     combined = merge(nil, backing(tangent))
     if length(combined) !== fieldcount(P)
-        throw(ArgumentError(
-            "Tangent fields do not match primal fields.\n" *
-            "Tangent fields: $L. Primal ($P) fields: $(fieldnames(P))"
-        ))
+        throw(
+            ArgumentError(
+                "Tangent fields do not match primal fields.\n" *
+                "Tangent fields: $L. Primal ($P) fields: $(fieldnames(P))",
+            ),
+        )
     end
-    return Tangent{P, typeof(combined)}(combined)
+    return Tangent{P,typeof(combined)}(combined)
 end
 
 # Tuple tangents are always in their canonical form
-canonicalize(tangent::Tangent{<:Tuple, <:Tuple}) = tangent
+canonicalize(tangent::Tangent{<:Tuple,<:Tuple}) = tangent
 
 # Dict tangents are always in their canonical form.
-canonicalize(tangent::Tangent{<:Any, <:AbstractDict}) = tangent
+canonicalize(tangent::Tangent{<:Any,<:AbstractDict}) = tangent
 
 # Tangents of unspecified primal types (indicated by specifying exactly `Any`)
 # all combinations of type-params are specified here to avoid ambiguities
-canonicalize(tangent::Tangent{Any, <:NamedTuple{L}}) where {L} = tangent
-canonicalize(tangent::Tangent{Any, <:Tuple}) where {L} = tangent
-canonicalize(tangent::Tangent{Any, <:AbstractDict}) where {L} = tangent
+canonicalize(tangent::Tangent{Any,<:NamedTuple{L}}) where {L} = tangent
+canonicalize(tangent::Tangent{Any,<:Tuple}) where {L} = tangent
+canonicalize(tangent::Tangent{Any,<:AbstractDict}) where {L} = tangent
 
 """
     _zeroed_backing(P)
 
 Returns a NamedTuple with same fields as `P`, and all values `ZeroTangent()`.
 """
-@generated function _zeroed_backing(::Type{P}) where P
+@generated function _zeroed_backing(::Type{P}) where {P}
     nil_base = ntuple(fieldcount(P)) do i
         (fieldname(P, i), ZeroTangent())
     end
@@ -218,7 +222,7 @@ after an operation such as the addition of a primal to a tangent
 It should be overloaded, if `T` does not have a default constructor,
 or if `T` needs to maintain some invarients between its fields.
 """
-function construct(::Type{T}, fields::NamedTuple{L}) where {T, L}
+function construct(::Type{T}, fields::NamedTuple{L}) where {T,L}
     # Tested and verified that that this avoids a ton of allocations
     if length(L) !== fieldcount(T)
         # if length is equal but names differ then we will catch that below anyway.
@@ -233,12 +237,12 @@ function construct(::Type{T}, fields::NamedTuple{L}) where {T, L}
     end
 end
 
-construct(::Type{T}, fields::T) where T<:NamedTuple = fields
-construct(::Type{T}, fields::T) where T<:Tuple = fields
+construct(::Type{T}, fields::T) where {T<:NamedTuple} = fields
+construct(::Type{T}, fields::T) where {T<:Tuple} = fields
 
 elementwise_add(a::Tuple, b::Tuple) = map(+, a, b)
 
-function elementwise_add(a::NamedTuple{an}, b::NamedTuple{bn}) where {an, bn}
+function elementwise_add(a::NamedTuple{an}, b::NamedTuple{bn}) where {an,bn}
     # Rule of Tangent addition: any fields not present are implict hard Zeros
 
     # Base on the `merge(:;NamedTuple, ::NamedTuple)` code from Base.
@@ -281,7 +285,7 @@ function elementwise_add(a::NamedTuple{an}, b::NamedTuple{bn}) where {an, bn}
             end
             field => value
         end
-        return (;vals...)
+        return (; vals...)
     end
 end
 
@@ -297,15 +301,16 @@ function Base.showerror(io::IO, err::PrimalAdditionFailedException{P}) where {P}
     println(io, "Could not construct $P after addition.")
     println(io, "This probably means no default constructor is defined.")
     println(io, "Either define a default constructor")
-    printstyled(io, "$P(", join(propertynames(err.differential), ", "), ")", color=:blue)
+    printstyled(io, "$P(", join(propertynames(err.differential), ", "), ")"; color=:blue)
     println(io, "\nor overload")
-    printstyled(io,
+    printstyled(
+        io,
         "ChainRulesCore.construct(::Type{$P}, ::$(typeof(err.differential)))";
-        color=:blue
+        color=:blue,
     )
     println(io, "\nor overload")
     printstyled(io, "Base.:+(::$P, ::$(typeof(err.differential)))"; color=:blue)
     println(io, "\nOriginal Exception:")
     printstyled(io, err.original; color=:yellow)
-    println(io)
+    return println(io)
 end

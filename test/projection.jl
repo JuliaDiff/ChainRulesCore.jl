@@ -24,9 +24,9 @@ struct NoSuperType end
         # real / complex
         @test ProjectTo(1.0)(2.0 + 3im) === 2.0
         @test ProjectTo(1.0 + 2.0im)(3.0) === 3.0 + 0.0im
-        @test ProjectTo(2.0+3.0im)(1+1im) === 1.0+1.0im
-        @test ProjectTo(2.0)(1+1im) === 1.0
-        
+        @test ProjectTo(2.0 + 3.0im)(1 + 1im) === 1.0 + 1.0im
+        @test ProjectTo(2.0)(1 + 1im) === 1.0
+
         # storage
         @test ProjectTo(1)(pi) === pi
         @test ProjectTo(1 + im)(pi) === ComplexF64(pi)
@@ -37,7 +37,8 @@ struct NoSuperType end
         @test ProjectTo(1.0)(2) === 2.0
 
         # Tangents
-        ProjectTo(1.0f0 + 2im)(Tangent{ComplexF64}(re=1, im=NoTangent())) === 1.0f0 + 0.0f0im
+        ProjectTo(1.0f0 + 2im)(Tangent{ComplexF64}(; re=1, im=NoTangent())) ===
+        1.0f0 + 0.0f0im
     end
 
     @testset "Dual" begin # some weird Real subtype that we should basically leave alone
@@ -46,9 +47,8 @@ struct NoSuperType end
 
         # real & complex
         @test ProjectTo(1.0 + 1im)(Dual(1.0, 2.0)) isa Complex{<:Dual}
-        @test ProjectTo(1.0 + 1im)(
-            Complex(Dual(1.0, 2.0), Dual(1.0, 2.0))
-        ) isa Complex{<:Dual}
+        @test ProjectTo(1.0 + 1im)(Complex(Dual(1.0, 2.0), Dual(1.0, 2.0))) isa
+              Complex{<:Dual}
         @test ProjectTo(1.0)(Complex(Dual(1.0, 2.0), Dual(1.0, 2.0))) isa Dual
 
         # Tangent
@@ -99,7 +99,7 @@ struct NoSuperType end
         # arrays of other things
         @test ProjectTo([:x, :y]) isa ProjectTo{NoTangent}
         @test ProjectTo(Any['x', "y"]) isa ProjectTo{NoTangent}
-        @test ProjectTo([(1,2), (3,4), (5,6)]) isa ProjectTo{AbstractArray}
+        @test ProjectTo([(1, 2), (3, 4), (5, 6)]) isa ProjectTo{AbstractArray}
 
         @test ProjectTo(Any[1, 2])(1:2) == [1.0, 2.0]  # projects each number.
         @test Tuple(ProjectTo(Any[1, 2 + 3im])(1:2)) === (1.0, 2.0 + 0.0im)
@@ -126,18 +126,18 @@ struct NoSuperType end
     @testset "Base: Ref" begin
         pref = ProjectTo(Ref(2.0))
         @test pref(Ref(3 + im)).x === 3.0
-        @test pref(Tangent{Base.RefValue}(x = 3 + im)).x === 3.0
+        @test pref(Tangent{Base.RefValue}(; x=3 + im)).x === 3.0
         @test pref(4).x === 4.0  # also re-wraps scalars
         @test pref(Ref{Any}(5.0)) isa Tangent{<:Base.RefValue}
 
         pref2 = ProjectTo(Ref{Any}(6 + 7im))
         @test pref2(Ref(8)).x === 8.0 + 0.0im
-        @test pref2(Tangent{Base.RefValue}(x = 8)).x === 8.0 + 0.0im
+        @test pref2(Tangent{Base.RefValue}(; x=8)).x === 8.0 + 0.0im
 
         prefvec = ProjectTo(Ref([1, 2, 3 + 4im]))  # recurses into contents
         @test prefvec(Ref(1:3)).x isa Vector{ComplexF64}
-        @test prefvec(Tangent{Base.RefValue}(x = 1:3)).x isa Vector{ComplexF64}
-        @test_skip @test_throws DimensionMismatch prefvec(Tangent{Base.RefValue}(x = 1:5))
+        @test prefvec(Tangent{Base.RefValue}(; x=1:3)).x isa Vector{ComplexF64}
+        @test_skip @test_throws DimensionMismatch prefvec(Tangent{Base.RefValue}(; x=1:5))
 
         @test ProjectTo(Ref(true)) isa ProjectTo{NoTangent}
         @test ProjectTo(Ref([false]')) isa ProjectTo{NoTangent}
@@ -341,13 +341,13 @@ struct NoSuperType end
 
     @testset "Tangent" begin
         x = 1:3.0
-        dx = Tangent{typeof(x)}(; step=0.1, ref=NoTangent());
+        dx = Tangent{typeof(x)}(; step=0.1, ref=NoTangent())
         @test ProjectTo(x)(dx) isa Tangent
         @test ProjectTo(x)(dx).step === 0.1
         @test ProjectTo(x)(dx).offset isa AbstractZero
 
         pref = ProjectTo(Ref(2.0))
-        dy = Tangent{typeof(Ref(2.0))}(x = 3+4im)
+        dy = Tangent{typeof(Ref(2.0))}(; x=3 + 4im)
         @test pref(dy) isa Tangent{<:Base.RefValue}
         @test pref(dy).x === 3.0
     end
@@ -365,21 +365,21 @@ struct NoSuperType end
         # Each "@test 33 > ..." is zero on nightly, 32 on 1.5.
 
         pvec = ProjectTo(rand(10^3))
-        @test 0 == @ballocated $pvec(dx) setup=(dx = rand(10^3))    # pass through
-        @test 90 > @ballocated $pvec(dx) setup=(dx = rand(10^3, 1))  # reshape
+        @test 0 == @ballocated $pvec(dx) setup = (dx = rand(10^3))    # pass through
+        @test 90 > @ballocated $pvec(dx) setup = (dx = rand(10^3, 1))  # reshape
 
         @test 33 > @ballocated ProjectTo(x)(dx) setup = (x = rand(10^3); dx = rand(10^3)) # including construction
 
         padj = ProjectTo(adjoint(rand(10^3)))
-        @test 0 == @ballocated $padj(dx) setup=(dx = adjoint(rand(10^3)))
-        @test 0 == @ballocated $padj(dx) setup=(dx = transpose(rand(10^3)))
+        @test 0 == @ballocated $padj(dx) setup = (dx = adjoint(rand(10^3)))
+        @test 0 == @ballocated $padj(dx) setup = (dx = transpose(rand(10^3)))
 
         @test 33 > @ballocated ProjectTo(x')(dx') setup = (x = rand(10^3); dx = rand(10^3))
 
         pdiag = ProjectTo(Diagonal(rand(10^3)))
-        @test 0 == @ballocated $pdiag(dx) setup=(dx = Diagonal(rand(10^3)))
+        @test 0 == @ballocated $pdiag(dx) setup = (dx = Diagonal(rand(10^3)))
 
         psymm = ProjectTo(Symmetric(rand(10^3, 10^3)))
-        @test_broken 0 == @ballocated $psymm(dx) setup=(dx = Symmetric(rand(10^3, 10^3)))  # 64
+        @test_broken 0 == @ballocated $psymm(dx) setup = (dx = Symmetric(rand(10^3, 10^3)))  # 64
     end
 end

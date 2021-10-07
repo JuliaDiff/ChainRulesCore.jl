@@ -32,7 +32,7 @@ ProjectTo{P}() where {P} = ProjectTo{P}(EMPTY_NT)
 
 const Type_kwfunc = Core.kwftype(Type).instance
 function (::typeof(Type_kwfunc))(kws::Any, ::Type{ProjectTo{P}}) where {P}
-    ProjectTo{P}(NamedTuple(kws))
+    return ProjectTo{P}(NamedTuple(kws))
 end
 
 Base.getproperty(p::ProjectTo, name::Symbol) = getproperty(backing(p), name)
@@ -131,7 +131,9 @@ ProjectTo(::AbstractZero) = ProjectTo{NoTangent}()  # Any x::Zero in forward pas
 # Also, any explicit construction with fields, where all fields project to zero, itself
 # projects to zero. This simplifies projectors for wrapper types like Diagonal([true, false]).
 const _PZ = ProjectTo{<:AbstractZero}
-ProjectTo{P}(::NamedTuple{T, <:Tuple{_PZ, Vararg{<:_PZ}}}) where {P,T} = ProjectTo{NoTangent}()
+function ProjectTo{P}(::NamedTuple{T,<:Tuple{_PZ,Vararg{<:_PZ}}}) where {P,T}
+    return ProjectTo{NoTangent}()
+end
 
 # Tangent
 # We haven't entirely figured out when to convert Tangents to "natural" representations such as
@@ -164,12 +166,16 @@ for T in (Float16, Float32, Float64, ComplexF16, ComplexF32, ComplexF64)
 end
 
 # In these cases we can just `convert` as we know we are dealing with plain and simple types
-(::ProjectTo{T})(dx::AbstractFloat) where T<:AbstractFloat = convert(T, dx)
-(::ProjectTo{T})(dx::Integer) where T<:AbstractFloat = convert(T, dx)  #needed to avoid ambiguity
+(::ProjectTo{T})(dx::AbstractFloat) where {T<:AbstractFloat} = convert(T, dx)
+(::ProjectTo{T})(dx::Integer) where {T<:AbstractFloat} = convert(T, dx)  #needed to avoid ambiguity
 # simple Complex{<:AbstractFloat}} cases
-(::ProjectTo{T})(dx::Complex{<:AbstractFloat}) where {T<:Complex{<:AbstractFloat}} = convert(T, dx)
+function (::ProjectTo{T})(dx::Complex{<:AbstractFloat}) where {T<:Complex{<:AbstractFloat}}
+    return convert(T, dx)
+end
 (::ProjectTo{T})(dx::AbstractFloat) where {T<:Complex{<:AbstractFloat}} = convert(T, dx)
-(::ProjectTo{T})(dx::Complex{<:Integer}) where {T<:Complex{<:AbstractFloat}} = convert(T, dx)
+function (::ProjectTo{T})(dx::Complex{<:Integer}) where {T<:Complex{<:AbstractFloat}}
+    return convert(T, dx)
+end
 (::ProjectTo{T})(dx::Integer) where {T<:Complex{<:AbstractFloat}} = convert(T, dx)
 
 # Other numbers, including e.g. ForwardDiff.Dual and Symbolics.Sym, should pass through.
@@ -244,9 +250,11 @@ end
 # although really Ref() is probably a better structure.
 function (project::ProjectTo{AbstractArray})(dx::Number) # ... so we restore from numbers
     if !(project.axes isa Tuple{})
-        throw(DimensionMismatch(
-            "array with ndims(x) == $(length(project.axes)) >  0 cannot have dx::Number",
-        ))
+        throw(
+            DimensionMismatch(
+                "array with ndims(x) == $(length(project.axes)) >  0 cannot have dx::Number"
+            ),
+        )
     end
     return fill(project.element(dx))
 end
@@ -298,7 +306,9 @@ function (project::ProjectTo{Adjoint})(dx::AbstractArray)
     return adjoint(project.parent(dy))
 end
 
-ProjectTo(x::LinearAlgebra.TransposeAbsVec) = ProjectTo{Transpose}(; parent=ProjectTo(parent(x)))
+function ProjectTo(x::LinearAlgebra.TransposeAbsVec)
+    return ProjectTo{Transpose}(; parent=ProjectTo(parent(x)))
+end
 function (project::ProjectTo{Transpose})(dx::LinearAlgebra.AdjOrTransAbsVec)
     return transpose(project.parent(transpose(dx)))
 end
@@ -316,10 +326,8 @@ ProjectTo(x::Diagonal) = ProjectTo{Diagonal}(; diag=ProjectTo(x.diag))
 (project::ProjectTo{Diagonal})(dx::Diagonal) = Diagonal(project.diag(dx.diag))
 
 # Symmetric
-for (SymHerm, chk, fun) in (
-    (:Symmetric, :issymmetric, :transpose),
-    (:Hermitian, :ishermitian, :adjoint),
-    )
+for (SymHerm, chk, fun) in
+    ((:Symmetric, :issymmetric, :transpose), (:Hermitian, :ishermitian, :adjoint))
     @eval begin
         function ProjectTo(x::$SymHerm)
             sub = ProjectTo(parent(x))

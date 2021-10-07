@@ -67,7 +67,7 @@ end
 function LinearAlgebra.diagm(
     m, n, kv::Pair{<:Integer,<:AbstractThunk}, kvs::Pair{<:Integer,<:AbstractThunk}...
 )
-    return diagm(m, n, (k => unthunk(v) for (k, v) in (kv, kvs...))...) 
+    return diagm(m, n, (k => unthunk(v) for (k, v) in (kv, kvs...))...)
 end
 
 LinearAlgebra.tril(a::AbstractThunk) = tril(unthunk(a))
@@ -196,7 +196,6 @@ end
 Base.show(io::IO, x::Thunk) = print(io, "Thunk($(repr(x.f)))")
 
 Base.convert(::Type{<:Thunk}, a::AbstractZero) = @thunk(a)
-
 
 """
     InplaceableThunk(add!::Function, val::Thunk)

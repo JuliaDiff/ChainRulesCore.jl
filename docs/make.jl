@@ -16,20 +16,20 @@ DocMeta.setdocmeta!(
         @scalar_rule(sin(x), cos(x))  # frule and rrule doctest
         @scalar_rule(sincos(x), @setup((sinx, cosx) = Ω), cosx, -sinx)  # frule doctest
         @scalar_rule(hypot(x::Real, y::Real), (x / Ω, y / Ω))  # rrule doctest
-    end
+    end,
 )
 
 indigo = DocThemeIndigo.install(ChainRulesCore)
 
-makedocs(
+makedocs(;
     modules=[ChainRulesCore],
-    format=Documenter.HTML(
+    format=Documenter.HTML(;
         prettyurls=false,
         assets=[indigo],
         mathengine=MathJax3(
             Dict(
                 :tex => Dict(
-                    "inlineMath" => [["\$","\$"], ["\\(","\\)"]],
+                    "inlineMath" => [["\$", "\$"], ["\\(", "\\)"]],
                     "tags" => "ams",
                     # TODO: remove when using physics package
                     "macros" => Dict(
@@ -67,7 +67,4 @@ makedocs(
     checkdocs=:exports,
 )
 
-deploydocs(
-    repo = "github.com/JuliaDiff/ChainRulesCore.jl.git",
-    push_preview=true,
-)
+deploydocs(; repo="github.com/JuliaDiff/ChainRulesCore.jl.git", push_preview=true)

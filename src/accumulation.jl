@@ -26,14 +26,13 @@ end
 
 add!!(x::AbstractArray, y::Thunk) = add!!(x, unthunk(y))
 
-function add!!(x::AbstractArray{<:Any, N}, y::AbstractArray{<:Any, N}) where N
+function add!!(x::AbstractArray{<:Any,N}, y::AbstractArray{<:Any,N}) where {N}
     return if is_inplaceable_destination(x)
         x .+= y
     else
         x + y
     end
 end
-
 
 """
     is_inplaceable_destination(x) -> Bool
@@ -64,7 +63,6 @@ end
 is_inplaceable_destination(::LinearAlgebra.Hermitian) = false
 is_inplaceable_destination(::LinearAlgebra.Symmetric) = false
 
-
 function debug_add!(accumuland, t::InplaceableThunk)
     returned_value = t.add!(accumuland)
     if returned_value !== accumuland
@@ -88,7 +86,7 @@ function Base.showerror(io::IO, err::BadInplaceException)
     if err.accumuland == err.returned_value
         println(
             io,
-            "Which in this case happenned to be equal. But they are not the same object."
+            "Which in this case happenned to be equal. But they are not the same object.",
         )
     end
 end
