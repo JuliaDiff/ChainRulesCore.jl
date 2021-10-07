@@ -99,7 +99,7 @@ macro scalar_rule(call, maybe_setup, partials...)
     rrule_expr = scalar_rrule_expr(__source__, f, call, [], inputs, derivatives)
 
     # Final return: building the expression to insert in the place of this macro
-    return code = quote
+    return quote
         if !($f isa Type) && fieldcount(typeof($f)) > 0
             throw(
                 ArgumentError(
