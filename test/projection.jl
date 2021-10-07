@@ -30,14 +30,14 @@ struct NoSuperType end
         # storage
         @test ProjectTo(1)(pi) === pi
         @test ProjectTo(1 + im)(pi) === ComplexF64(pi)
-        @test ProjectTo(1 // 2)(3 // 4) === 3 // 4
+        @test ProjectTo(1//2)(3//4) === 3//4
         @test ProjectTo(1.0f0)(1 / 2) === 0.5f0
         @test ProjectTo(1.0f0 + 2im)(3) === 3.0f0 + 0im
         @test ProjectTo(big(1.0))(2) === 2
         @test ProjectTo(1.0)(2) === 2.0
 
         # Tangents
-        ProjectTo(1.0f0 + 2im)(Tangent{ComplexF64}(re = 1, im = NoTangent())) ===
+        ProjectTo(1.0f0 + 2im)(Tangent{ComplexF64}(; re=1, im=NoTangent())) ===
         1.0f0 + 0.0f0im
     end
 
@@ -52,7 +52,7 @@ struct NoSuperType end
         @test ProjectTo(1.0)(Complex(Dual(1.0, 2.0), Dual(1.0, 2.0))) isa Dual
 
         # Tangent
-        @test ProjectTo(Dual(1.0, 2.0))(Tangent{Dual}(; value = 1.0)) isa Tangent
+        @test ProjectTo(Dual(1.0, 2.0))(Tangent{Dual}(; value=1.0)) isa Tangent
     end
 
     @testset "Base: arrays of numbers" begin
@@ -102,7 +102,7 @@ struct NoSuperType end
         @test ProjectTo([(1, 2), (3, 4), (5, 6)]) isa ProjectTo{AbstractArray}
 
         @test ProjectTo(Any[1, 2])(1:2) == [1.0, 2.0]  # projects each number.
-        @test Tuple(ProjectTo(Any[1, 2+3im])(1:2)) === (1.0, 2.0 + 0.0im)
+        @test Tuple(ProjectTo(Any[1, 2 + 3im])(1:2)) === (1.0, 2.0 + 0.0im)
         @test ProjectTo(Any[true, false]) isa ProjectTo{NoTangent}
 
         # empty arrays
@@ -126,18 +126,18 @@ struct NoSuperType end
     @testset "Base: Ref" begin
         pref = ProjectTo(Ref(2.0))
         @test pref(Ref(3 + im)).x === 3.0
-        @test pref(Tangent{Base.RefValue}(x = 3 + im)).x === 3.0
+        @test pref(Tangent{Base.RefValue}(; x=3 + im)).x === 3.0
         @test pref(4).x === 4.0  # also re-wraps scalars
         @test pref(Ref{Any}(5.0)) isa Tangent{<:Base.RefValue}
 
         pref2 = ProjectTo(Ref{Any}(6 + 7im))
         @test pref2(Ref(8)).x === 8.0 + 0.0im
-        @test pref2(Tangent{Base.RefValue}(x = 8)).x === 8.0 + 0.0im
+        @test pref2(Tangent{Base.RefValue}(; x=8)).x === 8.0 + 0.0im
 
         prefvec = ProjectTo(Ref([1, 2, 3 + 4im]))  # recurses into contents
         @test prefvec(Ref(1:3)).x isa Vector{ComplexF64}
-        @test prefvec(Tangent{Base.RefValue}(x = 1:3)).x isa Vector{ComplexF64}
-        @test_skip @test_throws DimensionMismatch prefvec(Tangent{Base.RefValue}(x = 1:5))
+        @test prefvec(Tangent{Base.RefValue}(; x=1:3)).x isa Vector{ComplexF64}
+        @test_skip @test_throws DimensionMismatch prefvec(Tangent{Base.RefValue}(; x=1:5))
 
         @test ProjectTo(Ref(true)) isa ProjectTo{NoTangent}
         @test ProjectTo(Ref([false]')) isa ProjectTo{NoTangent}
@@ -172,7 +172,7 @@ struct NoSuperType end
 
         # evil test case
         if VERSION >= v"1.7-"  # up to 1.6  Vector[[1,2,3]]'  is an error, not sure why it's called
-            xs = adj(Any[Any[1, 2, 3], Any[4+im, 5-im, 6+im, 7-im]])
+            xs = adj(Any[Any[1, 2, 3], Any[4 + im, 5 - im, 6 + im, 7 - im]])
             pvecvec3 = ProjectTo(xs)
             @test pvecvec3(xs)[1] == [1 2 3]
             @test pvecvec3(xs)[2] == adj.([4 + im 5 - im 6 + im 7 - im])
@@ -341,13 +341,13 @@ struct NoSuperType end
 
     @testset "Tangent" begin
         x = 1:3.0
-        dx = Tangent{typeof(x)}(; step = 0.1, ref = NoTangent())
+        dx = Tangent{typeof(x)}(; step=0.1, ref=NoTangent())
         @test ProjectTo(x)(dx) isa Tangent
         @test ProjectTo(x)(dx).step === 0.1
         @test ProjectTo(x)(dx).offset isa AbstractZero
 
         pref = ProjectTo(Ref(2.0))
-        dy = Tangent{typeof(Ref(2.0))}(x = 3 + 4im)
+        dy = Tangent{typeof(Ref(2.0))}(; x=3 + 4im)
         @test pref(dy) isa Tangent{<:Base.RefValue}
         @test pref(dy).x === 3.0
     end

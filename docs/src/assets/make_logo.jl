@@ -8,7 +8,7 @@ using Random
 
 const bridge_len = 50
 
-function chain(jiggle = 0)
+function chain(jiggle=0)
     shaky_rotate(θ) = rotate(θ + jiggle * (rand() - 0.5))
 
     ### 1
@@ -16,7 +16,6 @@ function chain(jiggle = 0)
     sethue(Luxor.julia_red)
     link()
     m1 = getmatrix()
-
 
     ### 2
     sethue(Luxor.julia_green)
@@ -38,14 +37,12 @@ function chain(jiggle = 0)
 
     setmatrix(m2)
     setcolor(Luxor.julia_green)
-    overlap(-1.5π)
+    return overlap(-1.5π)
 end
-
 
 function link()
     sector(50, 90, π, 0, :fill)
     sector(Point(0, bridge_len), 50, 90, 0, -π, :fill)
-
 
     rect(50, -3, 40, bridge_len + 6, :fill)
     rect(-50 - 40, -3, 40, bridge_len + 6, :fill)
@@ -58,7 +55,7 @@ function link()
     move(Point(-90, bridge_len))
     arc(Point(0, 0), 90, π, 0, :stoke)
     arc(Point(0, bridge_len), 90, 0, -π, :stroke)
-    strokepath()
+    return strokepath()
 end
 
 function overlap(ang_end)
@@ -68,7 +65,7 @@ function overlap(ang_end)
     move(Point(90, bridge_len))
     arc(Point(0, bridge_len), 90, 0, ang_end, :stoke)
 
-    strokepath()
+    return strokepath()
 end
 
 # Actually draw it
@@ -80,7 +77,7 @@ function save_logo(filename)
     translate(50, -130)
     chain(0.5)
     finish()
-    preview()
+    return preview()
 end
 
 save_logo("logo.svg")

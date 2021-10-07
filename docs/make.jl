@@ -21,12 +21,12 @@ DocMeta.setdocmeta!(
 
 indigo = DocThemeIndigo.install(ChainRulesCore)
 
-makedocs(
-    modules = [ChainRulesCore],
-    format = Documenter.HTML(
-        prettyurls = false,
-        assets = [indigo],
-        mathengine = MathJax3(
+makedocs(;
+    modules=[ChainRulesCore],
+    format=Documenter.HTML(;
+        prettyurls=false,
+        assets=[indigo],
+        mathengine=MathJax3(
             Dict(
                 :tex => Dict(
                     "inlineMath" => [["\$", "\$"], ["\\(", "\\)"]],
@@ -42,9 +42,9 @@ makedocs(
             ),
         ),
     ),
-    sitename = "ChainRules",
-    authors = "Jarrett Revels and other contributors",
-    pages = [
+    sitename="ChainRules",
+    authors="Jarrett Revels and other contributors",
+    pages=[
         "Introduction" => "index.md",
         "FAQ" => "FAQ.md",
         "Rule configurations and calling back into AD" => "config.md",
@@ -63,8 +63,8 @@ makedocs(
         ],
         "API" => "api.md",
     ],
-    strict = true,
-    checkdocs = :exports,
+    strict=true,
+    checkdocs=:exports,
 )
 
-deploydocs(repo = "github.com/JuliaDiff/ChainRulesCore.jl.git", push_preview = true)
+deploydocs(; repo="github.com/JuliaDiff/ChainRulesCore.jl.git", push_preview=true)

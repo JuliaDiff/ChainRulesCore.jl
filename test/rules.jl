@@ -28,11 +28,7 @@ end
 
 mixed_vararg(x, y, z...) = x + y + sum(z)
 function ChainRulesCore.frule(
-    dargs::Tuple{Any,Any,Any,Vararg},
-    ::typeof(mixed_vararg),
-    x,
-    y,
-    z...,
+    dargs::Tuple{Any,Any,Any,Vararg}, ::typeof(mixed_vararg), x, y, z...
 )
     Δx = dargs[2]
     Δy = dargs[3]
@@ -42,10 +38,7 @@ end
 
 type_constraints(x::Int, y::Float64) = x + y
 function ChainRulesCore.frule(
-    (_, Δx, Δy)::Tuple{Any,Int,Float64},
-    ::typeof(type_constraints),
-    x::Int,
-    y::Float64,
+    (_, Δx, Δy)::Tuple{Any,Int,Float64}, ::typeof(type_constraints), x::Int, y::Float64
 )
     return type_constraints(x, y), Δx + Δy
 end
@@ -73,9 +66,9 @@ _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
 @testset "frule and rrule" begin
     dself = ZeroTangent()
     @test frule((dself, 1), cool, 1) === nothing
-    @test frule((dself, 1), cool, 1; iscool = true) === nothing
+    @test frule((dself, 1), cool, 1; iscool=true) === nothing
     @test rrule(cool, 1) === nothing
-    @test rrule(cool, 1; iscool = true) === nothing
+    @test rrule(cool, 1; iscool=true) === nothing
 
     # add some methods:
     ChainRulesCore.@scalar_rule(Main.cool(x), one(x))
@@ -85,8 +78,7 @@ _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
     # Ensure those are the *only* methods that have been defined
     cool_methods = Set(m.sig for m in methods(rrule) if _second(m.sig) == typeof(cool))
     only_methods = Set([
-        Tuple{typeof(rrule),typeof(cool),Number},
-        Tuple{typeof(rrule),typeof(cool),String},
+        Tuple{typeof(rrule),typeof(cool),Number}, Tuple{typeof(rrule),typeof(cool),String}
     ])
     @test cool_methods == only_methods
 
@@ -104,7 +96,6 @@ _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
     rrx, nice_pullback = rrule(nice, 1)
     @test (NoTangent(), ZeroTangent()) === nice_pullback(1)
 
-
     # Test that these run. Do not care about numerical correctness.
     @test frule((nothing, 1.0, 1.0, 1.0), varargs_function, 0.5, 0.5, 0.5) == (1.5, 3.0)
 
@@ -116,12 +107,7 @@ _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
 
     @test(
         frule(
-            (nothing, 3.0, 2.0, 1.0, 0.0),
-            mixed_vararg_type_constaint,
-            3.0,
-            2.0,
-            1.0,
-            0.0,
+            (nothing, 3.0, 2.0, 1.0, 0.0), mixed_vararg_type_constaint, 3.0, 2.0, 1.0, 0.0
         ) == (6.0, 6.0)
     )
 
@@ -164,7 +150,6 @@ _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
         @test_skip ∂xr ≈ real(∂x)
     end
 
-
     @testset "@opt_out" begin
         first_oa(x, y) = x
         @scalar_rule(first_oa(x, y), (1, 0))
@@ -177,9 +162,11 @@ _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
             @test rrule(first_oa, 3.0, 4.0)[2](1) == (NoTangent(), 1, 0)
             @test rrule(first_oa, 3.0f0, 4.0f0) === nothing
 
-            @test !isempty(Iterators.filter(methods(ChainRulesCore.no_rrule)) do m
-                m.sig <: Tuple{Any,typeof(first_oa),T,T} where {T<:Float32}
-            end)
+            @test !isempty(
+                Iterators.filter(methods(ChainRulesCore.no_rrule)) do m
+                    m.sig <: Tuple{Any,typeof(first_oa),T,T} where {T<:Float32}
+                end,
+            )
         end
 
         @testset "frule" begin

@@ -102,10 +102,10 @@ Base.length(tangent::Tangent) = length(backing(tangent))
 Base.eltype(::Type{<:Tangent{<:Any,T}}) where {T} = eltype(T)
 function Base.reverse(tangent::Tangent)
     rev_backing = reverse(backing(tangent))
-    Tangent{typeof(rev_backing),typeof(rev_backing)}(rev_backing)
+    return Tangent{typeof(rev_backing),typeof(rev_backing)}(rev_backing)
 end
 
-function Base.indexed_iterate(tangent::Tangent{P,<:Tuple}, i::Int, state = 1) where {P}
+function Base.indexed_iterate(tangent::Tangent{P,<:Tuple}, i::Int, state=1) where {P}
     return Base.indexed_iterate(backing(tangent), i, state)
 end
 
@@ -301,16 +301,16 @@ function Base.showerror(io::IO, err::PrimalAdditionFailedException{P}) where {P}
     println(io, "Could not construct $P after addition.")
     println(io, "This probably means no default constructor is defined.")
     println(io, "Either define a default constructor")
-    printstyled(io, "$P(", join(propertynames(err.differential), ", "), ")", color = :blue)
+    printstyled(io, "$P(", join(propertynames(err.differential), ", "), ")"; color=:blue)
     println(io, "\nor overload")
     printstyled(
         io,
         "ChainRulesCore.construct(::Type{$P}, ::$(typeof(err.differential)))";
-        color = :blue,
+        color=:blue,
     )
     println(io, "\nor overload")
-    printstyled(io, "Base.:+(::$P, ::$(typeof(err.differential)))"; color = :blue)
+    printstyled(io, "Base.:+(::$P, ::$(typeof(err.differential)))"; color=:blue)
     println(io, "\nOriginal Exception:")
-    printstyled(io, err.original; color = :yellow)
-    println(io)
+    printstyled(io, err.original; color=:yellow)
+    return println(io)
 end
