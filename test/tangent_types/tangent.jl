@@ -175,10 +175,10 @@ end
         end
 
         @testset "NamedTuples" begin
-            NTTangent(nt) = Tangent{typeof(nt)}(; nt...)
-            t1 = NTTangent((; a = 1.5, b = 0.0))
-            t2 = NTTangent((; a = 0.0, b = 2.5))
-            t_sum = NTTangent((a = 1.5, b = 2.5))
+            make_tangent(nt::NamedTuple) = Tangent{typeof(nt)}(; nt...)
+            t1 = make_tangent((; a = 1.5, b = 0.0))
+            t2 = make_tangent((; a = 0.0, b = 2.5))
+            t_sum = make_tangent((a = 1.5, b = 2.5))
             @test t1 + t2 == t_sum
         end
 
