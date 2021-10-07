@@ -7,7 +7,7 @@ end
     @testset "function" begin
         f() = return 4.0
 
-        y, ẏ = frule((1.0,), ignore_derivatives, f)
+        y, ẏ = frule((1.0, ), ignore_derivatives, f)
         @test y == f()
         @test ẏ == NoTangent()
 
@@ -19,7 +19,7 @@ end
     @testset "argument" begin
         arg = 2.1
 
-        y, ẏ = frule((1.0,), ignore_derivatives, arg)
+        y, ẏ = frule((1.0, ), ignore_derivatives, arg)
         @test y == arg
         @test ẏ == NoTangent()
 
@@ -41,11 +41,11 @@ end
         @test pb(1.0) == (NoTangent(), NoTangent())
 
         # when called
-        y, ẏ = frule((1.0,), ignore_derivatives, () -> mf(3.0))
+        y, ẏ = frule((1.0,), ignore_derivatives, ()->mf(3.0))
         @test y == mf(3.0)
         @test ẏ == NoTangent()
 
-        y, pb = rrule(ignore_derivatives, () -> mf(3.0))
+        y, pb = rrule(ignore_derivatives, ()->mf(3.0))
         @test y == mf(3.0)
         @test pb(1.0) == (NoTangent(), NoTangent())
     end

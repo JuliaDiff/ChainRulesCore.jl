@@ -44,13 +44,9 @@ Base.:/(::Any, x::NotImplemented) = throw(NotImplementedException(x))
 Base.:/(x::NotImplemented, ::NotImplemented) = throw(NotImplementedException(x))
 
 Base.zero(x::NotImplemented) = throw(NotImplementedException(x))
-Base.zero(::Type{<:NotImplemented}) = throw(
-    NotImplementedException(
-        @not_implemented(
-            "`zero` is not defined for missing differentials of type `NotImplemented`"
-        )
-    ),
-)
+Base.zero(::Type{<:NotImplemented}) = throw(NotImplementedException(@not_implemented(
+    "`zero` is not defined for missing differentials of type `NotImplemented`"
+)))
 
 Base.iterate(x::NotImplemented) = throw(NotImplementedException(x))
 Base.iterate(x::NotImplemented, ::Any) = throw(NotImplementedException(x))

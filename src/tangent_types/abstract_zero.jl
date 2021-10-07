@@ -17,15 +17,15 @@ Base.iterate(x::AbstractZero) = (x, nothing)
 Base.iterate(::AbstractZero, ::Any) = nothing
 
 Base.Broadcast.broadcastable(x::AbstractZero) = Ref(x)
-Base.Broadcast.broadcasted(::Type{T}) where {T<:AbstractZero} = T()
+Base.Broadcast.broadcasted(::Type{T}) where T<:AbstractZero = T()
 
 # Linear operators
 Base.adjoint(z::AbstractZero) = z
 Base.transpose(z::AbstractZero) = z
 Base.:/(z::AbstractZero, ::Any) = z
 
-Base.convert(::Type{T}, x::AbstractZero) where {T<:Number} = zero(T)
-(::Type{T})(xs::AbstractZero...) where {T<:Number} = zero(T)
+Base.convert(::Type{T}, x::AbstractZero) where T <: Number = zero(T)
+(::Type{T})(xs::AbstractZero...) where T <: Number = zero(T)
 
 (::Type{Complex})(x::AbstractZero, y::Real) = Complex(false, y)
 (::Type{Complex})(x::Real, y::AbstractZero) = Complex(x, false)
@@ -33,7 +33,7 @@ Base.convert(::Type{T}, x::AbstractZero) where {T<:Number} = zero(T)
 Base.getindex(z::AbstractZero, k) = z
 
 Base.view(z::AbstractZero, ind...) = z
-Base.sum(z::AbstractZero; dims = :) = z
+Base.sum(z::AbstractZero; dims=:) = z
 
 """
     ZeroTangent() <: AbstractZero
