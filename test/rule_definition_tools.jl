@@ -281,61 +281,64 @@ end
     end
 end
 
+#! format: off
+# workaround for https://github.com/domluna/JuliaFormatter.jl/issues/484
 module IsolatedModuleForTestingScoping
-# check that rules can be defined by macros without any additional imports
-using ChainRulesCore: @scalar_rule, @non_differentiable
+    # check that rules can be defined by macros without any additional imports
+    using ChainRulesCore: @scalar_rule, @non_differentiable
 
-# ensure that functions, types etc. in module `ChainRulesCore` can't be resolved
-const ChainRulesCore = nothing
+    # ensure that functions, types etc. in module `ChainRulesCore` can't be resolved
+    const ChainRulesCore = nothing
 
-# this is
-# https://github.com/JuliaDiff/ChainRulesCore.jl/issues/317
-fixed(x) = :abc
-@non_differentiable fixed(x)
+    # this is
+    # https://github.com/JuliaDiff/ChainRulesCore.jl/issues/317
+    fixed(x) = :abc
+    @non_differentiable fixed(x)
 
-# check name collision between a primal input called `kwargs` and the actual keyword
-# arguments
-fixed_kwargs(x; kwargs...) = :abc
-@non_differentiable fixed_kwargs(kwargs)
+    # check name collision between a primal input called `kwargs` and the actual keyword
+    # arguments
+    fixed_kwargs(x; kwargs...) = :abc
+    @non_differentiable fixed_kwargs(kwargs)
 
-my_id(x) = x
-@scalar_rule(my_id(x), 1.0)
+    my_id(x) = x
+    @scalar_rule(my_id(x), 1.0)
 
-module IsolatedSubmodule
-# check that rules defined in isolated module without imports can be called
-# without errors
-using ChainRulesCore: frule, rrule, ZeroTangent, NoTangent, derivatives_given_output
-using ..IsolatedModuleForTestingScoping: fixed, fixed_kwargs, my_id
-using Test
+    module IsolatedSubmodule
+        # check that rules defined in isolated module without imports can be called
+        # without errors
+        using ChainRulesCore: frule, rrule, ZeroTangent, NoTangent, derivatives_given_output
+        using ..IsolatedModuleForTestingScoping: fixed, fixed_kwargs, my_id
+        using Test
 
-@testset "@non_differentiable" begin
-    for f in (fixed, fixed_kwargs)
-        y, ẏ = frule((ZeroTangent(), randn()), f, randn())
-        @test y === :abc
-        @test ẏ === NoTangent()
+        @testset "@non_differentiable" begin
+            for f in (fixed, fixed_kwargs)
+                y, ẏ = frule((ZeroTangent(), randn()), f, randn())
+                @test y === :abc
+                @test ẏ === NoTangent()
 
-        y, f_pullback = rrule(f, randn())
-        @test y === :abc
-        @test f_pullback(randn()) === (NoTangent(), NoTangent())
+                y, f_pullback = rrule(f, randn())
+                @test y === :abc
+                @test f_pullback(randn()) === (NoTangent(), NoTangent())
+            end
+
+            y, f_pullback = rrule(fixed_kwargs, randn(); keyword=randn())
+            @test y === :abc
+            @test f_pullback(randn()) === (NoTangent(), NoTangent())
+        end
+
+        @testset "@scalar_rule" begin
+            x, ẋ = randn(2)
+            y, ẏ = frule((ZeroTangent(), ẋ), my_id, x)
+            @test y == x
+            @test ẏ == ẋ
+
+            Δy = randn()
+            y, f_pullback = rrule(my_id, x)
+            @test y == x
+            @test f_pullback(Δy) == (NoTangent(), Δy)
+
+            @test derivatives_given_output(y, my_id, x) == ((1.0,),)
+        end
     end
-
-    y, f_pullback = rrule(fixed_kwargs, randn(); keyword=randn())
-    @test y === :abc
-    @test f_pullback(randn()) === (NoTangent(), NoTangent())
 end
-
-@testset "@scalar_rule" begin
-    x, ẋ = randn(2)
-    y, ẏ = frule((ZeroTangent(), ẋ), my_id, x)
-    @test y == x
-    @test ẏ == ẋ
-
-    Δy = randn()
-    y, f_pullback = rrule(my_id, x)
-    @test y == x
-    @test f_pullback(Δy) == (NoTangent(), Δy)
-
-    @test derivatives_given_output(y, my_id, x) == ((1.0,),)
-end
-end
-end
+#! format: on
