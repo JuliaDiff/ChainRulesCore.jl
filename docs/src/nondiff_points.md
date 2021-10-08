@@ -18,7 +18,7 @@ So what rule should we write for this case?
 The obvious answer, would be to write a rule that throws an error if input at a point where calculus says the derivative is not defined.
 Another option is to return some error signally value like `NaN`.
 Which you *can* do.
-However, this is not useful.
+However, there is no where to go with an error, the user still wants a derivative; so this is not useful.
 
 Let us explore what is useful:
 # Case Studies
@@ -65,9 +65,10 @@ plot(x-> x < 0 ? x : 5x)
 ```
 
 Here was have 3 main options, all are good.
-We could say there derivative at 0 is
+
+We could say there derivative at 0 is:
  - 1: which agrees with backwards finite differencing
- - 5: which agrees with fowards finite differencing
+ - 5: which agrees with forwards finite differencing
  - 3: which is the mean of `[1, 5]`, and agrees with central finite differencing
 
 All of these options are perfectly nice members of the [subderivative](https://en.wikipedia.org/wiki/Subderivative).
@@ -79,6 +80,13 @@ Saying it is `3` is the arguably the nicest, but it is also the most expensive t
 ```@example nondiff
 plot(ceil)
 ```
+
+Here it seems most useful to say the derivative is zero everywhere.
+The limits are zero from both sides.
+
+The other option for `ceil` would be to say it is 1 everywhere.
+But that it too weird, if the use wanted a relaxation of the problem then they would provide one.
+Imposing one on `ceil` for everyone is not reasonable.
 
 ### Primal finite, and derivative nonfinite and same on both sides
 
