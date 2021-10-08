@@ -115,13 +115,20 @@ We do not have to worry about what to return for the side where it is not define
 As we will never be asked for the derivative at e.g. `x=-2.5` since the primal function errors.
 But we do need to worry about at the boundary -- if that boundary point doesn't error.
 
+Since we will never be asked about the left-hand side (as the primal errors), we can use just the right-hand side derivative.
+In this case giving 0.0.
+`
+Also nice in this case is that it agrees with the symbolic simplification of `x->exp(2log(x))` into `x->x^2`.
+
+
+
 ### Not defined on one side, non-finite on the other
 ```@example nondiff
 plot(log)
 ```
 
 ### sub/super-differential convention
-**TODO: Incorperate this with rest of the document.
+**TODO: Incorperate this with rest of the document. Or move to design notes**
 
 Instead we introduce what we call the **sub/super-differential convention**:
 
