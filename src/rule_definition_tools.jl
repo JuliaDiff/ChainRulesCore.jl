@@ -572,9 +572,10 @@ and one to use for calling that function
 """
 function _split_primal_name(primal_name)
     # e.g. f(x, y)
-    if primal_name isa Symbol ||
-       Meta.isexpr(primal_name, :(.)) ||
-       Meta.isexpr(primal_name, :curly)
+   is_plain = primal_name isa Symbol
+   is_qualified = Meta.isexpr(primal_name, :(.))
+   is_parameterized = Meta.isexpr(primal_name, :curly)
+   if is_plain || is_qualified || is_parameterized
         primal_name_sig = :(::$Core.Typeof($primal_name))
         return primal_name_sig, primal_name
     elseif Meta.isexpr(primal_name, :(::))  # e.g. (::T)(x, y)
