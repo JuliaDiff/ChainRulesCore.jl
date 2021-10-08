@@ -295,10 +295,10 @@ function propagation_expr(Δs, ∂s, _conj=false, proj=identity)
     # Apply `muladd` iteratively.
     # Explicit multiplication is only performed for the first pair of partial and gradient.
     init_expr = :(*($(_∂s[1]), $(Δs[1])))
-    summed_∂_mul_Δs =
-        foldl(Iterators.drop(zip(_∂s, Δs), 1); init=init_expr) do ex, (∂s_i, Δs_i)
-            :(muladd($∂s_i, $Δs_i, $ex))
-        end
+    _∂s_Δs_tail = Iterators.drop(zip(_∂s, Δs), 1) 
+    summed_∂_mul_Δs = foldl(_∂s_Δs_tail; init=init_expr) do ex, (∂s_i, Δs_i)
+        :(muladd($∂s_i, $Δs_i, $ex))
+    end
     return :($proj($summed_∂_mul_Δs))
 end
 
