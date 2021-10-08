@@ -19,7 +19,7 @@ macro test_macro_throws(err_expr, expr)
             end
         end
         # Reuse `@test_throws` logic
-        if err!==nothing
+        if err !== nothing
             @test_throws $(esc(err_expr)) ($(Meta.quot(expr)); throw(err))
         else
             @test_throws $(esc(err_expr)) $(Meta.quot(expr))
@@ -37,7 +37,7 @@ struct NonDiffCounterExample
 end
 
 module NonDiffModuleExample
-    nondiff_2_1(x, y) = fill(7.5, 100)[x + y]
+nondiff_2_1(x, y) = fill(7.5, 100)[x + y]
 end
 
 @testset "rule_definition_tools.jl" begin
@@ -58,7 +58,7 @@ end
             res, pullback = rrule(nondiff_1_2, 3.1)
             @test res == (5.0, 3.0)
             @test isequal(
-                pullback(Tangent{Tuple{Float64, Float64}}(1.2, 3.2)),
+                pullback(Tangent{Tuple{Float64,Float64}}(1.2, 3.2)),
                 (NoTangent(), NoTangent()),
             )
         end
@@ -81,7 +81,8 @@ end
             pointy_identity(x) = x
             @non_differentiable pointy_identity(::Vector{<:AbstractString})
 
-            @test frule((ZeroTangent(), 1.2), pointy_identity, ["2"]) == (["2"], NoTangent())
+            @test frule((ZeroTangent(), 1.2), pointy_identity, ["2"]) ==
+                  (["2"], NoTangent())
             @test frule((ZeroTangent(), 1.2), pointy_identity, 2.0) == nothing
 
             res, pullback = rrule(pointy_identity, ["2"])
@@ -112,7 +113,8 @@ end
                 @test res == 4.5
                 @test pullback(1.1) == (NoTangent(), NoTangent())
 
-                @test frule((ZeroTangent(), 11.1), kw_demo, 1.5; kw=3.0) == (4.5, NoTangent())
+                @test frule((ZeroTangent(), 11.1), kw_demo, 1.5; kw=3.0) ==
+                      (4.5, NoTangent())
             end
         end
 
@@ -121,7 +123,7 @@ end
 
             @test isequal(
                 frule((ZeroTangent(), 1.2), NonDiffExample, 2.0),
-                (NonDiffExample(2.0), NoTangent())
+                (NonDiffExample(2.0), NoTangent()),
             )
 
             res, pullback = rrule(NonDiffExample, 2.0)
@@ -151,7 +153,7 @@ end
                 @test frule((1, 1), fvarargs, 1, 2.0) == (fvarargs(1, 2.0), NoTangent())
 
                 @test frule((1, 1), fvarargs, 1, 2) == nothing
-                    @test rrule(fvarargs, 1, 2) == nothing
+                @test rrule(fvarargs, 1, 2) == nothing
             end
 
             @testset "::Float64..." begin
@@ -196,8 +198,8 @@ end
         @testset "Functors" begin
             (f::NonDiffExample)(y) = fill(7.5, 100)[f.x + y]
             @non_differentiable (::NonDiffExample)(::Any)
-            @test frule((Tangent{NonDiffExample}(x=1.2), 2.3), NonDiffExample(3), 2) ==
-                (7.5, NoTangent())
+            @test frule((Tangent{NonDiffExample}(; x=1.2), 2.3), NonDiffExample(3), 2) ==
+                  (7.5, NoTangent())
             res, pullback = rrule(NonDiffExample(3), 2)
             @test res == 7.5
             @test pullback(4.5) == (NoTangent(), NoTangent())
@@ -205,8 +207,9 @@ end
 
         @testset "Module specified explicitly" begin
             @non_differentiable NonDiffModuleExample.nondiff_2_1(::Any, ::Any)
-            @test frule((ZeroTangent(), 1.2, 2.3), NonDiffModuleExample.nondiff_2_1, 3, 2) ==
-                (7.5, NoTangent())
+            @test frule(
+                (ZeroTangent(), 1.2, 2.3), NonDiffModuleExample.nondiff_2_1, 3, 2
+            ) == (7.5, NoTangent())
             res, pullback = rrule(NonDiffModuleExample.nondiff_2_1, 3, 2)
             @test res == 7.5
             @test pullback(4.5) == (NoTangent(), NoTangent(), NoTangent())
@@ -216,7 +219,7 @@ end
             # Where clauses are not supported.
             @test_macro_throws(
                 ErrorException,
-                (@non_differentiable where_identity(::Vector{T}) where T<:AbstractString)
+                (@non_differentiable where_identity(::Vector{T}) where {T<:AbstractString})
             )
         end
     end
@@ -224,32 +227,33 @@ end
     @testset "@scalar_rule" begin
         @testset "@scalar_rule with multiple output" begin
             simo(x) = (x, 2x)
-            @scalar_rule(simo(x), 1f0, 2f0)
+            @scalar_rule(simo(x), 1.0f0, 2.0f0)
 
             y, simo_pb = rrule(simo, π)
 
-            @test simo_pb((10f0, 20f0)) == (NoTangent(), 50f0)
+            @test simo_pb((10.0f0, 20.0f0)) == (NoTangent(), 50.0f0)
 
-            y, ẏ = frule((NoTangent(), 50f0), simo, π)
+            y, ẏ = frule((NoTangent(), 50.0f0), simo, π)
             @test y == (π, 2π)
-            @test ẏ == Tangent{typeof(y)}(50f0, 100f0)
+            @test ẏ == Tangent{typeof(y)}(50.0f0, 100.0f0)
             # make sure type is exactly as expected:
-            @test ẏ isa Tangent{Tuple{Irrational{:π}, Float64}, Tuple{Float32, Float32}}
+            @test ẏ isa Tangent{Tuple{Irrational{:π},Float64},Tuple{Float32,Float32}}
 
             xs, Ω = (3,), (3, 6)
-            @test ChainRulesCore.derivatives_given_output(Ω, simo, xs...) == ((1f0,), (2f0,))
+            @test ChainRulesCore.derivatives_given_output(Ω, simo, xs...) ==
+                  ((1.0f0,), (2.0f0,))
         end
 
         @testset "@scalar_rule projection" begin
-            make_imaginary(x) = im*x
+            make_imaginary(x) = im * x
             @scalar_rule make_imaginary(x) im
 
             # note: the === will make sure that these are Float64, not ComplexF64
-            @test (NoTangent(), 1.0) === rrule(make_imaginary, 2.0)[2](1.0*im)
+            @test (NoTangent(), 1.0) === rrule(make_imaginary, 2.0)[2](1.0 * im)
             @test (NoTangent(), 0.0) === rrule(make_imaginary, 2.0)[2](1.0)
 
-            @test (NoTangent(), 1.0+0.0im) === rrule(make_imaginary, 2.0im)[2](1.0*im)
-            @test (NoTangent(), 0.0-1.0im) === rrule(make_imaginary, 2.0im)[2](1.0)
+            @test (NoTangent(), 1.0 + 0.0im) === rrule(make_imaginary, 2.0im)[2](1.0 * im)
+            @test (NoTangent(), 0.0 - 1.0im) === rrule(make_imaginary, 2.0im)[2](1.0)
         end
 
         @testset "Regression tests against #276 and #265" begin
@@ -263,7 +267,7 @@ end
             @scalar_rule(simo2(x), 1.0, 2.0)
             _, simo2_pb = rrule(simo2, 43.0)
             # make sure it infers: inferability implies type stability
-            @inferred simo2_pb(Tangent{Tuple{Float64, Float64}}(3.0, 6.0))
+            @inferred simo2_pb(Tangent{Tuple{Float64,Float64}}(3.0, 6.0))
 
             # Test no new globals were created
             @test length(names(ChainRulesCore; all=true)) == num_globals_before
@@ -277,7 +281,8 @@ end
     end
 end
 
-
+#! format: off
+# workaround for https://github.com/domluna/JuliaFormatter.jl/issues/484
 module IsolatedModuleForTestingScoping
     # check that rules can be defined by macros without any additional imports
     using ChainRulesCore: @scalar_rule, @non_differentiable
@@ -336,3 +341,4 @@ module IsolatedModuleForTestingScoping
         end
     end
 end
+#! format: on

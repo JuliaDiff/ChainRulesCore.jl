@@ -27,7 +27,7 @@
         end
 
         @testset "misc AbstractTangent subtypes" begin
-            @test 16 == add!!(12, @thunk(2*2))
+            @test 16 == add!!(12, @thunk(2 * 2))
             @test 16 == add!!(16, ZeroTangent())
 
             @test 16 == add!!(16, NoTangent())  # Should this be an error?
@@ -37,15 +37,15 @@
             @testset "LHS Array (inplace)" begin
                 @testset "RHS Array" begin
                     A = [1.0 2.0; 3.0 4.0]
-                    accumuland = -1.0*ones(2,2)
+                    accumuland = -1.0 * ones(2, 2)
                     ret = add!!(accumuland, A)
                     @test ret === accumuland  # must be same object
                     @test accumuland == [0.0 1.0; 2.0 3.0]
                 end
 
                 @testset "RHS StaticArray" begin
-                    A = @SMatrix[1.0 2.0; 3.0 4.0]
-                    accumuland = -1.0*ones(2,2)
+                    A = @SMatrix [1.0 2.0; 3.0 4.0]
+                    accumuland = -1.0 * ones(2, 2)
                     ret = add!!(accumuland, A)
                     @test ret === accumuland  # must be same object
                     @test accumuland == [0.0 1.0; 2.0 3.0]
@@ -53,7 +53,7 @@
 
                 @testset "RHS Diagonal" begin
                     A = Diagonal([1.0, 2.0])
-                    accumuland = -1.0*ones(2,2)
+                    accumuland = -1.0 * ones(2, 2)
                     ret = add!!(accumuland, A)
                     @test ret === accumuland  # must be same object
                     @test accumuland == [0.0 -1.0; -1.0 1.0]
@@ -79,17 +79,17 @@
 
             @testset "Unhappy Path" begin
                 # wrong length
-                @test_throws DimensionMismatch add!!(ones(4,4), ones(2,2))
+                @test_throws DimensionMismatch add!!(ones(4, 4), ones(2, 2))
                 # wrong shape
-                @test_throws DimensionMismatch add!!(ones(4,4), ones(16))
+                @test_throws DimensionMismatch add!!(ones(4, 4), ones(16))
                 # wrong type (adding scalar to array)
                 @test_throws MethodError add!!(ones(4), 21.0)
             end
         end
 
         @testset "AbstractThunk $(typeof(thunk))" for thunk in (
-            @thunk(-1.0*ones(2, 2)),
-            InplaceableThunk(x -> x .-= ones(2, 2), @thunk(-1.0*ones(2, 2))),
+            @thunk(-1.0 * ones(2, 2)),
+            InplaceableThunk(x -> x .-= ones(2, 2), @thunk(-1.0 * ones(2, 2))),
         )
             @testset "in place" begin
                 accumuland = [1.0 2.0; 3.0 4.0]
@@ -111,12 +111,12 @@
         @testset "not actually inplace but said it was" begin
             # thunk should never be used in this test
             ithunk = InplaceableThunk(@thunk(@assert false)) do x
-                77*ones(2, 2)  # not actually inplace (also wrong)
+                77 * ones(2, 2)  # not actually inplace (also wrong)
             end
             accumuland = ones(2, 2)
             @assert ChainRulesCore.debug_mode() == false
             # without debug being enabled should return the result, not error
-            @test 77*ones(2, 2) == add!!(accumuland, ithunk)
+            @test 77 * ones(2, 2) == add!!(accumuland, ithunk)
 
             ChainRulesCore.debug_mode() = true  # enable debug mode
             # with debug being enabled should error
@@ -127,7 +127,7 @@
 
     @testset "showerror BadInplaceException" begin
         BadInplaceException = ChainRulesCore.BadInplaceException
-        ithunk = InplaceableThunk(x̄->nothing, @thunk(@assert false))
+        ithunk = InplaceableThunk(x̄ -> nothing, @thunk(@assert false))
         msg = sprint(showerror, BadInplaceException(ithunk, [22], [23]))
         @test occursin("22", msg)
 

@@ -20,73 +20,73 @@ end
 
 @testset "Tangent" begin
     @testset "empty types" begin
-        @test typeof(Tangent{Tuple{}}()) == Tangent{Tuple{}, Tuple{}}
+        @test typeof(Tangent{Tuple{}}()) == Tangent{Tuple{},Tuple{}}
     end
 
     @testset "==" begin
-        @test Tangent{Foo}(x=0.1, y=2.5) == Tangent{Foo}(x=0.1, y=2.5)
-        @test Tangent{Foo}(x=0.1, y=2.5) == Tangent{Foo}(y=2.5, x=0.1)
-        @test Tangent{Foo}(y=2.5, x=ZeroTangent()) == Tangent{Foo}(y=2.5)
+        @test Tangent{Foo}(; x=0.1, y=2.5) == Tangent{Foo}(; x=0.1, y=2.5)
+        @test Tangent{Foo}(; x=0.1, y=2.5) == Tangent{Foo}(; y=2.5, x=0.1)
+        @test Tangent{Foo}(; y=2.5, x=ZeroTangent()) == Tangent{Foo}(; y=2.5)
 
-        @test Tangent{Tuple{Float64,}}(2.0) == Tangent{Tuple{Float64,}}(2.0)
+        @test Tangent{Tuple{Float64}}(2.0) == Tangent{Tuple{Float64}}(2.0)
         @test Tangent{Dict}(Dict(4 => 3)) == Tangent{Dict}(Dict(4 => 3))
 
         tup = (1.0, 2.0)
-        @test Tangent{typeof(tup)}(1.0, 2.0) == Tangent{typeof(tup)}(1.0, @thunk(2*1.0))
+        @test Tangent{typeof(tup)}(1.0, 2.0) == Tangent{typeof(tup)}(1.0, @thunk(2 * 1.0))
         @test Tangent{typeof(tup)}(1.0, 2.0) == Tangent{typeof(tup)}(1.0, 2)
 
-        @test Tangent{Foo}(;y=2.0,) == Tangent{Foo}(;x=ZeroTangent(), y=Float32(2.0),)
+        @test Tangent{Foo}(; y=2.0) == Tangent{Foo}(; x=ZeroTangent(), y=Float32(2.0))
     end
 
     @testset "hash" begin
-        @test hash(Tangent{Foo}(x=0.1, y=2.5)) == hash(Tangent{Foo}(y=2.5, x=0.1))
-        @test hash(Tangent{Foo}(y=2.5, x=ZeroTangent())) == hash(Tangent{Foo}(y=2.5))
+        @test hash(Tangent{Foo}(; x=0.1, y=2.5)) == hash(Tangent{Foo}(; y=2.5, x=0.1))
+        @test hash(Tangent{Foo}(; y=2.5, x=ZeroTangent())) == hash(Tangent{Foo}(; y=2.5))
     end
 
     @testset "indexing, iterating, and properties" begin
-        @test keys(Tangent{Foo}(x=2.5)) == (:x,)
-        @test propertynames(Tangent{Foo}(x=2.5)) == (:x,)
-        @test haskey(Tangent{Foo}(x=2.5), :x) == true
+        @test keys(Tangent{Foo}(; x=2.5)) == (:x,)
+        @test propertynames(Tangent{Foo}(; x=2.5)) == (:x,)
+        @test haskey(Tangent{Foo}(; x=2.5), :x) == true
         if isdefined(Base, :hasproperty)
-            @test hasproperty(Tangent{Foo}(x=2.5), :y) == false
+            @test hasproperty(Tangent{Foo}(; x=2.5), :y) == false
         end
-        @test Tangent{Foo}(x=2.5).x == 2.5
+        @test Tangent{Foo}(; x=2.5).x == 2.5
 
-        @test keys(Tangent{Tuple{Float64,}}(2.0)) == Base.OneTo(1)
-        @test propertynames(Tangent{Tuple{Float64,}}(2.0)) == (1,)
-        @test getindex(Tangent{Tuple{Float64,}}(2.0), 1) == 2.0
-        @test getindex(Tangent{Tuple{Float64,}}(@thunk 2.0^2), 1) == 4.0
-        @test getproperty(Tangent{Tuple{Float64,}}(2.0), 1) == 2.0
-        @test getproperty(Tangent{Tuple{Float64,}}(@thunk 2.0^2), 1) == 4.0
+        @test keys(Tangent{Tuple{Float64}}(2.0)) == Base.OneTo(1)
+        @test propertynames(Tangent{Tuple{Float64}}(2.0)) == (1,)
+        @test getindex(Tangent{Tuple{Float64}}(2.0), 1) == 2.0
+        @test getindex(Tangent{Tuple{Float64}}(@thunk 2.0^2), 1) == 4.0
+        @test getproperty(Tangent{Tuple{Float64}}(2.0), 1) == 2.0
+        @test getproperty(Tangent{Tuple{Float64}}(@thunk 2.0^2), 1) == 4.0
 
-        NT = NamedTuple{(:a, :b), Tuple{Float64, Float64}}
-        @test getindex(Tangent{NT}(a=(@thunk 2.0^2),), :a) == 4.0
-        @test getindex(Tangent{NT}(a=(@thunk 2.0^2),), :b) == ZeroTangent()
-        @test getindex(Tangent{NT}(b=(@thunk 2.0^2),), 1) == ZeroTangent()
-        @test getindex(Tangent{NT}(b=(@thunk 2.0^2),), 2) == 4.0
+        NT = NamedTuple{(:a, :b),Tuple{Float64,Float64}}
+        @test getindex(Tangent{NT}(; a=(@thunk 2.0^2)), :a) == 4.0
+        @test getindex(Tangent{NT}(; a=(@thunk 2.0^2)), :b) == ZeroTangent()
+        @test getindex(Tangent{NT}(; b=(@thunk 2.0^2)), 1) == ZeroTangent()
+        @test getindex(Tangent{NT}(; b=(@thunk 2.0^2)), 2) == 4.0
 
-        @test getproperty(Tangent{NT}(a=(@thunk 2.0^2),), :a) == 4.0
-        @test getproperty(Tangent{NT}(a=(@thunk 2.0^2),), :b) == ZeroTangent()
-        @test getproperty(Tangent{NT}(b=(@thunk 2.0^2),), 1) == ZeroTangent()
-        @test getproperty(Tangent{NT}(b=(@thunk 2.0^2),), 2) == 4.0
+        @test getproperty(Tangent{NT}(; a=(@thunk 2.0^2)), :a) == 4.0
+        @test getproperty(Tangent{NT}(; a=(@thunk 2.0^2)), :b) == ZeroTangent()
+        @test getproperty(Tangent{NT}(; b=(@thunk 2.0^2)), 1) == ZeroTangent()
+        @test getproperty(Tangent{NT}(; b=(@thunk 2.0^2)), 2) == 4.0
 
         # TODO: uncomment this once https://github.com/JuliaLang/julia/issues/35516
         @test_broken haskey(Tangent{Tuple{Float64}}(2.0), 1) == true
         @test_broken hasproperty(Tangent{Tuple{Float64}}(2.0), 2) == false
 
-        @test length(Tangent{Foo}(x=2.5)) == 1
-        @test length(Tangent{Tuple{Float64,}}(2.0)) == 1
+        @test length(Tangent{Foo}(; x=2.5)) == 1
+        @test length(Tangent{Tuple{Float64}}(2.0)) == 1
 
-        @test eltype(Tangent{Foo}(x=2.5)) == Float64
-        @test eltype(Tangent{Tuple{Float64,}}(2.0)) == Float64
+        @test eltype(Tangent{Foo}(; x=2.5)) == Float64
+        @test eltype(Tangent{Tuple{Float64}}(2.0)) == Float64
 
         # Testing iterate via collect
-        @test collect(Tangent{Foo}(x=2.5)) == [2.5]
-        @test collect(Tangent{Tuple{Float64,}}(2.0)) == [2.0]
+        @test collect(Tangent{Foo}(; x=2.5)) == [2.5]
+        @test collect(Tangent{Tuple{Float64}}(2.0)) == [2.0]
 
         # Test indexed_iterate
         ctup = Tangent{Tuple{Float64,Int64}}(2.0, 3)
-        _unpack2tuple = function(tangent)
+        _unpack2tuple = function (tangent)
             a, b = tangent
             return (a, b)
         end
@@ -96,21 +96,21 @@ end
         # Test getproperty is inferrable
         _unpacknamedtuple = tangent -> (tangent.x, tangent.y)
         if VERSION ≥ v"1.2"
-            @inferred _unpacknamedtuple(Tangent{Foo}(x=2, y=3.0))
-            @inferred _unpacknamedtuple(Tangent{Foo}(y=3.0))
+            @inferred _unpacknamedtuple(Tangent{Foo}(; x=2, y=3.0))
+            @inferred _unpacknamedtuple(Tangent{Foo}(; y=3.0))
         end
     end
 
     @testset "reverse" begin
-        c = Tangent{Tuple{Int, Int, String}}(1, 2, "something")
-        cr = Tangent{Tuple{String, Int, Int}}("something", 2, 1)
+        c = Tangent{Tuple{Int,Int,String}}(1, 2, "something")
+        cr = Tangent{Tuple{String,Int,Int}}("something", 2, 1)
         @test reverse(c) === cr
 
         # can't reverse a named tuple or a dict
-        @test_throws MethodError reverse(Tangent{Foo}(;x=1.0, y=2.0))
+        @test_throws MethodError reverse(Tangent{Foo}(; x=1.0, y=2.0))
 
         d = Dict(:x => 1, :y => 2.0)
-        cdict = Tangent{Foo, typeof(d)}(d)
+        cdict = Tangent{Foo,typeof(d)}(d)
         @test_throws MethodError reverse(Tangent{Foo}())
     end
 
@@ -119,10 +119,9 @@ end
     end
 
     @testset "conj" begin
-        @test conj(Tangent{Foo}(x=2.0+3.0im)) == Tangent{Foo}(x=2.0-3.0im)
+        @test conj(Tangent{Foo}(; x=2.0 + 3.0im)) == Tangent{Foo}(; x=2.0 - 3.0im)
         @test ==(
-            conj(Tangent{Tuple{Float64,}}(2.0+3.0im)),
-            Tangent{Tuple{Float64,}}(2.0-3.0im)
+            conj(Tangent{Tuple{Float64}}(2.0 + 3.0im)), Tangent{Tuple{Float64}}(2.0 - 3.0im)
         )
         @test ==(
             conj(Tangent{Dict}(Dict(4 => 2.0 + 3.0im))),
@@ -132,26 +131,20 @@ end
 
     @testset "canonicalize" begin
         # Testing iterate via collect
-        @test ==(
-            canonicalize(Tangent{Tuple{Float64,}}(2.0)),
-            Tangent{Tuple{Float64,}}(2.0)
-        )
+        @test ==(canonicalize(Tangent{Tuple{Float64}}(2.0)), Tangent{Tuple{Float64}}(2.0))
 
-        @test ==(
-            canonicalize(Tangent{Dict}(Dict(4 => 3))),
-            Tangent{Dict}(Dict(4 => 3)),
-        )
+        @test ==(canonicalize(Tangent{Dict}(Dict(4 => 3))), Tangent{Dict}(Dict(4 => 3)))
 
         # For structure it needs to match order and ZeroTangent() fill to match primal
         CFoo = Tangent{Foo}
-        @test canonicalize(CFoo(x=2.5, y=10)) == CFoo(x=2.5, y=10)
-        @test canonicalize(CFoo(y=10, x=2.5)) == CFoo(x=2.5, y=10)
-        @test canonicalize(CFoo(y=10)) == CFoo(x=ZeroTangent(), y=10)
+        @test canonicalize(CFoo(; x=2.5, y=10)) == CFoo(; x=2.5, y=10)
+        @test canonicalize(CFoo(; y=10, x=2.5)) == CFoo(; x=2.5, y=10)
+        @test canonicalize(CFoo(; y=10)) == CFoo(; x=ZeroTangent(), y=10)
 
-        @test_throws ArgumentError canonicalize(CFoo(q=99.0, x=2.5))
+        @test_throws ArgumentError canonicalize(CFoo(; q=99.0, x=2.5))
 
         @testset "unspecified primal type" begin
-            c1 = Tangent{Any}(;a=1, b=2)
+            c1 = Tangent{Any}(; a=1, b=2)
             c2 = Tangent{Any}(1, 2)
             c3 = Tangent{Any}(Dict(4 => 3))
 
@@ -164,30 +157,27 @@ end
     @testset "+ with other composites" begin
         @testset "Structs" begin
             CFoo = Tangent{Foo}
-            @test  CFoo(x=1.5) + CFoo(x=2.5) == CFoo(x=4.0)
-            @test CFoo(y=1.5) + CFoo(x=2.5) == CFoo(y=1.5, x=2.5)
-            @test CFoo(y=1.5, x=1.5) + CFoo(x=2.5) == CFoo(y=1.5, x=4.0)
+            @test CFoo(; x=1.5) + CFoo(; x=2.5) == CFoo(; x=4.0)
+            @test CFoo(; y=1.5) + CFoo(; x=2.5) == CFoo(; y=1.5, x=2.5)
+            @test CFoo(; y=1.5, x=1.5) + CFoo(; x=2.5) == CFoo(; y=1.5, x=4.0)
         end
 
         @testset "Tuples" begin
             @test ==(
-                typeof(Tangent{Tuple{}}() + Tangent{Tuple{}}()),
-                Tangent{Tuple{}, Tuple{}}
+                typeof(Tangent{Tuple{}}() + Tangent{Tuple{}}()), Tangent{Tuple{},Tuple{}}
             )
             @test (
-                Tangent{Tuple{Float64, Float64}}(1.0, 2.0) +
-                Tangent{Tuple{Float64, Float64}}(1.0, 1.0)
-            ) == Tangent{Tuple{Float64, Float64}}(2.0, 3.0)
+                Tangent{Tuple{Float64,Float64}}(1.0, 2.0) +
+                Tangent{Tuple{Float64,Float64}}(1.0, 1.0)
+            ) == Tangent{Tuple{Float64,Float64}}(2.0, 3.0)
         end
 
         @testset "NamedTuples" begin
-            nt1 = (;a=1.5, b=0.0)
-            nt2 = (;a=0.0, b=2.5)
-            nt_sum = (a=1.5, b=2.5)
-            @test (
-                Tangent{typeof(nt1)}(; nt1...) +
-                Tangent{typeof(nt2)}(; nt2...)
-            ) == Tangent{typeof(nt_sum)}(; nt_sum...)
+            make_tangent(nt::NamedTuple) = Tangent{typeof(nt)}(; nt...)
+            t1 = make_tangent((; a=1.5, b=0.0))
+            t2 = make_tangent((; a=0.0, b=2.5))
+            t_sum = make_tangent((a=1.5, b=2.5))
+            @test t1 + t2 == t_sum
         end
 
         @testset "Dicts" begin
@@ -199,8 +189,8 @@ end
 
         @testset "Fields of type NotImplemented" begin
             CFoo = Tangent{Foo}
-            a = CFoo(x=1.5)
-            b = CFoo(x=@not_implemented(""))
+            a = CFoo(; x=1.5)
+            b = CFoo(; x=@not_implemented(""))
             for (x, y) in ((a, b), (b, a), (b, b))
                 z = x + y
                 @test z isa CFoo
@@ -215,8 +205,8 @@ end
                 @test first(z) isa ChainRulesCore.NotImplemented
             end
 
-            a = Tangent{NamedTuple{(:x,)}}(x=1.5)
-            b = Tangent{NamedTuple{(:x,)}}(x=@not_implemented(""))
+            a = Tangent{NamedTuple{(:x,)}}(; x=1.5)
+            b = Tangent{NamedTuple{(:x,)}}(; x=@not_implemented(""))
             for (x, y) in ((a, b), (b, a), (b, b))
                 z = x + y
                 @test z isa Tangent{NamedTuple{(:x,)}}
@@ -235,15 +225,15 @@ end
 
     @testset "+ with Primals" begin
         @testset "Structs" begin
-            @test Foo(3.5, 1.5) + Tangent{Foo}(x=2.5) == Foo(6.0, 1.5)
-            @test Tangent{Foo}(x=2.5) + Foo(3.5, 1.5) == Foo(6.0, 1.5)
+            @test Foo(3.5, 1.5) + Tangent{Foo}(; x=2.5) == Foo(6.0, 1.5)
+            @test Tangent{Foo}(; x=2.5) + Foo(3.5, 1.5) == Foo(6.0, 1.5)
             @test (@ballocated Bar(0.5) + Tangent{Bar}(; x=0.5)) == 0
         end
 
         @testset "Tuples" begin
             @test Tangent{Tuple{}}() + () == ()
-            @test ((1.0, 2.0) + Tangent{Tuple{Float64, Float64}}(1.0, 1.0)) == (2.0, 3.0)
-            @test (Tangent{Tuple{Float64, Float64}}(1.0, 1.0)) + (1.0, 2.0) == (2.0, 3.0)
+            @test ((1.0, 2.0) + Tangent{Tuple{Float64,Float64}}(1.0, 1.0)) == (2.0, 3.0)
+            @test (Tangent{Tuple{Float64,Float64}}(1.0, 1.0)) + (1.0, 2.0) == (2.0, 3.0)
         end
 
         @testset "NamedTuple" begin
@@ -256,14 +246,14 @@ end
 
         @testset "Dicts" begin
             d_primal = Dict(4 => 3.0, 3 => 2.0)
-            d_tangent = Tangent{typeof(d_primal)}(Dict(4 =>5.0))
+            d_tangent = Tangent{typeof(d_primal)}(Dict(4 => 5.0))
             @test d_primal + d_tangent == Dict(4 => 3.0 + 5.0, 3 => 2.0)
         end
     end
 
     @testset "+ with Primals, with inner constructor" begin
         value = StructWithInvariant(10.0)
-        diff = Tangent{StructWithInvariant}(x=2.0, x2=6.0)
+        diff = Tangent{StructWithInvariant}(; x=2.0, x2=6.0)
 
         @testset "with and without debug mode" begin
             @assert ChainRulesCore.debug_mode() == false
@@ -276,11 +266,10 @@ end
             ChainRulesCore.debug_mode() = false  # disable it again
         end
 
-
         # Now we define constuction for ChainRulesCore.jl's purposes:
         # It is going to determine the root quanity of the invarient
         function ChainRulesCore.construct(::Type{StructWithInvariant}, nt::NamedTuple)
-            x = (nt.x + nt.x2/2)/2
+            x = (nt.x + nt.x2 / 2) / 2
             return StructWithInvariant(x)
         end
         @test value + diff == StructWithInvariant(12.5)
@@ -288,7 +277,7 @@ end
     end
 
     @testset "differential arithmetic" begin
-        c = Tangent{Foo}(y=1.5, x=2.5)
+        c = Tangent{Foo}(; y=1.5, x=2.5)
 
         @test NoTangent() * c == NoTangent()
         @test c * NoTangent() == NoTangent()
@@ -310,14 +299,14 @@ end
 
     @testset "scaling" begin
         @test (
-            2 *  Tangent{Foo}(y=1.5, x=2.5)
-            == Tangent{Foo}(y=3.0, x=5.0)
-            == Tangent{Foo}(y=1.5, x=2.5) * 2
+            2 * Tangent{Foo}(; y=1.5, x=2.5) ==
+            Tangent{Foo}(; y=3.0, x=5.0) ==
+            Tangent{Foo}(; y=1.5, x=2.5) * 2
         )
         @test (
-            2 * Tangent{Tuple{Float64, Float64}}(2.0, 4.0)
-            == Tangent{Tuple{Float64, Float64}}(4.0, 8.0)
-            == Tangent{Tuple{Float64, Float64}}(2.0, 4.0) * 2
+            2 * Tangent{Tuple{Float64,Float64}}(2.0, 4.0) ==
+            Tangent{Tuple{Float64,Float64}}(4.0, 8.0) ==
+            Tangent{Tuple{Float64,Float64}}(2.0, 4.0) * 2
         )
         d = Tangent{Dict}(Dict(4 => 3.0))
         two_d = Tangent{Dict}(Dict(4 => 2 * 3.0))
@@ -325,7 +314,7 @@ end
     end
 
     @testset "show" begin
-        @test repr(Tangent{Foo}(x=1,)) == "Tangent{Foo}(x = 1,)"
+        @test repr(Tangent{Foo}(; x=1)) == "Tangent{Foo}(x = 1,)"
         # check for exact regex match not occurence( `^...$`)
         # and allowing optional whitespace (`\s?`)
         @test occursin(
@@ -343,7 +332,8 @@ end
 
         @testset "Internals don't allocate a ton" begin
             bk = (; x=1.0, y=2.0)
-            VERSION >= v"1.5" && @test (@ballocated(ChainRulesCore.construct($Foo, $bk))) <= 32
+            VERSION >= v"1.5" &&
+                @test (@ballocated(ChainRulesCore.construct($Foo, $bk))) <= 32
 
             # weaker version of the above (which should pass on all versions)
             @test (@ballocated(ChainRulesCore.construct($Foo, $bk))) <= 48
@@ -354,6 +344,6 @@ end
     @testset "non-same-typed differential arithmetic" begin
         nt = (; a=1, b=2.0)
         c = Tangent{typeof(nt)}(; a=NoTangent(), b=0.1)
-        @test nt + c == (; a=1, b=2.1);
+        @test nt + c == (; a=1, b=2.1)
     end
 end
