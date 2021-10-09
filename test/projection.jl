@@ -321,13 +321,15 @@ struct NoSuperType end
             pstat = ProjectTo(SA[1, 2, 3])
             @test axes(pstat(rand(3))) === (SOneTo(3),)
 
+            # This recurses into structured arrays:
             pst = ProjectTo(transpose(SA[1, 2, 3]))
             @test axes(pst(rand(1,3))) === (SOneTo(1), SOneTo(3))
             @test pst(rand(1,3)) isa Transpose
 
-            # When the argument is an ordinary Array, then what should happen?
+            # When the argument is an ordinary Array, static gradients are allowed to pass,
+            # like FillArrays. Collecting to an Array would cost a copy.
             pvec3 = ProjectTo([1, 2, 3])
-            pvec3(SA[1, 2, 3])
+            @test pvec3(SA[1, 2, 3]) isa StaticArray
         end
 
     #####
