@@ -68,7 +68,5 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/JuliaDiff/ChainRulesCore.jl.git",
-    devbranch="main",
-    push_preview=true
+    repo="github.com/JuliaDiff/ChainRulesCore.jl.git", devbranch="main", push_preview=true
 )
