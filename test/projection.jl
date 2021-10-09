@@ -137,10 +137,28 @@ struct NoSuperType end
         prefvec = ProjectTo(Ref([1, 2, 3 + 4im]))  # recurses into contents
         @test prefvec(Ref(1:3)).x isa Vector{ComplexF64}
         @test prefvec(Tangent{Base.RefValue}(; x=1:3)).x isa Vector{ComplexF64}
-        @test_skip @test_throws DimensionMismatch prefvec(Tangent{Base.RefValue}(; x=1:5))
+        @test_throws DimensionMismatch prefvec(Tangent{Base.RefValue}(; x=1:5))
 
         @test ProjectTo(Ref(true)) isa ProjectTo{NoTangent}
         @test ProjectTo(Ref([false]')) isa ProjectTo{NoTangent}
+    end
+
+    @testset "Base: Tuple" begin
+        pt1 = ProjectTo((1.0,))
+        @test pt1((1+im,)) == Tangent{Tuple{Float64}}(1.0,)
+        @test pt1(pt1((1,))) == pt1(pt1((1,)))            # accepts correct Tangent
+        @test pt1(Tangent{Any}(1)) == pt1((1,))           # accepts Tangent{Any}
+        @test pt1([1,]) == Tangent{Tuple{Float64}}(1.0,)  # accepts Vector
+        @test pt1(1+im) == Tangent{Tuple{Float64}}(1.0,)  # accepts Number
+        @test pt1(NoTangent()) === NoTangent()
+        @test pt1(ZeroTangent()) === ZeroTangent()
+
+        @test_throws Exception pt1([1, 2]) # DimensionMismatch, wrong length
+        @test_throws Exception pt1([])
+
+        pt3 = ProjectTo(([1, 2, 3], false, :gamma)) # partly non-differentiable
+        @test pt3((1:3, 4, 5)) == Tangent{Tuple{Vector{Int}, Bool, Symbol}}([1.0, 2.0, 3.0], NoTangent(), NoTangent())
+        @test ProjectTo((true, [false])) isa ProjectTo{NoTangent}
     end
 
     @testset "Base: non-diff" begin

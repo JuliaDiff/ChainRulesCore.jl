@@ -274,16 +274,64 @@ end
 # Ref
 function ProjectTo(x::Ref)
     sub = ProjectTo(x[])  # should we worry about isdefined(Ref{Vector{Int}}(), :x)? 
-    if sub isa ProjectTo{<:AbstractZero}
+    return ProjectTo{Tangent{typeof(x)}}(; x=sub)
+end
+
+(project::ProjectTo{<:Tangent{<:Ref}})(dx::Tangent) = project(Ref(only(backing(dx))))
+function (project::ProjectTo{<:Tangent{<:Ref}})(dx::Ref)
+    dy = project.x(dx[])
+    return project_type(project)(; x=dy)
+end
+# Since this works like a zero-array in broadcasting, it should also accept a number:
+(project::ProjectTo{<:Tangent{<:Ref}})(dx::Number) = project(Ref(dx))
+
+# Tuple
+function ProjectTo(x::Tuple)
+    elements = map(ProjectTo, x)
+    if elements isa NTuple{<:Any, ProjectTo{<:AbstractZero}}
         return ProjectTo{NoTangent}()
     else
-        return ProjectTo{Ref}(; type=typeof(x), x=sub)
+        return ProjectTo{Tangent{typeof(x)}}(; elements=elements)
     end
 end
-(project::ProjectTo{Ref})(dx::Tangent{<:Ref}) = Tangent{project.type}(; x=project.x(dx.x))
-(project::ProjectTo{Ref})(dx::Ref) = Tangent{project.type}(; x=project.x(dx[]))
-# Since this works like a zero-array in broadcasting, it should also accept a number:
-(project::ProjectTo{Ref})(dx::Number) = Tangent{project.type}(; x=project.x(dx))
+
+(project::ProjectTo{<:Tangent{<:Tuple}})(dx::Tangent) = project(backing(dx))
+function (project::ProjectTo{<:Tangent{<:Tuple}})(dx::Tuple)
+    len = length(project.elements)
+    if length(dx) != len
+        str = "tuple with length(x) == $len cannot have a gradient with length(dx) == $(length(dx))"
+        throw(DimensionMismatch(str))
+    end
+    dy = map((f,x) -> f(x), project.elements, dx)
+    return project_type(project)(dy...)
+end
+function (project::ProjectTo{<:Tangent{<:Tuple}})(dx::AbstractArray)
+    for d in 1:ndims(dx)
+        if size(dx, d) != get(length(project.elements), d, 1)
+            throw(_projection_mismatch(axes(project.elements), size(dx)))
+        end
+    end
+    dy = reshape(dx, axes(project.elements))  # allows for dx::OffsetArray
+    dz = ntuple(i -> project.elements[i](dy[i]), length(project.elements))
+    return project_type(project)(dz...)
+end
+(project::ProjectTo{<:Tangent{<:Tuple}})(dx::Number) = project(tuple(dx))
+
+#=
+# NamedTuple
+function ProjectTo(x::NamedTuple)
+    elements = map(ProjectTo, x)
+    if all(p -> p isa ProjectTo{<:AbstractZero}, elements)
+        return ProjectTo{NoTangent}()
+    else
+        return ProjectTo{Tangent{typeof(x)}}(; elements=elements)
+    end
+end
+function (project::ProjectTo{<:Tangent{<:NamedTuple}})(dx::Union{Tuple,NamedTuple})
+    dy = map((f,x) -> f(x), project.elements, dx)
+    return project_type(project)(dy...)
+end
+=#
 
 #####
 ##### `LinearAlgebra`
