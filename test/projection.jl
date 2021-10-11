@@ -145,11 +145,10 @@ struct NoSuperType end
 
     @testset "Base: Tuple" begin
         pt1 = ProjectTo((1.0,))
-        @test pt1((1+im,)) == Tangent{Tuple{Float64}}(1.0,)
+        @test pt1((1 + im,)) == Tangent{Tuple{Float64}}(1.0,)
         @test pt1(pt1((1,))) == pt1(pt1((1,)))            # accepts correct Tangent
         @test pt1(Tangent{Any}(1)) == pt1((1,))           # accepts Tangent{Any}
         @test pt1([1,]) == Tangent{Tuple{Float64}}(1.0,)  # accepts Vector
-        @test pt1(1+im) == Tangent{Tuple{Float64}}(1.0,)  # accepts Number
         @test pt1(NoTangent()) === NoTangent()
         @test pt1(ZeroTangent()) === ZeroTangent()
 
