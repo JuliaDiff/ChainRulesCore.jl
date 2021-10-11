@@ -288,7 +288,7 @@ end
 # Tuple
 function ProjectTo(x::Tuple)
     elements = map(ProjectTo, x)
-    if elements isa NTuple{<:Any, ProjectTo{<:AbstractZero}}
+    if elements isa NTuple{<:Any,ProjectTo{<:AbstractZero}}
         return ProjectTo{NoTangent}()
     else
         return ProjectTo{Tangent{typeof(x)}}(; elements=elements)
@@ -302,7 +302,7 @@ function (project::ProjectTo{<:Tangent{<:Tuple}})(dx::Tuple)
         str = "tuple with length(x) == $len cannot have a gradient with length(dx) == $(length(dx))"
         throw(DimensionMismatch(str))
     end
-    dy = map((f,x) -> f(x), project.elements, dx)
+    dy = map((f, x) -> f(x), project.elements, dx)
     return project_type(project)(dy...)
 end
 function (project::ProjectTo{<:Tangent{<:Tuple}})(dx::AbstractArray)
@@ -315,23 +315,7 @@ function (project::ProjectTo{<:Tangent{<:Tuple}})(dx::AbstractArray)
     dz = ntuple(i -> project.elements[i](dy[i]), length(project.elements))
     return project_type(project)(dz...)
 end
-(project::ProjectTo{<:Tangent{<:Tuple}})(dx::Number) = project(tuple(dx))
 
-#=
-# NamedTuple
-function ProjectTo(x::NamedTuple)
-    elements = map(ProjectTo, x)
-    if all(p -> p isa ProjectTo{<:AbstractZero}, elements)
-        return ProjectTo{NoTangent}()
-    else
-        return ProjectTo{Tangent{typeof(x)}}(; elements=elements)
-    end
-end
-function (project::ProjectTo{<:Tangent{<:NamedTuple}})(dx::Union{Tuple,NamedTuple})
-    dy = map((f,x) -> f(x), project.elements, dx)
-    return project_type(project)(dy...)
-end
-=#
 
 #####
 ##### `LinearAlgebra`
