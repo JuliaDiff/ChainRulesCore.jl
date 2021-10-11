@@ -18,7 +18,7 @@ function LinearAlgebra.dot(a::CustomComplex, b::CustomComplex)
     return CustomComplex(reim((a.re - a.im * im) * (b.re + b.im * im))...)
 end
 
-@testset "utils.jl" begin
+@testset "complex_math.jl" begin
     @testset "dot" begin
         scalars = (randn(), randn(ComplexF64), CustomComplex(reim(randn(ComplexF64))...))
         arrays = (randn(10), randn(ComplexF64, 10))
