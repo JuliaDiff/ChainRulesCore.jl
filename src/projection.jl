@@ -277,7 +277,7 @@ function ProjectTo(x::Ref)
     return ProjectTo{Tangent{typeof(x)}}(; x=sub)
 end
 
-(project::ProjectTo{<:Tangent{<:Ref}})(dx::Tangent) = project(Ref(only(backing(dx))))
+(project::ProjectTo{<:Tangent{<:Ref}})(dx::Tangent) = project(Ref(first(backing(dx))))
 function (project::ProjectTo{<:Tangent{<:Ref}})(dx::Ref)
     dy = project.x(dx[])
     return project_type(project)(; x=dy)
