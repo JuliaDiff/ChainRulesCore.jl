@@ -10,6 +10,9 @@
 
         @test sum(ZeroTangent()) == ZeroTangent()
         @test sum(NoTangent(); dims=2) == NoTangent()
+
+        @test reshape(NoTangent(), (1, :)) === NoTangent()
+        @test reshape(ZeroTangent(), 2, 3, 4, 5) === ZeroTangent()
     end
 
     @testset "ZeroTangent" begin
