@@ -1,6 +1,6 @@
 using ChainRulesCore, Test
 using LinearAlgebra, SparseArrays
-using OffsetArrays, BenchmarkTools
+using OffsetArrays, StaticArrays, BenchmarkTools
 
 # Like ForwardDiff.jl's Dual
 struct Dual{T<:Real} <: Real
@@ -295,7 +295,7 @@ struct NoSuperType end
     #####
 
     @testset "OffsetArrays" begin
-        # While there is no code for this, the rule that it checks axes(x) == axes(dx) else
+        # While there is no code for this, the rule that it checks axes(x) === axes(dx) else
         # reshape means that it restores offsets. (It throws an error on nontrivial size mismatch.)
 
         poffv = ProjectTo(OffsetArray(rand(3), 0:2))
@@ -304,7 +304,33 @@ struct NoSuperType end
 
         @test axes(poffv(OffsetArray(rand(3), 0:2))) == (0:2,)
         @test axes(poffv(OffsetArray(rand(3, 1), 0:2, 0:0))) == (0:2,)
+
+        pvec3 = ProjectTo([1, 2, 3])
+        @test axes(pvec3(OffsetArray(rand(3), 0:2))) == (1:3,)
+        @test pvec3(OffsetArray(rand(3), 0:2)) isa Vector  # relies on axes === axes test 
+        @test pvec3(OffsetArray(rand(3,1), 0:2, 0:0)) isa Vector
     end
+
+    #####
+    ##### `StaticArrays`
+    #####
+
+        @testset "StaticArrays" begin
+            # There is no code for this, but when argument isa StaticArray, axes(x) === axes(dx)
+            # implies a check, and reshape will wrap a Vector into a static SizedVector:
+            pstat = ProjectTo(SA[1, 2, 3])
+            @test axes(pstat(rand(3))) === (SOneTo(3),)
+
+            # This recurses into structured arrays:
+            pst = ProjectTo(transpose(SA[1, 2, 3]))
+            @test axes(pst(rand(1,3))) === (SOneTo(1), SOneTo(3))
+            @test pst(rand(1,3)) isa Transpose
+
+            # When the argument is an ordinary Array, static gradients are allowed to pass,
+            # like FillArrays. Collecting to an Array would cost a copy.
+            pvec3 = ProjectTo([1, 2, 3])
+            @test pvec3(SA[1, 2, 3]) isa StaticArray
+        end
 
     #####
     ##### `ChainRulesCore`
