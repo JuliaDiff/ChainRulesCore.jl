@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Deriving Array Rules · ChainRules</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="assets/documenter.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-dark.css" data-theme-name="documenter-dark"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="assets/themeswap.js"></script><link href="assets/indigo.css" rel="stylesheet" type="text/css"/></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="index.html"><img src="assets/logo.svg" alt="ChainRules logo"/></a><div class="docs-package-name"><span class="docs-autofit">ChainRules</span></div><form class="docs-search" action="search.html"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li><a class="tocitem" href="index.html">Introduction</a></li><li><a class="tocitem" href="FAQ.html">FAQ</a></li><li><a class="tocitem" href="config.html">Rule configurations and calling back into AD</a></li><li><a class="tocitem" href="opting_out_of_rules.html">Opting out of rules</a></li><li><a class="tocitem" href="writing_good_rules.html">Writing Good Rules</a></li><li><a class="tocitem" href="complex.html">Complex Numbers</a></li><li class="is-active"><a class="tocitem" href="arrays.html">Deriving Array Rules</a><ul class="internal"><li><a class="tocitem" href="#Forward-mode-rules"><span>Forward-mode rules</span></a></li><li><a class="tocitem" href="#Reverse-mode-rules"><span>Reverse-mode rules</span></a></li><li><a class="tocitem" href="#A-multidimensional-array-example"><span>A multidimensional array example</span></a></li><li><a class="tocitem" href="#Functions-that-return-a-tuple"><span>Functions that return a tuple</span></a></li><li><a class="tocitem" href="#Implicit-functions"><span>Implicit functions</span></a></li><li><a class="tocitem" href="#More-examples"><span>More examples</span></a></li><li><a class="tocitem" href="#References"><span>References</span></a></li></ul></li><li><a class="tocitem" href="debug_mode.html">Debug Mode</a></li><li><a class="tocitem" href="gradient_accumulation.html">Gradient Accumulation</a></li><li><a class="tocitem" href="use_in_ad_system.html">Usage in AD</a></li><li><a class="tocitem" href="converting_zygoterules.html">Converting ZygoteRules</a></li><li><a class="tocitem" href="tips_for_packages.html">Tips for making packages work with AD</a></li><li><span class="tocitem">Design</span><ul><li><a class="tocitem" href="design/changing_the_primal.html">Changing the Primal</a></li><li><a class="tocitem" href="design/many_differentials.html">Many Differential Types</a></li></ul></li><li><a class="tocitem" href="api.html">API</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href="arrays.html">Deriving Array Rules</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href="arrays.html">Deriving Array Rules</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/JuliaDiff/ChainRulesCore.jl/blob/master/docs/src/arrays.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Deriving-Array-Rules"><a class="docs-heading-anchor" href="#Deriving-Array-Rules">Deriving Array Rules</a><a id="Deriving-Array-Rules-1"></a><a class="docs-heading-anchor-permalink" href="#Deriving-Array-Rules" title="Permalink"></a></h1><p>One of the goals of the ChainRules interface is to make it easy to define your own rules for a function. This tutorial attempts to demystify deriving and implementing custom rules for arrays with real and complex entries, with examples. The approach we use is similar to the one succinctly explained and demonstrated in <sup class="footnote-reference"><a id="citeref-Giles2008" href="#footnote-Giles2008">[Giles2008]</a></sup> and its extended work <sup class="footnote-reference"><a id="citeref-Giles2008ext" href="#footnote-Giles2008ext">[Giles2008ext]</a></sup>, but we generalize it to support functions of multidimensional arrays with both real and complex entries.</p><p>Throughout this tutorial, we will use the following type alias:</p><pre><code class="language-julia">const RealOrComplex = Union{Real,Complex}</code></pre><h2 id="Forward-mode-rules"><a class="docs-heading-anchor" href="#Forward-mode-rules">Forward-mode rules</a><a id="Forward-mode-rules-1"></a><a class="docs-heading-anchor-permalink" href="#Forward-mode-rules" title="Permalink"></a></h2><h3 id="Approach"><a class="docs-heading-anchor" href="#Approach">Approach</a><a id="Approach-1"></a><a class="docs-heading-anchor-permalink" href="#Approach" title="Permalink"></a></h3><p>Consider a function</p><pre><code class="language-julia">Ω = f(X::Array{&lt;:RealOrComplex}...)::Array{&lt;:RealOrComplex}</code></pre><p>or in math notation</p><p class="math-container">\[f: (\ldots, X_m, \ldots) \mapsto \Omega,\]</p><p>where the components of <span>$X_m$</span> are written as <span>$(X_m)_{i,\ldots,j}$</span>. The variables <span>$X_m$</span> and <span>$\Omega$</span> are intermediates in a larger program (function) that, by considering only a single real input <span>$t$</span> and real output <span>$s$</span> can always be written as</p><p class="math-container">\[t \mapsto (\ldots, X_m, \ldots) \mapsto \Omega \mapsto s,\]</p><p>where <span>$t$</span> and <span>$s$</span> are real numbers. If we know the partial derivatives of <span>$X_m$</span> with respect to <span>$t$</span>, <span>$\frac{dX_m}{dt} = \dot{X}_m$</span>, the chain rule gives the pushforward of <span>$f$</span> as:</p><p class="math-container">\[\begin{equation} \label{pf}
+\dot{\Omega}
+    = f_*(\ldots, \dot{X}_m, \ldots)
+    = \sum_m \sum_{i, \ldots, j}
+        \frac{\partial \Omega}{ \partial (X_m)_{i,\ldots,j} } (\dot{X}_m)_{i,\ldots,j}
+\end{equation}\]</p><p>That&#39;s ugly, but in practice we can often write it more simply by using forward mode rules for simpler functions, as we&#39;ll see below. The forward-mode rules for arrays follow directly from the usual scalar chain rules.</p><h3 id="Array-addition"><a class="docs-heading-anchor" href="#Array-addition">Array addition</a><a id="Array-addition-1"></a><a class="docs-heading-anchor-permalink" href="#Array-addition" title="Permalink"></a></h3><pre><code class="language-julia">Ω = A + B</code></pre><p>This one is easy:</p><p class="math-container">\[\Omega = A + B\]</p><p class="math-container">\[\dot{\Omega} = \dot{A} + \dot{B}\]</p><p>We can implement the <code>frule</code> in ChainRules&#39;s notation:</p><pre><code class="language-julia">function frule(
+    (_, ΔA, ΔB),
+    ::typeof(+),
+    A::Array{&lt;:RealOrComplex},
+    B::Array{&lt;:RealOrComplex},
+)
+    Ω = A + B
+    ∂Ω = ΔA + ΔB
+    return (Ω, ∂Ω)
+end</code></pre><h3 id="Matrix-multiplication"><a class="docs-heading-anchor" href="#Matrix-multiplication">Matrix multiplication</a><a id="Matrix-multiplication-1"></a><a class="docs-heading-anchor-permalink" href="#Matrix-multiplication" title="Permalink"></a></h3><pre><code class="language-julia">Ω = A * B</code></pre><p class="math-container">\[\Omega = A B\]</p><p>First we write in component form:</p><p class="math-container">\[\Omega_{ij} = \sum_k A_{ik} B_{kj}\]</p><p>Then we use the product rule to get the pushforward for each scalar entry:</p><p class="math-container">\[\begin{align*}
+\dot{\Omega}_{ij}
+    &amp;= \sum_k \left( \dot{A}_{ik} B_{kj} + A_{ik} \dot{B}_{kj} \right)
+        &amp;&amp; \text{apply scalar product rule }
+            \frac{d}{dt}(x y) = \frac{dx}{dt} y + x \frac{dy}{dt} \\
+    &amp;= \sum_k \dot{A}_{ik} B_{kj} + \sum_k A_{ik} \dot{B}_{kj}
+        &amp;&amp; \text{split sum}
+\end{align*}\]</p><p>But the last expression is just the component form of a sum of matrix products:</p><p class="math-container">\[\begin{equation}\label{diffprod}
+\dot{\Omega} = \dot{A} B + A \dot{B}
+\end{equation}\]</p><p>This is the matrix product rule, and we write its <code>frule</code> as</p><pre><code class="language-julia">function frule(
+    (_, ΔA, ΔB),
+    ::typeof(*),
+    A::Matrix{&lt;:RealOrComplex},
+    B::Matrix{&lt;:RealOrComplex},
+)
+    Ω = A * B
+    ∂Ω = ΔA * B + A * ΔB
+    return (Ω, ∂Ω)
+end</code></pre><h3 id="Matrix-inversion"><a class="docs-heading-anchor" href="#Matrix-inversion">Matrix inversion</a><a id="Matrix-inversion-1"></a><a class="docs-heading-anchor-permalink" href="#Matrix-inversion" title="Permalink"></a></h3><pre><code class="language-julia">Ω = inv(A)</code></pre><p class="math-container">\[\Omega = A^{-1}\]</p><p>It&#39;s easiest to derive this rule from either of the two constraints:</p><p class="math-container">\[\begin{align*}
+\Omega A &amp;= A^{-1} ~A = I\\
+A \Omega &amp;= A~ A^{-1} = I,
+\end{align*}\]</p><p>where <span>$I$</span> is the identity matrix.</p><p>We use the matrix product rule to differentiate the first constraint:</p><p class="math-container">\[\dot{\Omega} A + \Omega \dot{A} = 0\]</p><p>Then, right-multiply both sides by <span>$A^{-1}$</span> to isolate <span>$\dot{\Omega}$</span>:</p><p class="math-container">\[\begin{align}
+0  &amp;= \dot{\Omega}~ A~ A^{-1} + \Omega ~\dot{A}~ A^{-1} \nonumber\\
+   &amp;= \dot{\Omega}~ I + \Omega ~\dot{A}~ A^{-1}
+       &amp;&amp; \text{use } A~ A^{-1} = I \nonumber\\
+   &amp;= \dot{\Omega} + \Omega \dot{A} \Omega
+       &amp;&amp; \text{substitute } A^{-1} = \Omega \nonumber\\
+\dot{\Omega}
+   &amp;= -\Omega \dot{A} \Omega
+       &amp;&amp; \text{solve for } \dot{\Omega} \label{invdiff}
+\end{align}\]</p><p>We write the <code>frule</code> as</p><pre><code class="language-julia">function frule((_, ΔA), ::typeof(inv), A::Matrix{&lt;:RealOrComplex})
+    Ω = inv(A)
+    ∂Ω = -Ω * ΔA * Ω
+    return (Ω, ∂Ω)
+end</code></pre><h3 id="Other-useful-identities"><a class="docs-heading-anchor" href="#Other-useful-identities">Other useful identities</a><a id="Other-useful-identities-1"></a><a class="docs-heading-anchor-permalink" href="#Other-useful-identities" title="Permalink"></a></h3><p>These identities are particularly useful:</p><p class="math-container">\[\begin{align*}
+\frac{d}{dt} \left( \Re(A) \right) &amp;= \Re(\dot{A})\\
+\frac{d}{dt} \left( A^* \right) &amp;= \dot{A}^*\\
+\frac{d}{dt} \left( A^\mathsf{T} \right) &amp;= \dot{A}^\mathsf{T}\\
+\frac{d}{dt} \left( A^\mathsf{H} \right) &amp;= \dot{A}^\mathsf{H}\\
+\frac{d}{dt} \left( \sum_{j}  A_{i \ldots j \ldots k} \right) &amp;=
+    \sum_{j} \dot{A}_{i \ldots j \ldots k},
+\end{align*}\]</p><p>where <span>$\cdot^*$</span> is the complex conjugate (<code>conj</code>), and <span>$\cdot^\mathsf{H} = \left(\cdot^\mathsf{T}\right)^*$</span> is the conjugate transpose (the <code>adjoint</code> function).</p><h2 id="Reverse-mode-rules"><a class="docs-heading-anchor" href="#Reverse-mode-rules">Reverse-mode rules</a><a id="Reverse-mode-rules-1"></a><a class="docs-heading-anchor-permalink" href="#Reverse-mode-rules" title="Permalink"></a></h2><h3 id="Approach-2"><a class="docs-heading-anchor" href="#Approach-2">Approach</a><a class="docs-heading-anchor-permalink" href="#Approach-2" title="Permalink"></a></h3><p>Reverse-mode rules are a little less intuitive, but we can re-use our pushforwards to simplify their derivation. Recall our program:</p><p class="math-container">\[t \mapsto (\ldots, X_m, \ldots) \mapsto \Omega \mapsto s,\]</p><p>At any step in the program, if we have intermediates <span>$X_m$</span>, we can write down the derivative <span>$\frac{ds}{dt}$</span> in terms of the tangents <span>$\dot{X}_m = \frac{dX_m}{dt}$</span> and adjoints <span>$\overline{X}_m = \frac{\partial s}{\partial X_m}$</span></p><p class="math-container">\[\begin{align*}
+\frac{ds}{dt}
+    &amp;= \sum_m \Re\left( \sum_{i,\ldots,j}
+           \left( \frac{\partial s}{\partial (X_m)_{i,\ldots,j}} \right)^*
+           \frac{d (X_m)_{i,\ldots,j}}{dt}
+       \right)\\
+    &amp;= \sum_m \Re\left( \sum_{i,\ldots,j}
+           (\overline{X}_m)_{i,\ldots,j}^*
+           (\dot{X}_m)_{i,\ldots,j}
+       \right)\\
+    &amp;= \sum_m \Re\ip{ \overline{X}_m }{ \dot{X}_m },
+\end{align*}\]</p><p>where <span>$\Re(\cdot)$</span> is the real part of a number (<code>real</code>), and <span>$\ip{\cdot}{\cdot}$</span> is the <a href="https://en.wikipedia.org/wiki/Frobenius_inner_product">Frobenius inner product</a> (<code>LinearAlgebra.dot</code>). Because this equation follows at any step of the program, we can equivalently write </p><p class="math-container">\[\frac{ds}{dt} = \Re\ip{ \overline{\Omega} }{ \dot{\Omega} },\]</p><p>which gives the identity</p><p class="math-container">\[\begin{equation} \label{pbident}
+\Re\ip{ \overline{\Omega} }{ \dot{\Omega} } = \sum_m \Re\ip{ \overline{X}_m }{ \dot{X}_m }.
+\end{equation}\]</p><p>For matrices and vectors, <span>$\ip{A}{B} = \tr(A^\mathsf{H} B)$</span>, and the identity simplifies to:</p><p class="math-container">\[\begin{equation} \label{pbidentmat}
+\Re\left( \tr\left(
+    \overline{\Omega}^\mathsf{H} \dot{\Omega}
+\right) \right) =
+\sum_m \Re \left( \tr \left(
+    \overline{X}_m^\mathsf{H} \dot{X}_m
+\right) \right),
+\end{equation}\]</p><p>where <span>$\tr(\cdot)$</span> is the matrix trace (<code>LinearAlgebra.tr</code>) function. However, it is often cleaner and more general to work with the inner product.</p><p>Our approach for deriving the adjoints <span>$\overline{X}_m$</span> is then:</p><ol><li>Derive the pushforward (<span>$\dot{\Omega}$</span> in terms of <span>$\dot{X}_m$</span>) using \eqref{pf}.</li><li>Substitute this expression for <span>$\dot{\Omega}$</span> into the left-hand side of \eqref{pbident}.</li><li>Manipulate until it looks like the right-hand side of \eqref{pbident}.</li><li>Solve for each <span>$\overline{X}_m$</span>.</li></ol><p>Note that the final expressions for the adjoints will not contain any <span>$\dot{X}_m$</span> terms.</p><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>Why do we conjugate, and why do we only use the real part of the dot product in \eqref{pbident}? Recall from <a href="complex.html">Complex Numbers</a> that we treat a complex number as a pair of real numbers. These identities are a direct consequence of this convention. Consider <span>$\frac{ds}{dt}$</span> for a scalar function <span>$f: (x + i y) \mapsto (u + i v)$</span>:</p><p class="math-container">\[\begin{align*}
+\frac{ds}{dt}
+    &amp;= \Re\ip{ \overline{x} + i \overline{y} }{ \dot{x} + i \dot{y} } \\
+    &amp;= \Re\left(
+           \left( \overline{x} + i \overline{y} \right)^*
+           \left( \dot{x} + i \dot{y} \right)
+       \right) \\
+    &amp;= \Re\left(
+           \left( \overline{x} - i \overline{y} \right)
+           \left( \dot{x} + i \dot{y} \right)
+       \right) \\
+    &amp;= \Re\left(
+           \left( \overline{x} \dot{x} + \overline{y} \dot{y} \right) +
+           i \left( \overline{x} \dot{y} - \overline{y} \dot{x} \right)
+       \right)\\
+    &amp;= \overline{x} \dot{x} + \overline{y} \dot{y}\\
+\end{align*}\]</p><p>which is exactly what the identity would produce if we had written the function as <span>$f: (x, y) \mapsto (u, v)$</span>.</p></div></div><h3 id="Useful-properties-of-the-inner-product"><a class="docs-heading-anchor" href="#Useful-properties-of-the-inner-product">Useful properties of the inner product</a><a id="Useful-properties-of-the-inner-product-1"></a><a class="docs-heading-anchor-permalink" href="#Useful-properties-of-the-inner-product" title="Permalink"></a></h3><p>Several properties of the Frobenius inner product come in handy. First, it is <a href="https://en.wikipedia.org/wiki/Linear_map">linear</a> in its second argument and conjugate linear in its first. That is, for arrays <span>$A, B, C, D$</span> and scalars <span>$a$</span> and <span>$b$</span>,</p><p class="math-container">\[\begin{align}
+\ip{A+B}{C+D} &amp;= \ip{A}{C} + \ip{B}{C} + \ip{A}{D} + \ip{B}{D} \label{iplinear}\\
+\ip{aA}{bB} &amp;= a^* b \ip{A}{B} \nonumber
+\end{align}\]</p><p>Second, swapping arguments is equivalent to conjugating the inner product:</p><p class="math-container">\[\begin{equation}
+\ip{A}{B} = \ip{B}{A}^* \label{ipconj}
+\end{equation}\]</p><p>Third, for matrices and vectors <span>$A$</span>, <span>$B$</span>, and <span>$C$</span>, we can move arguments from the left or right of one side to the other using the matrix adjoint:</p><p class="math-container">\[\begin{equation}
+\ip{A}{BCD} = \ip{B^\mathsf{H} A}{CD} = \ip{B^\mathsf{H} A D^\mathsf{H}}{C} \label{ipperm}
+\end{equation}\]</p><p>Fourth, the inner product of two arrays <span>$A$</span> and <span>$B$</span> is equivalent to the sum of the elementwise inner products of the two arrays:</p><p class="math-container">\[\begin{equation}
+\ip{A}{B} = \sum_{i,\ldots,k} \ip{A_{i,\ldots,k}}{B_{i,\ldots,k}} = \sum_{i,\ldots,k} A_{i,\ldots,k}^* B_{i,\ldots,k}
+\end{equation}\]</p><p>As a result, only elements that are nonzero on both sides contribute to the inner product. This property is especially useful when deriving rules involving structurally sparse arrays.</p><p>Now let&#39;s derive a few pullbacks using this approach.</p><h3 id="Matrix-multiplication-2"><a class="docs-heading-anchor" href="#Matrix-multiplication-2">Matrix multiplication</a><a class="docs-heading-anchor-permalink" href="#Matrix-multiplication-2" title="Permalink"></a></h3><pre><code class="language-julia">Ω = A * B</code></pre><p>We above derived in \eqref{diffprod} the pushforward</p><p class="math-container">\[\dot{\Omega} = \dot{A} B + A \dot{B}\]</p><p>Using \eqref{pbidentmat}, we now multiply by <span>$\overline{\Omega}^\mathsf{H}$</span> and take the real trace:</p><p class="math-container">\[\begin{align*}
+\Re\ip{\overline{\Omega}}{\dot{\Omega}}
+    &amp;= \Re \ip{\overline \Omega}{\dot{A} B + A \dot{B}}
+           &amp;&amp; \text{substitute } \dot{\Omega} \text{ from } \eqref{diffprod}\\
+    &amp;= \Re \ip{\overline \Omega}{\dot{A} B} + \Re \ip{\overline \Omega}{A \dot{B}}
+           &amp;&amp; \text{expand using } \eqref{iplinear} \\
+    &amp;= \Re \ip{\overline \Omega B^\mathsf{H}}{\dot{A}} + \Re \ip{A^\mathsf{H} \overline \Omega}{\dot{B}}
+           &amp;&amp; \text{rearrange the left term using } \eqref{ipperm}\\
+    &amp;= \Re \ip{\overline A}{\dot{A}} + \Re \ip{\overline B}{\dot{B}}
+           &amp;&amp; \text{right-hand side of } \eqref{pbidentmat}
+\end{align*}\]</p><p>That&#39;s it! The expression is in the desired form to solve for the adjoints by comparing the last two lines:</p><p class="math-container">\[\overline A = \overline \Omega B^\mathsf{H}, \qquad \overline B = A^\mathsf{H} \overline \Omega\]</p><p>Using ChainRules&#39;s notation, we would implement the <code>rrule</code> as</p><pre><code class="language-julia">function rrule(::typeof(*), A::Matrix{&lt;:RealOrComplex}, B::Matrix{&lt;:RealOrComplex})
+    function times_pullback(ΔΩ)
+        ∂A = @thunk(ΔΩ * B&#39;)
+        ∂B = @thunk(A&#39; * ΔΩ)
+        return (NoTangent(), ∂A, ∂B)
+    end
+    return A * B, times_pullback
+end</code></pre><h3 id="Matrix-inversion-2"><a class="docs-heading-anchor" href="#Matrix-inversion-2">Matrix inversion</a><a class="docs-heading-anchor-permalink" href="#Matrix-inversion-2" title="Permalink"></a></h3><pre><code class="language-julia">Ω = inv(A)</code></pre><p>In \eqref{invdiff}, we derived the pushforward as</p><p class="math-container">\[\dot{\Omega} = -\Omega \dot{A} \Omega\]</p><p>Using \eqref{pbidentmat},</p><p class="math-container">\[\begin{align*}
+\Re\ip{\overline{\Omega}}{\dot{\Omega}}
+    &amp;= \Re\ip{\overline{\Omega}}{-\Omega \dot{A} \Omega}
+           &amp;&amp; \text{substitute } \eqref{invdiff}\\
+    &amp;= \Re\ip{-\Omega^\mathsf{H} \overline{\Omega} \Omega^\mathsf{H}}{\dot{A}}
+           &amp;&amp; \text{rearrange using } \eqref{ipperm}\\
+    &amp;= \Re\ip{\overline{A}}{\dot{A}}
+           &amp;&amp; \text{right-hand side of } \eqref{pbidentmat}
+\end{align*}\]</p><p>we can now solve for <span>$\overline{A}$</span>:</p><p class="math-container">\[\overline{A} = -\Omega^\mathsf{H} \overline{\Omega} \Omega^\mathsf{H}\]</p><p>We can implement the resulting <code>rrule</code> as</p><pre><code class="language-julia">function rrule(::typeof(inv), A::Matrix{&lt;:RealOrComplex})
+    Ω = inv(A)
+    function inv_pullback(ΔΩ)
+        ∂A = -Ω&#39; * ΔΩ * Ω&#39;
+        return (NoTangent(), ∂A)
+    end
+    return Ω, inv_pullback
+end</code></pre><h2 id="A-multidimensional-array-example"><a class="docs-heading-anchor" href="#A-multidimensional-array-example">A multidimensional array example</a><a id="A-multidimensional-array-example-1"></a><a class="docs-heading-anchor-permalink" href="#A-multidimensional-array-example" title="Permalink"></a></h2><p>We presented the approach for deriving pushforwards and pullbacks for arrays of arbitrary dimensions, so let&#39;s cover an example. For multidimensional arrays, it&#39;s often easier to work in component form. Consider the following function:</p><pre><code class="language-julia">Ω = sum(abs2, X::Array{&lt;:RealOrComplex,3}; dims=2)::Array{&lt;:Real,3}</code></pre><p>which we write as</p><p class="math-container">\[\Omega_{i1k} = \sum_{j} |X_{ijk}|^2
+             = \sum_{j} \Re \ip{X_{ijk}}{X_{ijk}}\]</p><p>The pushforward from \eqref{pf} is</p><p class="math-container">\[\begin{align}
+\dot{\Omega}_{i1k}
+    &amp;= \sum_j \Re\ip{\dot{X}_{ijk}}{X_{ijk}} + \ip{X_{ijk}}{\dot{X}_{ijk}} \nonumber\\
+    &amp;= \sum_j \Re\ip{X_{ijk}}{\dot{X}_{ijk}}^* + \ip{X_{ijk}}{\dot{X}_{ijk}} \nonumber\\
+    &amp;= \sum_j 2 \Re\ip{X_{ijk}}{\dot{X}_{ijk}}, \label{sumabspf}
+\end{align}\]</p><p>where in the last step we have used the fact that for all real <span>$a$</span> and <span>$b$</span>,</p><p class="math-container">\[(a + i b) + (a + i b)^*
+    = (a + i b) + (a - i b)
+    = 2 a
+    = 2 \Re (a + i b).\]</p><p>Because none of this derivation depended on the index (or indices), we implement <code>frule</code> generically as</p><pre><code class="language-julia">function frule(
+    (_, _, ΔX),
+    ::typeof(sum),
+    ::typeof(abs2),
+    X::Array{&lt;:RealOrComplex};
+    dims = :,
+)
+    Ω = sum(abs2, X; dims = dims)
+    ∂Ω = sum(2 .* real.(conj.(X) .* ΔX); dims = dims)
+    return (Ω, ∂Ω)
+end</code></pre><p>We can now derive the reverse-mode rule. The elementwise form of \eqref{pbident} is</p><p class="math-container">\[\begin{align*}
+\Re\ip{ \overline{\Omega} }{ \dot{\Omega} }
+    &amp;= \Re \left( \sum_{ik} \overline{\Omega}_{i1k}^*
+           \dot{\Omega}_{i1k} \right)
+           &amp;&amp; \text{expand left-hand side of } \eqref{pbident}\\
+    &amp;= \Re \left(\sum_{ijk} \overline{\Omega}_{i1k}^*
+           2 \Re\left( X_{ijk}^* \dot{X}_{ijk} \right)
+       \right)
+           &amp;&amp; \text{substitute } \eqref{sumabspf}\\
+    &amp;= \Re \left( \sum_{ijk}
+           \left(
+               2 \Re \left( \overline{\Omega}_{i1k} \right)
+               X_{ijk}^*
+           \right) \dot{X}_{ijk}
+       \right)
+           &amp;&amp; \text{bring } \dot{X}_{ijk} \text{ outside of } \Re\\
+    &amp;= \sum_{ijk} \Re\ip{2 \Re \left( \overline{\Omega}_{i1k} \right) X_{ijk}}{\dot{X}_{ijk}}
+           &amp;&amp; \text{rewrite as an inner product}\\
+    &amp;= \sum_{ijk} \Re\ip{\overline{X}_{ijk}}{\dot{X}_{i1k}}
+           &amp;&amp; \text{right-hand side of } \eqref{pbident}
+\end{align*}\]</p><p>We now solve for <span>$\overline{X}$</span>:</p><p class="math-container">\[\overline{X}_{ijk} = 2\Re \left( \overline{\Omega}_{i1k} \right) X_{ijk}\]</p><p>Like the <code>frule</code>, this <code>rrule</code> can be implemented generically:</p><pre><code class="language-julia">function rrule(::typeof(sum), ::typeof(abs2), X::Array{&lt;:RealOrComplex}; dims = :)
+    function sum_abs2_pullback(ΔΩ)
+        ∂abs2 = NoTangent()
+        ∂X = @thunk(2 .* real.(ΔΩ) .* X)
+        return (NoTangent(), ∂abs2, ∂X)
+    end
+    return sum(abs2, X; dims = dims), sum_abs2_pullback
+end</code></pre><h2 id="Functions-that-return-a-tuple"><a class="docs-heading-anchor" href="#Functions-that-return-a-tuple">Functions that return a tuple</a><a id="Functions-that-return-a-tuple-1"></a><a class="docs-heading-anchor-permalink" href="#Functions-that-return-a-tuple" title="Permalink"></a></h2><p>Every Julia function returns a single output. For example, let&#39;s look at <code>LinearAlgebra.logabsdet</code>, the logarithm of the absolute value of the determinant of a matrix, which returns <span>$\log |\det(A)|$</span> and <span>$\operatorname{sign}(\det A) = \frac{\det A}{| \det A |}$</span>:</p><pre><code class="language-julia">(l, s) = logabsdet(A)</code></pre><p>The return type is actually a single output, a tuple of scalars, but when deriving, we treat them as multiple outputs. The left-hand side of \eqref{pbident} then becomes a sum over terms, just like the right-hand side.</p><p>Let&#39;s derive the forward- and reverse-mode rules for <code>logabsdet</code>.</p><p class="math-container">\[\begin{align*}
+l &amp;= \log |\det(A)|\\
+s &amp;= \operatorname{sign}(\det(A)),
+\end{align*}\]</p><p>where <span>$\operatorname{sign}(x) = \frac{x}{|x|}$</span>.</p><h3 id="Forward-mode-rule"><a class="docs-heading-anchor" href="#Forward-mode-rule">Forward-mode rule</a><a id="Forward-mode-rule-1"></a><a class="docs-heading-anchor-permalink" href="#Forward-mode-rule" title="Permalink"></a></h3><p>To make this easier, let&#39;s break the computation into more manageable steps:</p><p class="math-container">\[\begin{align*}
+d &amp;= \det(A)\\
+a &amp;= |d| = \sqrt{\Re \left( d^* d \right)}\\
+l &amp;= \log a\\
+s &amp;= \frac{d}{a}
+\end{align*}\]</p><p>We&#39;ll make frequent use of the identities:</p><p class="math-container">\[d = a s\]</p><p class="math-container">\[s^* s = \frac{d^* d}{a^2} = \frac{a^2}{a^2} = 1\]</p><p>It will also be useful to define <span>$b = \tr\left( A^{-1} \dot{A} \right)$</span>.</p><p>For <span>$\dot{d}$</span>, we use the pushforward for the determinant given in section 2.2.4 of <sup class="footnote-reference"><a id="citeref-Giles2008ext" href="#footnote-Giles2008ext">[Giles2008ext]</a></sup>:</p><p class="math-container">\[\dot{d} = d b\]</p><p>Now we&#39;ll compute the pushforwards for the remaining steps.</p><p class="math-container">\[\begin{align*}
+\dot{a} &amp;= \frac{1}{2 a} \frac{d}{dt}
+                         \Re\left( d^* d \right)\\
+        &amp;= \frac{2}{2 a} \Re \left( d^* \dot{d} \right)\\
+        &amp;= \Re \left( s^* \dot{d} \right)
+            &amp;&amp; \text{use } d = a s \\
+        &amp;= \Re \left( s^* d b \right)
+            &amp;&amp; \text{substitute } \dot{d} \\
+\dot{l} &amp;= a^{-1} \dot{a}\\
+        &amp;= a^{-1} \Re \left( s^* d b \right)
+            &amp;&amp; \text{substitute } \dot{a}\\
+        &amp;= \Re \left( s^* s b \right)
+            &amp;&amp; \text{use } d = a s \\
+        &amp;= \Re \left(b \right)
+            &amp;&amp; \text{use } s^* s = 1\\
+\dot{s} &amp;= a^{-1} \dot{d} - a^{-2} d \dot{a}\\
+        &amp;= a^{-1} \left( \dot{d} - \dot{a} s \right)
+            &amp;&amp; \text{use } d = a s \\
+        &amp;= a^{-1} \left(
+               \dot{d} - \Re \left( s^* \dot{d} \right) s
+           \right)
+            &amp;&amp; \text{substitute } \dot{a}\\
+        &amp;= a^{-1} \left(
+               \dot{d} - \left(
+                   s^* \dot{d} -
+                   i \Im \left( s^* \dot{d} \right)
+               \right) s
+           \right)
+            &amp;&amp; \text{use } \Re(x) = x - i \Im(x)\\
+        &amp;= a^{-1} \left(
+               \dot{d} - \left( s^* s \right) \dot{d} +
+               i \Im \left( s^* \dot{d} \right) s 
+               \right)\\
+        &amp;= i a^{-1} \Im \left( s^* \dot{d} \right) s
+            &amp;&amp; \text{use } s^* s = 1\\
+        &amp;= i a^{-1} \Im \left( s^* d b \right) s
+            &amp;&amp; \text{substitute } \dot{d}\\
+        &amp;= i \Im \left( s^* s b \right) s
+            &amp;&amp; \text{use } d = a s \\
+        &amp;= i \Im(b) s
+            &amp;&amp; \text{use } s^* s = 1
+\end{align*}\]</p><p>Note that the term <span>$b$</span> is reused. In summary, after all of that work, the final pushforward is quite simple:</p><p class="math-container">\[\begin{align}
+b &amp;= \tr \left( A^{-1} \dot{A} \right) \label{logabsdet_b} \\
+\dot{l} &amp;= \Re(b) \label{logabsdet_ldot}\\
+\dot{s} &amp;= i \Im(b) s \label{logabsdet_sdot}\\
+\end{align}\]</p><p>We can define the <code>frule</code> as:</p><pre><code class="language-julia">function frule((_, ΔA), ::typeof(logabsdet), A::Matrix{&lt;:RealOrComplex})
+    # The primal function uses the lu decomposition to compute logabsdet
+    # we reuse this decomposition to compute inv(A) * ΔA
+    F = lu(A, check = false)
+    Ω = logabsdet(F)  # == logabsdet(A)
+    b = tr(F \ ΔA)  # == tr(inv(A) * ΔA)
+    s = last(Ω)
+    ∂l = real(b)
+    # for real A, ∂s will always be zero (because imag(b) = 0)
+    # this is type-stable because the eltype is known
+    ∂s = eltype(A) &lt;: Real ? ZeroTangent() : im * imag(b) * s
+    # tangents of tuples are of type Tangent{&lt;:Tuple}
+    ∂Ω = Tangent{typeof(Ω)}(∂l, ∂s)
+    return (Ω, ∂Ω)
+end</code></pre><h3 id="Reverse-mode-rule"><a class="docs-heading-anchor" href="#Reverse-mode-rule">Reverse-mode rule</a><a id="Reverse-mode-rule-1"></a><a class="docs-heading-anchor-permalink" href="#Reverse-mode-rule" title="Permalink"></a></h3><p class="math-container">\[\begin{align*}
+&amp;\Re\ip{\overline{l}}{\dot{l}} + \Re\ip{\overline{s}}{\dot{s}}
+    &amp;&amp; \text{left-hand side of } \eqref{pbidentmat}\\
+&amp;= \Re\left( \overline{l}^* \dot{l} + \overline{s}^* \dot{s} \right) \\
+&amp;= \Re\left( 
+       \overline{l}^* \Re(b) + i \overline{s}^* s \Im(b)
+   \right)
+       &amp;&amp; \text{substitute } \eqref{logabsdet_ldot} \text{ and } \eqref{logabsdet_sdot} \\
+&amp;= \Re\left( 
+       \Re\left( \overline{l} \right) \Re(b) -
+       \Im \left( \overline{s}^* s \right) \Im(b)
+   \right)
+       &amp;&amp; \text{discard imaginary parts} \\
+&amp;= \Re\left(
+       \left(
+           \Re \left( \overline{l} \right) +
+           i \Im \left( \overline{s}^* s \right)
+       \right) b
+   \right)
+       &amp;&amp; \text{gather parts of } b \\
+&amp;= \Re\left(
+       \left(
+           \Re \left( \overline{l} \right) +
+           i \Im \left( \overline{s}^* s \right)
+       \right)
+       \tr(A^{-1} \dot{A})
+   \right)
+       &amp;&amp; \text{substitute } b \text{ from } \eqref{logabsdet_b} \\
+&amp;= \Re\left( \tr \left(
+       \left(
+           \Re \left( \overline{l} \right) +
+           i \Im \left( \overline{s}^* s \right)
+       \right)
+       A^{-1} \dot{A}
+   \right) \right)
+       &amp;&amp; \text{bring scalar within } \tr \\
+&amp;= \Re\ip{
+        \left(
+            \Re \left( \overline{l} \right) + i \Im \left( s^* \overline{s} \right)
+        \right) A^{-\mathsf{H}}
+    }{\dot{A}} &amp;&amp; \text{rewrite as inner product}\\
+&amp;= \Re\ip{\overline{A}}{\dot{A}} &amp;&amp; \text{right-hand side of } \eqref{pbidentmat}\\
+\end{align*}\]</p><p>Now we solve for <span>$\overline{A}$</span>:</p><p class="math-container">\[\begin{align*}
+\overline{A} = \left(
+    \Re \left( \overline{l} \right) +
+    i \Im \left( s^* \overline{s} \right)
+\right) A^{-\mathsf{H}}
+\end{align*}\]</p><p>The <code>rrule</code> can be implemented as</p><pre><code class="language-julia">function rrule(::typeof(logabsdet), A::Matrix{&lt;:RealOrComplex})
+    # The primal function uses the lu decomposition to compute logabsdet
+    # we reuse this decomposition to compute inv(A)
+    F = lu(A, check = false)
+    Ω = logabsdet(F)  # == logabsdet(A)
+    s = last(Ω)
+    function logabsdet_pullback(ΔΩ)
+        (Δl, Δs) = ΔΩ
+        f = conj(s) * Δs
+        imagf = f - real(f)  # 0 for real A and Δs, im * imag(f) for complex A and/or Δs
+        g = real(Δl) + imagf
+        ∂A = g * inv(F)&#39;  # == g * inv(A)&#39;
+        return (NoTangent(), ∂A)
+    end
+    return (Ω, logabsdet_pullback)
+end</code></pre><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>It&#39;s a good idea when deriving pushforwards and pullbacks to verify that they make sense. For the pushforward, since <span>$l$</span> is real, it follows that <span>$\dot{l}$</span> is too.</p><p>What about <span>$\dot{s}$</span>? Well, <span>$s = \frac{d}{|d|}$</span> is point on the unit circle in the complex plane. Multiplying a complex number by <span>$i$</span> rotates it counter-clockwise by 90°. So the expression for <span>$\dot{s}$</span> takes a real number, <span>$\Im(b)$</span>, multiplies by <span>$s$</span> to make it parallel to <span>$s$</span>, then multiplies by <span>$i$</span> to make it perpendicular to <span>$s$</span>, that is, perfectly tangent to the unit complex circle at <span>$s$</span>.</p><p>For the pullback, it again follows that only the real part of <span>$\overline{l}$</span> is pulled back.</p><p><span>$s^*$</span> rotates a number parallel to <span>$s$</span> to the real line. So <span>$s^* \overline{s}$</span> rotates <span>$\overline{s}$</span> so that its imaginary part is the part that was tangent to the complex circle at <span>$s$</span>, while the real part is the part that was not tangent. Then the pullback isolates the imaginary part, which effectively is a projection. That is, any part of the adjoint <span>$\overline{s}$</span> that is not tangent to the complex circle at <span>$s$</span> will not contribute to <span>$\overline{A}$</span>.</p></div></div><h2 id="Implicit-functions"><a class="docs-heading-anchor" href="#Implicit-functions">Implicit functions</a><a id="Implicit-functions-1"></a><a class="docs-heading-anchor-permalink" href="#Implicit-functions" title="Permalink"></a></h2><p>Sometimes a function is only defined implicitly, and internally some solver or iterative algorithm is used to compute the result. We can still in some cases derive rules by considering only the implicit functions and not the internals. One example is the solution <span>$X$</span> to the Sylvester equation</p><p class="math-container">\[A X + X B = -C\]</p><p>for inputs <span>$A$</span>, <span>$B$</span>, and <span>$C$</span>. We can also write this solution as <span>$X = \operatorname{sylvester}(A, B, C)$</span>, which in Julia is computed using <code>LinearAlgebra.sylvester(A, B, C)</code>.</p><h3 id="Forward-mode-Rule"><a class="docs-heading-anchor" href="#Forward-mode-Rule">Forward-mode Rule</a><a id="Forward-mode-Rule-1"></a><a class="docs-heading-anchor-permalink" href="#Forward-mode-Rule" title="Permalink"></a></h3><p>We start by differentiating the implicit function:</p><p class="math-container">\[\dot{A} X + A \dot{X} + \dot{X} B + X \dot{B} = -\dot{C}\]</p><p>Then we isolate the terms with <span>$\dot{X}$</span> on one side:</p><p class="math-container">\[\begin{align}
+A \dot{X} + \dot{X} B
+    &amp;= -\dot{C} - \dot{A} X - X \dot{B} \label{sylpfimplicit}\\
+    &amp;= -(\dot{C} + \dot{A} X + X \dot{B}) \nonumber
+\end{align}\]</p><p>So the pushforward is the solution to a different Sylvester equation:</p><p class="math-container">\[\dot{X} = \operatorname{sylvester}(A, B, \dot{C} + \dot{A} X + X \dot{B})\]</p><p>The <code>frule</code> can be implemented as</p><pre><code class="language-julia">function frule((_, ΔA, ΔB, ΔC), ::typeof(sylvester), A, B, C)
+    X = sylvester(A, B, C)
+    return X, sylvester(A, B, ΔC + ΔA * X + X * ΔB)
+end</code></pre><h3 id="Reverse-mode-Rule"><a class="docs-heading-anchor" href="#Reverse-mode-Rule">Reverse-mode Rule</a><a id="Reverse-mode-Rule-1"></a><a class="docs-heading-anchor-permalink" href="#Reverse-mode-Rule" title="Permalink"></a></h3><p>Like with the pushforward, it&#39;s easiest to work with the implicit function. We start by introducing some dummy <span>$-Z$</span> and taking its inner product with both sides of \eqref{sylpfimplicit}:</p><p class="math-container">\[\ip{-Z}{A \dot{X} + \dot{X} B} = \ip{-Z}{-\dot{C} - \dot{A} X - X \dot{B}}.\]</p><p>Then we expand</p><p class="math-container">\[\ip{-Z}{A \dot{X}} + \ip{-Z}{\dot{X} B} = \ip{Z}{\dot{C}} + \ip{Z}{\dot{A} X} + \ip{Z}{X \dot{B}}.\]</p><p>Now permute:</p><p class="math-container">\[\ip{-A^\mathsf{H} Z}{\dot{X}} + \ip{-Z B^\mathsf{H}}{\dot{X}} = \ip{Z}{\dot{C}} + \ip{Z X^\mathsf{H}}{\dot{A}} + \ip{X^\mathsf{H} Z}{X \dot{B}}.\]</p><p>Then combine:</p><p class="math-container">\[\ip{-(A^\mathsf{H} Z + Z B^\mathsf{H})}{\dot{X}} = \ip{Z X^\mathsf{H}}{\dot{A}} + \ip{X^\mathsf{H} Z}{X \dot{B}} + \ip{Z}{\dot{C}}.\]</p><p>This is almost exactly the identity we need to solve for <span>$\overline{A}$</span>, <span>$\overline{B}$</span>, and <span>$\overline{C}$</span>. To manipulate it to the right form, we need only define <span>$A^\mathsf{H} Z + Z B^\mathsf{H} = -\overline{X}$</span>. This <em>yet another</em> Sylvester equation, so letting <span>$Z = \overline{C}$</span>, our final pullback is:</p><p class="math-container">\[\begin{align*}
+\overline{C} &amp;= \operatorname{sylvester}(A^\mathsf{H}, B^\mathsf{H}, \overline{X})\\
+             &amp;= \operatorname{sylvester}(B, A, \overline{X}^\mathsf{H})^\mathsf{H}\\
+\overline{A} &amp;= \overline{C} X^\mathsf{H}\\
+\overline{B} &amp;= X^\mathsf{H} \overline{C}\\
+\end{align*}\]</p><p>The <code>rrule</code> can be implemented as</p><pre><code class="language-julia">function rrule(::typeof(sylvester), A, B, C)
+    X = sylvester(A, B, C)
+    function sylvester_pullback(ΔX)
+        ∂C = copy(sylvester(B, A, copy(ΔX&#39;))&#39;)
+        return NoTangent(), @thunk(∂C * X&#39;), @thunk(X&#39; * ∂C), ∂C
+    end
+    return X, sylvester_pullback
+end</code></pre><p>Note, however, that the Sylvester equation is usually solved using the Schur decomposition of <span>$A$</span> and <span>$B$</span>. These Schur decompositions can be reused to solve the Sylvester equations in the pushforward and pullback. See the <a href="https://github.com/JuliaDiff/ChainRules.jl/blob/v0.7.57/src/rulesets/LinearAlgebra/dense.jl#L243-L286">implementation in ChainRules</a> for details.</p><h2 id="More-examples"><a class="docs-heading-anchor" href="#More-examples">More examples</a><a id="More-examples-1"></a><a class="docs-heading-anchor-permalink" href="#More-examples" title="Permalink"></a></h2><p>For more instructive examples of array rules, see <sup class="footnote-reference"><a id="citeref-Giles2008ext" href="#footnote-Giles2008ext">[Giles2008ext]</a></sup> (real vector and matrix rules) and the <a href="https://github.com/JuliaDiff/ChainRules.jl/tree/main/src/rulesets/LinearAlgebra">LinearAlgebra rules in ChainRules</a>. For differentiating the LU decomposition, see <a href="https://sethaxen.com/blog/2021/02/differentiating-the-lu-decomposition/">this blog post by Seth Axen</a>.</p><h2 id="References"><a class="docs-heading-anchor" href="#References">References</a><a id="References-1"></a><a class="docs-heading-anchor-permalink" href="#References" title="Permalink"></a></h2><section class="footnotes is-size-7"><ul><li class="footnote" id="footnote-Giles2008"><a class="tag is-link" href="#citeref-Giles2008">Giles2008</a><blockquote><p>Giles M. B. Collected Matrix Derivative Results for Forward and Reverse Mode Algorithmic Differentiation. In: Advances in Automatic Differentiation. <em>Lecture Notes in Computational Science and Engineering</em>, vol 64: pp 35-44. Springer, Berlin (2008). doi: <a href="https://doi.org/10.1007/978-3-540-68942-3_4">10.1007/978-3-540-68942-3_4</a>. <a href="https://people.maths.ox.ac.uk/gilesm/files/AD2008.pdf">pdf</a></p></blockquote></li><li class="footnote" id="footnote-Giles2008ext"><a class="tag is-link" href="#citeref-Giles2008ext">Giles2008ext</a><blockquote><p>Giles M. B. An Extended Collection of Matrix Derivative Results for Forward and Reverse Mode Algorithmic Differentiation. (unpublished). <a href="https://people.maths.ox.ac.uk/gilesm/files/NA-08-01.pdf">pdf</a></p></blockquote></li></ul></section></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="complex.html">« Complex Numbers</a><a class="docs-footer-nextpage" href="debug_mode.html">Debug Mode »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 12 October 2021 15:39">Tuesday 12 October 2021</span>. Using Julia version 1.6.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
