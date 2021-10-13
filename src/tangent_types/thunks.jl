@@ -196,6 +196,7 @@ end
 Base.show(io::IO, x::Thunk) = print(io, "Thunk($(repr(x.f)))")
 
 Base.convert(::Type{<:Thunk}, a::AbstractZero) = @thunk(a)
+Base.convert(::Type{T}, t::AbstractThunk) where {T} = convert(T, unthunk(t))
 
 """
     InplaceableThunk(add!::Function, val::Thunk)

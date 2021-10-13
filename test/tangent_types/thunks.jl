@@ -24,6 +24,7 @@
 
     @testset "convert" begin
         @test convert(Thunk, ZeroTangent()) isa Thunk
+        @test convert(Float64, @thunk(2.2)) isa Float64
     end
 
     @testset "unthunk" begin
