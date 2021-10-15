@@ -27,8 +27,7 @@ Base.convert(::Type{T}, x::AbstractZero) where {T<:Number} = zero(T)
 (::Type{Complex})(x::AbstractZero, y::Real) = Complex(false, y)
 (::Type{Complex})(x::Real, y::AbstractZero) = Complex(x, false)
 
-Base.getindex(z::AbstractZero, args...) = z
-
+Base.getindex(z::AbstractZero, ind...) = z
 Base.view(z::AbstractZero, ind...) = z
 Base.sum(z::AbstractZero; dims=:) = z
 Base.reshape(z::AbstractZero, size...) = z

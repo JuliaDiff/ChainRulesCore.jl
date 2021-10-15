@@ -5,6 +5,9 @@
     end
 
     @testset "Linear operators" begin
+        @test getindex(ZeroTangent(), 1) === ZeroTangent()
+        @test getindex(NoTangent(), 1, 2) === NoTangent()
+
         @test view(ZeroTangent(), 1) == ZeroTangent()
         @test view(NoTangent(), 1, 2) == NoTangent()
 
