@@ -149,4 +149,13 @@
         end
         @test isempty(detect_ambiguities(M))
     end
+
+    @testset "LinearAlgebra constructors" begin
+        @test adjoint(ZeroTangent()) === ZeroTangent()
+        @test transpose(ZeroTangent()) === ZeroTangent()
+        @test Adjoint(ZeroTangent()) === ZeroTangent()
+        @test Transpose(ZeroTangent()) === ZeroTangent()
+        @test Symmetric(ZeroTangent()) === ZeroTangent()
+        @test Hermitian(ZeroTangent(), :U) === ZeroTangent()
+    end
 end

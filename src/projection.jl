@@ -401,6 +401,16 @@ function (project::ProjectTo{Adjoint})(dx::AbstractArray)
     dy = eltype(dx) <: Real ? vec(dx) : adjoint(dx)
     return adjoint(project.parent(dy))
 end
+# structural => natural standardisation, broadest possible signature
+function (project::ProjectTo{Adjoint})(dx::Tangent)
+    if dx.parent isa Tangent
+        # Can't wrap a structural representation of an array in an Adjoint:
+        return dx
+    else
+        # This case should handle dx.parent isa AbstractZero, too
+        return Adjoint(project.parent(dx.parent))
+    end
+end
 
 function ProjectTo(x::LinearAlgebra.TransposeAbsVec)
     return ProjectTo{Transpose}(; parent=ProjectTo(parent(x)))
@@ -415,14 +425,22 @@ function (project::ProjectTo{Transpose})(dx::AbstractArray)
     dy = eltype(dx) <: Number ? vec(dx) : transpose(dx)
     return transpose(project.parent(dy))
 end
+function (project::ProjectTo{Transpose})(
+    dx::Tangent{<:Transpose, <:NamedTuple{(:parent,), <:Tuple{AbstractVector}}},
+    )
+    return Transpose(project.parent(dx.parent))
+end
 
 # Diagonal
 ProjectTo(x::Diagonal) = ProjectTo{Diagonal}(; diag=ProjectTo(x.diag))
 (project::ProjectTo{Diagonal})(dx::AbstractMatrix) = Diagonal(project.diag(diag(dx)))
 (project::ProjectTo{Diagonal})(dx::Diagonal) = Diagonal(project.diag(dx.diag))
-
-(project::ProjectTo{Diagonal})(dx::Tangent{T}) where T = (@show T; Diagonal(project.diag(dx.diag)))
-# (project::ProjectTo{Diagonal})(dx::Tangent{<:Diagonal, NamedTuple{(:diag,), <:Tuple{AbstractVector}}}) = Diagonal(project.diag(@show dx.diag))
+# structural => natural standardisation, very conservative signature:
+function (project::ProjectTo{Diagonal})(
+    dx::Tangent{<:Diagonal, <:NamedTuple{(:diag,), <:Tuple{AbstractVector}}},
+    )
+    return Diagonal(project.diag(dx.diag))
+end
 
 # Symmetric
 for (SymHerm, chk, fun) in
@@ -440,6 +458,13 @@ for (SymHerm, chk, fun) in
             # If we could mutate dx, then that could speed up action on dx::Matrix.
             dz = $chk(dy) ? dy : (dy .+ $fun(dy)) ./ 2
             return $SymHerm(project.parent(dz), project.uplo)
+        end
+        function (project::ProjectTo{$SymHerm})(dx::Tangent{<:$SymHerm})
+            if dx.data isa Tangent
+                return dx
+            else
+                return $SymHerm(project.parent(dx.data))
+            end
         end
         # This is an example of a subspace which is not a subtype,
         # not clear how broadly it's worthwhile to try to support this.

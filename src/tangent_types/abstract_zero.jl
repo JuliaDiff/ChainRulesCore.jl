@@ -19,9 +19,6 @@ Base.iterate(::AbstractZero, ::Any) = nothing
 Base.Broadcast.broadcastable(x::AbstractZero) = Ref(x)
 Base.Broadcast.broadcasted(::Type{T}) where {T<:AbstractZero} = T()
 
-# Linear operators
-Base.adjoint(z::AbstractZero) = z
-Base.transpose(z::AbstractZero) = z
 Base.:/(z::AbstractZero, ::Any) = z
 
 Base.convert(::Type{T}, x::AbstractZero) where {T<:Number} = zero(T)
@@ -37,7 +34,16 @@ Base.sum(z::AbstractZero; dims=:) = z
 Base.reshape(z::AbstractZero, size...) = z
 Base.reverse(z::AbstractZero, args...; kwargs...) = z
 
-(::Type{<:UniformScaling})(z::AbstractZero) = z
+# LinearAlgebra
+LinearAlgebra.adjoint(z::AbstractZero, ind...) = z
+LinearAlgebra.transpose(z::AbstractZero, ind...) = z
+
+for T in (:UniformScaling, :Adjoint, :Transpose, :Diagonal)
+    @eval (::Type{<:LinearAlgebra.$T})(z::AbstractZero) = z
+end
+for T in (:Symmetric, :Hermitian)
+    @eval (::Type{<:LinearAlgebra.$T})(z::AbstractZero, uplo=:U) = z
+end
 
 """
     ZeroTangent() <: AbstractZero

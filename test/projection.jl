@@ -232,6 +232,10 @@ struct NoSuperType end
         @test padj_complex(transpose([4, 5, 6 + 7im])) == [4 5 6 + 7im]
         @test padj_complex(adjoint([4, 5, 6 + 7im])) == [4 5 6 - 7im]
 
+        # structural => natural
+        @test padj(Tangent{adjT}(; parent=ones(3) .+ im)) isa adjT
+        @test_skip padj(Tangent{Any}(; parent=ones(3))) isa adjT  # only for Adjoint now
+
         # evil test case
         if VERSION >= v"1.7-"  # up to 1.6  Vector[[1,2,3]]'  is an error, not sure why it's called
             xs = adj(Any[Any[1, 2, 3], Any[4 + im, 5 - im, 6 + im, 7 - im]])
@@ -266,6 +270,10 @@ struct NoSuperType end
         @test psymm(psymm(reshape(1:9, 3, 3))) == psymm(reshape(1:9, 3, 3))
         @test psymm(rand(ComplexF32, 3, 3, 1)) isa Symmetric{Float64}
         @test ProjectTo(Symmetric(randn(3, 3) .> 0))(randn(3, 3)) == NoTangent() # Bool
+        # structural => natural
+        dx = Tangent{typeof(Symmetric(rand(3, 3)))}(; data=[1 2 3; 4 5 6; 7 8 9im])
+        @test psymm(dx) isa Symmetric{Float64}
+        @test psymm(Tangent{typeof(Symmetric(rand(3, 3)))}(; )) isa AbstractZero
 
         pherm = ProjectTo(Hermitian(rand(3, 3) .+ im, :L))
         # NB, projection onto Hermitian subspace, not application of Hermitian constructor
@@ -292,6 +300,8 @@ struct NoSuperType end
         @test pdiag(Diagonal(1.0:3.0)) === Diagonal(1.0:3.0)
         @test ProjectTo(Diagonal(randn(3) .> 0))(randn(3, 3)) == NoTangent()
         @test ProjectTo(Diagonal(randn(3) .> 0))(Diagonal(rand(3))) == NoTangent()
+        # structural => natural
+        @test pdiag(Tangent{typeof(Diagonal(1:3))}(; diag=ones(3) .+ im)) isa Diagonal{Float64}
 
         pbi = ProjectTo(Bidiagonal(rand(3, 3), :L))
         @test pbi(reshape(1:9, 3, 3)) == [1.0 0.0 0.0; 2.0 5.0 0.0; 0.0 6.0 9.0]
