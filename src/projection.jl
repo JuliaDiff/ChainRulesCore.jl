@@ -272,11 +272,13 @@ end
 #####
 
 # Ref
+# Note that Ref is mutable. This causes Zygote to represent its structral tangent not as a NamedTuple,
+# but as `Ref{Any}((x=val,))`. Here we use a Tangent, there is at present no mutable version, but see
+# https://github.com/JuliaDiff/ChainRulesCore.jl/issues/105
 function ProjectTo(x::Ref)
     sub = ProjectTo(x[])  # should we worry about isdefined(Ref{Vector{Int}}(), :x)? 
     return ProjectTo{Tangent{typeof(x)}}(; x=sub)
 end
-
 (project::ProjectTo{<:Tangent{<:Ref}})(dx::Tangent) = project(Ref(first(backing(dx))))
 function (project::ProjectTo{<:Tangent{<:Ref}})(dx::Ref)
     dy = project.x(dx[])
@@ -294,7 +296,9 @@ function ProjectTo(x::Tuple)
         return ProjectTo{Tangent{typeof(x)}}(; elements=elements)
     end
 end
-
+# This method means that projection is re-applied to the contents of a Tangent.
+# We're not entirely sure whether this is every necessary; but it should be safe,
+# and should often compile away:
 (project::ProjectTo{<:Tangent{<:Tuple}})(dx::Tangent) = project(backing(dx))
 function (project::ProjectTo{<:Tangent{<:Tuple}})(dx::Tuple)
     len = length(project.elements)
@@ -302,6 +306,7 @@ function (project::ProjectTo{<:Tangent{<:Tuple}})(dx::Tuple)
         str = "tuple with length(x) == $len cannot have a gradient with length(dx) == $(length(dx))"
         throw(DimensionMismatch(str))
     end
+    # Here map will fail if the lengths don't match, but gives a much less helpful error:
     dy = map((f, x) -> f(x), project.elements, dx)
     return project_type(project)(dy...)
 end
