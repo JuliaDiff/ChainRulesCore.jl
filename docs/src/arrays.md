@@ -814,7 +814,7 @@ See the [implementation in ChainRules](https://github.com/JuliaDiff/ChainRules.j
 
 ## More examples
 
-For more instructive examples of array rules, see [^Giles2008ext] (real vector and matrix rules) and the [LinearAlgebra rules in ChainRules](https://github.com/JuliaDiff/ChainRules.jl/tree/master/src/rulesets/LinearAlgebra).
+For more instructive examples of array rules, see [^Giles2008ext] (real vector and matrix rules) and the [LinearAlgebra rules in ChainRules](https://github.com/JuliaDiff/ChainRules.jl/tree/main/src/rulesets/LinearAlgebra).
 For differentiating the LU decomposition, see [this blog post by Seth Axen](https://sethaxen.com/blog/2021/02/differentiating-the-lu-decomposition/).
 
 ## References

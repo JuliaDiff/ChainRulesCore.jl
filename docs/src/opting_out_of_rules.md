@@ -8,7 +8,7 @@ If this is generally the case, then we should not have the rule defined at all.
 But if it is only the case for a particular set of types, then we want to opt-out just that one.
 This is done with the [`@opt_out`](@ref) macro.
 
-Consider one a `rrule` for `sum` (the following simplified from the one in [ChainRules.jl](https://github.com/JuliaDiff/ChainRules.jl/blob/master/src/rulesets/Base/mapreduce.jl) itself)
+Consider one a `rrule` for `sum` (the following simplified from the one in [ChainRules.jl](https://github.com/JuliaDiff/ChainRules.jl/blob/main/src/rulesets/Base/mapreduce.jl) itself)
 ```julia
 function rrule(::typeof(sum), x::AbstractArray{<:Number})
     y = sum(x; dims=dims)
