@@ -445,22 +445,22 @@ for (SymHerm, chk, fun) in
             sub = ProjectTo(parent(x))
             # Because the projector stores uplo, ProjectTo(Symmetric(rand(3,3) .> 0)) isn't automatically trivial:
             sub isa ProjectTo{<:AbstractZero} && return sub
-            return ProjectTo{$SymHerm}(; uplo=LinearAlgebra.sym_uplo(x.uplo), parent=sub)
+            return ProjectTo{$SymHerm}(; uplo=LinearAlgebra.sym_uplo(x.uplo), data=sub)
         end
         function (project::ProjectTo{$SymHerm})(dx::AbstractArray)
-            dy = project.parent(dx)
+            dy = project.data(dx)
             # Here $chk means this is efficient on same-type.
             # If we could mutate dx, then that could speed up action on dx::Matrix.
             dz = $chk(dy) ? dy : (dy .+ $fun(dy)) ./ 2
-            return $SymHerm(project.parent(dz), project.uplo)
+            return $SymHerm(project.data(dz), project.uplo)
         end
         function (project::ProjectTo{$SymHerm})(dx::Tangent)  # structural => natural
-            return dx.data isa Tangent ? dx : $SymHerm(project.parent(dx.data), project.uplo)
+            return dx.data isa Tangent ? dx : $SymHerm(project.data(dx.data), project.uplo)
         end
         # This is an example of a subspace which is not a subtype,
         # not clear how broadly it's worthwhile to try to support this.
         function (project::ProjectTo{$SymHerm})(dx::Diagonal)
-            sub = project.parent # this is going to be unhappy about the size
+            sub = project.data # this is going to be unhappy about the size
             sub_one = ProjectTo{project_type(sub)}(;
                 element=sub.element, axes=(sub.axes[1],)
             )
@@ -472,18 +472,18 @@ end
 # Triangular
 for UL in (:UpperTriangular, :LowerTriangular, :UnitUpperTriangular, :UnitLowerTriangular) # UpperHessenberg
     @eval begin
-        ProjectTo(x::$UL) = ProjectTo{$UL}(; parent=ProjectTo(parent(x)))
-        (project::ProjectTo{$UL})(dx::AbstractArray) = $UL(project.parent(dx))
+        ProjectTo(x::$UL) = ProjectTo{$UL}(; data=ProjectTo(parent(x)))
+        (project::ProjectTo{$UL})(dx::AbstractArray) = $UL(project.data(dx))
+        function (project::ProjectTo{$UL})(dx::Tangent)  # structural => natural
+            return dx.data isa Tangent ? dx : $UL(project.data(dx.data), project.uplo)
+        end
         # Another subspace which is not a subtype, like Diagonal inside Symmetric above, equally unsure
         function (project::ProjectTo{$UL})(dx::Diagonal)
-            sub = project.parent
+            sub = project.data
             sub_one = ProjectTo{project_type(sub)}(;
                 element=sub.element, axes=(sub.axes[1],)
             )
             return Diagonal(sub_one(dx.diag))
-        end
-        function (project::ProjectTo{$UL})(dx::Tangent)  # structural => natural
-            return dx.data isa Tangent ? dx : $UL(project.parent(dx.data), project.uplo)
         end
     end
 end
