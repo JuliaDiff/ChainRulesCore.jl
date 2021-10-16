@@ -140,7 +140,7 @@ end
 # Tangent
 # We haven't entirely figured out when to convert Tangents to "natural" representations such as
 # dx::AbstractArray (when both are possible), or the reverse. So for now we just pass them through:
-(::ProjectTo{T})(dx::Tangent{<:T}) where {T} = dx
+(::ProjectTo)(dx::Tangent) = dx
 
 #####
 ##### `Base`
