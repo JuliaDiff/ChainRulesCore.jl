@@ -425,21 +425,16 @@ function (project::ProjectTo{Transpose})(dx::AbstractArray)
     dy = eltype(dx) <: Number ? vec(dx) : transpose(dx)
     return transpose(project.parent(dy))
 end
-function (project::ProjectTo{Transpose})(
-    dx::Tangent{<:Transpose, <:NamedTuple{(:parent,), <:Tuple{AbstractVector}}},
-    )
-    return Transpose(project.parent(dx.parent))
+function (project::ProjectTo{Transpose})(dx::Tangent)  # structural => natural
+    return dx.parent isa Tangent ? dx : Transpose(project.parent(dx.parent))
 end
 
 # Diagonal
 ProjectTo(x::Diagonal) = ProjectTo{Diagonal}(; diag=ProjectTo(x.diag))
 (project::ProjectTo{Diagonal})(dx::AbstractMatrix) = Diagonal(project.diag(diag(dx)))
 (project::ProjectTo{Diagonal})(dx::Diagonal) = Diagonal(project.diag(dx.diag))
-# structural => natural standardisation, very conservative signature:
-function (project::ProjectTo{Diagonal})(
-    dx::Tangent{<:Diagonal, <:NamedTuple{(:diag,), <:Tuple{AbstractVector}}},
-    )
-    return Diagonal(project.diag(dx.diag))
+function (project::ProjectTo{Diagonal})(dx::Tangent) # structural => natural
+    return dx.diag isa Tangent ? dx.diag : Diagonal(project.diag(dx.diag))
 end
 
 # Symmetric
@@ -459,12 +454,8 @@ for (SymHerm, chk, fun) in
             dz = $chk(dy) ? dy : (dy .+ $fun(dy)) ./ 2
             return $SymHerm(project.parent(dz), project.uplo)
         end
-        function (project::ProjectTo{$SymHerm})(dx::Tangent{<:$SymHerm})
-            if dx.data isa Tangent
-                return dx
-            else
-                return $SymHerm(project.parent(dx.data))
-            end
+        function (project::ProjectTo{$SymHerm})(dx::Tangent)  # structural => natural
+            return dx.data isa Tangent ? dx : $SymHerm(project.parent(dx.data), project.uplo)
         end
         # This is an example of a subspace which is not a subtype,
         # not clear how broadly it's worthwhile to try to support this.
@@ -491,8 +482,9 @@ for UL in (:UpperTriangular, :LowerTriangular, :UnitUpperTriangular, :UnitLowerT
             )
             return Diagonal(sub_one(dx.diag))
         end
-        # Convert "structural" `Tangent`s to array-like "natural" tangents
-        (project::ProjectTo{$UL})(dx::Tangent{<:$UL, NamedTuple{(:data,), <:Tuple{AbstractMatrix}}}) = $UL(dx.data)
+        function (project::ProjectTo{$UL})(dx::Tangent)  # structural => natural
+            return dx.data isa Tangent ? dx : $UL(project.parent(dx.data), project.uplo)
+        end
     end
 end
 

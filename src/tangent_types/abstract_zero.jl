@@ -37,7 +37,10 @@ Base.reverse(z::AbstractZero, args...; kwargs...) = z
 LinearAlgebra.adjoint(z::AbstractZero, ind...) = z
 LinearAlgebra.transpose(z::AbstractZero, ind...) = z
 
-for T in (:UniformScaling, :Adjoint, :Transpose, :Diagonal)
+for T in (
+        :UniformScaling, :Adjoint, :Transpose, :Diagonal
+        :UpperTriangular, :LowerTriangular, :UnitUpperTriangular, :UnitLowerTriangular,
+    )
     @eval (::Type{<:LinearAlgebra.$T})(z::AbstractZero) = z
 end
 for T in (:Symmetric, :Hermitian)
