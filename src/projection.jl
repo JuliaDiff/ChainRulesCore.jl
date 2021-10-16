@@ -131,7 +131,7 @@ ProjectTo(::AbstractZero) = ProjectTo{NoTangent}()  # Any x::Zero in forward pas
 # Also, any explicit construction with fields, where all fields project to zero, itself
 # projects to zero. This simplifies projectors for wrapper types like Diagonal([true, false]).
 const _PZ = ProjectTo{<:AbstractZero}
-const _PZ_Tuple = Tuple{PZ,Vararg{PZ}} where PZ<:_PZ  # 1 or more ProjectTo{<:AbstractZeros}
+const _PZ_Tuple = Tuple{PZ,Vararg{PZ}} where {PZ<:_PZ}  # 1 or more ProjectTo{<:AbstractZeros}
 function ProjectTo{P}(::NamedTuple{T,<:_PZ_Tuple}) where {P,T}
     return ProjectTo{NoTangent}()
 end
