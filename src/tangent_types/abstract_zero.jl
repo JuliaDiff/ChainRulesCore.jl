@@ -46,6 +46,9 @@ end
 for T in (:Symmetric, :Hermitian)
     @eval (::Type{<:LinearAlgebra.$T})(z::AbstractZero, uplo=:U) = z
 end
+LinearAlgebra.Bidiagonal(dv::AbstractZero, ev::AbstractZero, uplo::Symbol) = NoTangent()
+LinearAlgebra.Bidiagonal(dv::AbstractArray, ev::AbstractZero, uplo::Symbol) = Bidiagonal(dv, zero(dv)[1:end-1], uplo)
+LinearAlgebra.Bidiagonal(dv::AbstractZero, ev::AbstractArray, uplo::Symbol) = Bidiagonal(vcat(zero(ev), false), ev, uplo)
 
 """
     ZeroTangent() <: AbstractZero

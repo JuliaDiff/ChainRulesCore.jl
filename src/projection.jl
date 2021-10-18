@@ -140,7 +140,7 @@ end
 # Tangent
 # We haven't entirely figured out when to convert Tangents to "natural" representations such as
 # dx::AbstractArray (when both are possible), or the reverse. So for now we just pass them through:
-(::ProjectTo)(dx::Tangent) = dx
+(::ProjectTo{T})(dx::Tangent{<:T}) where {T} = dx
 
 #####
 ##### `Base`
@@ -380,6 +380,8 @@ end
 
 using LinearAlgebra: AdjointAbsVec, TransposeAbsVec, AdjOrTransAbsVec
 
+const ArrayOrZero = Union{AbstractArray, AbstractZero}
+
 # UniformScaling can represent its own cotangent
 ProjectTo(x::UniformScaling) = ProjectTo{UniformScaling}(; λ=ProjectTo(x.λ))
 ProjectTo(x::UniformScaling{Bool}) = ProjectTo(false)
@@ -402,13 +404,12 @@ function (project::ProjectTo{Adjoint})(dx::AbstractArray)
     return adjoint(project.parent(dy))
 end
 # structural => natural standardisation, broadest possible signature
-function (project::ProjectTo{Adjoint})(dx::Tangent)
-    if dx.parent isa Tangent
+function (project::ProjectTo{Adjoint})(dx::Tangent{<:Adjoint})
+    if dx.parent isa ArrayOrZero
+        return Adjoint(project.parent(dx.parent))
+    else
         # Can't wrap a structural representation of an array in an Adjoint:
         return dx
-    else
-        # This case should handle dx.parent isa AbstractZero, too
-        return Adjoint(project.parent(dx.parent))
     end
 end
 
@@ -425,16 +426,16 @@ function (project::ProjectTo{Transpose})(dx::AbstractArray)
     dy = eltype(dx) <: Number ? vec(dx) : transpose(dx)
     return transpose(project.parent(dy))
 end
-function (project::ProjectTo{Transpose})(dx::Tangent)  # structural => natural
-    return dx.parent isa Tangent ? dx : Transpose(project.parent(dx.parent))
+function (project::ProjectTo{Transpose})(dx::Tangent{<:Transpose})  # structural => natural
+    return dx.parent isa ArrayOrZero ? Transpose(project.parent(dx.parent)) : dx
 end
 
 # Diagonal
 ProjectTo(x::Diagonal) = ProjectTo{Diagonal}(; diag=ProjectTo(x.diag))
 (project::ProjectTo{Diagonal})(dx::AbstractMatrix) = Diagonal(project.diag(diag(dx)))
 (project::ProjectTo{Diagonal})(dx::Diagonal) = Diagonal(project.diag(dx.diag))
-function (project::ProjectTo{Diagonal})(dx::Tangent) # structural => natural
-    return dx.diag isa Tangent ? dx.diag : Diagonal(project.diag(dx.diag))
+function (project::ProjectTo{Diagonal})(dx::Tangent{<:Diagonal}) # structural => natural
+    dx.diag isa ArrayOrZero ? Diagonal(project.diag(dx.diag)) : dx
 end
 
 # Symmetric
@@ -454,8 +455,8 @@ for (SymHerm, chk, fun) in
             dz = $chk(dy) ? dy : (dy .+ $fun(dy)) ./ 2
             return $SymHerm(project.data(dz), project.uplo)
         end
-        function (project::ProjectTo{$SymHerm})(dx::Tangent)  # structural => natural
-            return dx.data isa Tangent ? dx : $SymHerm(project.data(dx.data), project.uplo)
+        function (project::ProjectTo{$SymHerm})(dx::Tangent{<:$SymHerm})  # structural => natural
+            dx.data isa ArrayOrZero ? $SymHerm(project.data(dx.data), project.uplo) : dx
         end
         # This is an example of a subspace which is not a subtype,
         # not clear how broadly it's worthwhile to try to support this.
@@ -474,8 +475,8 @@ for UL in (:UpperTriangular, :LowerTriangular, :UnitUpperTriangular, :UnitLowerT
     @eval begin
         ProjectTo(x::$UL) = ProjectTo{$UL}(; data=ProjectTo(parent(x)))
         (project::ProjectTo{$UL})(dx::AbstractArray) = $UL(project.data(dx))
-        function (project::ProjectTo{$UL})(dx::Tangent)  # structural => natural
-            return dx.data isa Tangent ? dx : $UL(project.data(dx.data), project.uplo)
+        function (project::ProjectTo{$UL})(dx::Tangent{<:$UL})  # structural => natural
+            dx.data isa ArrayOrZero ? $UL(project.data(dx.data), project.uplo) : dx
         end
         # Another subspace which is not a subtype, like Diagonal inside Symmetric above, equally unsure
         function (project::ProjectTo{$UL})(dx::Diagonal)
@@ -505,6 +506,14 @@ function (project::ProjectTo{Bidiagonal})(dx::Bidiagonal)
         dv = project.dv(diag(dx))
         ev = fill!(similar(dv, length(dv) - 1), 0)
         return Bidiagonal(dv, ev, uplo)
+    end
+end
+function (project::ProjectTo{Bidiagonal})(dx::Tangent{<:Bidiagonal})  # structural => natural
+    if dx.dv isa ArrayOrZero && dx.ev isa ArrayOrZero
+        # possibly the various cases should live here, not as methods of constructor?
+        Bidiagonal(project.dv(dx.dv), project.ev(dx.ev), project.uplo)
+    else
+        dx
     end
 end
 
