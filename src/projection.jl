@@ -406,9 +406,11 @@ end
 # structural => natural standardisation, broadest possible signature
 function (project::ProjectTo{Adjoint})(dx::Tangent{<:Adjoint})
     if dx.parent isa ArrayOrZero
+        # Adjoint handles ZeroTangent, which could also be produced by project.parent
         return Adjoint(project.parent(dx.parent))
     else
-        # Can't wrap a structural representation of an array in an Adjoint:
+        # Can't wrap a structural representation, or a thunk, in an Adjoint.
+        # But do these happen?
         return dx
     end
 end
@@ -435,7 +437,7 @@ ProjectTo(x::Diagonal) = ProjectTo{Diagonal}(; diag=ProjectTo(x.diag))
 (project::ProjectTo{Diagonal})(dx::AbstractMatrix) = Diagonal(project.diag(diag(dx)))
 (project::ProjectTo{Diagonal})(dx::Diagonal) = Diagonal(project.diag(dx.diag))
 function (project::ProjectTo{Diagonal})(dx::Tangent{<:Diagonal}) # structural => natural
-    dx.diag isa ArrayOrZero ? Diagonal(project.diag(dx.diag)) : dx
+    return dx.diag isa ArrayOrZero ? Diagonal(project.diag(dx.diag)) : dx
 end
 
 # Symmetric
@@ -456,7 +458,7 @@ for (SymHerm, chk, fun) in
             return $SymHerm(project.data(dz), project.uplo)
         end
         function (project::ProjectTo{$SymHerm})(dx::Tangent{<:$SymHerm})  # structural => natural
-            dx.data isa ArrayOrZero ? $SymHerm(project.data(dx.data), project.uplo) : dx
+            return dx.data isa ArrayOrZero ? $SymHerm(project.data(dx.data), project.uplo) : dx
         end
         # This is an example of a subspace which is not a subtype,
         # not clear how broadly it's worthwhile to try to support this.
@@ -476,7 +478,7 @@ for UL in (:UpperTriangular, :LowerTriangular, :UnitUpperTriangular, :UnitLowerT
         ProjectTo(x::$UL) = ProjectTo{$UL}(; data=ProjectTo(parent(x)))
         (project::ProjectTo{$UL})(dx::AbstractArray) = $UL(project.data(dx))
         function (project::ProjectTo{$UL})(dx::Tangent{<:$UL})  # structural => natural
-            dx.data isa ArrayOrZero ? $UL(project.data(dx.data), project.uplo) : dx
+            return dx.data isa ArrayOrZero ? $UL(project.data(dx.data), project.uplo) : dx
         end
         # Another subspace which is not a subtype, like Diagonal inside Symmetric above, equally unsure
         function (project::ProjectTo{$UL})(dx::Diagonal)
@@ -511,9 +513,9 @@ end
 function (project::ProjectTo{Bidiagonal})(dx::Tangent{<:Bidiagonal})  # structural => natural
     if dx.dv isa ArrayOrZero && dx.ev isa ArrayOrZero
         # possibly the various cases should live here, not as methods of constructor?
-        Bidiagonal(project.dv(dx.dv), project.ev(dx.ev), project.uplo)
+        return Bidiagonal(project.dv(dx.dv), project.ev(dx.ev), project.uplo)
     else
-        dx
+        return dx
     end
 end
 
