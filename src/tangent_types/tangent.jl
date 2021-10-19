@@ -58,7 +58,7 @@ end
 
 function _backing_error(P, G, E)
     msg = "Tangent for the primal $P should be backed by a $E type, not by $G."
-    throw(ArgumentError(msg))
+    return throw(ArgumentError(msg))
 end
 
 function Base.:(==)(a::Tangent{P,T}, b::Tangent{P,T}) where {P,T}
