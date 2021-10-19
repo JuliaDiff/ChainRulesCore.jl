@@ -130,7 +130,7 @@ end
         @test_throws MethodError reverse(Tangent{Foo}(; x=1.0, y=2.0))
 
         d = Dict(:x => 1, :y => 2.0)
-        cdict = Tangent{Foo,typeof(d)}(d)
+        cdict = Tangent{typeof(d),typeof(d)}(d)
         @test_throws MethodError reverse(Tangent{Foo}())
     end
 
