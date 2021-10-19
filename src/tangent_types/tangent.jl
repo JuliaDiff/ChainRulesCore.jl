@@ -31,6 +31,7 @@ struct Tangent{P,T} <: AbstractTangent
             T <: Tuple || _backing_error(P, T, Tuple)
         elseif P <: AbstractDict
             T <: AbstractDict || _backing_error(P, T, AbstractDict)
+        elseif P == Any  # can be anything
         else  # Any other struct (including NamedTuple)
             T <: NamedTuple || _backing_error(P, T, NamedTuple)
         end
