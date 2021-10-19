@@ -29,7 +29,7 @@ struct Tangent{P,T} <: AbstractTangent
     function Tangent{P,T}(backing) where {P,T}
         function backing_error(P, G, E)
             msg = "Tangent for the primal $P should be backed by a $E type, not by $G."
-            throw(ArgumentError(msg))
+            return throw(ArgumentError(msg))
         end
 
         if P <: Tuple
