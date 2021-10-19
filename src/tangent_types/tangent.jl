@@ -27,17 +27,12 @@ struct Tangent{P,T} <: AbstractTangent
     backing::T
 
     function Tangent{P,T}(backing) where {P,T}
-        function backing_error(P, G, E)
-            msg = "Tangent for the primal $P should be backed by a $E type, not by $G."
-            return throw(ArgumentError(msg))
-        end
-
         if P <: Tuple
-            T <: Tuple || backing_error(P, T, Tuple)
+            T <: Tuple || _backing_error(P, T, Tuple)
         elseif P <: AbstractDict
-            T <: AbstractDict || backing_error(P, T, AbstractDict)
-        else
-            T <: NamedTuple || backing_error(P, T, NamedTuple)
+            T <: AbstractDict || _backing_error(P, T, AbstractDict)
+        else  # Any other struct (including NamedTuple)
+            T <: NamedTuple || _backing_error(P, T, NamedTuple)
         end
         return new(backing)
     end
@@ -59,6 +54,11 @@ end
 
 function Tangent{P}(d::Dict) where {P<:Dict}
     return Tangent{P,typeof(d)}(d)
+end
+
+function _backing_error(P, G, E)
+    msg = "Tangent for the primal $P should be backed by a $E type, not by $G."
+    throw(ArgumentError(msg))
 end
 
 function Base.:(==)(a::Tangent{P,T}, b::Tangent{P,T}) where {P,T}
