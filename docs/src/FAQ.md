@@ -104,9 +104,9 @@ The list here is incomplete, but is vetted for quality.
 
  - MIT 18337 lecture notes 8-10 (by [Christopher Rackauckas](https://github.com/ChrisRackauckas) and [David P. Sanders](https://github.com/dpsanders)  : moves fast from basic to advanced, particularly good if you like applicable mathematics
    - [Automatic Differentiation and Application](https://mitmath.github.io/18337/lecture8/automatic_differentiation): Good introduction
-   - [Forward-Mode AD via High Dimensional Algebras](https://mitmath.github.io/18337/lecture9/autodiff_dimensions): actually part 2 of the introduction
    - [Solving Stiff Ordinary Differential Equations](https://mitmath.github.io/18337/lecture9/stiff_odes): ignore the ODE stuff, most of this is about Sparse AutoDiff, can skip/skim this one
    - [Basic Parameter Estimation, Reverse-Mode AD, and Inverse Problems](https://mitmath.github.io/18337/lecture10/estimation_identification): use in optimization, and details connections of other math.
+   - [Differentiable Programming and Neural Differential Equations](https://mitmath.github.io/18337/lecture11/adjoints): Includes custom primative derivations for equation solvers.
 
  - [Diff-Zoo Jupyter Notebook Book](https://github.com/MikeInnes/diff-zoo)  (by [Mike Innes](https://github.com/MikeInnes/diff-zoo), has implementations and explanations.
 
