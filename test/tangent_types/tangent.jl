@@ -91,7 +91,11 @@ end
         @test getproperty(Tangent{NT}(; b=(@thunk 2.0^2)), 2) == 4.0
 
         # TODO: uncomment this once https://github.com/JuliaLang/julia/issues/35516
-        @test_broken haskey(Tangent{Tuple{Float64}}(2.0), 1) == true
+        if VERSION >= v"1.8-"
+            @test haskey(Tangent{Tuple{Float64}}(2.0), 1) == true
+        else
+            @test_broken haskey(Tangent{Tuple{Float64}}(2.0), 1) == true
+        end
         @test_broken hasproperty(Tangent{Tuple{Float64}}(2.0), 2) == false
 
         @test length(Tangent{Foo}(; x=2.5)) == 1
@@ -332,8 +336,8 @@ end
         two_d = Tangent{Dict}(Dict(4 => 2 * 3.0))
         @test 2 * d == two_d == d * 2
 
-        @test_throws MethodError [1,2] * Tangent{Foo}(; y=1.5, x=2.5)
-        @test_throws MethodError [1,2] * d
+        @test_throws MethodError [1, 2] * Tangent{Foo}(; y=1.5, x=2.5)
+        @test_throws MethodError [1, 2] * d
         @test_throws MethodError Tangent{Foo}(; y=1.5, x=2.5) * @thunk [1 2; 3 4]
     end
 
