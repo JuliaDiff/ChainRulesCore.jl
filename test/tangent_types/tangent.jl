@@ -331,6 +331,10 @@ end
         d = Tangent{Dict}(Dict(4 => 3.0))
         two_d = Tangent{Dict}(Dict(4 => 2 * 3.0))
         @test 2 * d == two_d == d * 2
+
+        @test_throws MethodError [1,2] * Tangent{Foo}(; y=1.5, x=2.5)
+        @test_throws MethodError [1,2] * d
+        @test_throws MethodError Tangent{Foo}(; y=1.5, x=2.5) * @thunk [1 2; 3 4]
     end
 
     @testset "show" begin
