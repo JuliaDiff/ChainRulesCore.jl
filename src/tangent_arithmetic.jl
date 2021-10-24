@@ -147,7 +147,7 @@ Base.:+(a::Tangent{P}, b::P) where {P} = b + a
 # We intentionally do not define, `Base.*(::Tangent, ::Tangent)` as that is not meaningful
 # In general one doesn't have to represent multiplications of 2 differentials
 # Only of a differential and a scaling factor (generally `Real`)
-for T in (:Any,)
+for T in (:Number,)
     @eval Base.:*(s::$T, tangent::Tangent) = map(x -> s * x, tangent)
     @eval Base.:*(tangent::Tangent, s::$T) = map(x -> x * s, tangent)
 end
