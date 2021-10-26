@@ -144,7 +144,7 @@ end
 Base.:+(a::Dict, d::Tangent{P}) where {P} = merge(+, a, backing(d))
 Base.:+(a::Tangent{P}, b::P) where {P} = b + a
 
-Base.:-(tangent::Tangent{P}) where {P} = map(x -> -x, tangent)
+Base.:-(tangent::Tangent{P}) where {P} = map(-, tangent)
 
 # We intentionally do not define, `Base.*(::Tangent, ::Tangent)` as that is not meaningful
 # In general one doesn't have to represent multiplications of 2 differentials
