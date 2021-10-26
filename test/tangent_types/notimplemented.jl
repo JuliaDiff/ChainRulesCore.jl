@@ -22,6 +22,7 @@
         @test ni2 + ni === ni2
 
         # multiplication and dot product
+        @test -ni == ni
         for a in (true, x, thunk)
             @test ni * a === ni
             @test a * ni === ni
