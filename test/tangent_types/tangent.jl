@@ -321,6 +321,12 @@ end
         @test c * t == c * 2
     end
 
+    @testset "-Tangent" begin
+        t = Tangent{Foo}(; x=1.0, y=-2.0)
+        @test -t == Tangent{Foo}(; x=-1.0, y=2.0)
+        @test -1.0 * t == -t
+    end
+
     @testset "scaling" begin
         @test (
             2 * Tangent{Foo}(; y=1.5, x=2.5) ==

@@ -22,6 +22,7 @@
         @test ni2 + ni === ni2
 
         # multiplication and dot product
+        @test -ni == ni
         for a in (true, x, thunk)
             @test ni * a === ni
             @test a * ni === ni
@@ -46,7 +47,6 @@
 
         # unsupported operations
         E = ChainRulesCore.NotImplementedException
-        @test_throws E -ni
         for a in (true, x, NoTangent(), ZeroTangent(), thunk)
             @test_throws E ni - a
             @test_throws E a - ni

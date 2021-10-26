@@ -39,10 +39,11 @@ for T in (:AbstractThunk, :Tangent, :Any)
     @eval LinearAlgebra.dot(x::NotImplemented, ::$T) = x
     @eval LinearAlgebra.dot(::$T, x::NotImplemented) = x
 end
+# unary :- is the same as multiplication by -1
+Base.:-(x::NotImplemented) = x
 
 # subtraction throws an exception: in AD we add tangents but do not subtract them
 # subtraction happens eg. in gradient descent which can't be performed with `NotImplemented`
-Base.:-(x::NotImplemented) = throw(NotImplementedException(x))
 Base.:-(x::NotImplemented, ::NotImplemented) = throw(NotImplementedException(x))
 for T in (:ZeroTangent, :NoTangent, :AbstractThunk, :Tangent, :Any)
     @eval Base.:-(x::NotImplemented, ::$T) = throw(NotImplementedException(x))
@@ -143,6 +144,8 @@ function Base.:+(a::P, d::Tangent{P}) where {P}
 end
 Base.:+(a::Dict, d::Tangent{P}) where {P} = merge(+, a, backing(d))
 Base.:+(a::Tangent{P}, b::P) where {P} = b + a
+
+Base.:-(tangent::Tangent{P}) where {P} = map(-, tangent)
 
 # We intentionally do not define, `Base.*(::Tangent, ::Tangent)` as that is not meaningful
 # In general one doesn't have to represent multiplications of 2 differentials
