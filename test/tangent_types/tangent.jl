@@ -324,7 +324,7 @@ end
     @testset "-Tangent" begin
         t = Tangent{Foo}(; x=1.0, y=-2.0)
         @test -t == Tangent{Foo}(; x=-1.0, y=2.0)
-        @test -1.0*t == -t
+        @test -1.0 * t == -t
     end
 
     @testset "scaling" begin
