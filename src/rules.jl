@@ -152,7 +152,7 @@ A collection of type-tuples is stored in its method-table.
 If something has this defined, it means that it must having a must also have a `rrule`, 
 defined that returns `nothing`.
 
-!!! warning "do not overload no_rrule directly
+!!! warning "Do not overload no_rrule directly"
     It is fine and intended to query the method table of `no_rrule`.
     It is not safe to add to that directly, as corresponding changes also need to be made to
     `rrule`.
