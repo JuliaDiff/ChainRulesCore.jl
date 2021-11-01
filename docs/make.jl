@@ -48,6 +48,7 @@ makedocs(;
         "Introduction" => "index.md",
         "FAQ" => "FAQ.md",
         "Rule configurations and calling back into AD" => "config.md",
+        "Types that represent embedded subspaces" => "embedded_subspaces.md", 
         "Opting out of rules" => "opting_out_of_rules.md",
         "Writing Good Rules" => "writing_good_rules.md",
         "Complex Numbers" => "complex.md",
