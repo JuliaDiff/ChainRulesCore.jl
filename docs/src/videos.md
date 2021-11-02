@@ -5,6 +5,7 @@ Note however, that the videos are frozen in time reflecting the state of the pac
 This documentation is the continously updated canonical source.
 However, we have tried to note below each video notes on its correctness.
 
+The talks that follow are in reverse chronological order (i.e. most recent video is first).
 
 ## EuroAD 2021: ChainRules.jl: AD system agnostic rules for JuliaLang
 Presented by Lyndon White.
