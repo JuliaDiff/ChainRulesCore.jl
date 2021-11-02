@@ -20,8 +20,6 @@ It does also serve as a nice motivation for those first coming across the packag
 </div>
 ```
 
-This talk was prepared for EuroAD 2021.
-
 Abstract:
 > The ChainRules project is a suite of JuliaLang packages that define custom primitives (i.e. rules) for doing AD in JuliaLang.
 > Importantly it is AD system agnostic.
