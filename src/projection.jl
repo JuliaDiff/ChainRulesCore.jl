@@ -491,29 +491,36 @@ for UL in (:UpperTriangular, :LowerTriangular, :UnitUpperTriangular, :UnitLowerT
     end
 end
 
-# Weird -- not exhaustive!
+# Weird cases -- not exhaustive!
+
 # one strategy is to recurse into the struct:
 ProjectTo(x::Bidiagonal{T}) where {T<:Number} = generic_projector(x)
 function (project::ProjectTo{Bidiagonal})(dx::AbstractMatrix)
-    uplo = LinearAlgebra.sym_uplo(project.uplo)
-    dv = project.dv(diag(dx))
-    ev = project.ev(uplo === :U ? diag(dx, 1) : diag(dx, -1))
-    return Bidiagonal(dv, ev, uplo)
+    dy = Bidiagonal(dx, LinearAlgebra.sym_uplo(project.uplo))
+    return generic_projection(project, dy)
 end
 function (project::ProjectTo{Bidiagonal})(dx::Bidiagonal)
     if project.uplo == dx.uplo
         return generic_projection(project, dx) # fast path
     else
-        uplo = LinearAlgebra.sym_uplo(project.uplo)
-        dv = project.dv(diag(dx))
-        ev = fill!(similar(dv, length(dv) - 1), 0)
-        return Bidiagonal(dv, ev, uplo)
+        # Allow Diagonal, subspace which is not a subtype
+        return Diagonal(project.dv(dx.dv))
     end
+end
+function (project::ProjectTo{Bidiagonal})(dx::Diagonal)  # subspace which is not a subtype
+    return Diagonal(project.dv(dx.diag))
 end
 function (project::ProjectTo{Bidiagonal})(dx::Tangent{<:Bidiagonal})  # structural => natural
     if dx.dv isa ArrayOrZero && dx.ev isa ArrayOrZero
-        # possibly the various cases should live here, not as methods of constructor?
-        return Bidiagonal(project.dv(dx.dv), project.ev(dx.ev), project.uplo)
+        dv = project.dv(dx.dv)
+        ev = project.ev(dx.ev)
+        if ev isa AbstractZero  # then collapse to Diagonal, or possibly Zero:
+            return Diagonal(dv)
+        elseif dv isa AbstractZero  # a bit ugly, must construct explicit zeros:
+            dv = fill!(similar(ev, length(ev) + 1), 0)
+            ev = convert(typeof(dv), ev)  # required if ev isa Fill, or a OneElement
+        end
+        return Bidiagonal(dv, ev, project.uplo)  # neither argument can be a Zero
     else
         return dx
     end

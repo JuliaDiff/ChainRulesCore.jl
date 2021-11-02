@@ -312,6 +312,11 @@ struct NoSuperType end
         bu = Bidiagonal(rand(3, 3) .+ im, :U)  # differs but uplo, not type
         @test pbi(bu) == diagm(0 => diag(real(bu)))
         @test_throws DimensionMismatch pbi(rand(ComplexF32, 3, 2))
+        # structural => natural
+        @test pbi(Tangent{Bidiagonal}(; ev=(1:2.0))) isa Bidiagonal  # constructs the diagonal
+        # subspace but not a subtype:
+        @test pbi(Tangent{Bidiagonal}(; dv=[1,2,3+im])) isa Diagonal{Float64}
+        @test pbi(Diagonal(1:3)) isa Diagonal{Float64}
 
         pstri = ProjectTo(SymTridiagonal(Symmetric(rand(3, 3))))
         @test pstri(reshape(1:9, 3, 3)) == [1.0 3.0 0.0; 3.0 5.0 7.0; 0.0 7.0 9.0]
