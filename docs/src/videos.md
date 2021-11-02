@@ -3,16 +3,16 @@
 For people who learn better by video we have a number of videos of talks we have given about the ChainRules project.
 Note however, that the videos are frozen in time reflecting the state of the packages at the time they were recorded.
 This documentation is the continously updated canonical source.
-However, we have tried to noted below each video notes on its correctness.
+However, we have tried to note below each video notes on its correctness.
 
 
 ## EuroAD 2021: ChainRules.jl: AD system agnostic rules for JuliaLang
 Presented by Lyndon White.
 [Slides](https://www.slideshare.net/LyndonWhite2/euroad-2021-chainrulesjl)
 
-This is the talk to watch if you want to understand why the ChainRules project exists, what it's challenges are, and how those have been overcome.
+This is the talk to watch if you want to understand why the ChainRules project exists, what its challenges are, and how those have been overcome.
 It is intended less for users of the package, and more for people working in the field AD more generally.
-It does also serve as a nice motivation for those first coming across the package as-well though.
+It does also serve as a nice motivation for those first coming across the package as well though.
 
 ```@raw html
 <div class="video-container">
@@ -26,7 +26,7 @@ Abstract:
 > It has proved successful in this goal.
 > At present it works with about half a dozen different JuliaLang AD systems.
 > It has been a long journey, but as of August 2021, the core packages have now hit version 1.0.
-
+>
 > This talk will go through why this is useful, the particular objectives the project had, and the challenges that had to be solved.
 > This talk is not intended as an educational guide for users (For that see our 2021 JuliaCon talk: > Everything you need to know about ChainRules 1.0 (https://live.juliacon.org/talk/LWVB39)).
 > Rather this talk is to share the insights we have had, and likely (inadvertently) the mistakes we have made, with the wider autodiff community.
