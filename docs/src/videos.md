@@ -12,7 +12,7 @@ Presented by Lyndon White.
 [Slides](https://www.slideshare.net/LyndonWhite2/euroad-2021-chainrulesjl)
 
 This is the talk to watch if you want to understand why the ChainRules project exists, what its challenges are, and how those have been overcome.
-It is intended less for users of the package, and more for people working in the field AD more generally.
+It is intended less for users of the package, and more for people working in the field of AD more generally.
 It does also serve as a nice motivation for those first coming across the package as well though.
 
 ```@raw html
