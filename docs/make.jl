@@ -57,6 +57,7 @@ makedocs(;
         "Usage in AD" => "use_in_ad_system.md",
         "Converting ZygoteRules" => "converting_zygoterules.md",
         "Tips for making packages work with AD" => "tips_for_packages.md",
+        "Videos" => "videos.md",
         "Design" => [
             "Changing the Primal" => "design/changing_the_primal.md",
             "Many Differential Types" => "design/many_differentials.md",
