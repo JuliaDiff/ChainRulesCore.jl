@@ -490,60 +490,78 @@ for UL in (:UpperTriangular, :LowerTriangular, :UnitUpperTriangular, :UnitLowerT
         end
     end
 end
-
-# Weird cases -- not exhaustive!
-
-# one strategy is to recurse into the struct:
-ProjectTo(x::Bidiagonal{T}) where {T<:Number} = generic_projector(x)
-function (project::ProjectTo{Bidiagonal})(dx::AbstractMatrix)
-    dy = Bidiagonal(dx, LinearAlgebra.sym_uplo(project.uplo))
-    return generic_projection(project, dy)
-end
-function (project::ProjectTo{Bidiagonal})(dx::Bidiagonal)
-    if project.uplo == dx.uplo
-        return generic_projection(project, dx) # fast path
-    else
-        # Allow Diagonal, subspace which is not a subtype
-        return Diagonal(project.dv(dx.dv))
-    end
-end
-function (project::ProjectTo{Bidiagonal})(dx::Diagonal)  # subspace which is not a subtype
-    return Diagonal(project.dv(dx.diag))
-end
-function (project::ProjectTo{Bidiagonal})(dx::Tangent{<:Bidiagonal})  # structural => natural
-    if dx.dv isa ArrayOrZero && dx.ev isa ArrayOrZero
-        dv = project.dv(dx.dv)
-        ev = project.ev(dx.ev)
-        if ev isa AbstractZero  # then collapse to Diagonal, or possibly Zero:
-            return Diagonal(dv)
-        elseif dv isa AbstractZero  # a bit ugly, must construct explicit zeros:
-            dv = fill!(similar(ev, length(ev) + 1), 0)
-            ev = convert(typeof(dv), ev)  # required if ev isa Fill, or a OneElement
+for UUL in (:UnitUpperTriangular, :UnitLowerTriangular)
+    # UL = Symbol(string(UUL)[5:end])
+    @eval begin
+        ProjectTo(x::$UUL) = ProjectTo{$UUL}(; data=ProjectTo(parent(x)))
+        function (project::ProjectTo{$UUL})(dx::AbstractArray)
+            dy = project.data(dx)
+            # Since x's diagonal is fixed to 1, dx must be zero there:
+            $UUL(dy) - I  # makes an UpperTriangular, etc.
         end
-        return Bidiagonal(dv, ev, project.uplo)  # neither argument can be a Zero
-    else
-        return dx
+        # (project::ProjectTo{$UUL})(dx::$UL) = project.data(dx)
     end
 end
+# Subspaces which aren't subtypes, like Diagonal inside Symmetric above:
+(project::ProjectTo{UpperTriangular})(dx::Diagonal) = project.data(dx)
+(project::ProjectTo{LowerTriangular})(dx::Diagonal) = project.data(dx)
 
-ProjectTo(x::SymTridiagonal{T}) where {T<:Number} = generic_projector(x)
-function (project::ProjectTo{SymTridiagonal})(dx::AbstractMatrix)
-    dv = project.dv(diag(dx))
-    ev = project.ev((diag(dx, 1) .+ diag(dx, -1)) ./ 2)
+(project::ProjectTo{UpperHessenberg})(dx::Diagonal) = project.data(dx)
+(project::ProjectTo{UpperHessenberg})(dx::UpperTriangular) = project.data(dx)
+
+(project::ProjectTo{UnitUpperTriangular})(dx::Diagonal) = NoTangent()
+(project::ProjectTo{UnitUpperTriangular})(dx::UpperTriangular) = project.data(dx)  # produced by projector
+(project::ProjectTo{UnitLowerTriangular})(dx::Diagonal) = NoTangent()
+(project::ProjectTo{UnitLowerTriangular})(dx::LowerTriangular) = project.data(dx)
+
+# Multidiagonal
+# For all of these, the eltypes must all match, so store one full-size projector for simplicity.
+function ProjectTo(x::Bidiagonal)
+    full = invoke(ProjectTo, Tuple{AbstractArray{T2}} where {T2<:Number}, x)
+    full isa ProjectTo{<:AbstractZero} && return full
+    ProjectTo{Bidiagonal}(full = full, uplo = LinearAlgebra.sym_uplo(x.uplo))
+end
+function ProjectTo(x::Tridiagonal)
+    full = invoke(ProjectTo, Tuple{AbstractArray{T2}} where {T2<:Number}, x)
+    # full isa ProjectTo{<:AbstractZero} && return full
+    ProjectTo{Tridiagonal}(full = full)
+end
+function ProjectTo(x::SymTridiagonal)
+    full = invoke(ProjectTo, Tuple{AbstractArray{T2}} where {T2<:Number}, x)
+    # full isa ProjectTo{<:AbstractZero} && return full
+    ProjectTo{SymTridiagonal}(full = full)
+end
+(project::ProjectTo{Bidiagonal})(dx::AbstractArray) = Bidiagonal(project.full(dx), project.uplo)
+(project::ProjectTo{Bidiagonal})(dx::AbstractMatrix) = project.full(Bidiagonal(dx, project.uplo))
+(project::ProjectTo{Tridiagonal})(dx::AbstractArray) = Tridiagonal(project.full(dx))
+(project::ProjectTo{Tridiagonal})(dx::AbstractMatrix) = project.full(Tridiagonal(dx))
+(project::ProjectTo{SymTridiagonal})(dx::SymTridiagonal) = SymTridiagonal(project.full(dx))
+(project::ProjectTo{SymTridiagonal})(dx::Symmetric) = project.full(SymTridiagonal(dx))
+function (project::ProjectTo{SymTridiagonal})(dx::AbstractArray)
+    dz = project.full(dx)
+    dv = diag(dz)
+    ev = (diag(dz, 1) .+ diag(dz, -1)) ./ 2
     return SymTridiagonal(dv, ev)
 end
-(project::ProjectTo{SymTridiagonal})(dx::SymTridiagonal) = generic_projection(project, dx)
+# Subspaces which aren't subtypes:
+(project::ProjectTo{Bidiagonal})(dx::Diagonal) = project.full(dx)
+(project::ProjectTo{Tridiagonal})(dx::Diagonal) = project.full(dx)
+(project::ProjectTo{Tridiagonal})(dx::Bidiagonal) = project.full(dx)
+(project::ProjectTo{SymTridiagonal})(dx::Diagonal) = project.full(dx)
+# structural => natural
+function (project::ProjectTo{Bidiagonal})(dx::Tangent{<:Bidiagonal})
+    dx.dv isa ArrayOrZero && dx.ev isa ArrayOrZero || return dx
+    return project.full(Bidiagonal(dx.dv, dx.ev, project.uplo))  # will return a Diagonal when ev::AbstractZero
+end
+function (project::ProjectTo{Tridiagonal})(dx::Tangent{<:Tridiagonal})
+    dx.dl isa ArrayOrZero && dx.d isa ArrayOrZero && dx.du isa ArrayOrZero || return dx
+    return project.full(Tridiagonal(dx.dl, dx.d, dx.du))
+end
+function (project::ProjectTo{SymTridiagonal})(dx::Tangent{<:SymTridiagonal})
+    dx.dv isa ArrayOrZero && dx.ev isa ArrayOrZero || return dx
+    return project.full(SymTridiagonal(dx.dv, dx.ev))
+end
 
-# another strategy is just to use the AbstractArray method
-function ProjectTo(x::Tridiagonal{T}) where {T<:Number}
-    notparent = invoke(ProjectTo, Tuple{AbstractArray{T2}} where {T2<:Number}, x)
-    return ProjectTo{Tridiagonal}(; notparent=notparent)
-end
-function (project::ProjectTo{Tridiagonal})(dx::AbstractArray)
-    dy = project.notparent(dx)
-    return Tridiagonal(dy)
-end
-# Note that backing(::Tridiagonal) doesn't work, https://github.com/JuliaDiff/ChainRulesCore.jl/issues/392
 
 #####
 ##### `SparseArrays`

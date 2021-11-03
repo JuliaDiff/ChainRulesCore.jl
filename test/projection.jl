@@ -325,12 +325,23 @@ struct NoSuperType end
         stri = SymTridiagonal(Symmetric(rand(3, 3) .+ im))
         @test pstri(stri) == real(stri)
         @test_throws DimensionMismatch pstri(rand(ComplexF32, 3, 2))
+        # structural => natural
+        pstri(Tangent{SymTridiagonal}(ev = [1,2])) # matrix
+        # subspace but not a subtype:
+        @test pstri(Tangent{SymTridiagonal}(dv = [1, 2, 3])) isa Diagonal{Float64}
+        @test pstri(Diagonal(rand(3) .+ im)) isa Diagonal{Float64}
 
         ptri = ProjectTo(Tridiagonal(rand(3, 3)))
         @test ptri(reshape(1:9, 3, 3)) == [1.0 4.0 0.0; 2.0 5.0 8.0; 0.0 6.0 9.0]
         @test ptri(ptri(reshape(1:9, 3, 3))) == ptri(reshape(1:9, 3, 3))
         @test ptri(rand(ComplexF32, 3, 3)) isa Tridiagonal{Float64}
-        @test_throws DimensionMismatch ptri(rand(ComplexF32, 3, 2))
+        @test_throws ArgumentError ptri(rand(ComplexF32, 3, 2))
+        # structural => natural
+        ptri(Tangent{Tridiagonal}(du = [1, 2], dl = [3im, 4im])) isa Tridiagonal{Float64}
+        # subspace but not a subtype:
+        ptri(Tangent{Tridiagonal}(du = [1, 2])) isa Bidiagonal{Float64}
+        ptri(Tangent{Tridiagonal}(du = [1, 2], d = [3im, 4im, 5im])) isa Bidiagonal{Float64}
+        ptri(Tangent{Tridiagonal}(d = [1, 2, 3])) isa Diagonal{Float64}
     end
 
     #####
