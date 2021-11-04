@@ -462,31 +462,17 @@ for (SymHerm, chk, fun) in
         end
         # This is an example of a subspace which is not a subtype,
         # not clear how broadly it's worthwhile to try to support this.
-        function (project::ProjectTo{$SymHerm})(dx::Diagonal)
-            sub = project.data # this is going to be unhappy about the size
-            sub_one = ProjectTo{project_type(sub)}(;
-                element=sub.element, axes=(sub.axes[1],)
-            )
-            return Diagonal(sub_one(dx.diag))
-        end
+        (project::ProjectTo{$SymHerm})(dx::Diagonal) =  project.data(dx)
     end
 end
 
 # Triangular
-for UL in (:UpperTriangular, :LowerTriangular, :UnitUpperTriangular, :UnitLowerTriangular) # UpperHessenberg
+for UL in (:UpperTriangular, :LowerTriangular, :UpperHessenberg)
     @eval begin
         ProjectTo(x::$UL) = ProjectTo{$UL}(; data=ProjectTo(parent(x)))
         (project::ProjectTo{$UL})(dx::AbstractArray) = $UL(project.data(dx))
         function (project::ProjectTo{$UL})(dx::Tangent{<:$UL})  # structural => natural
-            return dx.data isa ArrayOrZero ? $UL(project.data(dx.data), project.uplo) : dx
-        end
-        # Another subspace which is not a subtype, like Diagonal inside Symmetric above, equally unsure
-        function (project::ProjectTo{$UL})(dx::Diagonal)
-            sub = project.data
-            sub_one = ProjectTo{project_type(sub)}(;
-                element=sub.element, axes=(sub.axes[1],)
-            )
-            return Diagonal(sub_one(dx.diag))
+            return dx.data isa ArrayOrZero ? $UL(project.data(dx.data)) : dx
         end
     end
 end

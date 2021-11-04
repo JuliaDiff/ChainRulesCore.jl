@@ -287,6 +287,16 @@ struct NoSuperType end
         @test pupp(rand(ComplexF32, 3, 3, 1)) isa UpperTriangular{Float64}
         @test ProjectTo(UpperTriangular(randn(3, 3) .> 0))(randn(3, 3)) == NoTangent()
 
+        phess = ProjectTo(UpperHessenberg(rand(3, 3)))
+        @test phess(reshape(1:9,3,3)) == [1 4 7; 2 5 8; 0 6 9]
+        @test phess(reshape(1:9,3,3) .+ im) isa UpperHessenberg{Float64}
+
+        pdu = ProjectTo(UnitLowerTriangular(rand(3, 3)))
+        # NB, since the diagonal is constant 1, its gradient is zero:
+        @test pdu(reshape(1:9, 3, 3)) == [0 0 0; 2 0 0; 3 6 0]
+        @test pdu(rand(ComplexF32, 3, 3, 1)) isa LowerTriangular{Float64}
+        @test pdu(Diagonal(1:3)) == NoTangent()
+
         # an experiment with allowing subspaces which aren't subtypes
         @test psymm(Diagonal([1, 2, 3])) isa Diagonal{Float64}
         @test pupp(Diagonal([1, 2, 3 + 4im])) isa Diagonal{Float64}
