@@ -81,30 +81,39 @@ Saying it is `3` is the arguably the nicest, but it is also the most expensive t
 plot(ceil)
 ```
 
-Here it seems most useful to say the derivative is zero everywhere.
+Here it is most useful to say the derivative is zero everywhere.
 The limits are zero from both sides.
 
-The other option for `ceil` would be to say it is 1 everywhere.
+The other option for `x->ceil(x)` would be relax the problem into `x->x`, and thus  say it is 1 everywhere
 But that it too weird, if the use wanted a relaxation of the problem then they would provide one.
-Imposing one on `ceil` for everyone is not reasonable.
+We can not be imposing that relaxation on to `ceil` for everyone is not reasonable.
 
 ### Primal finite, and derivative nonfinite and same on both sides
 
 ```@example nondiff
 plot(cbrt)
 ```
-s(derivative nonfinite and different on each side is not possible with a finite and defined primal.)
-### Primal and derivative Non-finite and same on both sides
+
+
+
+### Primal and derivative Non-finite and different on both sides
 ```@example nondiff
 plot(x->inv(x^2))
 plot!(; xlims=(-1,1), ylims=(-100,100)) #hide
 ```
 
-### Primal and gradient Non-finite and differing on both sides
+In this case the primal isn't finite, so the value of the derivative can be assumed to matter less.
+It is not surprising to see a nonfinite gradient for nonfinite primal.
+So it is fine to have a the gradient being nonfinite.
+
+## Primal finite and derivative nonfinite and different on each side
 ```@example nondiff
-plot(inv)
-plot!(; xlims=(-1,1), ylims=(-100,100)) #hide
+plot(x-> sign(x) * cbrt(x))
 ```
+
+In this example, the primal is defined and finite, so we would like a derivative to defined.
+We are back in the case of a local minimal like we were for `abs`.
+We can make most of the same arguments as we made there to justify saying the derivative is zero.
 
 ### Not defined on one-side
 ```@example nondiff
@@ -126,6 +135,8 @@ Also nice in this case is that it agrees with the symbolic simplification of `x-
 ```@example nondiff
 plot(log)
 ```
+
+Here there is no harm in taking the value on the defined, finite
 
 ### sub/super-differential convention
 **TODO: Incorperate this with rest of the document. Or move to design notes**
