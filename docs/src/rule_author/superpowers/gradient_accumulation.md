@@ -1,4 +1,4 @@
-# Gradient Accumulation
+# [Gradient Accumulation](@id grad_acc)
 
 Consider some function
 $$f(x) = g(x) + h(x)$$.
