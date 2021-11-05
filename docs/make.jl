@@ -46,11 +46,6 @@ makedocs(;
     authors="Jarrett Revels and other contributors",
     pages=[
         "Introduction" => "index.md",
-        "The maths" => [
-            "The propagators: pushforward and pullback" => "maths/propagators.md",
-            "Complex numbers" => "maths/complex.md",
-            "Deriving array rules" => "maths/arrays.md",
-        ],
         "How to use ChainRules as a rule author" => [
             "Introduction" => "rule_author/intro.md",
             "Differentials" => "rule_author/differentials.md",
@@ -71,6 +66,11 @@ makedocs(;
             "Usage in AD" => "ad_author/use_in_ad_system.md",
             "Suport calling back into ADs" => "ad_author/call_back_into_ad.md",
             "Support opting out of rules" => "ad_author/opt_out.md",
+        ],
+        "The maths" => [
+            "The propagators: pushforward and pullback" => "maths/propagators.md",
+            "Complex numbers" => "maths/complex.md",
+            "Deriving array rules" => "maths/arrays.md",
         ],
         "Design" => [
             "Changing the Primal" => "design/changing_the_primal.md",
