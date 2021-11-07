@@ -531,7 +531,7 @@ end
 (project::ProjectTo{Tridiagonal})(dx::Tridiagonal) = project.full(dx)
 (project::ProjectTo{SymTridiagonal})(dx::SymTridiagonal) = project.full(dx)
 # AbstractArray
-(proj::ProjectTo{Bidiagonal})(dx::AbstractArray) = Bidiagonal(project.full(dx), proj.uplo)
+(project::ProjectTo{Bidiagonal})(dx::AbstractArray) = Bidiagonal(project.full(dx), project.uplo)
 (project::ProjectTo{Tridiagonal})(dx::AbstractArray) = Tridiagonal(project.full(dx))
 (project::ProjectTo{SymTridiagonal})(dx::Symmetric) = SymTridiagonal(project.full(dx))
 function (project::ProjectTo{SymTridiagonal})(dx::AbstractArray)
