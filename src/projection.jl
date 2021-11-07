@@ -495,10 +495,10 @@ end
 # Subspaces which aren't subtypes, like Diagonal inside Symmetric above:
 (project::ProjectTo{UpperTriangular})(dx::Diagonal) = project.data(dx)
 (project::ProjectTo{LowerTriangular})(dx::Diagonal) = project.data(dx)
-
-(project::ProjectTo{UpperHessenberg})(dx::Diagonal) = project.data(dx)
-(project::ProjectTo{UpperHessenberg})(dx::UpperTriangular) = project.data(dx)
-
+if VERSION >= v"1.4"
+    (project::ProjectTo{UpperHessenberg})(dx::Diagonal) = project.data(dx)
+    (project::ProjectTo{UpperHessenberg})(dx::UpperTriangular) = project.data(dx)
+end
 (project::ProjectTo{UnitUpperTriangular})(dx::Diagonal) = NoTangent()
 (project::ProjectTo{UnitLowerTriangular})(dx::Diagonal) = NoTangent()
 

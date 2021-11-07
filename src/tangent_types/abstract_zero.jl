@@ -84,7 +84,7 @@ function _promote_vectors(x::AbstractVector, y::AbstractVector)
     if isconcretetype(T)
         return convert(T, x), convert(T, y)
     else
-        short = map(first∘promote, x, y)
+        short = map(first ∘ promote, x, y)
         return convert(typeof(short), x), convert(typeof(short), y)
     end
 end
