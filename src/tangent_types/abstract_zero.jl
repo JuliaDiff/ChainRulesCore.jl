@@ -42,6 +42,7 @@ for T in (
         :UpperTriangular, :LowerTriangular, :UpperHessenberg,
         :UnitUpperTriangular, :UnitLowerTriangular,
     )
+    VERSION < v"1.4" && f == :UpperHessenberg && continue  # not defined in 1.0
     @eval (::Type{<:LinearAlgebra.$T})(z::AbstractZero) = z
 end
 
