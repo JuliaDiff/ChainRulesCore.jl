@@ -51,7 +51,7 @@ LinearAlgebra.Hermitian(z::AbstractZero, uplo=:U) = z
 LinearAlgebra.Bidiagonal(dv::AbstractVector, ev::AbstractZero, uplo::Symbol) = Diagonal(dv)
 function LinearAlgebra.Bidiagonal(dv::AbstractZero, ev::AbstractVector, uplo::Symbol)
     dv = fill!(similar(ev, length(ev) + 1), 0) # can't avoid making a dummy array
-    Bidiagonal(dv, convert(typeof(dv), ev), uplo)
+    return Bidiagonal(dv, convert(typeof(dv), ev), uplo)
 end
 LinearAlgebra.Bidiagonal(dv::AbstractZero, ev::AbstractZero, uplo::Symbol) = NoTangent()
 
@@ -60,7 +60,7 @@ LinearAlgebra.Tridiagonal(dl::AbstractZero, d::AbstractVector, du::AbstractVecto
 LinearAlgebra.Tridiagonal(dl::AbstractVector, d::AbstractVector, du::AbstractZero) = Bidiagonal(_promote_vectors(d, dl)..., :L)
 function LinearAlgebra.Tridiagonal(dl::AbstractVector, d::AbstractZero, du::AbstractVector)
     d = fill!(similar(dl, length(dl) + 1), 0)
-    Tridiagonal(convert(typeof(d), dl), d, convert(typeof(d), du))
+    return Tridiagonal(convert(typeof(d), dl), d, convert(typeof(d), du))
 end
 # two Zeros:
 LinearAlgebra.Tridiagonal(dl::AbstractZero, d::AbstractVector, du::AbstractZero) = Diagonal(d)
@@ -72,7 +72,7 @@ LinearAlgebra.Tridiagonal(dl::AbstractZero, d::AbstractZero, du::AbstractZero) =
 LinearAlgebra.SymTridiagonal(dv::AbstractVector, ev::AbstractZero) = Diagonal(dv)
 function LinearAlgebra.SymTridiagonal(dv::AbstractZero, ev::AbstractVector)
     dv = fill!(similar(ev, length(ev) + 1), 0)
-    SymTridiagonal(dv, convert(typeof(dv), ev))
+    return SymTridiagonal(dv, convert(typeof(dv), ev))
 end
 LinearAlgebra.SymTridiagonal(dv::AbstractZero, ev::AbstractZero) = NoTangent()
 

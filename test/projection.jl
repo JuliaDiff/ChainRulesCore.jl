@@ -287,9 +287,11 @@ struct NoSuperType end
         @test pupp(rand(ComplexF32, 3, 3, 1)) isa UpperTriangular{Float64}
         @test ProjectTo(UpperTriangular(randn(3, 3) .> 0))(randn(3, 3)) == NoTangent()
 
-        phess = ProjectTo(UpperHessenberg(rand(3, 3)))
-        @test phess(reshape(1:9,3,3)) == [1 4 7; 2 5 8; 0 6 9]
-        @test phess(reshape(1:9,3,3) .+ im) isa UpperHessenberg{Float64}
+        if VERSION >= v"1.4" # not sure 1.4 exactly!
+            phess = ProjectTo(UpperHessenberg(rand(3, 3)))
+            @test phess(reshape(1:9,3,3)) == [1 4 7; 2 5 8; 0 6 9]
+            @test phess(reshape(1:9,3,3) .+ im) isa UpperHessenberg{Float64}
+        end
 
         pdu = ProjectTo(UnitLowerTriangular(rand(3, 3)))
         # NB, since the diagonal is constant 1, its gradient is zero:

@@ -468,6 +468,7 @@ end
 
 # Triangular
 for UL in (:UpperTriangular, :LowerTriangular, :UpperHessenberg)
+    VERSION < v"1.4" && UL == :UpperHessenberg && continue  # not defined in 1.0
     @eval begin
         ProjectTo(x::$UL) = ProjectTo{$UL}(; data=ProjectTo(parent(x)))
         (project::ProjectTo{$UL})(dx::AbstractArray) = $UL(project.data(dx))
@@ -488,9 +489,7 @@ for UUL in (:UnitUpperTriangular, :UnitLowerTriangular)
         # No type perfectly encodes the gradient of UnitUpperTriangular.
         # To avoid unnecessary copies of what projection produces,
         # allow any UpperTriangular through:
-        function (project::ProjectTo{$UUL})(dx::$UL)
-            dy = project.data(dx)
-        end
+        (project::ProjectTo{$UUL})(dx::$UL) = project.data(dx)
     end
 end
 # Subspaces which aren't subtypes, like Diagonal inside Symmetric above:
@@ -509,17 +508,17 @@ function ProjectTo(x::Bidiagonal)
     full = invoke(ProjectTo, Tuple{AbstractArray{T2}} where {T2<:Number}, x)
     # full isa ProjectTo{<:AbstractZero} && return full  # never happens, invoke misses the Bool method
     ProjectTo(zero(eltype(x))) isa ProjectTo{<:AbstractZero} && return ProjectTo(false)  # better short-circuit
-    return ProjectTo{Bidiagonal}(full = full, uplo = LinearAlgebra.sym_uplo(x.uplo))
+    return ProjectTo{Bidiagonal}(; full = full, uplo = LinearAlgebra.sym_uplo(x.uplo))
 end
 function ProjectTo(x::Tridiagonal)
     full = invoke(ProjectTo, Tuple{AbstractArray{T2}} where {T2<:Number}, x)
     ProjectTo(zero(eltype(x))) isa ProjectTo{<:AbstractZero} && return ProjectTo(false)
-    return ProjectTo{Tridiagonal}(full = full)
+    return ProjectTo{Tridiagonal}(; full = full)
 end
 function ProjectTo(x::SymTridiagonal)
     full = invoke(ProjectTo, Tuple{AbstractArray{T2}} where {T2<:Number}, x)
     ProjectTo(zero(eltype(x))) isa ProjectTo{<:AbstractZero} && return ProjectTo(false)
-    return ProjectTo{SymTridiagonal}(full = full)
+    return ProjectTo{SymTridiagonal}(; full = full)
 end
 # Own type: `project.full` can convert eltype mantaining strucure
 function (project::ProjectTo{Bidiagonal})(dx::Bidiagonal)
@@ -532,7 +531,7 @@ end
 (project::ProjectTo{Tridiagonal})(dx::Tridiagonal) = project.full(dx)
 (project::ProjectTo{SymTridiagonal})(dx::SymTridiagonal) = project.full(dx)
 # AbstractArray
-(project::ProjectTo{Bidiagonal})(dx::AbstractArray) = Bidiagonal(project.full(dx), project.uplo)
+(proj::ProjectTo{Bidiagonal})(dx::AbstractArray) = Bidiagonal(project.full(dx), proj.uplo)
 (project::ProjectTo{Tridiagonal})(dx::AbstractArray) = Tridiagonal(project.full(dx))
 (project::ProjectTo{SymTridiagonal})(dx::Symmetric) = SymTridiagonal(project.full(dx))
 function (project::ProjectTo{SymTridiagonal})(dx::AbstractArray)
