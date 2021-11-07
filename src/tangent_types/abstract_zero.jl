@@ -39,14 +39,14 @@ LinearAlgebra.transpose(z::AbstractZero, ind...) = z
 
 for T in (
         :UniformScaling, :Adjoint, :Transpose, :Diagonal
-        :UpperTriangular, :LowerTriangular, :UnitUpperTriangular, :UnitLowerTriangular,
-        :UpperHessenberg
+        :UpperTriangular, :LowerTriangular, :UpperHessenberg,
+        :UnitUpperTriangular, :UnitLowerTriangular,
     )
     @eval (::Type{<:LinearAlgebra.$T})(z::AbstractZero) = z
 end
-for T in (:Symmetric, :Hermitian)
-    @eval (::Type{<:LinearAlgebra.$T})(z::AbstractZero, uplo=:U) = z
-end
+
+LinearAlgebra.Symmetric(z::AbstractZero, uplo=:U) = z
+LinearAlgebra.Hermitian(z::AbstractZero, uplo=:U) = z
 
 LinearAlgebra.Bidiagonal(dv::AbstractVector, ev::AbstractZero, uplo::Symbol) = Diagonal(dv)
 function LinearAlgebra.Bidiagonal(dv::AbstractZero, ev::AbstractVector, uplo::Symbol)
@@ -56,9 +56,8 @@ end
 LinearAlgebra.Bidiagonal(dv::AbstractZero, ev::AbstractZero, uplo::Symbol) = NoTangent()
 
 # one Zero:
-LinearAlgebra.Tridiagonal(dl::AbstractZero, d::AbstractVector, du::AbstractZero) = Diagonal(d)
-LinearAlgebra.Tridiagonal(dl::AbstractZero, d::AbstractVector, du::AbstractVector) = Bidiagonal(d, du, :U)
-LinearAlgebra.Tridiagonal(dl::AbstractVector, d::AbstractVector, du::AbstractZero) = Bidiagonal(d, dl, :L)
+LinearAlgebra.Tridiagonal(dl::AbstractZero, d::AbstractVector, du::AbstractVector) = Bidiagonal(_promote_vectors(d, du)..., :U)
+LinearAlgebra.Tridiagonal(dl::AbstractVector, d::AbstractVector, du::AbstractZero) = Bidiagonal(_promote_vectors(d, dl)..., :L)
 function LinearAlgebra.Tridiagonal(dl::AbstractVector, d::AbstractZero, du::AbstractVector)
     d = fill!(similar(dl, length(dl) + 1), 0)
     Tridiagonal(convert(typeof(d), dl), d, convert(typeof(d), du))
@@ -76,6 +75,18 @@ function LinearAlgebra.SymTridiagonal(dv::AbstractZero, ev::AbstractVector)
     SymTridiagonal(dv, convert(typeof(dv), ev))
 end
 LinearAlgebra.SymTridiagonal(dv::AbstractZero, ev::AbstractZero) = NoTangent()
+
+# These types all demand exactly same-type vectors, but may get e.g. Fill, Vector.
+_promote_vectors(x::T, y::T) where {T<:AbstractVector} = (x, y)
+function _promote_vectors(x::AbstractVector, y::AbstractVector)
+    T = Base._return_type(+, Tuple{typeof(x), typeof(y)})
+    if isconcretetype(T)
+        return convert(T, x), convert(T, y)
+    else
+        short = map(first∘promote, x, y)
+        return convert(typeof(short), x), convert(typeof(short), y)
+    end
+end
 
 """
     ZeroTangent() <: AbstractZero

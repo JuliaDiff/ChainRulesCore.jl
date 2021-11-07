@@ -462,7 +462,7 @@ for (SymHerm, chk, fun) in
         end
         # This is an example of a subspace which is not a subtype,
         # not clear how broadly it's worthwhile to try to support this.
-        (project::ProjectTo{$SymHerm})(dx::Diagonal) =  project.data(dx)
+        (project::ProjectTo{$SymHerm})(dx::Diagonal) = project.data(dx)
     end
 end
 
@@ -477,15 +477,20 @@ for UL in (:UpperTriangular, :LowerTriangular, :UpperHessenberg)
     end
 end
 for UUL in (:UnitUpperTriangular, :UnitLowerTriangular)
-    # UL = Symbol(string(UUL)[5:end])
+    UL = Symbol(string(UUL)[5:end])
     @eval begin
         ProjectTo(x::$UUL) = ProjectTo{$UUL}(; data=ProjectTo(parent(x)))
         function (project::ProjectTo{$UUL})(dx::AbstractArray)
             dy = project.data(dx)
             # Since x's diagonal is fixed to 1, dx must be zero there:
-            $UUL(dy) - I  # makes an UpperTriangular, etc.
+            return $UUL(dy) - I  # makes an UpperTriangular, etc.
         end
-        # (project::ProjectTo{$UUL})(dx::$UL) = project.data(dx)
+        # No type perfectly encodes the gradient of UnitUpperTriangular.
+        # To avoid unnecessary copies of what projection produces,
+        # allow any UpperTriangular through:
+        function (project::ProjectTo{$UUL})(dx::$UL)
+            dy = project.data(dx)
+        end
     end
 end
 # Subspaces which aren't subtypes, like Diagonal inside Symmetric above:
@@ -496,33 +501,40 @@ end
 (project::ProjectTo{UpperHessenberg})(dx::UpperTriangular) = project.data(dx)
 
 (project::ProjectTo{UnitUpperTriangular})(dx::Diagonal) = NoTangent()
-(project::ProjectTo{UnitUpperTriangular})(dx::UpperTriangular) = project.data(dx)  # produced by projector
 (project::ProjectTo{UnitLowerTriangular})(dx::Diagonal) = NoTangent()
-(project::ProjectTo{UnitLowerTriangular})(dx::LowerTriangular) = project.data(dx)
 
 # Multidiagonal
 # For all of these, the eltypes must all match, so store one full-size projector for simplicity.
 function ProjectTo(x::Bidiagonal)
     full = invoke(ProjectTo, Tuple{AbstractArray{T2}} where {T2<:Number}, x)
-    full isa ProjectTo{<:AbstractZero} && return full
-    ProjectTo{Bidiagonal}(full = full, uplo = LinearAlgebra.sym_uplo(x.uplo))
+    # full isa ProjectTo{<:AbstractZero} && return full  # never happens, invoke misses the Bool method
+    ProjectTo(zero(eltype(x))) isa ProjectTo{<:AbstractZero} && return ProjectTo(false)  # better short-circuit
+    return ProjectTo{Bidiagonal}(full = full, uplo = LinearAlgebra.sym_uplo(x.uplo))
 end
 function ProjectTo(x::Tridiagonal)
     full = invoke(ProjectTo, Tuple{AbstractArray{T2}} where {T2<:Number}, x)
-    # full isa ProjectTo{<:AbstractZero} && return full
-    ProjectTo{Tridiagonal}(full = full)
+    ProjectTo(zero(eltype(x))) isa ProjectTo{<:AbstractZero} && return ProjectTo(false)
+    return ProjectTo{Tridiagonal}(full = full)
 end
 function ProjectTo(x::SymTridiagonal)
     full = invoke(ProjectTo, Tuple{AbstractArray{T2}} where {T2<:Number}, x)
-    # full isa ProjectTo{<:AbstractZero} && return full
-    ProjectTo{SymTridiagonal}(full = full)
+    ProjectTo(zero(eltype(x))) isa ProjectTo{<:AbstractZero} && return ProjectTo(false)
+    return ProjectTo{SymTridiagonal}(full = full)
 end
+# Own type: `project.full` can convert eltype mantaining strucure
+function (project::ProjectTo{Bidiagonal})(dx::Bidiagonal)
+    if LinearAlgebra.sym_uplo(dx.uplo) == project.uplo
+        return project.full(dx)
+    else  # make a dummy array, better type-stability than returning a Diagonal
+        return project.full(Bidiagonal(dx.dv, zero(dx.ev), project.uplo))
+    end
+end
+(project::ProjectTo{Tridiagonal})(dx::Tridiagonal) = project.full(dx)
+(project::ProjectTo{SymTridiagonal})(dx::SymTridiagonal) = project.full(dx)
+# AbstractArray
 (project::ProjectTo{Bidiagonal})(dx::AbstractArray) = Bidiagonal(project.full(dx), project.uplo)
-(project::ProjectTo{Bidiagonal})(dx::AbstractMatrix) = project.full(Bidiagonal(dx, project.uplo))
 (project::ProjectTo{Tridiagonal})(dx::AbstractArray) = Tridiagonal(project.full(dx))
-(project::ProjectTo{Tridiagonal})(dx::AbstractMatrix) = project.full(Tridiagonal(dx))
-(project::ProjectTo{SymTridiagonal})(dx::SymTridiagonal) = SymTridiagonal(project.full(dx))
-(project::ProjectTo{SymTridiagonal})(dx::Symmetric) = project.full(SymTridiagonal(dx))
+(project::ProjectTo{SymTridiagonal})(dx::Symmetric) = SymTridiagonal(project.full(dx))
 function (project::ProjectTo{SymTridiagonal})(dx::AbstractArray)
     dz = project.full(dx)
     dv = diag(dz)
@@ -643,6 +655,6 @@ function (project::ProjectTo{SparseMatrixCSC})(dx::SparseMatrixCSC)
         m, n = size(dx)
         return SparseMatrixCSC(m, n, dx.colptr, dx.rowval, nzval)
     else
-        invoke(project, Tuple{AbstractArray}, dx)
+        return invoke(project, Tuple{AbstractArray}, dx)
     end
 end

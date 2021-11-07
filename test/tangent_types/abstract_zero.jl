@@ -160,5 +160,27 @@
         @test Transpose(ZeroTangent()) === ZeroTangent()
         @test Symmetric(ZeroTangent()) === ZeroTangent()
         @test Hermitian(ZeroTangent(), :U) === ZeroTangent()
+
+        # Multidiagonal
+        @test Bidiagonal([1, 2, 3], ZeroTangent(), :U) == Diagonal(1:3)
+        @test Bidiagonal(ZeroTangent(), 1:3, :U) == [0 1 0 0; 0 0 2 0; 0 0 0 3; 0 0 0 0]
+        @test Tridiagonal(ZeroTangent(), ZeroTangent(), [4, 5]) == [0 4 0; 0 0 5; 0 0 0]
+        @test Tridiagonal(ZeroTangent(), 1:3, ZeroTangent()) == Diagonal(1:3)
+    end
+
+    @testset "promote vectors" begin
+        v64s = (Vector{Float64}, Vector{Float64})
+        @test v64s == typeof.(ChainRulesCore._promote_vectors(fill(pi,3), [1,2,3]))
+        @test v64s == typeof.(ChainRulesCore._promote_vectors(Any[1,2,pi], rand(2)))
+        @test v64s == typeof.(ChainRulesCore._promote_vectors(randn(3) .> 1, rand(10)))
+
+        @test length.(ChainRulesCore._promote_vectors(Any[1,2,pi], rand(2))) == (3, 2)
+        @test length.(ChainRulesCore._promote_vectors(randn(3) .> 1, rand(10))) == (3, 10)
+
+        _samet((x, y)) = typeof(x) == typeof(y)
+        @test _samet(ChainRulesCore._promote_vectors(sparse([1,0,3]), [4,5,6]))
+        @test _samet(ChainRulesCore._promote_vectors(SA[1/2, 3/4], [5, 6]))
+        # The last isn't actually realistic, since all the constructors which take several
+        # vectors demand both same type and different length, so cannot accept StaticArrays.
     end
 end

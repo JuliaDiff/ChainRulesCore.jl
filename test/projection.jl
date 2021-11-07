@@ -322,6 +322,7 @@ struct NoSuperType end
         bu = Bidiagonal(rand(3, 3) .+ im, :U)  # differs but uplo, not type
         @test pbi(bu) == diagm(0 => diag(real(bu)))
         @test_throws DimensionMismatch pbi(rand(ComplexF32, 3, 2))
+        @test ProjectTo(Bidiagonal(randn(3, 3) .> 0, :L))(rand(3, 3)) == NoTangent()
         # structural => natural
         @test pbi(Tangent{Bidiagonal}(; ev=(1:2.0))) isa Bidiagonal  # constructs the diagonal
         # subspace but not a subtype:
@@ -345,7 +346,7 @@ struct NoSuperType end
         @test ptri(reshape(1:9, 3, 3)) == [1.0 4.0 0.0; 2.0 5.0 8.0; 0.0 6.0 9.0]
         @test ptri(ptri(reshape(1:9, 3, 3))) == ptri(reshape(1:9, 3, 3))
         @test ptri(rand(ComplexF32, 3, 3)) isa Tridiagonal{Float64}
-        @test_throws ArgumentError ptri(rand(ComplexF32, 3, 2))
+        @test_throws DimensionMismatch ptri(rand(ComplexF32, 3, 2))
         # structural => natural
         ptri(Tangent{Tridiagonal}(du = [1, 2], dl = [3im, 4im])) isa Tridiagonal{Float64}
         # subspace but not a subtype:
