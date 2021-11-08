@@ -1,4 +1,4 @@
-# Differentials
+# [Tangent types](@id tangents)
 
 The values that come back from pullbacks or pushforwards are not always the same type as the input/outputs of the primal function.
 They are differentials, which correspond roughly to something able to represent the difference between two values of the primal types.
