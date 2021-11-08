@@ -84,7 +84,11 @@ function _promote_vectors(x::AbstractVector, y::AbstractVector)
     if isconcretetype(T)
         return convert(T, x), convert(T, y)
     else
-        short = map(Base.splat(first ∘ promote), zip(x, y))
+        if VERSION > v"1.4"
+            short = map(first ∘ promote, x, y)
+        else  # on 1.0 and friends, neither map nor zip stop early. So we improvise
+            short = [promote(x[i], y[i])[1] for i in intersect(axes(x, 1), axes(y, 1))]
+        end
         return convert(typeof(short), x), convert(typeof(short), y)
     end
 end
