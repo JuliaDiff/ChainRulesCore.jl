@@ -35,7 +35,6 @@ This is the standard case, one can returned the derivative that is defined accor
 Here we would reasonably say that at `x=0` the derivative is `3*0^2=0`. 
 
 
-An interesting thing about `x->x^3` is that at `x=0` the derivative is defined, but neither the sub-derivative nor super-derivative is defined.
 
 ### Local Minima / Maxima
 
