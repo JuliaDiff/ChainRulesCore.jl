@@ -21,7 +21,7 @@ Which you *can* do.
 However, there is no where to go with an error, the user still wants a derivative; so this is not useful.
 
 Let us explore what is useful:
-# Case Studies
+## Case Studies
 
 ```@setup nondiff
 using Plots
@@ -72,8 +72,9 @@ We could say there derivative at 0 is:
  - 3: which is the mean of `[1, 5]`, and agrees with central finite differencing
 
 All of these options are perfectly nice members of the [subderivative](https://en.wikipedia.org/wiki/Subderivative).
-Saying it is `3` is the arguably the nicest, but it is also the most expensive to compute; and it will 
- 
+`3` is the arguably the nicest, but it is also the most expensive to compute.
+In general all are acceptable.
+
 
 ### Derivative zero almost everywhere
 
@@ -88,36 +89,10 @@ The other option for `x->ceil(x)` would be relax the problem into `x->x`, and th
 But that it too weird, if the use wanted a relaxation of the problem then they would provide one.
 We can not be imposing that relaxation on to `ceil` for everyone is not reasonable.
 
-### Primal finite, and derivative nonfinite and same on both sides
-
-```@example nondiff
-plot(cbrt)
-```
-
-
-
-### Primal and derivative Non-finite and different on both sides
-```@example nondiff
-plot(x->inv(x^2))
-plot!(; xlims=(-1,1), ylims=(-100,100)) #hide
-```
-
-In this case the primal isn't finite, so the value of the derivative can be assumed to matter less.
-It is not surprising to see a nonfinite gradient for nonfinite primal.
-So it is fine to have a the gradient being nonfinite.
-
-## Primal finite and derivative nonfinite and different on each side
-```@example nondiff
-plot(x-> sign(x) * cbrt(x))
-```
-
-In this example, the primal is defined and finite, so we would like a derivative to defined.
-We are back in the case of a local minimal like we were for `abs`.
-We can make most of the same arguments as we made there to justify saying the derivative is zero.
-
 ### Not defined on one-side
 ```@example nondiff
 plot(x->exp(2log(x)))
+plot!(; xlims=(-10,10), ylims=(-10,10)) #hide
 ```
 
 We do not have to worry about what to return for the side where it is not defined.
@@ -130,13 +105,42 @@ In this case giving 0.0.
 Also nice in this case is that it agrees with the symbolic simplification of `x->exp(2log(x))` into `x->x^2`.
 
 
+### Derivative nonfinite and same on both sides
 
-### Not defined on one side, non-finite on the other
 ```@example nondiff
-plot(log)
+plot(cbrt)
 ```
 
-Here there is no harm in taking the value on the defined, finite
+Here we have no real choice but to say the derivative at `0` is `Inf`.
+We could consider as an alternative saying some large but finite value.
+However, if too large it will just overflow rapidly anyway; and if too small it will not dominate over finite terms.
+It is not possible to find a given value that is always large enough.
+Our alternatives  woud be to consider the dederivative at `nextfloat(0.0)` or `prevfloat(0.0)`.
+But this is more or less the same as choosing some large value -- in this case an extremely large value that will rapidly overflow.
+
+
+### Derivative on-finite and different on both sides
+
+```@example nondiff
+plot(x-> sign(x) * cbrt(x))
+```
+
+In this example, the primal is defined and finite, so we would like a derivative to defined.
+We are back in the case of a local minimal like we were for `abs`.
+We can make most of the same arguments as we made there to justify saying the derivative is zero.
+
+## Conclusion
+
+From the case studies a few general rules can be seen for how to choose a value that is _useful_.
+These rough rules are:
+ - Say the derivative is 0 at local optima
+ - If the derivative from one side is defined and the other isn't, say it is the derivative taken from defined side.
+ - If the derivative from one side is finite and the other isn't, say it is the derivative taken from finite side.
+ - When derivative from each side is not equal, strongly consider reporting the average
+
+Our goal as always, is to get a pragmatically useful result for everyone, which must by necessity also avoid a pathological result for anyone.
+
+
 
 ### sub/super-differential convention
 **TODO: Incorperate this with rest of the document. Or move to design notes**
