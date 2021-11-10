@@ -5,7 +5,7 @@ Expressing the output of `f(x...)` as `Ω`, return the tuple:
 
     (Ω, ΔΩ)
 
-The second return value is the differential w.r.t. the output.
+The second return value is the tangent w.r.t. the output.
 
 If no method matching `frule((Δf, Δx...), f, x...)` has been defined, then return `nothing`.
 
@@ -87,7 +87,7 @@ as `Ω`, return the tuple:
     (Ω, (Ω̄₁, Ω̄₂, ...) -> (s̄elf, x̄₁, x̄₂, ...))
 
 Where the second return value is the the propagation rule or pullback.
-It takes in differentials corresponding to the outputs (`x̄₁, x̄₂, ...`),
+It takes in cotangents corresponding to the outputs (`x̄₁, x̄₂, ...`),
 and `s̄elf`, the internal values of the function itself (for closures)
 
 If no method matching `rrule(f, xs...)` has been defined, then return `nothing`.

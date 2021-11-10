@@ -44,7 +44,7 @@ See docs on [Constructors](@ref).
 ## Include the derivative with respect to the function object itself
 The `ZygoteRules.@adjoint` macro automagically[^1] inserts an extra `nothing` in the return for the function it generates to represent the derivative of output with respect to the function object.
 ChainRules as a philosophy avoids magic as much as possible, and thus require you to return it explicitly.
-If it is a plain function (like `typeof(sin)`), then the differential will be [`NoTangent`](@ref).
+If it is a plain function (like `typeof(sin)`), then the tangent will be [`NoTangent`](@ref).
 
 
 [^1]: unless you write it in functor form (i.e. `@adjoint (f::MyType)(args...)=...`), in that case like for `rrule` you need to include it explictly.

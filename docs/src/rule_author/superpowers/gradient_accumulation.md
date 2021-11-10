@@ -19,7 +19,7 @@ end
 The AD software must transform that into something which repeatedly sums up the gradient of each part:
 `X̄ = ā + b̄`.
 
-This requires that all differential types `D` must implement `+`: `+(::D, ::D)::D`.
+This requires that all tangent types `D` must implement `+`: `+(::D, ::D)::D`.
 
 We can note that in this particular case `ā` and `b̄` will both be arrays.
 This operation (`X̄ = ā + b̄`) will allocate one array to hold `ā`, another one to hold `b̄`, and a third one to hold `ā + b̄`.
@@ -47,7 +47,7 @@ AD systems can generate `add!!` instead of `+` when accumulating gradient to tak
 
 ### Inplaceable Thunks (`InplaceableThunks`) avoid allocating values in the first place.
 We got down to two allocations from using [`add!!`](@ref), but can we do better?
-We can think of having a differential type which acts on a partially accumulated result, to mutate it to contain its current value plus the partial derivative being accumulated.
+We can think of having a tangent type which acts on a partially accumulated result, to mutate it to contain its current value plus the partial derivative being accumulated.
 Rather than having an actual computed value, we can just have a thing that will act on a value to perform the addition.
 Let's illustrate it with our example.
 
@@ -79,9 +79,9 @@ The `val` field use a plain [`Thunk`](@ref) to avoid the computation (and thus a
 !!! note "Do we need both representations?"
     Right now every [`InplaceableThunk`](@ref) has two fields that need to be specified.
     The value form (represented as a the [`Thunk`](@ref) typed field), and the action form (represented as the `add!` field).
-    It is possible in a future version of ChainRulesCore.jl we will work out a clever way to find the zero differential for arbitrary primal values.
-    Given that, we could always just determine the value form from `inplaceable.add!(zero_differential(primal))`.
-    There are some technical difficulties in finding the zero differentials, but this may be solved at some point.
+    It is possible in a future version of ChainRulesCore.jl we will work out a clever way to find the zero tangent for arbitrary primal values.
+    Given that, we could always just determine the value form from `inplaceable.add!(zero_tangent(primal))`.
+    There are some technical difficulties in finding the zero tangents, but this may be solved at some point.
 
 
 The `+` operation on `InplaceableThunk`s is overloaded to [`unthunk`](@ref) that `val` field to get the value form.

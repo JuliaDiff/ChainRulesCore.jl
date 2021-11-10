@@ -1,7 +1,7 @@
 """
     AbstractZero <: AbstractTangent
 
-Supertype for zero-like differentials—i.e., differentials that act like zero when
+Supertype for zero-like tangents—i.e., tangents that act like zero when
 added or multiplied to other values.
 If an AD system encounters a propagator that takes as input only subtypes of `AbstractZero`,
 then it can stop performing AD operations.
@@ -39,7 +39,7 @@ Base.reshape(z::AbstractZero, size...) = z
 """
     ZeroTangent() <: AbstractZero
 
-The additive identity for differentials.
+The additive identity for tangents.
 This is basically the same as `0`.
 A derivative of `ZeroTangent()` does not propagate through the primal function.
 """
@@ -53,15 +53,15 @@ Base.zero(::Type{<:AbstractTangent}) = ZeroTangent()
 """
     NoTangent() <: AbstractZero
 
-This differential indicates that the derivative does not exist.
-It is the differential for primal types that are not differentiable,
+This tangent indicates that the derivative does not exist.
+It is the tangent type for primal types that are not differentiable,
 such as integers or booleans (when they are not being used to represent
 floating-point values).
 The only valid way to perturb such values is to not change them at all.
 As a consequence, `NoTangent` is functionally identical to `ZeroTangent()`,
 but it provides additional semantic information.
 
-Adding this differential to a primal is generally wrong: gradient-based
+Adding `NoTangent()` to a primal is generally wrong: gradient-based
 methods cannot be used to optimize over discrete variables.
 An optimization package making use of this might want to check for such a case.
 

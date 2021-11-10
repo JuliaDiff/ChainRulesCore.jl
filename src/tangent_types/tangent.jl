@@ -1,11 +1,11 @@
 """
     Tangent{P, T} <: AbstractTangent
 
-This type represents the differential for a `struct`/`NamedTuple`, or `Tuple`.
-`P` is the the corresponding primal type that this is a differential for.
+This type represents the tangent for a `struct`/`NamedTuple`, or `Tuple`.
+`P` is the the corresponding primal type that this is a tangent for.
 
 `Tangent{P}` should have fields (technically properties), that match to a subset of the
-fields of the primal type; and each should be a differential type matching to the primal
+fields of the primal type; and each should be a tangent type matching to the primal
 type of that field.
 Fields of the P that are not present in the Tangent are treated as `Zero`.
 
@@ -23,7 +23,7 @@ function is provided.
 """
 struct Tangent{P,T} <: AbstractTangent
     # Note: If T is a Tuple/Dict, then P is also a Tuple/Dict
-    # (but potentially a different one, as it doesn't contain differentials)
+    # (but potentially a different one, as it doesn't contain tangents)
     backing::T
 
     function Tangent{P,T}(backing) where {P,T}
@@ -310,7 +310,7 @@ elementwise_add(a::Dict, b::Dict) = merge(+, a, b)
 
 struct PrimalAdditionFailedException{P} <: Exception
     primal::P
-    differential::Tangent{P}
+    tangent::Tangent{P}
     original::Exception
 end
 
@@ -318,15 +318,13 @@ function Base.showerror(io::IO, err::PrimalAdditionFailedException{P}) where {P}
     println(io, "Could not construct $P after addition.")
     println(io, "This probably means no default constructor is defined.")
     println(io, "Either define a default constructor")
-    printstyled(io, "$P(", join(propertynames(err.differential), ", "), ")"; color=:blue)
+    printstyled(io, "$P(", join(propertynames(err.tangent), ", "), ")"; color=:blue)
     println(io, "\nor overload")
     printstyled(
-        io,
-        "ChainRulesCore.construct(::Type{$P}, ::$(typeof(err.differential)))";
-        color=:blue,
+        io, "ChainRulesCore.construct(::Type{$P}, ::$(typeof(err.tangent)))"; color=:blue
     )
     println(io, "\nor overload")
-    printstyled(io, "Base.:+(::$P, ::$(typeof(err.differential)))"; color=:blue)
+    printstyled(io, "Base.:+(::$P, ::$(typeof(err.tangent)))"; color=:blue)
     println(io, "\nOriginal Exception:")
     printstyled(io, err.original; color=:yellow)
     return println(io)
