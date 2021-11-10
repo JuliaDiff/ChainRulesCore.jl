@@ -48,7 +48,7 @@ makedocs(;
         "Introduction" => "index.md",
         "How to use ChainRules as a rule author" => [
             "Introduction" => "rule_author/intro.md",
-            "Differentials" => "rule_author/differentials.md",
+            "Tangent types" => "rule_author/differentials.md",
             #"`frule` and `rrule`" => "rule_author/rules.md", # TODO: a complete example
             "Writing good rules" => "rule_author/writing_good_rules.md",
             "Testing your rules" => "rule_author/testing.md",
@@ -74,8 +74,9 @@ makedocs(;
         ],
         "Design" => [
             "Changing the Primal" => "design/changing_the_primal.md",
-            "Many Differential Types" => "design/many_differentials.md",
+            "Many Tangent Types" => "design/many_differentials.md",
         ],
+        "Videos" => "videos.md",
         "FAQ" => "FAQ.md",
         "API" => "api.md",
     ],
