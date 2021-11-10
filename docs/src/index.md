@@ -129,6 +129,81 @@ We also define [`Thunk`](@ref)s to allow certain optimisation.
 
 See the section on [tangent types](@ref tangents) for more details.
 
+## Example of using ChainRules directly
+
+While ChainRules is largely intended as a backend for autodiff systems, it can be used directly.
+In fact, this can be very useful if you can constrain the code you need to differentiate to only use things that have rules defined for.
+This was once how all neural network code worked.
+
+Using ChainRules directly also helps get a feel for it.
+
+```jldoctest index; output=false
+using ChainRulesCore
+
+function foo(x)
+    a = sin(x)
+    b = 0.2 + a
+    c = asin(b)
+    return c
+end
+
+# Define rules (alternatively get them for free via `using ChainRules`)
+@scalar_rule(sin(x), cos(x))
+@scalar_rule(+(x, y), (1.0, 1.0))
+@scalar_rule(asin(x), inv(sqrt(1 - x^2)))
+# output
+
+```
+```jldoctest index
+#### Find dfoo/dx via rrules
+#### First the forward pass, gathering up the pullbacks
+x = 3;
+a, a_pullback = rrule(sin, x);
+b, b_pullback = rrule(+, 0.2, a);
+c, c_pullback = rrule(asin, b)
+
+#### Then the backward pass calculating gradients
+c̄ = 1;                    # ∂c/∂c
+_, b̄ = c_pullback(c̄);     # ∂c/∂b = ∂c/∂b ⋅ ∂c/∂c
+_, _, ā = b_pullback(b̄);  # ∂c/∂a = ∂c/∂b ⋅ ∂b/∂a
+_, x̄ = a_pullback(ā);     # ∂c/∂x = ∂c/∂a ⋅ ∂a/∂x
+x̄                         # ∂c/∂x = ∂foo/∂x
+# output
+-1.0531613736418153
+```
+```jldoctest index
+#### Find dfoo/dx via frules
+x = 3;
+ẋ = 1;              # ∂x/∂x
+nofields = ZeroTangent();  # ∂self/∂self
+
+a, ȧ = frule((nofields, ẋ), sin, x);                    # ∂a/∂x = ∂a/∂x ⋅ ∂x/∂x 
+b, ḃ = frule((nofields, ZeroTangent(), ȧ), +, 0.2, a);  # ∂b/∂x = ∂b/∂a ⋅ ∂a/∂x
+c, ċ = frule((nofields, ḃ), asin, b);                   # ∂c/∂x = ∂c/∂b ⋅ ∂b/∂x
+ċ                                                       # ∂c/∂x = ∂foo/∂x
+# output
+-1.0531613736418153
+```
+```julia
+#### Find dfoo/dx via FiniteDifferences.jl
+using FiniteDifferences
+central_fdm(5, 1)(foo, x)
+# output
+-1.0531613736418257
+
+#### Find dfoo/dx via ForwardDiff.jl
+using ForwardDiff
+ForwardDiff.derivative(foo, x)
+# output
+-1.0531613736418153
+
+#### Find dfoo/dx via Zygote.jl
+using Zygote
+Zygote.gradient(foo, x)
+# output
+(-1.0531613736418153,)
+```
+
 ## Videos
 
 For people who learn better by video we have a number of videos of talks we have given about the ChainRules project.
@@ -211,79 +286,3 @@ Abstract:
 > The ChainRules project allows package authors to write rules for custom sensitivities (sometimes called custom adjoints) in a way that is not dependent on any particular autodiff (AD) package.
 > It allows authors of AD packages to access a wealth of prewritten custom sensitivities, saving them the effort of writing them all out themselves.
 > ChainRules is the successor to DiffRules.jl and is the native rule system currently used by ForwardDiff2,  Zygote and soon ReverseDiff
-
-
-## Example of using ChainRules directly
-
-While ChainRules is largely intended as a backend for autodiff systems, it can be used directly.
-In fact, this can be very useful if you can constrain the code you need to differentiate to only use things that have rules defined for.
-This was once how all neural network code worked.
-
-Using ChainRules directly also helps get a feel for it.
-
-```jldoctest index; output=false
-using ChainRulesCore
-
-function foo(x)
-    a = sin(x)
-    b = 0.2 + a
-    c = asin(b)
-    return c
-end
-
-# Define rules (alternatively get them for free via `using ChainRules`)
-@scalar_rule(sin(x), cos(x))
-@scalar_rule(+(x, y), (1.0, 1.0))
-@scalar_rule(asin(x), inv(sqrt(1 - x^2)))
-# output
-
-```
-```jldoctest index
-#### Find dfoo/dx via rrules
-#### First the forward pass, gathering up the pullbacks
-x = 3;
-a, a_pullback = rrule(sin, x);
-b, b_pullback = rrule(+, 0.2, a);
-c, c_pullback = rrule(asin, b)
-
-#### Then the backward pass calculating gradients
-c̄ = 1;                    # ∂c/∂c
-_, b̄ = c_pullback(c̄);     # ∂c/∂b = ∂c/∂b ⋅ ∂c/∂c
-_, _, ā = b_pullback(b̄);  # ∂c/∂a = ∂c/∂b ⋅ ∂b/∂a
-_, x̄ = a_pullback(ā);     # ∂c/∂x = ∂c/∂a ⋅ ∂a/∂x
-x̄                         # ∂c/∂x = ∂foo/∂x
-# output
--1.0531613736418153
-```
-```jldoctest index
-#### Find dfoo/dx via frules
-x = 3;
-ẋ = 1;              # ∂x/∂x
-nofields = ZeroTangent();  # ∂self/∂self
-
-a, ȧ = frule((nofields, ẋ), sin, x);                    # ∂a/∂x = ∂a/∂x ⋅ ∂x/∂x 
-b, ḃ = frule((nofields, ZeroTangent(), ȧ), +, 0.2, a);  # ∂b/∂x = ∂b/∂a ⋅ ∂a/∂x
-c, ċ = frule((nofields, ḃ), asin, b);                   # ∂c/∂x = ∂c/∂b ⋅ ∂b/∂x
-ċ                                                       # ∂c/∂x = ∂foo/∂x
-# output
--1.0531613736418153
-```
-```julia
-#### Find dfoo/dx via FiniteDifferences.jl
-using FiniteDifferences
-central_fdm(5, 1)(foo, x)
-# output
--1.0531613736418257
-
-#### Find dfoo/dx via ForwardDiff.jl
-using ForwardDiff
-ForwardDiff.derivative(foo, x)
-# output
--1.0531613736418153
-
-#### Find dfoo/dx via Zygote.jl
-using Zygote
-Zygote.gradient(foo, x)
-# output
-(-1.0531613736418153,)
-```
