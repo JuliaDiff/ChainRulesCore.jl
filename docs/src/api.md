@@ -14,7 +14,7 @@ Pages = ["rule_definition_tools.jl"]
 Private = false
 ```
 
-## Differentials
+## Tangents
 ```@autodocs
 Modules = [ChainRulesCore]
 Pages = [

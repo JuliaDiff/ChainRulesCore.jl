@@ -2,7 +2,7 @@
 
 This section of the docs will tell you everything you need to know about writing rules for your package.
 
-It will help with understanding differential types, the anatomy of the `frule` and
+It will help with understanding tangent types, the anatomy of the `frule` and
 the `rrule`, and provide tips on writing good rules, as well as how to test them easily
 using finite differences.
 

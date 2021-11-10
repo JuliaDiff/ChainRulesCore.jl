@@ -44,7 +44,7 @@ This woull be solved once [JuliaLang/julia#38241](https://github.com/JuliaLang/j
 
 ## Use `Thunk`s appropriately
 
-If work is only required for one of the returned differentials, then it should be wrapped in a `@thunk` (potentially using a `begin`-`end` block).
+If work is only required for one of the returned tangents, then it should be wrapped in a `@thunk` (potentially using a `begin`-`end` block).
 
 If there are multiple return values, their computation should almost always be wrapped in a `@thunk`.
 
@@ -169,16 +169,16 @@ For example, if a primal type `P` overloads subtraction (`-(::P,::P)`) then that
 Common cases for types that represent a [vector-space](https://en.wikipedia.org/wiki/Vector_space) (e.g. `Float64`, `Array{Float64}`) is that the natural tangent type is the same as the primal type.
 However, this is not always the case.
 For example for a [`PDiagMat`](https://github.com/JuliaStats/PDMats.jl) a natural tangent is `Diagonal` since there is no requirement that a positive definite diagonal matrix has a positive definite tangent.
-Another example is for a `DateTime`, any `Period` subtype, such as `Millisecond` or `Nanosecond` is a natural differential.
+Another example is for a `DateTime`, any `Period` subtype, such as `Millisecond` or `Nanosecond` is a natural tangent.
 There are often many different natural tangent types for a given primal type.
 However, they are generally closely related and duck-type the same.
 For example, for most `AbstractArray` subtypes, most other `AbstractArray`s (of right size and element type) can be considered as natural tangent types.
 
 Not all types have natural tangent types.
-For example there is no natural differential for a `Tuple`.
+For example there is no natural tangent for a `Tuple`.
 It is not a `Tuple` since that doesn't have any method for `+`.
 Similar is true for many `struct`s.
-For those cases there is only a structural differential.
+For those cases there is only a structural tangent.
 
 ### Structural tangents
 
@@ -216,10 +216,10 @@ In this sense they wrap either a natural or structural tangent.
 
 ## Use `@not_implemented` appropriately
 
-You can use [`@not_implemented`](@ref) to mark missing differentials.
-This is helpful if the function has multiple inputs or outputs, and you have worked out analytically and implemented some but not all differentials.
+You can use [`@not_implemented`](@ref) to mark missing tangents.
+This is helpful if the function has multiple inputs or outputs, and you have worked out analytically and implemented some but not all tangents.
 
-It is recommended to include a link to a GitHub issue about the missing differential in the debugging information:
+It is recommended to include a link to a GitHub issue about the missing tangent in the debugging information:
 ```julia
 @not_implemented(
     """
@@ -229,9 +229,9 @@ It is recommended to include a link to a GitHub issue about the missing differen
 )
 ```
 
-Do not use `@not_implemented` if the differential does not exist mathematically (use `NoTangent()` instead).
+Do not use `@not_implemented` if the tangent does not exist mathematically (use `NoTangent()` instead).
 
-Note: [ChainRulesTestUtils.jl](https://github.com/JuliaDiff/ChainRulesTestUtils.jl) marks `@not_implemented` differentials as "test broken".
+Note: [ChainRulesTestUtils.jl](https://github.com/JuliaDiff/ChainRulesTestUtils.jl) marks `@not_implemented` tangents as "test broken".
 
 ## Use rule definition tools
 
