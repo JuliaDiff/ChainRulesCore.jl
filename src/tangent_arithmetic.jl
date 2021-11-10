@@ -1,5 +1,5 @@
 #==
-All differentials need to define + and *.
+All tangents need to define + and *.
 That happens here.
 
 We just use @eval to define all the combinations for AbstractTangent
@@ -148,8 +148,8 @@ Base.:+(a::Tangent{P}, b::P) where {P} = b + a
 Base.:-(tangent::Tangent{P}) where {P} = map(-, tangent)
 
 # We intentionally do not define, `Base.*(::Tangent, ::Tangent)` as that is not meaningful
-# In general one doesn't have to represent multiplications of 2 differentials
-# Only of a differential and a scaling factor (generally `Real`)
+# In general one doesn't have to represent multiplications of 2 tangents
+# Only of a tangent and a scaling factor (generally `Real`)
 for T in (:Number,)
     @eval Base.:*(s::$T, tangent::Tangent) = map(x -> s * x, tangent)
     @eval Base.:*(tangent::Tangent, s::$T) = map(x -> x * s, tangent)

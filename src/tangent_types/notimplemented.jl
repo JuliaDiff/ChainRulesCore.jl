@@ -1,18 +1,18 @@
 """
     @not_implemented(info)
 
-Create a differential that indicates that the derivative is not implemented.
+Create a tangent that indicates that the derivative is not implemented.
 
-The `info` should be useful information about the missing differential for debugging.
+The `info` should be useful information about the missing tangent for debugging.
 
 !!! note
     This macro should be used only if the automatic differentiation would error
     otherwise. It is mostly useful if the function has multiple inputs or outputs,
-    and one has worked out analytically and implemented some but not all differentials.
+    and one has worked out analytically and implemented some but not all tangents.
 
 !!! note
     It is good practice to include a link to a GitHub issue about the missing
-    differential in the debugging information.
+    tangent in the debugging information.
 """
 macro not_implemented(info)
     return :(NotImplemented($__module__, $(QuoteNode(__source__)), $(esc(info))))
@@ -21,7 +21,7 @@ end
 """
     NotImplemented
 
-This differential indicates that the derivative is not implemented.
+This tangent indicates that the derivative is not implemented.
 
 It is generally best to construct this using the [`@not_implemented`](@ref) macro,
 which will automatically insert the source module and file location.
@@ -34,11 +34,11 @@ end
 
 # required for `@scalar_rule`
 # (together with `conj(x::AbstractTangent) = x` and the definitions in
-# differential_arithmetic.jl)
+# tangent_arithmetic.jl)
 Base.Broadcast.broadcastable(x::NotImplemented) = Ref(x)
 
 # throw error with debugging information for other standard information
-# (`+`, `-`, `*`, and `dot` are defined in differential_arithmetic.jl)
+# (`+`, `-`, `*`, and `dot` are defined in tangent_arithmetic.jl)
 Base.:/(x::NotImplemented, ::Any) = throw(NotImplementedException(x))
 Base.:/(::Any, x::NotImplemented) = throw(NotImplementedException(x))
 Base.:/(x::NotImplemented, ::NotImplemented) = throw(NotImplementedException(x))
@@ -48,7 +48,7 @@ function Base.zero(::Type{<:NotImplemented})
     return throw(
         NotImplementedException(
             @not_implemented(
-                "`zero` is not defined for missing differentials of type `NotImplemented`"
+                "`zero` is not defined for missing tangents of type `NotImplemented`"
             )
         ),
     )
@@ -77,7 +77,7 @@ function NotImplementedException(x::NotImplemented)
 end
 
 function Base.showerror(io::IO, e::NotImplementedException)
-    print(io, "differential not implemented @ ", e.mod, " ", e.source)
+    print(io, "tangent not implemented @ ", e.mod, " ", e.source)
     if e.info !== nothing
         print(io, "\nInfo: ", e.info)
     end

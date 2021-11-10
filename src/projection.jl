@@ -1,7 +1,7 @@
 """
     (p::ProjectTo{T})(dx)
 
-Projects the differential `dx` onto a specific tangent space.
+Projects the tangent `dx` onto a specific tangent space.
 
 The type `T` is meant to encode the largest acceptable space, so usually
 this enforces `p(dx)::T`. But some subspaces which aren't subtypes of `T` may
@@ -80,7 +80,7 @@ _maybe_call(f, x) = f
 """
     ProjectTo(x)
 
-Returns a `ProjectTo{T}` functor which projects a differential `dx` onto the
+Returns a `ProjectTo{T}` functor which projects a tangent `dx` onto the
 relevant tangent space for `x`.
 
 Custom `ProjectTo` methods are provided for many subtypes of `Number` (to e.g. ensure precision),
