@@ -160,6 +160,27 @@ struct NoSuperType end
         @test ProjectTo((true, [false])) isa ProjectTo{NoTangent}
     end
 
+    @testset "Base: NamedTuple" begin
+        pt1 = ProjectTo((a=1.0,))
+        @test pt1((a=1 + im,)) == Tangent{NamedTuple{(:a,),Tuple{Float64}}}(; a=1.0)
+        @test pt1(pt1((a=1,))) == pt1(pt1((a=1,)))    # accepts correct Tangent
+        @test pt1(Tangent{Any}(; a=1)) == pt1((a=1,)) # accepts Tangent{Any}
+        @test pt1(NoTangent()) === NoTangent()
+        @test pt1(ZeroTangent()) === ZeroTangent()
+
+        @test_throws Exception pt1((a=1, b=2)) # DimensionMismatch, wrong length
+        @test_throws Exception pt1((b=1,)) # wrong name
+
+        pt3 = ProjectTo((a=[1, 2, 3], b=false, c=:gamma)) # partly non-differentiable
+        @test pt3((a=1:3, b=4, c=5)) ==
+            Tangent{NamedTuple{(:a, :b, :c),Tuple{Vector{Int},Bool,Symbol}}}(;
+            a=[1.0, 2.0, 3.0], b=NoTangent(), c=NoTangent()
+        )
+        @test_throws Exception pt3((b=4, a=1:3, c=5))
+
+        @test ProjectTo((a=true, b=[false])) isa ProjectTo{NoTangent}
+    end
+
     @testset "Base: non-diff" begin
         @test ProjectTo(:a)(1) == NoTangent()
         @test ProjectTo('b')(2) == NoTangent()

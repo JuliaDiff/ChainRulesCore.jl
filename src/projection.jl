@@ -287,7 +287,7 @@ end
 # Since this works like a zero-array in broadcasting, it should also accept a number:
 (project::ProjectTo{<:Tangent{<:Ref}})(dx::Number) = project(Ref(dx))
 
-# Tuple
+# Tuple and NamedTuple
 function ProjectTo(x::Tuple)
     elements = map(ProjectTo, x)
     if elements isa NTuple{<:Any,ProjectTo{<:AbstractZero}}
@@ -296,10 +296,22 @@ function ProjectTo(x::Tuple)
         return ProjectTo{Tangent{typeof(x)}}(; elements=elements)
     end
 end
+function ProjectTo(x::NamedTuple)
+    elements = map(ProjectTo, x)
+    if Tuple(elements) isa NTuple{<:Any,ProjectTo{<:AbstractZero}}
+        return ProjectTo{NoTangent}()
+    else
+        return ProjectTo{Tangent{typeof(x)}}(; elements...)
+    end
+end
+
 # This method means that projection is re-applied to the contents of a Tangent.
 # We're not entirely sure whether this is every necessary; but it should be safe,
 # and should often compile away:
-(project::ProjectTo{<:Tangent{<:Tuple}})(dx::Tangent) = project(backing(dx))
+function (project::ProjectTo{<:Tangent{<:Union{Tuple,NamedTuple}}})(dx::Tangent)
+    return project(backing(dx))
+end
+
 function (project::ProjectTo{<:Tangent{<:Tuple}})(dx::Tuple)
     len = length(project.elements)
     if length(dx) != len
@@ -310,6 +322,29 @@ function (project::ProjectTo{<:Tangent{<:Tuple}})(dx::Tuple)
     dy = map((f, x) -> f(x), project.elements, dx)
     return project_type(project)(dy...)
 end
+function (project::ProjectTo{<:Tangent{<:NamedTuple}})(dx::NamedTuple)
+    elements = backing(project)
+    len = length(elements)
+    if length(dx) != len
+        throw(
+            DimensionMismatch(
+                "named tuple with length(x) == $len cannot have a gradient with length(dx) == $(length(dx))",
+            ),
+        )
+    end
+    keys_elements = keys(elements)
+    if keys(dx) != keys_elements
+        throw(
+            ArgumentError(
+                "named tuple with keys(x) == $keys_elements cannot have a gradient with keys(dx) == $(keys(dx))",
+            ),
+        )
+    end
+    # Here map will fail if the lengths don't match, but gives a much less helpful error:
+    dy = map((f, x) -> f(x), elements, dx)
+    return project_type(project)(; dy...)
+end
+
 function (project::ProjectTo{<:Tangent{<:Tuple}})(dx::AbstractArray)
     for d in 1:ndims(dx)
         if size(dx, d) != get(length(project.elements), d, 1)
