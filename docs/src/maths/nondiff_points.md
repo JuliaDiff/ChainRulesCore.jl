@@ -1,12 +1,10 @@
 # What to return for non-differentiable points
 !!! info "What is the short version?"
-    If the function is not differentiable due to e.g. a branch, like `abs`, your rule can reasonably claim the derivative at that point is the value from either branch, *or* any value in-between (e.g. for `abs` claiming 0 is a good idea).
-    If it is not differentiable due to the primal not being defined on one side, you can set it to what ever you like.
-    Your rule should claim a derivative that is *useful*.
-In calculus one learns that if the derivative as computed by approaching from the left,
-and the derivative one computes as approaching from the right are not equal then the derivative is not defined,
-and we say the function is not differentiable at that point.
-This is distinct from the notion captured by [`NoTangent`](@ref), which is that the tangent space itself is not defined: because in some sense the primal value can not be perturbed e.g. is is a discrete type.
+    If the function is not-differentiable choose to return something useful rather than erroring.
+    For a branch a function is not differentiable due to e.g. a branch, like `abs`, your rule can reasonably claim the derivative at that point is the value from either branch, *or* any value in-between.
+    In particular for local optima (like in the case of `abs`) claiming the derivative is 0 is a good idea.
+    Similarly, if derivative is from one side is not defined, or is not finite, return the derivative from the other side.
+    Throwing an error, or returning `NaN` is generally the least useful option.
 
 However, contrary to what calculus says most autodiff systems will return an answer for such functions.
 For example for: `abs_left(x) = (x <= 0) ? -x : x`, AD will say the derivative at `x=0` is `-1`.
