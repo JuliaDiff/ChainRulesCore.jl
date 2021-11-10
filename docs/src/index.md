@@ -1,11 +1,11 @@
 # ChainRules
 
 [Automatic differentiation (AD)](https://en.wikipedia.org/wiki/Automatic_differentiation) is a set of techniques for obtaining derivatives of arbitrary functions.
-There is a surprisingly large number of packages for doing AD in Julia.
+There are surprisingly many packages for doing AD in Julia.
 ChainRules isn't one of these packages.
 
 The AD packages essentially combine derivatives of simple functions into derivatives of more complicated functions.
-They differ in the way they combine the derivatives, but they all require a common set of derivatives of simple functions (primitives/rules).
+They differ in the way they break down complicated functions into simple ones, but they all require a common set of derivatives of simple functions (rules).
 
 [ChainRules](https://github.com/JuliaDiff/ChainRules.jl) is an AD-independent set of rules, and a system for defining and testing rules.
 
@@ -37,13 +37,14 @@ To be able to do that, ChainRules also defines a small number of tangent types t
 
 !!! note "Tangents and cotangents"
     Strictly speaking tangents, $ẋ = \frac{dx}{da}$, are propagated in `frule`s, and cotangents, $x̄ = \frac{da}{dx}$, are propagated in `rrule`s.
-    However, we do not distinguish between the two in practice: both are represented by the same tangent types, and we sometimes (often?) refer to cotangents as tangents.
+    However, in practice there is rarely a need to distinguish between the two: both are represented by the same tangent types.
+    Thus, except when the detail might clarify, we refer to both as tangents.
 
 !!! terminology "`frule` and `rrule`"
-    The whole field is a mess for terminology.
     `frule` and `rrule` are ChainRules specific terms.
     Their exact functioning is fairly ChainRules specific, though other tools have similar functions.
     The core notion is sometimes called _custom AD primitives_, _custom adjoints_, _custom gradients_, _custom sensitivities_.
+    The whole field is a mess for terminology.
 
 
 ### Forward-mode AD rules (`frule`s)
