@@ -321,9 +321,7 @@ function Base.showerror(io::IO, err::PrimalAdditionFailedException{P}) where {P}
     printstyled(io, "$P(", join(propertynames(err.tangent), ", "), ")"; color=:blue)
     println(io, "\nor overload")
     printstyled(
-        io,
-        "ChainRulesCore.construct(::Type{$P}, ::$(typeof(err.tangent)))";
-        color=:blue,
+        io, "ChainRulesCore.construct(::Type{$P}, ::$(typeof(err.tangent)))"; color=:blue
     )
     println(io, "\nor overload")
     printstyled(io, "Base.:+(::$P, ::$(typeof(err.tangent)))"; color=:blue)
