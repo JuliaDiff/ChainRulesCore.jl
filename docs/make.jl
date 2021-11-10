@@ -76,6 +76,7 @@ makedocs(;
             "Changing the Primal" => "design/changing_the_primal.md",
             "Many Tangent Types" => "design/many_differentials.md",
         ],
+        "Videos" => "videos.md",
         "FAQ" => "FAQ.md",
         "API" => "api.md",
     ],
