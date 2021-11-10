@@ -1,3 +1,5 @@
+ENV["GKSwstype"] = "100"  # make Plots/GR work on headless machine
+
 using ChainRulesCore
 using Documenter
 using DocThemeIndigo
@@ -69,6 +71,7 @@ makedocs(;
         ],
         "The maths" => [
             "The propagators: pushforward and pullback" => "maths/propagators.md",
+            "Non-differentiable Points" => "maths/nondiff_points.md",
             "Complex numbers" => "maths/complex.md",
             "Deriving array rules" => "maths/arrays.md",
         ],
