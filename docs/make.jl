@@ -1,3 +1,5 @@
+ENV["GKSwstype"] = "100"  # make Plots/GR work on headless machine
+
 using ChainRulesCore
 using Documenter
 using DocThemeIndigo
@@ -58,7 +60,6 @@ makedocs(;
                 "`RuleConfig`" => "rule_author/superpowers/ruleconfig.md",
                 "Gradient accumulation" => "rule_author/superpowers/gradient_accumulation.md",
             ],
-            "Non-differentiable Points" => "nondiff_points.md",
             "Converting ZygoteRules.@adjoint to rrules" => "rule_author/converting_zygoterules.md",
             "Tips for making your package work with AD" => "rule_author/tips_for_packages.md",
             "Debug mode" => "rule_author/debug_mode.md",
@@ -70,6 +71,7 @@ makedocs(;
         ],
         "The maths" => [
             "The propagators: pushforward and pullback" => "maths/propagators.md",
+            "Non-differentiable Points" => "maths/nondiff_points.md",
             "Complex numbers" => "maths/complex.md",
             "Deriving array rules" => "maths/arrays.md",
         ],
