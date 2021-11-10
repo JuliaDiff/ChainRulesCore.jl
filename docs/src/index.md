@@ -2,7 +2,7 @@
 
 [Automatic differentiation (AD)](https://en.wikipedia.org/wiki/Automatic_differentiation) is a set of techniques for obtaining derivatives of arbitrary functions.
 There is a surprisingly large number of packages for doing AD in Julia.
-ChainRules isn't one of these packageis.
+ChainRules isn't one of these packages.
 
 The AD packages essentially combine derivatives of simple functions into derivatives of more complicated functions.
 They differ in the way they combine the derivatives, but they all require a common set of derivatives of simple functions (primitives/rules).
@@ -67,6 +67,12 @@ This propagation is call the pushforward.
 Often we will think of the `frule` as having the primal computation `y = foo(args...; kwargs...)`, and the pushforward `∂Y = pushforward(Δself, Δargs...)`,
 even though they are not present in seperate forms in the code.
 
+For example, the `frule` for `sin(x)` is:
+```julia
+function frule((_, Δx), ::typeof(sin), x)
+    return sin(x), cos(x) * Δx
+end
+```
 
 ### Reverse-mode AD rules (`rrule`s)
 
@@ -90,6 +96,13 @@ That pullback function is used like:
 `∂self, ∂args... = pullback(Δy)`
 Almost always the _pullback_ will be declared locally within the `rrule`, and will be a _closure_ over some of the other arguments, and potentially over the primal result too.
 
+For example, the `rrule` for `sin(x)` is:
+```julia
+function rrule(::typeof(sin), x)
+    sin_pullback(Δy) = (NoTangent(), cos(x)' * Δy)
+    return sin(x), sin_pullback
+end
+```
 
 !!! note "Why `rrule` returns a pullback but `frule` doesn't return a pushforward"
     While `rrule` takes only the arguments to the original function (the primal arguments) and returns a function (the pullback) that operates with the derivative information, the `frule` does it all at once.
