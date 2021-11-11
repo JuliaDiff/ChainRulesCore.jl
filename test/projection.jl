@@ -161,24 +161,39 @@ struct NoSuperType end
     end
 
     @testset "Base: NamedTuple" begin
-        pt1 = ProjectTo((a=1.0,))
-        @test pt1((a=1 + im,)) == Tangent{NamedTuple{(:a,),Tuple{Float64}}}(; a=1.0)
-        @test pt1(pt1((a=1,))) == pt1(pt1((a=1,)))    # accepts correct Tangent
-        @test pt1(Tangent{Any}(; a=1)) == pt1((a=1,)) # accepts Tangent{Any}
-        @test pt1(NoTangent()) === NoTangent()
-        @test pt1(ZeroTangent()) === ZeroTangent()
+        pt1 = @inferred(ProjectTo((a=1.0,)))
+        @test @inferred(pt1((a=1 + im,))) ==
+            Tangent{NamedTuple{(:a,),Tuple{Float64}}}(; a=1.0)
+        @test @inferred(pt1(pt1((a=1,)))) == @inferred(pt1(pt1((a=1,))))    # accepts correct Tangent
+        @test @inferred(pt1(Tangent{Any}(; a=1))) == pt1((a=1,)) # accepts Tangent{Any}
+        @test @inferred(pt1(NoTangent())) === NoTangent()
+        @test @inferred(pt1(ZeroTangent())) === ZeroTangent()
 
-        @test_throws Exception pt1((a=1, b=2)) # DimensionMismatch, wrong length
-        @test_throws Exception pt1((b=1,)) # wrong name
+        @test_throws Exception pt1((a=1, b=2)) # no projector for `b`
+        @test_throws Exception pt1((b=1,)) # no projector for `b`
 
-        pt3 = ProjectTo((a=[1, 2, 3], b=false, c=:gamma)) # partly non-differentiable
-        @test pt3((a=1:3, b=4, c=5)) ==
+        # subset is allowed (required for Diffractor)
+        @test @inferred(pt1(NamedTuple())) === Tangent{NamedTuple{(:a,),Tuple{Float64}}}()
+
+        pt3 = @inferred(ProjectTo((a=[1, 2, 3], b=false, c=:gamma))) # partly non-differentiable
+        @test @inferred(pt3((a=1:3, b=4, c=5))) ==
             Tangent{NamedTuple{(:a, :b, :c),Tuple{Vector{Int},Bool,Symbol}}}(;
             a=[1.0, 2.0, 3.0], b=NoTangent(), c=NoTangent()
         )
-        @test_throws Exception pt3((b=4, a=1:3, c=5))
 
-        @test ProjectTo((a=true, b=[false])) isa ProjectTo{NoTangent}
+        # different order
+        @test @inferred(pt3((b=4, a=1:3, c=5))) ==
+            Tangent{NamedTuple{(:a, :b, :c),Tuple{Vector{Int},Bool,Symbol}}}(;
+            b=NoTangent(), a=[1.0, 2.0, 3.0], c=NoTangent()
+        )
+
+        # only a subset
+        @test @inferred(pt3((c=5,))) ==
+            Tangent{NamedTuple{(:a, :b, :c),Tuple{Vector{Int},Bool,Symbol}}}(;
+            c=NoTangent()
+        )
+
+        @test @inferred(ProjectTo((a=true, b=[false]))) isa ProjectTo{NoTangent}
     end
 
     @testset "Base: non-diff" begin

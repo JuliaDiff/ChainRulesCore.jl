@@ -323,26 +323,42 @@ function (project::ProjectTo{<:Tangent{<:Tuple}})(dx::Tuple)
     return project_type(project)(dy...)
 end
 function (project::ProjectTo{<:Tangent{<:NamedTuple}})(dx::NamedTuple)
-    elements = backing(project)
-    len = length(elements)
-    if length(dx) != len
-        throw(
-            DimensionMismatch(
-                "named tuple with length(x) == $len cannot have a gradient with length(dx) == $(length(dx))",
-            ),
-        )
-    end
-    keys_elements = keys(elements)
-    if keys(dx) != keys_elements
-        throw(
-            ArgumentError(
-                "named tuple with keys(x) == $keys_elements cannot have a gradient with keys(dx) == $(keys(dx))",
-            ),
-        )
-    end
-    # Here map will fail if the lengths don't match, but gives a much less helpful error:
-    dy = map((f, x) -> f(x), elements, dx)
+    dy = _project_namedtuple(backing(project), dx)
     return project_type(project)(; dy...)
+end
+
+# Diffractor returns not necessarily a named tuple with all keys and of the same order as
+# the projector
+# Thus we can't use `map`
+function _project_namedtuple(f::NamedTuple{fn,ft}, x::NamedTuple{xn,xt}) where {fn,ft,xn,xt}
+    if @generated
+        vals = Any[
+            if xn[i] in fn
+                :(getfield(f, $(QuoteNode(xn[i])))(getfield(x, $(QuoteNode(xn[i])))))
+            else
+                throw(
+                    ArgumentError(
+                        "named tuple with keys(x) == $fn cannot have a gradient with key $(xn[i])",
+                    ),
+                )
+            end for i in 1:length(xn)
+        ]
+        :(NamedTuple{$xn}(($(vals...),)))
+    else
+        vals = ntuple(Val(length(xn))) do i
+            name = xn[i]
+            if name in fn
+                getfield(f, name)(getfield(x, name))
+            else
+                throw(
+                    ArgumentError(
+                        "named tuple with keys(x) == $fn cannot have a gradient with key $(xn[i])",
+                    ),
+                )
+            end
+        end
+        NamedTuple{xn}(vals)
+    end
 end
 
 function (project::ProjectTo{<:Tangent{<:Tuple}})(dx::AbstractArray)
