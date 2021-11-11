@@ -26,6 +26,28 @@ They should also have a test-only dependency on [ChainRulesTestUtils.jl](https:/
 
 Note that the packages with rules do not have to depend on AD systems, and neither do the AD systems have to depend on individual packages.
 
+## ChainRules roll-out status
+
+Numerous [packages](https://juliahub.com/ui/Packages/ChainRulesCore/G6ax7/?page=2) depend on ChainRulesCore to define rules for their functions.
+
+6 AD engines currently use ChainRules to get access to rules:
+
+[Zygote.jl](https://github.com/FluxML/Zygote.jl) is a reverse-mode AD that supports using `rrule`s, calling back into AD, and opting out of rules.
+However, its own [ZygoteRules.jl](https://github.com/FluxML/ZygoteRules.jl/) primitives (`@adjoint`s) take precedence before `rrule`s when both are defined -- even if the `@adjoint` is less specific than the `rrule`.
+Internally it uses its own set of tangent types, e.g. `nothing` instead of `NoTangent`/`ZeroTangent`.
+It also `unthunk`s every tangent.
+
+[Diffractor.jl](https://github.com/JuliaDiff/Diffractor.jl) is a forward- and reverse-mode AD that fully supports ChainRules, including calling back into AD, opting out of rules, and uses tangent types internally.
+
+[Yota](https://github.com/dfdx/Yota.jl) is a reverse-mode AD that fully supports ChainRules, including calling back into AD, opting out of rules, and uses tangent types internally.
+
+[ReverseDiff](https://github.com/JuliaDiff/ReverseDiff.jl) is a reverse-mode AD that supports using `rrule`s, but not calling back into AD and opting out of rules.
+
+[Nabla.jl](https://github.com/invenia/Nabla.jl) is a reverse-mode AD that supports using `rrule`s, but not opting out of rules, nor calling back into AD.
+
+[ReversePropagation.jl](https://github.com/dpsanders/ReversePropagation.jl) is a reverse-mode AD that supports using `rrule`s for scalar functions, but not calling back into AD and opting out of rules.
+
+
 ## Key functionality
 
 Consider a relationship $y = f(x)$, where $f$ is some function.
