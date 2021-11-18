@@ -71,7 +71,7 @@ Examples being:
 - There is only one derivative being returned, so from the fact that the user called
   `frule`/`rrule` they clearly will want to use that one.
 
-## Structs: constructors and functors
+## [Structs: constructors and functors](@id structs)
 
 To define an `frule` or `rrule` for a _function_ `foo` we dispatch on the type of `foo`, which is `typeof(foo)`.
 For example, the `rrule` signature would be like:
