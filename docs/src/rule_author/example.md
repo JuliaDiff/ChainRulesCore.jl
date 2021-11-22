@@ -1,6 +1,6 @@
 # Pedagogical Example
 
-This pedagogical example will show you how to write an `rrule` for a moderately interesting primal calculation.
+This pedagogical example will show you how to write an `rrule`.
 See [On writing good `rrule` / `frule` methods](@ref) section for more tips and gotchas.
 If you want to learn about `frule`s, you should still read and understand this example as many concepts are shared, and then look for real world `frule` examples in ChainRules.jl.
 
