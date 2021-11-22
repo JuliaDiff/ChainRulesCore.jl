@@ -23,13 +23,9 @@ Note that field `c` is ignored in the calculation.
 
 ## The `rrule`
 
-A common gotcha is forgetting to `import` the `rrule`
+The `rrule` method for our primal computation should extend the `ChainRulesCore.rrule` function.
 ```julia
-import ChainRulesCore: rrule
-```
-Then, we are able to extend it with a method for our use case
-```julia
-function rrule(::typeof(foo_mul), foo::Foo, b::AbstractArray)
+function ChainRulesCore.rrule(::typeof(foo_mul), foo::Foo, b::AbstractArray)
     y = foo_mul(foo, b)
     function foo_mul_pullback(ȳ)
         f̄ = NoTangent()
@@ -42,7 +38,7 @@ end
 ```
 Now let's examine the rule in more detail:
 ```julia
-function rrule(::typeof(foo_mul), foo::Foo, b::AbstractArray)
+function ChainRulesCore.rrule(::typeof(foo_mul), foo::Foo, b::AbstractArray)
     ...
     return y, foo_mul_pullback
 end
