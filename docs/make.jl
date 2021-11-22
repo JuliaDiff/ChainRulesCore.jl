@@ -50,6 +50,7 @@ makedocs(;
         "Introduction" => "index.md",
         "How to use ChainRules as a rule author" => [
             "Introduction" => "rule_author/intro.md",
+            "Pedagogical example" => "rule_author/example.md",
             "Tangent types" => "rule_author/tangents.md",
             #"`frule` and `rrule`" => "rule_author/rules.md", # TODO: a complete example
             "Writing good rules" => "rule_author/writing_good_rules.md",

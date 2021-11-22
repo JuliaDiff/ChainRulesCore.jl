@@ -10,7 +10,7 @@ They differ in the way they break down complicated functions into simple ones, b
 [ChainRules](https://github.com/JuliaDiff/ChainRules.jl) is an AD-independent set of rules, and a system for defining and testing rules.
 
 !!! note "What is a rule?"
-    A rule encodes knowledge about propagating derivatives, e.g. that the derivative (with respect to `x`) of `a*x` is `a`, and the derivative of `sin(x)` is `cos(x)`, etc.
+    A rule encodes knowledge about propagating derivatives, e.g. that the derivative with respect to `x` of `a*x` is `a`, and the derivative of `sin(x)` is `cos(x)`, etc.
 
 ## ChainRules ecosystem organisation
 
