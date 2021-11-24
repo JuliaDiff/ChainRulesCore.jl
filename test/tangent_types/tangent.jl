@@ -23,26 +23,6 @@ end
         @test typeof(Tangent{Tuple{}}()) == Tangent{Tuple{},Tuple{}}
     end
 
-    @testset "constructor" begin
-        t = (1.0, 2.0)
-        nt = (x=1, y=2.0)
-        d = Dict(:x => 1.0, :y => 2.0)
-        vals = [1, 2]
-
-        @test_throws ArgumentError Tangent{typeof(t),typeof(nt)}(nt)
-        @test_throws ArgumentError Tangent{typeof(t),typeof(d)}(d)
-
-        @test_throws ArgumentError Tangent{typeof(d),typeof(nt)}(nt)
-        @test_throws ArgumentError Tangent{typeof(d),typeof(t)}(t)
-
-        @test_throws ArgumentError Tangent{typeof(nt),typeof(vals)}(vals)
-        @test_throws ArgumentError Tangent{typeof(nt),typeof(d)}(d)
-        @test_throws ArgumentError Tangent{typeof(nt),typeof(t)}(t)
-
-        @test_throws ArgumentError Tangent{Foo,typeof(d)}(d)
-        @test_throws ArgumentError Tangent{Foo,typeof(t)}(t)
-    end
-
     @testset "==" begin
         @test Tangent{Foo}(; x=0.1, y=2.5) == Tangent{Foo}(; x=0.1, y=2.5)
         @test Tangent{Foo}(; x=0.1, y=2.5) == Tangent{Foo}(; y=2.5, x=0.1)
@@ -134,7 +114,7 @@ end
         @test_throws MethodError reverse(Tangent{Foo}(; x=1.0, y=2.0))
 
         d = Dict(:x => 1, :y => 2.0)
-        cdict = Tangent{typeof(d),typeof(d)}(d)
+        cdict = Tangent{Foo,typeof(d)}(d)
         @test_throws MethodError reverse(Tangent{Foo}())
     end
 
