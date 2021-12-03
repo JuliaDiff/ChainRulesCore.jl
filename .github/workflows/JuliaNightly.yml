@@ -4,7 +4,7 @@ name: JuliaNightly
 # to avoid inclusion in nightly cron build with failure notifications.
 on:
   push:
-    branches: [master]
+    branches: [main]
     tags: ["*"]
   pull_request:
 concurrency:
