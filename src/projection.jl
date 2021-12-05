@@ -287,7 +287,7 @@ end
 # Since this works like a zero-array in broadcasting, it should also accept a number:
 (project::ProjectTo{<:Tangent{<:Ref}})(dx::Number) = project(Ref(dx))
 
-# Tuple
+# Tuple and NamedTuple
 function ProjectTo(x::Tuple)
     elements = map(ProjectTo, x)
     if elements isa NTuple{<:Any,ProjectTo{<:AbstractZero}}
@@ -296,10 +296,22 @@ function ProjectTo(x::Tuple)
         return ProjectTo{Tangent{typeof(x)}}(; elements=elements)
     end
 end
+function ProjectTo(x::NamedTuple)
+    elements = map(ProjectTo, x)
+    if Tuple(elements) isa NTuple{<:Any,ProjectTo{<:AbstractZero}}
+        return ProjectTo{NoTangent}()
+    else
+        return ProjectTo{Tangent{typeof(x)}}(; elements...)
+    end
+end
+
 # This method means that projection is re-applied to the contents of a Tangent.
 # We're not entirely sure whether this is every necessary; but it should be safe,
 # and should often compile away:
-(project::ProjectTo{<:Tangent{<:Tuple}})(dx::Tangent) = project(backing(dx))
+function (project::ProjectTo{<:Tangent{<:Union{Tuple,NamedTuple}}})(dx::Tangent)
+    return project(backing(dx))
+end
+
 function (project::ProjectTo{<:Tangent{<:Tuple}})(dx::Tuple)
     len = length(project.elements)
     if length(dx) != len
@@ -310,6 +322,45 @@ function (project::ProjectTo{<:Tangent{<:Tuple}})(dx::Tuple)
     dy = map((f, x) -> f(x), project.elements, dx)
     return project_type(project)(dy...)
 end
+function (project::ProjectTo{<:Tangent{<:NamedTuple}})(dx::NamedTuple)
+    dy = _project_namedtuple(backing(project), dx)
+    return project_type(project)(; dy...)
+end
+
+# Diffractor returns not necessarily a named tuple with all keys and of the same order as
+# the projector
+# Thus we can't use `map`
+function _project_namedtuple(f::NamedTuple{fn,ft}, x::NamedTuple{xn,xt}) where {fn,ft,xn,xt}
+    if @generated
+        vals = Any[
+            if xn[i] in fn
+                :(getfield(f, $(QuoteNode(xn[i])))(getfield(x, $(QuoteNode(xn[i])))))
+            else
+                throw(
+                    ArgumentError(
+                        "named tuple with keys(x) == $fn cannot have a gradient with key $(xn[i])",
+                    ),
+                )
+            end for i in 1:length(xn)
+        ]
+        :(NamedTuple{$xn}(($(vals...),)))
+    else
+        vals = ntuple(Val(length(xn))) do i
+            name = xn[i]
+            if name in fn
+                getfield(f, name)(getfield(x, name))
+            else
+                throw(
+                    ArgumentError(
+                        "named tuple with keys(x) == $fn cannot have a gradient with key $(xn[i])",
+                    ),
+                )
+            end
+        end
+        NamedTuple{xn}(vals)
+    end
+end
+
 function (project::ProjectTo{<:Tangent{<:Tuple}})(dx::AbstractArray)
     for d in 1:ndims(dx)
         if size(dx, d) != get(length(project.elements), d, 1)
