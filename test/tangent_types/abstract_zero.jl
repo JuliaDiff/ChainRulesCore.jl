@@ -13,6 +13,11 @@
 
         @test reshape(NoTangent(), (1, :)) === NoTangent()
         @test reshape(ZeroTangent(), 2, 3, 4, 5) === ZeroTangent()
+
+        @test reverse(NoTangent()) === NoTangent()
+        @test reverse(ZeroTangent()) === ZeroTangent()
+        @test reverse(ZeroTangent(); dims=1) === ZeroTangent()
+        @test reverse(ZeroTangent(), 2, 5) === ZeroTangent()
     end
 
     @testset "ZeroTangent" begin

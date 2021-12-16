@@ -107,6 +107,9 @@
         v = [1, 2, 3]
         t = @thunk(v)
 
+        m = rand(3, 3)
+        tm = @thunk(m)
+
         if VERSION >= v"1.2"
             @test 3 == mapreduce(_ -> 1, +, t)
             @test 3 == mapreduce((_, _) -> 1, +, v, t)
@@ -120,6 +123,10 @@
         @test 1 == getindex(t, 1)
         @test_throws MutateThunkException setindex!(t, 0.0, 1)
         @test [4; 5; 6] == selectdim([1 2 3; 4 5 6], 1, 2)
+
+        @test reverse(t) == reverse(v)
+        @test reverse(t, 2) == reverse(v, 2)
+        @test reverse(tm; dims=2) == reverse(m; dims=2)
     end
 
     @testset "LinearAlgebra" begin
