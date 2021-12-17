@@ -81,6 +81,11 @@
         @test convert(Int64, ZeroTangent()) === Int64(0)
         @test convert(Float32, ZeroTangent()) === 0.0f0
         @test convert(ComplexF64, ZeroTangent()) === 0.0 + 0.0im
+
+        @test z[1] === z
+        @test z[1:3] === z
+        @test z[1, 2] === z
+        @test getindex(z) === z
     end
 
     @testset "NoTangent" begin
@@ -120,5 +125,10 @@
 
         @test convert(Int64, NoTangent()) == 0
         @test convert(Float64, NoTangent()) == 0.0
+
+        @test dne[1] === dne
+        @test dne[1:3] === dne
+        @test dne[1, 2] === dne
+        @test getindex(dne) === dne
     end
 end
