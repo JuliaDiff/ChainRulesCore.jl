@@ -5,7 +5,6 @@
 
     @testset "==" begin
         @test @thunk(3.2) == InplaceableThunk(x -> x + 3.2, @thunk(3.2))
-        @test @thunk(3.2) == 3.2
         @test 3.2 == InplaceableThunk(x -> x + 3.2, @thunk(3.2))
     end
 
