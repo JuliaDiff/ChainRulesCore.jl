@@ -116,4 +116,22 @@
         @test convert(Int64, NoTangent()) == 0
         @test convert(Float64, NoTangent()) == 0.0
     end
+
+    @testset "ambiguities" begin
+        M = @eval module M
+            using ChainRulesCore
+
+            struct X{R,S} <: Number
+                a::R
+                b::S
+                hasvalue::Bool
+
+                function X{R,S}(a, b, hv=true) where {R,S}
+                    isa(hv, Bool) || error("must be bool")
+                    return new{R,S}(a, b, hv)
+                end
+            end
+        end
+        @test isempty(detect_ambiguities(M))
+    end
 end
