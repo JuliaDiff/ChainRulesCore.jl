@@ -111,7 +111,7 @@ You can see it looks a lot like an example call to `rrule`, just with the prefix
 Probably more or less with no changes.
 [`@non_differentiable`](@ref) also lets you specify a signature in case you want to restrict non-differentiability to a certain subset of argument types.
 
-## No such thing a `literal_getproperty`
+## No such thing as `literal_getproperty`
 That is just `getproperty`, it takes `Symbol`.
 It should constant-fold.
 It likely doesn't though as Zygote doesn't play nice with the optimizer.
