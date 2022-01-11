@@ -143,15 +143,41 @@ end
 (::ProjectTo{T})(dx::Tangent{<:T}) where {T} = dx
 
 #####
+##### A related utility which wants to live nearby
+#####
+
+"""
+    is_non_differentiable(x) == is_non_differentiable(typeof(x))
+
+Returns `true` if `x` is known from its type not to have derivatives, else `false`.
+
+Should mostly agree with whether `ProjectTo(x)` maps to `AbstractZero`,
+which is what the fallback method checks. The exception is that it will not look
+inside abstractly typed containers like `x = Any[true, false]`.
+"""
+is_non_differentiable(x) = is_non_differentiable(typeof(x))
+
+is_non_differentiable(::Type{<:Number}) = false
+is_non_differentiable(::Type{<:NTuple{N,T}}) where {N,T} = is_non_differentiable(T)
+is_non_differentiable(::Type{<:AbstractArray{T}}) where {T} = is_non_differentiable(T)
+
+function is_non_differentiable(::Type{T}) where {T}  # fallback
+    PT = Base._return_type(ProjectTo, Tuple{T})  # might be Union{} if unstable
+    return isconcretetype(PT) && PT <: ProjectTo{<:AbstractZero}
+end
+
+#####
 ##### `Base`
 #####
 
 # Bool
 ProjectTo(::Bool) = ProjectTo{NoTangent}()  # same projector as ProjectTo(::AbstractZero) above
+is_non_differentiable(::Type{Bool}) = true
 
 # Other never-differentiable types
 for T in (:Symbol, :Char, :AbstractString, :RoundingMode, :IndexStyle)
     @eval ProjectTo(::$T) = ProjectTo{NoTangent}()
+    @eval is_non_differentiable(::Type{<:$T}) = true
 end
 
 # Numbers

@@ -13,7 +13,7 @@ export frule_via_ad, rrule_via_ad
 export @non_differentiable, @opt_out, @scalar_rule, @thunk, @not_implemented
 export ProjectTo, canonicalize, unthunk  # tangent operations
 export add!!  # gradient accumulation operations
-export ignore_derivatives, @ignore_derivatives
+export ignore_derivatives, @ignore_derivatives, is_non_differentiable
 # tangents
 export Tangent, NoTangent, InplaceableThunk, Thunk, ZeroTangent, AbstractZero, AbstractThunk
 
