@@ -22,6 +22,7 @@ jobs:
         os: [ubuntu-latest]
         package:
           - {user: JuliaDiff, repo: ChainRules.jl}
+          - {user: JuliaDiff, repo: ChainRulesTestUtils.jl}
           - {user: JuliaDiff, repo: ChainRulesOverloadGeneration.jl}
           - {user: JuliaMath, repo: SpecialFunctions.jl}
           - {user: invenia, repo: BlockDiagonals.jl}
