@@ -379,6 +379,12 @@ end
 
 using LinearAlgebra: AdjointAbsVec, TransposeAbsVec, AdjOrTransAbsVec
 
+# UniformScaling can represent its own cotangent
+ProjectTo(x::UniformScaling) = ProjectTo{UniformScaling}(; λ=ProjectTo(x.λ))
+ProjectTo(x::UniformScaling{Bool}) = ProjectTo(false)
+(pr::ProjectTo{UniformScaling})(dx::UniformScaling) = UniformScaling(pr.λ(dx.λ))
+(pr::ProjectTo{UniformScaling})(dx::Tangent{<:UniformScaling}) = UniformScaling(pr.λ(dx.λ))
+
 # Row vectors
 ProjectTo(x::AdjointAbsVec) = ProjectTo{Adjoint}(; parent=ProjectTo(parent(x)))
 # Note that while [1 2; 3 4]' isa Adjoint, we use ProjectTo{Adjoint} only to encode AdjointAbsVec.
