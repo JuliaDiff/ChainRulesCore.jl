@@ -188,7 +188,7 @@ end
 
 # Tangents: we prefer to reconstruct numbers, but only safe to try when their constructor
 # understands, including a mix of Zeros & reals. Other cases, we just let through:
-(project::ProjectTo{<:Complex})(dx::Tangent{<:Complex}) = project(Complex(dx.re, dx.im))
+(project::ProjectTo{<:Number})(dx::Tangent{<:Complex}) = project(Complex(dx.re, dx.im))
 (::ProjectTo{<:Number})(dx::Tangent{<:Number}) = dx
 
 # Arrays
