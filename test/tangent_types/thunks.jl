@@ -15,6 +15,8 @@
         for (i, j) in zip(a, t)
             @test i == j
         end
+
+        @test nothing === iterate(@thunk ()) == iterate(())
     end
 
     @testset "show" begin
