@@ -11,7 +11,9 @@ Base.Broadcast.broadcastable(x::AbstractThunk) = broadcastable(unthunk(x))
 
 @inline function Base.iterate(x::AbstractThunk)
     val = unthunk(x)
-    element, state = iterate(val)
+    el_and_state = iterate(val)
+    el_and_state isa Nothing && return nothing
+    element, state = el_and_state
     return element, (val, state)
 end
 
