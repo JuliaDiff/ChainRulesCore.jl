@@ -39,6 +39,8 @@ struct NoSuperType end
         # Tangents
         ProjectTo(1.0f0 + 2im)(Tangent{ComplexF64}(; re=1, im=NoTangent())) ===
         1.0f0 + 0.0f0im
+
+        @test 1.0 === ProjectTo(1.0)(Tangent{ComplexF64}(; re=1, im=NoTangent()))
     end
 
     @testset "Dual" begin # some weird Real subtype that we should basically leave alone
