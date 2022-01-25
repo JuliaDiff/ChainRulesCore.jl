@@ -98,7 +98,7 @@ But we do need to worry about at the boundary -- if that boundary point doesn't 
 
 Since we will never be asked about the left-hand side (as the primal errors), we can use just the right-hand side derivative.
 In this case giving 0.0.
-`
+
 Also nice in this case is that it agrees with the symbolic simplification of `x->exp(2log(x))` into `x->x^2`.
 
 
