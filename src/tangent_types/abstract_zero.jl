@@ -37,6 +37,8 @@ Base.sum(z::AbstractZero; dims=:) = z
 Base.reshape(z::AbstractZero, size...) = z
 Base.reverse(z::AbstractZero, args...; kwargs...) = z
 
+(::Type{<:UniformScaling})(z::AbstractZero) = z
+
 """
     ZeroTangent() <: AbstractZero
 

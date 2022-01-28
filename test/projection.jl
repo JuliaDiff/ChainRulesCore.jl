@@ -208,6 +208,13 @@ struct NoSuperType end
     ##### `LinearAlgebra`
     #####
 
+    @testset "UniformScaling" begin
+        @test ProjectTo(I)(123) === NoTangent()
+        @test ProjectTo(2 * I)(I * 3im) === 0.0 * I
+        @test ProjectTo((4 + 5im) * I)(Tangent{typeof(im * I)}(; λ = 6)) === (6.0 + 0.0im) * I
+        @test ProjectTo(7 * I)(Tangent{typeof(2I)}()) == ZeroTangent()
+    end
+
     @testset "LinearAlgebra: $adj vectors" for adj in [transpose, adjoint]
         # adjoint vectors
         padj = ProjectTo(adj([1, 2, 3]))
