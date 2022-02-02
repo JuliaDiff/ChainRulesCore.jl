@@ -85,10 +85,10 @@ struct EnzymeRuleConfig <: RuleConfig{Union{SupportsMutation, HasReverseMode, No
 ```
 
 Note: you can only depend on the presence of a feature, not its absence.
-This means we may need to define features and their compliments, when one is not the obvious default (as in the fast of [`HasReverseMode`](@ref)/[`NoReverseMode`](@ref) and [`HasForwardsMode`](@ref)/[`NoForwardsMode`](@ref).).
+This means we may need to define features and their complements, when one is not the obvious default (as in the case of [`HasReverseMode`](@ref)/[`NoReverseMode`](@ref) and [`HasForwardsMode`](@ref)/[`NoForwardsMode`](@ref).).
 
 
-Such special properties generally should only be defines in `ChainRulesCore`.
+Such special properties generally should only be defined in `ChainRulesCore`.
 (Theoretically, they could be defined elsewhere, but the AD and the package containing the rule need to load them, and ChainRulesCore is the place for things like that.)
 
 
