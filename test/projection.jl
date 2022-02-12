@@ -307,6 +307,7 @@ struct NoSuperType end
     @testset "LinearAlgebra: sparse structured matrices" begin
         pdiag = ProjectTo(Diagonal(1:3))
         @test pdiag(reshape(1:9, 3, 3)) == Diagonal([1, 5, 9])
+        @test pdiag(reshape(1:9, 3, 3, 1)) == Diagonal([1, 5, 9])
         @test pdiag(pdiag(reshape(1:9, 3, 3))) == pdiag(reshape(1:9, 3, 3))
         @test pdiag(rand(ComplexF32, 3, 3)) isa Diagonal{Float64}
         @test pdiag(Diagonal(1.0:3.0)) === Diagonal(1.0:3.0)

@@ -436,6 +436,10 @@ end
 ProjectTo(x::Diagonal) = ProjectTo{Diagonal}(; diag=ProjectTo(x.diag))
 (project::ProjectTo{Diagonal})(dx::AbstractMatrix) = Diagonal(project.diag(diag(dx)))
 (project::ProjectTo{Diagonal})(dx::Diagonal) = Diagonal(project.diag(dx.diag))
+function (project::ProjectTo{Diagonal})(dx::AbstractArray)
+    ind = diagind(size(dx,1), size(dx,2), 0)
+    return Diagonal(project.diag(dx[ind]))
+end
 function (project::ProjectTo{Diagonal})(dx::Tangent{<:Diagonal}) # structural => natural
     return dx.diag isa ArrayOrZero ? Diagonal(project.diag(dx.diag)) : dx
 end
