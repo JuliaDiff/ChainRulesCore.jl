@@ -38,12 +38,12 @@ LinearAlgebra.adjoint(z::AbstractZero, ind...) = z
 LinearAlgebra.transpose(z::AbstractZero, ind...) = z
 
 for T in (
-        :UniformScaling, :Adjoint, :Transpose, :Diagonal
+        :UniformScaling, :Adjoint, :Transpose, :Diagonal,
         :UpperTriangular, :LowerTriangular, :UpperHessenberg,
         :UnitUpperTriangular, :UnitLowerTriangular,
     )
-    VERSION < v"1.4" && f == :UpperHessenberg && continue  # not defined in 1.0
-    @eval (::Type{<:LinearAlgebra.$T})(z::AbstractZero) = z
+    VERSION < v"1.4" && T == :UpperHessenberg && continue  # not defined in 1.0
+    @eval LinearAlgebra.$T(z::AbstractZero) = z
 end
 
 LinearAlgebra.Symmetric(z::AbstractZero, uplo=:U) = z
