@@ -109,7 +109,7 @@ end
         @test NoTangent() === @inferred Base.tail(ntang1)
 
         # TODO: uncomment this once https://github.com/JuliaLang/julia/issues/35516
-        if VERSION >= v"1.8-"
+        if hasmethod(haskey, typeof(((1,2), 3)))
             @test haskey(Tangent{Tuple{Float64}}(2.0), 1) == true
         else
             @test_broken haskey(Tangent{Tuple{Float64}}(2.0), 1) == true
