@@ -6,23 +6,33 @@ This avoids allocations when `x` can be mutated in this way.
 """
 add!!(x, y) = x + y
 
-"""
-    add!!(x, t::InplacableThunk)
-
-The specialization of `add!!` for [`InplaceableThunk`](@ref) promises to only call
-`t.add!` on `x` if `x` is suitably mutable; otherwise it will be out of place.
-"""
 function add!!(x, t::InplaceableThunk)
     return if is_inplaceable_destination(x)
-        if !debug_mode()
-            t.add!(x)
-        else
+        if debug_mode()
             debug_add!(x, t)
+        else
+            t.add!(x)
         end
     else
-        x + t
+        # Can't mutate x, but this may still be more efficient:
+        add!!(unthunk(t), x)
     end
 end
+
+function add!!(x::Thunk, y::Thunk)
+    xun = unthunk(x)
+    yun = unthunk(y)
+    # We're allowed to write into either, but don't know which is writeable:
+    return if is_inplaceable_destination(xun)
+        add!!(xun, yun)
+    else
+        add!!(yun, xun)
+    end
+end
+
+add!!(x::Thunk, y::InplaceableThunk) = add!!(unthunk(x), y)  # solves ambiguity
+
+add!!(x::InplaceableThunk, y::Thunk) = add!!(unthunk(y), x)
 
 add!!(x::AbstractArray, y::Thunk) = add!!(x, unthunk(y))
 
