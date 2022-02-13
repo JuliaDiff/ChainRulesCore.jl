@@ -31,10 +31,10 @@ function add!!(x::Thunk, y::Thunk)
 end
 
 add!!(x::Thunk, y::InplaceableThunk) = add!!(unthunk(x), y)  # solves ambiguity
-
 add!!(x::InplaceableThunk, y::Thunk) = add!!(unthunk(y), x)
 
 add!!(x::AbstractArray, y::Thunk) = add!!(x, unthunk(y))
+add!!(x::Thunk, y::AbstractArray) = add!!(unthunk(x), y)
 
 function add!!(x::AbstractArray{<:Any,N}, y::AbstractArray{<:Any,N}) where {N}
     return if is_inplaceable_destination(x)
