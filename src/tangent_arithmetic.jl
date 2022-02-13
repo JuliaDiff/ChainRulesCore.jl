@@ -116,8 +116,12 @@ Base.complex(::ZeroTangent, ::ZeroTangent) = ZeroTangent()
 Base.complex(::ZeroTangent, i::Real) = complex(oftype(i, 0), i)
 Base.complex(r::Real, ::ZeroTangent) = complex(r)
 
-Base.:+(a::AbstractThunk, b::AbstractThunk) = unthunk(a) + unthunk(b)
+Base.:+(a::AbstractThunk, b::AbstractThunk) = add!!(a, b)
 Base.:*(a::AbstractThunk, b::AbstractThunk) = unthunk(a) * unthunk(b)
+
+Base.:+(a::AbstractThunk, b::AbstractArray) = add!!(a, b)
+Base.:+(a::AbstractArray, b::AbstractThunk) = add!!(b, a)
+
 for T in (:Tangent, :Any)
     @eval Base.:+(a::AbstractThunk, b::$T) = unthunk(a) + b
     @eval Base.:+(a::$T, b::AbstractThunk) = a + unthunk(b)
