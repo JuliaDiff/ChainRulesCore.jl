@@ -208,7 +208,7 @@ struct NoSuperType end
     ##### `LinearAlgebra`
     #####
 
-    @testset "UniformScaling" begin
+    VERSION >= v"1.6" && @testset "UniformScaling" begin
         @test ProjectTo(I)(123) === NoTangent()
         @test ProjectTo(2 * I)(I * 3im) === 0.0 * I
         @test ProjectTo((4 + 5im) * I)(Tangent{typeof(im * I)}(; λ = 6)) === (6.0 + 0.0im) * I
