@@ -379,11 +379,14 @@ end
 
 using LinearAlgebra: AdjointAbsVec, TransposeAbsVec, AdjOrTransAbsVec
 
-# UniformScaling can represent its own cotangent
-ProjectTo(x::UniformScaling) = ProjectTo{UniformScaling}(; λ=ProjectTo(x.λ))
-ProjectTo(x::UniformScaling{Bool}) = ProjectTo(false)
-(pr::ProjectTo{UniformScaling})(dx::UniformScaling) = UniformScaling(pr.λ(dx.λ))
-(pr::ProjectTo{UniformScaling})(dx::Tangent{<:UniformScaling}) = UniformScaling(pr.λ(dx.λ))
+if VERSION >= v"1.6" 
+    # UniformScaling can represent its own cotangent
+    # but shouldn't on Julia 1.0, as rules in CR.jl were added only after mioving to 1.6
+    ProjectTo(x::UniformScaling) = ProjectTo{UniformScaling}(; λ=ProjectTo(x.λ))
+    ProjectTo(x::UniformScaling{Bool}) = ProjectTo(false)
+    (pr::ProjectTo{UniformScaling})(dx::UniformScaling) = UniformScaling(pr.λ(dx.λ))
+    (pr::ProjectTo{UniformScaling})(dx::Tangent{<:UniformScaling}) = UniformScaling(pr.λ(dx.λ))
+end
 
 # Row vectors
 ProjectTo(x::AdjointAbsVec) = ProjectTo{Adjoint}(; parent=ProjectTo(parent(x)))
