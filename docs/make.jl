@@ -52,7 +52,8 @@ makedocs(;
             "Introduction" => "rule_author/intro.md",
             "Pedagogical example" => "rule_author/example.md",
             "Tangent types" => "rule_author/tangents.md",
-            #"`frule` and `rrule`" => "rule_author/rules.md", # TODO: a complete example
+            "Which functions need rules?" => "rule_author/which_functions_need_rules.md",
+            "Rule definition tools" => "rule_author/rule_definition_tools.md",
             "Writing good rules" => "rule_author/writing_good_rules.md",
             "Testing your rules" => "rule_author/testing.md",
             "Superpowers" => [
