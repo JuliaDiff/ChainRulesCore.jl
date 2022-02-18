@@ -122,7 +122,7 @@ ProjectTo(::Any) = identity
 
 # Thunks
 (project::ProjectTo)(dx::Thunk) = Thunk(project ∘ dx.f)
-(project::ProjectTo)(dx::InplaceableThunk) = Thunk(project ∘ dx.val.f)
+(project::ProjectTo)(dx::InplaceableThunk) = project(dx.val)
 
 # Zero
 ProjectTo(::AbstractZero) = ProjectTo{NoTangent}()  # Any x::Zero in forward pass makes this one projector,
