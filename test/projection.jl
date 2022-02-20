@@ -427,6 +427,13 @@ struct NoSuperType end
         @test unthunk(pth) === 6.0 + 0.0im
     end
 
+    @testset "InplaceableThunk" begin
+        it = InplaceableThunk(x -> x + 6, @thunk 1 + 2 + 3)
+        pt = ProjectTo(4 + 5im)(it)
+        @test pt isa Thunk
+        @test unthunk(pt) === 6.0 + 0.0im
+    end
+
     @testset "Tangent" begin
         x = 1:3.0
         dx = Tangent{typeof(x)}(; step=0.1, ref=NoTangent())
