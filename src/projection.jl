@@ -379,7 +379,7 @@ end
 
 using LinearAlgebra: AdjointAbsVec, TransposeAbsVec, AdjOrTransAbsVec
 
-if VERSION >= v"1.6" 
+if VERSION >= v"1.6"
     # UniformScaling can represent its own cotangent
     # but shouldn't on Julia 1.0, as rules in CR.jl were added only after mioving to 1.6
     ProjectTo(x::UniformScaling) = ProjectTo{UniformScaling}(; λ=ProjectTo(x.λ))
