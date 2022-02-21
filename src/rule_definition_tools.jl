@@ -490,32 +490,37 @@ Similar applies for [`frule`](@ref) and [`ChainRulesCore.no_frule`](@ref)
 For more information see the [documentation on opting out of rules](@ref opt_out).
 """
 macro opt_out(expr)
-    no_rule_target = _no_rule_target_rewrite!(deepcopy(expr))
+    no_rule_target = _target_rewrite!(deepcopy(expr), :norule)
+    rule_target = _target_rewrite!(deepcopy(expr), :rule)
 
     return @strip_linenos quote
         $(esc(no_rule_target)) = nothing
-        $(esc(expr)) = nothing
+        $(esc(rule_target)) = nothing
     end
 end
 
 "Rewrite method sig Expr for `rrule` to be for `no_rrule`, and `frule` to be `no_frule`."
-function _no_rule_target_rewrite!(expr::Expr)
+function _target_rewrite!(expr::Expr, rule_norule)
     length(expr.args) === 0 && error("Malformed method expression. $expr")
     if expr.head === :call || expr.head === :where
-        expr.args[1] = _no_rule_target_rewrite!(expr.args[1])
+        expr.args[1] = _target_rewrite!(expr.args[1], rule_norule)
     elseif expr.head == :(.) && expr.args[1] == :ChainRulesCore
-        expr = _no_rule_target_rewrite!(expr.args[end])
+        expr = _target_rewrite!(expr.args[end], rule_norule)
     else
         error("Malformed method expression. $(expr)")
     end
     return expr
 end
-_no_rule_target_rewrite!(qt::QuoteNode) = _no_rule_target_rewrite!(qt.value)
-function _no_rule_target_rewrite!(call_target::Symbol)
-    return if call_target == :rrule
+_target_rewrite!(qt::QuoteNode, rule_norule) = _target_rewrite!(qt.value, rule_norule)
+function _target_rewrite!(call_target::Symbol, rule_norule)
+    return if call_target == :rrule && rule_norule == :norule
         :(ChainRulesCore.no_rrule)
-    elseif call_target == :frule
+    elseif call_target == :rrule && rule_norule == :rule
+        :(ChainRulesCore.rrule)
+    elseif call_target == :frule && rule_norule == :norule
         :(ChainRulesCore.no_frule)
+    elseif call_target == :frule && rule_norule == :rule
+        :(ChainRulesCore.frule)
     else
         error("Unexpected opt-out target. Exprected frule or rrule, got: $call_target")
     end
