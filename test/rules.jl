@@ -182,7 +182,8 @@ _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
         @testset "frule" begin
             @test frule((NoTangent(), 1, 0), first_oa, 3.0, 4.0) == (3.0, 1)
             @test frule((NoTangent(), 1, 0), first_oa, 3.0f0, 4.0f0) === nothing
-            @test frule((NoTangent(), 1, 0), first_oa, Float16(3.0), Float16(4.0)) === nothing
+            @test frule((NoTangent(), 1, 0), first_oa, Float16(3.0), Float16(4.0)) ===
+                nothing
 
             @test !isempty(
                 Iterators.filter(methods(ChainRulesCore.no_frule)) do m
