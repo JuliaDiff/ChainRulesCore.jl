@@ -158,13 +158,25 @@ _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
             ChainRulesCore.frule(::Any, ::typeof(first_oa), x::T, y::T) where {T<:Float32}
         )
 
+        # forgotten ChainRulesCore prefix #545
+        @opt_out rrule(::typeof(first_oa), x::T, y::T) where {T<:Float16}
+        @opt_out(
+            frule(::Any, ::typeof(first_oa), x::T, y::T) where {T<:Float16}
+        )
+
         @testset "rrule" begin
             @test rrule(first_oa, 3.0, 4.0)[2](1) == (NoTangent(), 1, 0)
             @test rrule(first_oa, 3.0f0, 4.0f0) === nothing
+            @test rrule(first_oa, Float16(3.0), Float16(4.0)) === nothing
 
             @test !isempty(
                 Iterators.filter(methods(ChainRulesCore.no_rrule)) do m
                     m.sig <: Tuple{Any,typeof(first_oa),T,T} where {T<:Float32}
+                end,
+            )
+            @test !isempty(
+                Iterators.filter(methods(ChainRulesCore.no_rrule)) do m
+                    m.sig <: Tuple{Any,typeof(first_oa),T,T} where {T<:Float16}
                 end,
             )
         end
@@ -172,10 +184,16 @@ _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
         @testset "frule" begin
             @test frule((NoTangent(), 1, 0), first_oa, 3.0, 4.0) == (3.0, 1)
             @test frule((NoTangent(), 1, 0), first_oa, 3.0f0, 4.0f0) === nothing
+            @test frule((NoTangent(), 1, 0), first_oa, Float16(3.0), Float16(4.0)) === nothing
 
             @test !isempty(
                 Iterators.filter(methods(ChainRulesCore.no_frule)) do m
                     m.sig <: Tuple{Any,Any,typeof(first_oa),T,T} where {T<:Float32}
+                end,
+            )
+            @test !isempty(
+                Iterators.filter(methods(ChainRulesCore.no_frule)) do m
+                    m.sig <: Tuple{Any,Any,typeof(first_oa),T,T} where {T<:Float16}
                 end,
             )
         end
