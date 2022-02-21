@@ -160,9 +160,7 @@ _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
 
         # forgotten ChainRulesCore prefix #545
         @opt_out rrule(::typeof(first_oa), x::T, y::T) where {T<:Float16}
-        @opt_out(
-            frule(::Any, ::typeof(first_oa), x::T, y::T) where {T<:Float16}
-        )
+        @opt_out frule(::Any, ::typeof(first_oa), x::T, y::T) where {T<:Float16}
 
         @testset "rrule" begin
             @test rrule(first_oa, 3.0, 4.0)[2](1) == (NoTangent(), 1, 0)

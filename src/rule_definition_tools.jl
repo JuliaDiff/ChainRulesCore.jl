@@ -522,7 +522,7 @@ function _target_rewrite!(call_target::Symbol, rule_norule)
     elseif call_target == :frule && rule_norule == :rule
         :(ChainRulesCore.frule)
     else
-        error("Unexpected opt-out target. Exprected frule or rrule, got: $call_target")
+        error("Unexpected opt-out target. Expected frule or rrule, got: $call_target")
     end
 end
 
