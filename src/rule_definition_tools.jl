@@ -520,13 +520,13 @@ end
 _target_rewrite!(qt::QuoteNode, no_rule) = _target_rewrite!(qt.value, no_rule)
 function _target_rewrite!(call_target::Symbol, no_rule)
     return if call_target == :rrule && no_rule
-        :(ChainRulesCore.no_rrule)
+        :($ChainRulesCore.no_rrule)
     elseif call_target == :rrule && !no_rule
-        :(ChainRulesCore.rrule)
+        :($ChainRulesCore.rrule)
     elseif call_target == :frule && no_rule
-        :(ChainRulesCore.no_frule)
+        :($ChainRulesCore.no_frule)
     elseif call_target == :frule && !no_rule
-        :(ChainRulesCore.frule)
+        :($ChainRulesCore.frule)
     else
         error("Unexpected opt-out target. Expected frule or rrule, got: $call_target")
     end
