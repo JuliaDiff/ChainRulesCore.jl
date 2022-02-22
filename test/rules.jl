@@ -158,7 +158,8 @@ _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
             ChainRulesCore.frule(::Any, ::typeof(first_oa), x::T, y::T) where {T<:Float32}
         )
 
-        # forgotten ChainRulesCore prefix #545
+        # Declared without using the ChainRulesCore namespace qualification
+        # see https://github.com/JuliaDiff/ChainRulesCore.jl/issues/545
         @opt_out rrule(::typeof(first_oa), x::T, y::T) where {T<:Float16}
         @opt_out frule(::Any, ::typeof(first_oa), x::T, y::T) where {T<:Float16}
 
