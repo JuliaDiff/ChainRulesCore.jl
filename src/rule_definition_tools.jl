@@ -490,8 +490,8 @@ Similar applies for [`frule`](@ref) and [`ChainRulesCore.no_frule`](@ref)
 For more information see the [documentation on opting out of rules](@ref opt_out).
 """
 macro opt_out(expr)
-    no_rule_target = _target_rewrite!(deepcopy(expr), :norule)
-    rule_target = _target_rewrite!(deepcopy(expr), :rule)
+    no_rule_target = _target_rewrite!(deepcopy(expr), true)
+    rule_target = _target_rewrite!(deepcopy(expr), false)
 
     return @strip_linenos quote
         $(esc(no_rule_target)) = nothing
@@ -499,27 +499,33 @@ macro opt_out(expr)
     end
 end
 
-"Rewrite method sig Expr for `rrule` to be for `no_rrule`, and `frule` to be `no_frule`."
-function _target_rewrite!(expr::Expr, rule_norule)
+"""
+    _target_rewrite!(expr::Expr, no_rule)
+
+Rewrite method sig `expr` for `rrule` to be for `no_rrule` or `ChainRulesCore.rrule`
+(with the CRC namespace qualification), depending on the `no_rule` argument.
+Does the equivalent for `frule`.
+"""
+function _target_rewrite!(expr::Expr, no_rule)
     length(expr.args) === 0 && error("Malformed method expression. $expr")
     if expr.head === :call || expr.head === :where
-        expr.args[1] = _target_rewrite!(expr.args[1], rule_norule)
+        expr.args[1] = _target_rewrite!(expr.args[1], no_rule)
     elseif expr.head == :(.) && expr.args[1] == :ChainRulesCore
-        expr = _target_rewrite!(expr.args[end], rule_norule)
+        expr = _target_rewrite!(expr.args[end], no_rule)
     else
         error("Malformed method expression. $(expr)")
     end
     return expr
 end
-_target_rewrite!(qt::QuoteNode, rule_norule) = _target_rewrite!(qt.value, rule_norule)
-function _target_rewrite!(call_target::Symbol, rule_norule)
-    return if call_target == :rrule && rule_norule == :norule
+_target_rewrite!(qt::QuoteNode, no_rule) = _target_rewrite!(qt.value, no_rule)
+function _target_rewrite!(call_target::Symbol, no_rule)
+    return if call_target == :rrule && no_rule
         :(ChainRulesCore.no_rrule)
-    elseif call_target == :rrule && rule_norule == :rule
+    elseif call_target == :rrule && !no_rule
         :(ChainRulesCore.rrule)
-    elseif call_target == :frule && rule_norule == :norule
+    elseif call_target == :frule && no_rule
         :(ChainRulesCore.no_frule)
-    elseif call_target == :frule && rule_norule == :rule
+    elseif call_target == :frule && !no_rule
         :(ChainRulesCore.frule)
     else
         error("Unexpected opt-out target. Expected frule or rrule, got: $call_target")
