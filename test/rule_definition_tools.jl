@@ -285,7 +285,7 @@ end
 # workaround for https://github.com/domluna/JuliaFormatter.jl/issues/484
 module IsolatedModuleForTestingScoping
     # check that rules can be defined by macros without any additional imports
-    using ChainRulesCore: @scalar_rule, @non_differentiable
+    using ChainRulesCore: @scalar_rule, @non_differentiable, @opt_out
 
     # ensure that functions, types etc. in module `ChainRulesCore` can't be resolved
     const ChainRulesCore = nothing
@@ -303,11 +303,20 @@ module IsolatedModuleForTestingScoping
     my_id(x) = x
     @scalar_rule(my_id(x), 1.0)
 
+    # @opt_out
+    first_oa(x, y) = x
+    @scalar_rule(first_oa(x, y), (1, 0))
+    # Declared without using the ChainRulesCore namespace qualification
+    # see https://github.com/JuliaDiff/ChainRulesCore.jl/issues/545
+    @opt_out rrule(::typeof(first_oa), x::T, y::T) where {T<:Float16}
+    @opt_out frule(::Any, ::typeof(first_oa), x::T, y::T) where {T<:Float16}
+
     module IsolatedSubmodule
         # check that rules defined in isolated module without imports can be called
         # without errors
         using ChainRulesCore: frule, rrule, ZeroTangent, NoTangent, derivatives_given_output
-        using ..IsolatedModuleForTestingScoping: fixed, fixed_kwargs, my_id
+        using ChainRulesCore: no_rrule, no_frule
+        using ..IsolatedModuleForTestingScoping: fixed, fixed_kwargs, my_id, first_oa
         using Test
 
         @testset "@non_differentiable" begin
@@ -338,6 +347,25 @@ module IsolatedModuleForTestingScoping
             @test f_pullback(Δy) == (NoTangent(), Δy)
 
             @test derivatives_given_output(y, my_id, x) == ((1.0,),)
+        end
+
+        @testset "@optout" begin
+            # rrule
+            @test rrule(first_oa, Float16(3.0), Float16(4.0)) === nothing
+            @test !isempty(
+                Iterators.filter(methods(no_rrule)) do m
+                    m.sig <: Tuple{Any,typeof(first_oa),T,T} where {T<:Float16}
+                end,
+            )
+
+            # frule
+            @test frule((NoTangent(), 1, 0), first_oa, Float16(3.0), Float16(4.0)) ===
+                nothing
+            @test !isempty(
+                Iterators.filter(methods(no_frule)) do m
+                    m.sig <: Tuple{Any,Any,typeof(first_oa),T,T} where {T<:Float16}
+                end,
+            )
         end
     end
 end
