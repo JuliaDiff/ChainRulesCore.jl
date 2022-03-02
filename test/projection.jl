@@ -287,11 +287,9 @@ struct NoSuperType end
         @test pupp(rand(ComplexF32, 3, 3, 1)) isa UpperTriangular{Float64}
         @test ProjectTo(UpperTriangular(randn(3, 3) .> 0))(randn(3, 3)) == NoTangent()
 
-        if VERSION >= v"1.4" # not sure 1.4 exactly!
-            phess = ProjectTo(UpperHessenberg(rand(3, 3)))
-            @test phess(reshape(1:9,3,3)) == [1 4 7; 2 5 8; 0 6 9]
-            @test phess(reshape(1:9,3,3) .+ im) isa UpperHessenberg{Float64}
-        end
+        phess = ProjectTo(UpperHessenberg(rand(3, 3)))
+        @test phess(reshape(1:9,3,3)) == [1 4 7; 2 5 8; 0 6 9]
+        @test phess(reshape(1:9,3,3) .+ im) isa UpperHessenberg{Float64}
 
         pdu = ProjectTo(UnitLowerTriangular(rand(3, 3)))
         # NB, since the diagonal is constant 1, its gradient is zero:
@@ -494,7 +492,7 @@ struct NoSuperType end
         @test eval(Meta.parse(str))(ones(1, 3)) isa Adjoint{Float64,Vector{Float64}}
     end
 
-    VERSION > v"1.1" && @testset "allocation tests" begin
+    @testset "allocation tests" begin
         # For sure these fail on Julia 1.0, not sure about 1.3 etc.
         # We only really care about current stable anyway
         # Each "@test 33 > ..." is zero on nightly, 32 on 1.5.

@@ -472,7 +472,6 @@ end
 
 # Triangular
 for UL in (:UpperTriangular, :LowerTriangular, :UpperHessenberg)
-    VERSION < v"1.4" && UL == :UpperHessenberg && continue  # not defined in 1.0
     @eval begin
         ProjectTo(x::$UL) = ProjectTo{$UL}(; data=ProjectTo(parent(x)))
         (project::ProjectTo{$UL})(dx::AbstractArray) = $UL(project.data(dx))
@@ -499,10 +498,10 @@ end
 # Subspaces which aren't subtypes, like Diagonal inside Symmetric above:
 (project::ProjectTo{UpperTriangular})(dx::Diagonal) = project.data(dx)
 (project::ProjectTo{LowerTriangular})(dx::Diagonal) = project.data(dx)
-if VERSION >= v"1.4"
-    (project::ProjectTo{UpperHessenberg})(dx::Diagonal) = project.data(dx)
-    (project::ProjectTo{UpperHessenberg})(dx::UpperTriangular) = project.data(dx)
-end
+
+(project::ProjectTo{UpperHessenberg})(dx::Diagonal) = project.data(dx)
+(project::ProjectTo{UpperHessenberg})(dx::UpperTriangular) = project.data(dx)
+
 (project::ProjectTo{UnitUpperTriangular})(dx::Diagonal) = NoTangent()
 (project::ProjectTo{UnitLowerTriangular})(dx::Diagonal) = NoTangent()
 
