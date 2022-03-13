@@ -295,9 +295,11 @@ function propagation_expr(Δs, ∂s, _conj=false, proj=identity)
     # Apply `muladd` iteratively.
     # Explicit multiplication is only performed for the first pair of partial and gradient.
     (∂s_1, Δs_1), _∂s_Δs_tail = Iterators.peel(zip(_∂s, Δs))
-    init_expr = :($∂s_1 * $Δs_1)
+    # zero gradients are treated as hard zeros. This avoids propagation of NaNs when
+    # partials are non-finite
+    init_expr = :(ifelse(iszero($Δs_1), zero($∂s_1), $∂s_1) * $Δs_1)
     summed_∂_mul_Δs = foldl(_∂s_Δs_tail; init=init_expr) do ex, (∂s_i, Δs_i)
-        :(muladd($∂s_i, $Δs_i, $ex))
+        :(muladd(ifelse(iszero($Δs_i), zero($∂s_i), $∂s_i), $Δs_i, $ex))
     end
     return :($proj($summed_∂_mul_Δs))
 end
