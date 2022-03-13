@@ -256,6 +256,29 @@ end
             @test (NoTangent(), 0.0 - 1.0im) === rrule(make_imaginary, 2.0im)[2](1.0)
         end
 
+        @testset "@scalar_rule strong zero (co)tangents" begin
+            suminv(x, y) = inv(x) + inv(y)
+            @scalar_rule suminv(x, y) (-(inv(x)^2), -(inv(y)^2))
+
+            @test frule((NoTangent(), 1.0, 1.0), suminv, 0.0, 1.0) === (Inf, -Inf)
+            @test frule((NoTangent(), ZeroTangent(), 1.0), suminv, 0.0, 1.0) === (Inf, -1.0)
+            @test frule((NoTangent(), 0.0, 1.0), suminv, 0.0, 1.0) === (Inf, -1.0)            
+
+            @test frule((NoTangent(), 1.0, 1.0), suminv, 1.0, 0.0) === (Inf, -Inf)
+            @test frule((NoTangent(), 1.0, ZeroTangent()), suminv, 1.0, 0.0) === (Inf, -1.0)
+            @test frule((NoTangent(), 1.0, 0.0), suminv, 1.0, 0.0) === (Inf, -1.0)
+
+            @test rrule(suminv, 0.0, 1.0)[2](1.0) === (NoTangent(), -Inf, -1.0)
+            @test rrule(suminv, 0.0, 1.0)[2](ZeroTangent()) ===
+                (NoTangent(), ZeroTangent(), ZeroTangent())
+            @test rrule(suminv, 0.0, 1.0)[2](0.0) === (NoTangent(), 0.0, 0.0)
+
+            @test rrule(suminv, 1.0, 0.0)[2](1.0) === (NoTangent(), -1.0, -Inf)
+            @test rrule(suminv, 1.0, 0.0)[2](ZeroTangent()) ===
+                (NoTangent(), ZeroTangent(), ZeroTangent())
+            @test rrule(suminv, 1.0, 0.0)[2](0.0) === (NoTangent(), 0.0, 0.0)
+        end
+
         @testset "Regression tests against #276 and #265" begin
             # https://github.com/JuliaDiff/ChainRulesCore.jl/pull/276
             # https://github.com/JuliaDiff/ChainRulesCore.jl/pull/265
