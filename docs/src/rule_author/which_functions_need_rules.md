@@ -29,7 +29,7 @@ For example,
 ```julia
 function addone(a::AbstractArray)
     b = similar(a)
-    b .+= 1
+    b .= a .+ 1
     return sum(b)
 end
 ```
