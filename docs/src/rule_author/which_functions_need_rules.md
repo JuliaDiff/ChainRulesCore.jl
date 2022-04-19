@@ -55,7 +55,7 @@ julia> gradient(addone, a)
 ([1.0, 1.0, 1.0],)
 ```
 Notice that `addone(a)` mutates another array `b` internally, but **not** its input.
-This is commonly done in less trivial functions, and is often what Zygote's `Mutating arrays is not supported` error is telling you.
+This is commonly done in less trivial functions, and is often what Zygote's `Mutating arrays is not supported` error is telling you,
 even though you did not intend to mutate anything.
 Functions which mutate their own input are much more problematic.
 These are the ones named (by convention) with an exclamation mark, such as `fill!(a, x)` or `push!(a, x)`.
