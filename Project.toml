@@ -1,6 +1,6 @@
 name = "ChainRulesCore"
 uuid = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
-version = "1.14.0"
+version = "1.15.0"
 
 [deps]
 Compat = "34da2185-b29b-5c13-b0c7-acf172513d20"
@@ -9,7 +9,7 @@ SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [compat]
 BenchmarkTools = "0.5"
-Compat = "2, 3"
+Compat = "2, 3, 4"
 FiniteDifferences = "0.10"
 OffsetArrays = "1"
 StaticArrays = "0.11, 0.12, 1"
