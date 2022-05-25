@@ -93,5 +93,7 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/JuliaDiff/ChainRulesCore.jl.git", devbranch=devbranch, push_preview=true
+    repo="github.com/JuliaDiff/ChainRulesCore.jl.git",
+    devbranch=devbranch,
+    push_preview=true,
 )
