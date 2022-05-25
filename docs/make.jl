@@ -5,6 +5,8 @@ using Documenter
 using DocThemeIndigo
 using Markdown
 
+const devbranch = "main"
+
 DocMeta.setdocmeta!(
     ChainRulesCore,
     :DocTestSetup,
@@ -28,6 +30,7 @@ makedocs(;
     format=Documenter.HTML(;
         prettyurls=false,
         assets=[indigo],
+        edit_link=devbranch,
         mathengine=MathJax3(
             Dict(
                 :tex => Dict(
@@ -90,5 +93,5 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/JuliaDiff/ChainRulesCore.jl.git", devbranch="main", push_preview=true
+    repo="github.com/JuliaDiff/ChainRulesCore.jl.git", devbranch=devbranch, push_preview=true
 )
