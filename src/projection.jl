@@ -207,7 +207,7 @@ _eltype_projectto(::Type{<:Irrational}) = ProjectTo{Real}()
 
 # In other cases, store a projector per element:
 function ProjectTo(xs::AbstractArray)
-    elements = map(ProjectTo, xs)
+    elements = ProjectTo.(xs)
     if elements isa AbstractArray{<:ProjectTo{<:AbstractZero}}
         return ProjectTo{NoTangent}()  # short-circuit if all elements project to zero
     else
