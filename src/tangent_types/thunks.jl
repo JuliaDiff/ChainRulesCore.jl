@@ -186,7 +186,7 @@ with a field for each variable used in the expression, and call overloaded.
 Do not use `@thunk` if this would be equal or more work than actually evaluating the expression itself.
 This is commonly the case for scalar operators.
 
-For more details see the manual section [on using thunks effectively](http://www.juliadiff.org/ChainRulesCore.jl/dev/writing_good_rules.html#Use-Thunks-appropriately-1)
+For more details see the manual section [on using thunks effectively](https://juliadiff.org/ChainRulesCore.jl/dev/rule_author/writing_good_rules.html#Use-Thunks-appropriately).
 """
 struct Thunk{F} <: AbstractThunk
     f::F
