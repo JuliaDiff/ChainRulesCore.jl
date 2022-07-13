@@ -107,6 +107,10 @@ struct NoSuperType end
         @test Tuple(ProjectTo(Any[1, 2 + 3im])(1:2)) === (1.0, 2.0 + 0.0im)
         @test ProjectTo(Any[true, false]) isa ProjectTo{NoTangent}
 
+        # projecting other things should still infer
+        @inferred ProjectTo([one, one])
+        @inferred ProjectTo(["x", "y"])
+
         # empty arrays
         @test isempty(ProjectTo([])(1:0))
         @test_throws DimensionMismatch ProjectTo(Int[])([2])
