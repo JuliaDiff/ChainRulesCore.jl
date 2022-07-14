@@ -230,7 +230,7 @@ unthunk(x::InplaceableThunk) = unthunk(x.val)
 function Base.show(io::IO, x::InplaceableThunk)
     print(io, "InplaceableThunk(")
     str = sprint(show, x.add!, context = io)
-    ind = findfirst("var\"#", str)
+    ind = findfirst("var\"#", str)  # look for auto-generated function names, often with huge types
     if isnothing(ind)
         printstyled(io, str, color=:light_black)
     else

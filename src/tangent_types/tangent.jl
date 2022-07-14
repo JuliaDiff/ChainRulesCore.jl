@@ -79,7 +79,7 @@ function Base.show(io::IO, tangent::Tangent{P}) where {P}
     i = findfirst('{', str)
     if isnothing(i)
         print(io, str)
-    else
+    else  # for Tangent{T{A,B,C}}(stuff), print {A,B,C} in grey, and trim this part if longer than a line:
         print(io, str[1:prevind(str, i)])
         if length(str) < 80
             printstyled(io, str[i:end], color=:light_black)

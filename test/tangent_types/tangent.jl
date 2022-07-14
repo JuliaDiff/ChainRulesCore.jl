@@ -386,6 +386,6 @@ end
         nt2 = (x=t3, y=t3)
         tang = ProjectTo(nt2)(nt2)  # moderately complicated Tangent
         @test contains(sprint(show, tang), "...}(x = Tangent")  # gets shortened
-        @test contains(sprint(show, tang), "Tangent{Tuple{Int64, Int64, Int64}}")  # inner piece
+        @test contains(sprint(show, tang), "Tangent{Tuple{$Int, $Int, $Int}}")  # inner piece appears whole
     end
 end
