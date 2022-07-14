@@ -382,10 +382,10 @@ end
     end
     
     @testset "printing" begin
-        t3 = (1, 2, 3)
-        nt2 = (x=t3, y=t3)
-        tang = ProjectTo(nt2)(nt2)  # moderately complicated Tangent
+        t5 = Tuple(rand(3))
+        nt3 = (x=t5, y=t5, z=nothing)
+        tang = ProjectTo(nt3)(nt3)  # moderately complicated Tangent
         @test contains(sprint(show, tang), "...}(x = Tangent")  # gets shortened
-        @test contains(sprint(show, tang), "Tangent{Tuple{$Int, $Int, $Int}}")  # inner piece appears whole
+        @test contains(sprint(show, tang), sprint(show, tang.x))  # inner piece appears whole
     end
 end
