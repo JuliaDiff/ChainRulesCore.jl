@@ -75,7 +75,18 @@ Base.hash(a::Tangent, h::UInt) = Base.hash(backing(canonicalize(a)), h)
 
 function Base.show(io::IO, tangent::Tangent{P}) where {P}
     print(io, "Tangent{")
-    show(io, P)
+    str = sprint(show, P, context = io)
+    i = findfirst('{', str)
+    if isnothing(i)
+        print(io, str)
+    else  # for Tangent{T{A,B,C}}(stuff), print {A,B,C} in grey, and trim this part if longer than a line:
+        print(io, str[1:prevind(str, i)])
+        if length(str) < 80
+            printstyled(io, str[i:end], color=:light_black)
+        else
+           printstyled(io, str[i:prevind(str, 80)], "...", color=:light_black) 
+        end
+    end
     print(io, "}")
     if isempty(backing(tangent))
         print(io, "()")  # so it doesn't show `NamedTuple()`

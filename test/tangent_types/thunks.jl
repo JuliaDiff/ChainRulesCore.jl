@@ -190,4 +190,16 @@
         @test scal!(2, 2.0, v, 1) == scal!(2, @thunk(2.0), v, 1)
         @test_throws MutateThunkException LAPACK.trsyl!('C', 'C', m, m, @thunk(m))
     end
+    
+    @testset "printing" begin
+        @test !contains(sprint(show, @thunk 1+1), "...")  # short thunks not abbreviated
+        th = let x = rand(100)
+            @thunk x .+ x'
+        end
+        @test contains(sprint(show, th), "...")  # but long ones are
+        
+        @test contains(sprint(show, InplaceableThunk(mul!, th)), "mul!")  # named functions left in InplaceableThunk
+        str = sprint(show, InplaceableThunk(z -> z .+ ones(100), th))
+        @test length(findall("...", str)) == 2  # now both halves shortened
+    end
 end

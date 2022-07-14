@@ -380,4 +380,12 @@ end
         c = Tangent{typeof(nt)}(; a=NoTangent(), b=0.1)
         @test nt + c == (; a=1, b=2.1)
     end
+    
+    @testset "printing" begin
+        t5 = Tuple(rand(3))
+        nt3 = (x=t5, y=t5, z=nothing)
+        tang = ProjectTo(nt3)(nt3)  # moderately complicated Tangent
+        @test contains(sprint(show, tang), "...}(x = Tangent")  # gets shortened
+        @test contains(sprint(show, tang), sprint(show, tang.x))  # inner piece appears whole
+    end
 end
