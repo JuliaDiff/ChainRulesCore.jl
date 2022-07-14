@@ -197,11 +197,11 @@ end
 function Base.show(io::IO, x::Thunk)
     print(io, "Thunk(")
     str = sprint(show, x.f, context = io)  # often this name is like "ChainRules.var"#1398#1403"{Matrix{Float64}, Matrix{Float64}}"
-    ind = findfirst(".var\"#", str)
-    if isnothing(ind)
+    ind = findfirst("var\"#", str)
+    if isnothing(ind) || length(str) < 80
         printstyled(io, str, color=:light_black)
     else
-        printstyled(io, str[1:ind[6]], "...", color=:light_black)
+        printstyled(io, str[1:ind[5]], "...", color=:light_black)
     end
     print(io, ")")
 end
@@ -230,11 +230,11 @@ unthunk(x::InplaceableThunk) = unthunk(x.val)
 function Base.show(io::IO, x::InplaceableThunk)
     print(io, "InplaceableThunk(")
     str = sprint(show, x.add!, context = io)
-    ind = findfirst(".var\"#", str)
+    ind = findfirst("var\"#", str)
     if isnothing(ind)
         printstyled(io, str, color=:light_black)
     else
-        printstyled(io, str[1:ind[6]], "...", color=:light_black)
+        printstyled(io, str[1:ind[5]], "...", color=:light_black)
     end
     print(io, ", ")
     show(io, x.val)

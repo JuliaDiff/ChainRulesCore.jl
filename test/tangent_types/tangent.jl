@@ -380,4 +380,12 @@ end
         c = Tangent{typeof(nt)}(; a=NoTangent(), b=0.1)
         @test nt + c == (; a=1, b=2.1)
     end
+    
+    @testset "printing" begin
+        t3 = (1, 2, 3)
+        nt2 = (x=t3, y=t3)
+        tang = ProjectTo(nt2)(nt2)  # moderately complicated Tangent
+        @test contains(sprint(show, tang), "...}(x = Tangent")  # gets shortened
+        @test contains(sprint(show, tang), "Tangent{Tuple{Int64, Int64, Int64}}")  # inner piece
+    end
 end
