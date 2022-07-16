@@ -283,7 +283,11 @@ end
 (project::ProjectTo{<:Tangent{<:Ref}})(dx::Tangent) = project(Ref(first(backing(dx))))
 function (project::ProjectTo{<:Tangent{<:Ref}})(dx::Ref)
     dy = project.x(dx[])
-    return project_type(project)(; x=dy)
+    if dy isa AbstractZero
+        return NoTangent()
+    else
+        return project_type(project)(; x=dy)
+    end
 end
 # Since this works like a zero-array in broadcasting, it should also accept a number:
 (project::ProjectTo{<:Tangent{<:Ref}})(dx::Number) = project(Ref(dx))
@@ -321,7 +325,11 @@ function (project::ProjectTo{<:Tangent{<:Tuple}})(dx::Tuple)
     end
     # Here map will fail if the lengths don't match, but gives a much less helpful error:
     dy = map((f, x) -> f(x), project.elements, dx)
-    return project_type(project)(dy...)
+    if all(d -> d isa AbstractZero, dy)
+        return NoTangent()
+    else
+        return project_type(project)(dy...)
+    end
 end
 function (project::ProjectTo{<:Tangent{<:NamedTuple}})(dx::NamedTuple)
     dy = _project_namedtuple(backing(project), dx)
@@ -370,7 +378,11 @@ function (project::ProjectTo{<:Tangent{<:Tuple}})(dx::AbstractArray)
     end
     dy = reshape(dx, axes(project.elements))  # allows for dx::OffsetArray
     dz = ntuple(i -> project.elements[i](dy[i]), length(project.elements))
-    return project_type(project)(dz...)
+    if all(d -> d isa AbstractZero, dy)
+        return NoTangent()
+    else
+        return project_type(project)(dz...)
+    end
 end
 
 
