@@ -99,8 +99,10 @@ end
 Base.first(tangent::Tangent{P,T}) where {P,T<:Union{Tuple,NamedTuple}} = first(backing(canonicalize(tangent)))
 Base.last(tangent::Tangent{P,T}) where {P,T<:Union{Tuple,NamedTuple}} = last(backing(canonicalize(tangent)))
 
-Base.tail(tangent::Tangent{P}) where {P<:Tuple} = Tangent{_tailtype(P)}(Base.tail(backing(tangent))...)
+Base.tail(t::Tangent{P}) where {P<:Tuple} = Tangent{_tailtype(P)}(Base.tail(backing(canonicalize(t)))...)
 @generated _tailtype(::Type{P}) where {P<:Tuple} = Tuple{P.parameters[2:end]...}
+Base.tail(t::Tangent{<:Tuple{Any}}) = NoTangent()
+Base.tail(t::Tangent{<:Tuple{}}) = NoTangent()
 
 function Base.getindex(tangent::Tangent{P,T}, idx::Int) where {P,T<:Union{Tuple,NamedTuple}}
     back = backing(canonicalize(tangent))
