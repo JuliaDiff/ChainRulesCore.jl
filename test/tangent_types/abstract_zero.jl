@@ -86,6 +86,10 @@
         @test z[1:3] === z
         @test z[1, 2] === z
         @test getindex(z) === z
+        
+        @test first(z) === z
+        @test last(z) === z
+        @test Base.tail(z) === z
     end
 
     @testset "NoTangent" begin

@@ -16,6 +16,13 @@
 
         @test nothing === iterate(@thunk ()) == iterate(())
     end
+    
+    @testset "first, last, tail" begin
+        @test first(@thunk (1,2,3) .+ 4) === 5
+        @test last(@thunk (1,2,3) .+ 4) === 7
+        @test Base.tail(@thunk (1,2,3) .+ 4) === (6, 7)
+        @test Base.tail(@thunk NoTangent() * 5) === NoTangent()
+    end
 
     @testset "show" begin
         rep = repr(Thunk(rand))
