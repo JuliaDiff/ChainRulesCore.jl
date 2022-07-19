@@ -99,6 +99,14 @@ end
         @test getproperty(Tangent{NT}(; a=(@thunk 2.0^2)), :b) == ZeroTangent()
         @test getproperty(Tangent{NT}(; b=(@thunk 2.0^2)), 1) == ZeroTangent()
         @test getproperty(Tangent{NT}(; b=(@thunk 2.0^2)), 2) == 4.0
+        
+        @test first(Tangent{NT}(; a=(@thunk 2.0^2))) isa Thunk
+        @test unthunk(first(Tangent{NT}(; a=(@thunk 2.0^2)))) == 4.0
+        @test last(Tangent{NT}(; a=(@thunk 2.0^2))) isa ZeroTangent
+        
+        ntang1 = @inferred Base.tail(Tangent{NT}(; b=(@thunk 2.0^2)))
+        @test ntang1 isa Tangent{<:NamedTuple{(:b,)}}
+        @test NoTangent() === @inferred Base.tail(ntang1)
 
         # TODO: uncomment this once https://github.com/JuliaLang/julia/issues/35516
         if VERSION >= v"1.8-"
