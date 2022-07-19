@@ -96,6 +96,12 @@ function Base.show(io::IO, tangent::Tangent{P}) where {P}
     end
 end
 
+Base.first(tangent::Tangent{P,T}) where {P,T<:Union{Tuple,NamedTuple}} = first(backing(canonicalize(tangent)))
+Base.last(tangent::Tangent{P,T}) where {P,T<:Union{Tuple,NamedTuple}} = last(backing(canonicalize(tangent)))
+
+Base.tail(tangent::Tangent{P}) where {P<:Tuple} = Tangent{_tailtype(P)}(Base.tail(backing(tangent))...)
+@generated _tailtype(::Type{P}) where {P<:Tuple} = Tuple{P.parameters[2:end]...}
+
 function Base.getindex(tangent::Tangent{P,T}, idx::Int) where {P,T<:Union{Tuple,NamedTuple}}
     back = backing(canonicalize(tangent))
     return unthunk(getfield(back, idx))
@@ -127,6 +133,7 @@ end
 
 Base.iterate(tangent::Tangent, args...) = iterate(backing(tangent), args...)
 Base.length(tangent::Tangent) = length(backing(tangent))
+
 Base.eltype(::Type{<:Tangent{<:Any,T}}) where {T} = eltype(T)
 function Base.reverse(tangent::Tangent)
     rev_backing = reverse(backing(tangent))

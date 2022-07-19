@@ -78,6 +78,13 @@ end
         @test getindex(Tangent{Tuple{Float64}}(@thunk 2.0^2), 1) == 4.0
         @test getproperty(Tangent{Tuple{Float64}}(2.0), 1) == 2.0
         @test getproperty(Tangent{Tuple{Float64}}(@thunk 2.0^2), 1) == 4.0
+        
+        tang3 = Tangent{Tuple{Float64, String, Vector{Float64}}}(1.0, NoTangent(), @thunk [3.0] .+ 4)
+        @test @inferred(first(tang3)) === tang3[1] === 1.0
+        @test @inferred(last(tang3)) isa Thunk
+        @test unthunk(last(tang3)) == [7.0]
+        @test Tuple(@inferred Base.tail(tang3))[1] === NoTangent()
+        @test Tuple(Base.tail(tang3))[end] isa Thunk
 
         NT = NamedTuple{(:a, :b),Tuple{Float64,Float64}}
         @test getindex(Tangent{NT}(; a=(@thunk 2.0^2)), :a) == 4.0
