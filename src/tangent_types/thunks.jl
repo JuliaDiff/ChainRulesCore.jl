@@ -127,6 +127,9 @@ function LinearAlgebra.LAPACK.trsyl!(transa, transb, A, B, C::AbstractThunk, isg
     return throw(MutateThunkException())
 end
 
+@inline _usethunks() = true
+rrule(::typeof(_usethunks)) = false, _ -> (NoTangent(),)
+
 """
     @thunk expr
 
@@ -136,7 +139,7 @@ macro thunk(body)
     # Basically `:(Thunk(() -> $(esc(body))))` but use the location where it is defined.
     # so we get useful stack traces if it errors.
     func = Expr(:->, Expr(:tuple), Expr(:block, __source__, body))
-    return :(Thunk($(esc(func))))
+    return :(_usethunks() ? Thunk($(esc(func))) : $(esc(body)))
 end
 
 """
@@ -228,6 +231,8 @@ struct InplaceableThunk{T<:Thunk,F} <: AbstractThunk
     add!::F
     val::T
 end
+
+InplaceableThunk(add!, val) = val  # if _usethunks() disables @thunk, then bypass this too 
 
 unthunk(x::InplaceableThunk) = unthunk(x.val)
 
