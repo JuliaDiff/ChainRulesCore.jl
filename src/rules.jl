@@ -103,7 +103,6 @@ end
 (a::ApplyBack)(dy) = a.back(dy)
 (a::ApplyBack)(dy::ProductTangent) = ProductTangent(map(a.back, dy.partials))  # or some Tangent recursion?
 
-
 """
     rrule([::RuleConfig,] f, x...)
 
