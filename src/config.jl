@@ -90,7 +90,6 @@ See also: [`frule_via_ad`](@ref), [`RuleConfig`](@ref) and the documentation on
 """
 function rrule_via_ad end
 
-
 abstract type ChunkedRuleCapability end
 """
 HasChunkedMode
