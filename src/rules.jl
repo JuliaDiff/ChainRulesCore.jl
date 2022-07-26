@@ -96,7 +96,9 @@ function rrule(::RuleConfig{>:HasChunkedMode}, f, args...)
     return y, ApplyBack(back)
 end
 
-struct ApplyBack{F}; back::F; end
+struct ApplyBack{F}
+    back::F
+end
 
 (a::ApplyBack)(dy) = a.back(dy)
 (a::ApplyBack)(dy::ProductTangent) = ProductTangent(map(a.back, dy.partials))  # or some Tangent recursion?
