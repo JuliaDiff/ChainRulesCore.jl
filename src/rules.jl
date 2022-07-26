@@ -83,7 +83,7 @@ struct ProductTangent{P}
 end
 
 function frule(::RuleConfig{>:HasChunkedMode}, (Δf, Δx...), f, args...)
-    frule((Δf, Δx...), f, args...)
+    return frule((Δf, Δx...), f, args...)
 end
 
 function frule(::RuleConfig{>:HasChunkedMode}, (Δf, Δx::ProductTangent), f, args...)
