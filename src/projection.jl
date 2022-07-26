@@ -40,6 +40,8 @@ Base.propertynames(p::ProjectTo) = propertynames(backing(p))
 backing(project::ProjectTo) = getfield(project, :info)
 
 project_type(p::ProjectTo{T}) where {T} = T
+project_type(::Type{<:ProjectTo{T}}) where {T} = T
+project_type(_) = Any
 
 function Base.show(io::IO, project::ProjectTo{T}) where {T}
     print(io, "ProjectTo{")
@@ -150,7 +152,7 @@ end
 ProjectTo(::Bool) = ProjectTo{NoTangent}()  # same projector as ProjectTo(::AbstractZero) above
 
 # Other never-differentiable types
-for T in (:Symbol, :Char, :AbstractString, :RoundingMode, :IndexStyle)
+for T in (:Symbol, :Char, :AbstractString, :RoundingMode, :IndexStyle, :Nothing)
     @eval ProjectTo(::$T) = ProjectTo{NoTangent}()
 end
 
@@ -600,4 +602,41 @@ function (project::ProjectTo{SparseMatrixCSC})(dx::SparseMatrixCSC)
     else
         invoke(project, Tuple{AbstractArray}, dx)
     end
+end
+
+#####
+##### A related utility which wants to live nearby
+#####
+
+"""
+    differential_type(x)
+    differential_type(typeof(x))
+
+Testing `differential_type(x) <: AbstractZero` will tell you whether `x` is
+known to be non-differentiable.
+
+This relies on `ProjectTo(x)`, and the method accepting a type relies on type inference.
+Thus it will not look inside abstractly typed containers such as `x = Any[true, false]`.
+
+```jldoctest
+julia> differential_type(true)
+NoTangent
+
+julia> differential_type(Int)
+Float64
+
+julia> x = Any[true, false];
+
+julia> differential_type(x)
+NoTangent
+
+julia> differential_type(typeof(x))
+Any
+```
+"""
+differential_type(x) = project_type(ProjectTo(x))
+
+function differential_type(::Type{T}) where {T}
+    PT = Base._return_type(ProjectTo, Tuple{T})  # might be Union{} if unstable
+    return isconcretetype(PT) ? project_type(PT) : Any         
 end

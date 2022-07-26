@@ -478,3 +478,13 @@ struct NoSuperType end
         @test_broken 0 == @ballocated $psymm(dx) setup = (dx = Symmetric(rand(10^3, 10^3)))  # 64
     end
 end
+
+@testset "differential_type" begin
+    @test differential_type(true) == differential_type(Bool) == NoTangent
+    @test differential_type(1) == differential_type(Int) == Float64
+    tup = (false, :x, nothing)
+    @test differential_type(tup) == differential_type(typeof(tup)) == NoTangent
+    
+    @test differential_type(NoSuperType()) == differential_type(NoSuperType) == Any
+    @test differential_type(Dual(1,2)) == differential_type(Dual) == Real
+end
