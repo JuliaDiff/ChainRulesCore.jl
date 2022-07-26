@@ -89,3 +89,20 @@ See also: [`frule_via_ad`](@ref), [`RuleConfig`](@ref) and the documentation on
 [rule configurations and calling back into AD](@ref config)
 """
 function rrule_via_ad end
+
+
+abstract type ChunkedRuleCapability end
+"""
+HasChunkedMode
+
+This trait indicates that a `RuleConfig{>:HasChunkedMode}` can perform chunked AD.
+"""
+struct HasChunkedMode <: ChunkedRuleCapability end
+
+"""
+NoChunkedMode
+
+This is the complement to [`HasChunkedMode`](@ref). To avoid ambiguities [`RuleConfig`]s
+that do not support chunked AD should be `RuleConfig{>:NoChunkedMode}`.
+"""
+struct NoChunkedMode <: ChunkedRuleCapability end

@@ -78,6 +78,29 @@ function (::typeof(frule_kwfunc))(kws::Any, ::typeof(frule), ::RuleConfig, args.
     return frule_kwfunc(kws, frule, args...)
 end
 
+struct ProductTangent{P}
+    partials::P
+end
+
+function frule(::RuleConfig{>:HasChunkedMode}, (Δf, Δx...), f, args...)
+    frule((Δf, Δx...), f, args...)
+end
+
+function frule(::RuleConfig{>:HasChunkedMode}, (Δf, Δx::ProductTangent), f, args...)
+    frule((Δf, first(Δx)), args...)[1], ProductTangent(map(Δrow->frule((Δf, Δrow)[2], f, args...), Δx))
+end
+
+function rrule(::RuleConfig{>:HasChunkedMode}, f, args...)
+    y, back = rrule(args...)
+    return y, ApplyBack(back)
+end
+
+struct ApplyBack{F}; back::F; end
+
+(a::ApplyBack)(dy) = a.back(dy)
+(a::ApplyBack)(dy::ProductTangent) = ProductTangent(map(a.back, dy.partials))  # or some Tangent recursion?
+
+
 """
     rrule([::RuleConfig,] f, x...)
 
@@ -149,7 +172,7 @@ const NO_RRULE_DOC = """
 This is an piece of infastructure supporting opting out of [`rrule`](@ref).
 It follows the signature for `rrule` exactly.
 A collection of type-tuples is stored in its method-table.
-If something has this defined, it means that it must having a must also have a `rrule`, 
+If something has this defined, it means that it must having a must also have a `rrule`,
 defined that returns `nothing`.
 
 !!! warning "Do not overload no_rrule directly"
