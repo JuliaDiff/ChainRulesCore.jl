@@ -86,9 +86,8 @@ function frule(::RuleConfig{>:HasChunkedMode}, (Δf, Δx...), f, args...)
     return frule((Δf, Δx...), f, args...)
 end
 
-function frule(::RuleConfig{>:HasChunkedMode}, (Δf, Δx::ProductTangent), f, args...)
-    return frule((Δf, first(Δx)), args...)[1],
-    ProductTangent(map(Δrow -> frule((Δf, Δrow)[2], f, args...), Δx))
+function frule(::RuleConfig{>:HasChunkedMode}, (Δf, Δx)::Tuple{Any,ProductTangent}, f, args...)
+    return  frule((Δf, first(Δx)), args...)[1], ProductTangent(map(Δrow->frule((Δf, Δrow), f, args...)[2], Δx))
 end
 
 function rrule(::RuleConfig{>:HasChunkedMode}, f, args...)

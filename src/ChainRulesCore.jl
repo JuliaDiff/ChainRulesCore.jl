@@ -32,7 +32,6 @@ include("projection.jl")
 
 include("config.jl")
 include("rules.jl")
-include("chunked_rules.jl")
 include("rule_definition_tools.jl")
 include("ignore_derivatives.jl")
 
