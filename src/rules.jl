@@ -88,7 +88,7 @@ end
 
 function frule(::RuleConfig{>:HasChunkedMode}, (Δf, Δx)::Tuple{Any,ProductTangent}, f, args...)
     fx = frule((Δf, first(Δx)), args...)[1]
-    dfx = ProductTangent(map(Δrow->frule((Δf, Δrow), f, args...)[2], Δx))
+    dfx = ProductTangent(map(Δrow -> frule((Δf, Δrow), f, args...)[2], Δx))
     return (fx, dfx)
 end
 
