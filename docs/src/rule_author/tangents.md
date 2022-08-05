@@ -12,12 +12,12 @@ To be more formal they support operations which let them act as a vector space.
 
 ## Operations on a tangent type
 Any tangent type must support:
- - `zero` which returns a additive identity for that type (though it can just return `ZeroTangent()` (see below))
+ - `zero` which returns an additive identity for that type (though it can just return `ZeroTangent()` (see below))
  - `+` for addition between two tangents of this primal, returning another tangent of this primal. This allows gradient accumulation.
- - `*` for multiplication (scaling) by a scalar
- - `+` between a tangent and it's primal type returning another tangent of the primal type -- differential geometers sometimes call this expodential map.
+ - `*` for multiplication (scaling) by a scalar.
+- `+` between a tangent and its primal type returning another tangent of the primal type -- differential geometers sometimes call this exponential map.
 
-Further they often support other linear operators as is convenient for the use in defining rules. 
+Further they often support other linear operators for convenience in writing rules. 
 
 ## The subtypes of AbstractTangent
 
