@@ -71,6 +71,13 @@ Examples being:
 - There is only one derivative being returned, so from the fact that the user called
   `frule`/`rrule` they clearly will want to use that one.
 
+!! Warning
+   If your rule returns the tangent it receives without change (such as `rrule(::typeof(+), xs::AbstractArray)`
+   or some view / wrapper of this (such as `rrule(::typeof(adjoint), x::AbstractMatrix)`
+   then it is unsafe to wrap it in a `@thunk`. This is because gradient accumulation assumes that
+   the result of `unthunk`ing may be mutated for efficiency, but if the same array appears elsewhere,
+   this will give wrong answers.
+
 ## [Structs: constructors and functors](@id structs)
 
 To define an `frule` or `rrule` for a _function_ `foo` we dispatch on the type of `foo`, which is `typeof(foo)`.
