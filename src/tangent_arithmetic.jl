@@ -116,11 +116,14 @@ Base.complex(::ZeroTangent, ::ZeroTangent) = ZeroTangent()
 Base.complex(::ZeroTangent, i::Real) = complex(oftype(i, 0), i)
 Base.complex(r::Real, ::ZeroTangent) = complex(r)
 
-Base.:+(a::AbstractThunk, b::AbstractThunk) = add!!(a, b)
 Base.:*(a::AbstractThunk, b::AbstractThunk) = unthunk(a) * unthunk(b)
 
-Base.:+(a::AbstractThunk, b::AbstractArray) = add!!(a, b)
-Base.:+(a::AbstractArray, b::AbstractThunk) = add!!(b, a)
+# The result of unthunking is assumed to be safe to mutate:
+Base.:+(a::AbstractThunk, b::AbstractArray) = add!!(unthunk(a), b)
+Base.:+(a::AbstractArray, b::AbstractThunk) = add!!(unthunk(b), a)
+# With two thunks, possibly , `add!!` will chose which one to mutate.
+# This method avoids AbstractThunk, as any new subtypes of that could lead to stackoverflow:
+Base.:+(a::Union{Thunk,InplaceableThunk}, b::Union{Thunk,InplaceableThunk}) = add!!(a, b)
 
 for T in (:Tangent, :Any)
     @eval Base.:+(a::AbstractThunk, b::$T) = unthunk(a) + b
