@@ -2,7 +2,8 @@
     add!!(x, y)
 
 Returns `x+y`, potentially mutating `x` in-place to hold this value.
-This avoids allocations when `x` can be mutated in this way.
+This avoids allocations when `x` can be mutated in this way,
+for which it relies on `is_inplaceable_destination(x)`.
 """
 add!!(x, y) = x + y
 
@@ -18,6 +19,8 @@ function add!!(x, t::InplaceableThunk)
         add!!(unthunk(t), x)
     end
 end
+add!!(x::InplaceableThunk, y) = add!!(unthunk(x), y)
+add!!(x::InplaceableThunk, y::InplaceableThunk) = add!!(unthunk(x), y)
 
 function add!!(x::Thunk, y::Thunk)
     xun = unthunk(x)
@@ -33,8 +36,15 @@ end
 add!!(x::Thunk, y::InplaceableThunk) = add!!(unthunk(x), y)  # solves ambiguity
 add!!(x::InplaceableThunk, y::Thunk) = add!!(unthunk(y), x)
 
-add!!(x::AbstractArray, y::Thunk) = add!!(x, unthunk(y))
 add!!(x::Thunk, y::AbstractArray) = add!!(unthunk(x), y)
+function add!!(x::AbstractArray, y::Thunk)
+    return if is_inplaceable_destination(x)
+        add!!(x, unthunk(y))
+    else
+        # Can't mutate x, but this may still be more efficient:
+        add!!(unthunk(y), x)
+    end
+end
 
 function add!!(x::AbstractArray{<:Any,N}, y::AbstractArray{<:Any,N}) where {N}
     return if is_inplaceable_destination(x)
