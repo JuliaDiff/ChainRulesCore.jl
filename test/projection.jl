@@ -212,7 +212,7 @@ struct NoSuperType end
         @test ProjectTo(I)(123) === NoTangent()
         @test ProjectTo(2 * I)(I * 3im) === 0.0 * I
         @test ProjectTo((4 + 5im) * I)(Tangent{typeof(im * I)}(; λ = 6)) === (6.0 + 0.0im) * I
-        @test ProjectTo(7 * I)(Tangent{typeof(2I)}()) == ZeroTangent()
+        @test ProjectTo(7 * I)(Tangent{typeof(2I)}()) == 0.0I
     end
 
     @testset "LinearAlgebra: $adj vectors" for adj in [transpose, adjoint]
@@ -413,7 +413,6 @@ struct NoSuperType end
         @test pb(ZeroTangent()) isa AbstractZero  # was a method ambiguity!
 
         # all projectors preserve Zero, and specific type, via one fallback method:
-        @test ProjectTo(pi)(ZeroTangent()) === ZeroTangent()
         @test ProjectTo(pi)(NoTangent()) === NoTangent()
         pv = ProjectTo(sprand(30, 0.3))
         @test pv(ZeroTangent()) === ZeroTangent()
