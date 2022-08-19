@@ -83,6 +83,7 @@ makedocs(;
         ],
         "Videos" => "videos.md",
         "FAQ" => "FAQ.md",
+        "Team" => "team.md",
         "API" => "api.md",
     ],
     strict=true,
