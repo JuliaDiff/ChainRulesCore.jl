@@ -16,8 +16,7 @@ unary input, unary output scalar function:
 ```jldoctest frule
 julia> dself = NoTangent();
 
-julia> x = rand()
-0.8236475079774124
+julia> x = 0.8236475079774124;
 
 julia> sinx, Δsinx = frule((dself, 1), sin, x)
 (0.7336293678134624, 0.6795498147167869)
