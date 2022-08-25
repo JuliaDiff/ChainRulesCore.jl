@@ -26,6 +26,17 @@ end
 
 add!!(x::AbstractArray, y::Thunk) = add!!(x, unthunk(y))
 
+# add!!(x::AbstractArray, y::AccumThunk) = add!!(x, unthunk(y))  # not sure! This may be less efficient than fallback
+
+function add!!(x::AbstractArray, y::AccumThunk)
+    return if is_inplaceable_destination(x)
+        x .+= y
+    else
+        # We are free to mutate the other way...
+        add!!(y.value, x)
+    end
+end
+
 function add!!(x::AbstractArray{<:Any,N}, y::AbstractArray{<:Any,N}) where {N}
     return if is_inplaceable_destination(x)
         if !debug_mode()

@@ -7,6 +7,16 @@ function Base.showerror(io::IO, e::MutateThunkException)
     return nothing
 end
 
+#####
+##### Operations which un-thunk automatically
+#####
+
+# Note the if you use an object which might be thunked in two places,
+# you should *always* call `unthunk` manually first, once, to avoid un-thunking twice.
+
+# Maybe the docs should have a list of exactly what operations do un-thunk automatically...
+# do we really need so many?
+
 Base.Broadcast.broadcastable(x::AbstractThunk) = broadcastable(unthunk(x))
 
 @inline function Base.iterate(x::AbstractThunk)
@@ -138,6 +148,11 @@ macro thunk(body)
     func = Expr(:->, Expr(:tuple), Expr(:block, __source__, body))
     return :(Thunk($(esc(func))))
 end
+# macro thunk(s::Symbol)
+#     @warn "Applying `@thunk` to a single symbol does nothing, as there is no calculation to defer."
+#     # But should it perhaps do something, if we also regard thunks as marking safe-to-mutate?
+#     return esc(s)
+# end
 
 """
     unthunk(x)
@@ -157,6 +172,7 @@ Base.transpose(x::AbstractThunk) = @thunk(transpose(unthunk(x)))
 
 """
     Thunk(()->v)
+
 A thunk is a deferred computation.
 It wraps a zero argument closure that when invoked returns a tangent.
 `@thunk(v)` is a macro that expands into `Thunk(()->v)`.
@@ -212,6 +228,10 @@ end
 
 Base.convert(::Type{<:Thunk}, a::AbstractZero) = @thunk(a)
 
+#####
+##### `InplaceableThunk`
+#####
+
 """
     InplaceableThunk(add!::Function, val::Thunk)
 
@@ -244,3 +264,94 @@ function Base.show(io::IO, x::InplaceableThunk)
     show(io, x.val)
     print(io, ")")
 end
+
+
+#####
+##### `AccumThunk`
+#####
+
+"""
+    AccumThunk(value) <: AbstractThunk
+
+This isn't a delayed computation, but is instead a marker that its contents is known to be safe
+to mutate during gradient accumulation. At present it is produced by adding two thunks,
+allowing any further addition to keep mutating. Anything downstream which wants an array must
+already know to `unthunk`, which is why this is `<: AbstractThunk`.
+
+Ideally it would be produced by adding two Arrays too, but that's impossible in CR's design.
+It might be good for many rules which produce a known-safe Array to wrap it in this.
+
+If we may assume/demand that the result of `@thunk` is always a new array, too,
+then more cases can mutate. And then it would make sense for `@thunk A` on one Symbol
+to produce an `AccumThunk`, promoting `@thunk` to have two meanings. But not yet done.
+"""
+struct AccumThunk{T} <: AbstractThunk
+    value::T
+end
+
+@inline unthunk(x::AccumThunk) = x.value
+
+function Base.show(io::IO, x::AccumThunk)
+    print(io, "AccumThunk(")
+    str = sprint(show, x.value, context = io)
+    if length(str) < 80
+        print(io, str)
+    else
+        print(io, first(str, 70), "...")
+    end
+    print(io, ")")
+end
+
+
+#=
+
+julia> using ChainRules, ChainRulesCore, Diffractor
+
+julia> _getindex(x...) = getindex(x...);  # use CR's rule:
+julia> function ChainRules.rrule(::typeof(_getindex), x::AbstractArray, inds...)
+           function getindex_pullback(dy)
+               nots = map(Returns(NoTangent()), inds)
+               return (NoTangent(), ChainRules.thunked_∇getindex(x, dy, inds...), nots...)
+           end
+           return x[inds...], getindex_pullback
+       end
+
+julia> Diffractor.gradient(x -> _getindex(x,1), [1,2,3.0])  # calls unthunk on final answer
+([1.0, 0.0, 0.0],)
+       
+julia> @btime Diffractor.gradient(x -> _getindex(x,1), $(rand(128 * 100)));
+  min 1.012 μs, mean 11.103 μs (2 allocations, 100.05 KiB)
+
+julia> @btime Diffractor.gradient(x -> _getindex(x,1)+_getindex(x,2), $(rand(128 * 100)));
+  min 7.625 μs, mean 46.941 μs (6 allocations, 300.14 KiB)  # unthunk, unthunk, add -- unchanged
+
+julia> @btime Diffractor.gradient(x -> _getindex(x,1)+_getindex(x,2)+_getindex(x,3), $(rand(128 * 100)));
+  min 16.791 μs, mean 67.720 μs (10 allocations, 500.23 KiB)  # before
+  min 8.625 μs, mean 44.642 μs (6 allocations, 300.14 KiB)    # after
+ 
+  min 1.036 μs, mean 12.684 μs (2 allocations, 100.05 KiB)    # with stronger assumption, overwrite any thunk
+
+# Same example as https://github.com/FluxML/Zygote.jl/pull/981#issuecomment-861079488
+# originally https://github.com/FluxML/Zygote.jl/issues/644
+
+julia> function _evalpoly(x, p)
+           N = length(p)
+           ex = _getindex(p, length(p))
+           for i in N-1:-1:1
+               ex = muladd(x, ex, _getindex(p, i))
+           end
+           ex
+       end
+_evalpoly (generic function with 1 method)
+
+julia> x, p = rand(), randn(10000);
+
+julia> @btime _evalpoly(x, p);
+  min 20.375 μs, mean 20.553 μs (1 allocation, 16 bytes)
+
+julia> @btime Diffractor.gradient(_evalpoly, x, p);
+  min 566.669 ms, mean 585.185 ms (1174329 allocations, 2.44 GiB)    # before
+  min 376.376 ms, mean 384.314 ms (1144338 allocations, 975.62 MiB)  # after
+
+=#
+

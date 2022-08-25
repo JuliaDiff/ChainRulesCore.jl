@@ -116,7 +116,6 @@ Base.complex(::ZeroTangent, ::ZeroTangent) = ZeroTangent()
 Base.complex(::ZeroTangent, i::Real) = complex(oftype(i, 0), i)
 Base.complex(r::Real, ::ZeroTangent) = complex(r)
 
-Base.:+(a::AbstractThunk, b::AbstractThunk) = unthunk(a) + unthunk(b)
 Base.:*(a::AbstractThunk, b::AbstractThunk) = unthunk(a) * unthunk(b)
 for T in (:Tangent, :Any)
     @eval Base.:+(a::AbstractThunk, b::$T) = unthunk(a) + b
@@ -154,3 +153,48 @@ for T in (:Number,)
     @eval Base.:*(s::$T, tangent::Tangent) = map(x -> s * x, tangent)
     @eval Base.:*(tangent::Tangent, s::$T) = map(x -> x * s, tangent)
 end
+
+# Accumulation
+# While many weird operations above may never be called, accumulation of gradients is one of
+# the big sources of memory allocation in AD, and is the entire reason InplaceableThunks exist.
+# Here we try to mark any array known to be safe-to-mutate by wrapping it with AccumThunk.
+
+Base.:+(a::AbstractThunk, b::AbstractThunk) = maybe_accumthunk(unthunk(a) + unthunk(b))
+# Try not to put this wrapper on non-arrays
+maybe_accumthunk(a) = is_inplaceable_destination(a) ? AccumThunk(a) : a
+
+Base.:+(a::AbstractThunk, b::AbstractArray) = AccumThunk(unthunk(a) + b)
+Base.:+(a::AbstractArray, b::AbstractThunk) = AccumThunk(a + unthunk(b))
+
+Base.:+(a::AccumThunk, b::AbstractArray) = AccumThunk(add!!(a.value, b))
+Base.:+(a::AbstractArray, b::AccumThunk) = AccumThunk(add!!(b.value, a))
+
+Base.:+(a::AccumThunk, b::AbstractThunk) = maybe_accumthunk(add!!(a.value, b))
+Base.:+(a::AbstractThunk, b::AccumThunk) = maybe_accumthunk(add!!(b.value, a))
+
+function Base.:+(a::AccumThunk, b::AccumThunk)
+    return if is_inplaceable_destination(a.value)
+        AccumThunk(add!!(a.value, b.value))
+    elseif is_inplaceable_destination(b.value)
+        AccumThunk(add!!(b.value, a.value))
+    else  # no point keeping this type:
+        a.value + b.value
+    end
+end
+
+
+#=
+
+# You could go further and assume any result of unthunk is safe to mutate,
+# something like this:
+
+# Base.:+(a::AbstractThunk, b::AbstractThunk) = maybe_accumthunk(add!!(unthunk(a), b))
+
+Base.:+(a::InplaceableThunk, b::AbstractThunk) = AccumThunk(add!!(unthunk(b), b))
+Base.:+(a::AbstractThunk, b::InplaceableThunk) = AccumThunk(add!!(unthunk(a), b))
+Base.:+(a::InplaceableThunk, b::InplaceableThunk) = AccumThunk(add!!(unthunk(a), b))
+
+Base.:+(a::AccumThunk, b::InplaceableThunk) = maybe_accumthunk(add!!(a.value, b))
+Base.:+(a::InplaceableThunk, b::AccumThunk) = maybe_accumthunk(add!!(b.value, a))
+
+=#

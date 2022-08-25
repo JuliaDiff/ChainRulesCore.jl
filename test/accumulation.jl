@@ -90,9 +90,10 @@
             end
         end
 
-        @testset "AbstractThunk $(typeof(thunk))" for thunk in (
+        @testset "add!!(array, $(typeof(thunk)))" for thunk in (
             @thunk(-1.0 * ones(2, 2)),
             InplaceableThunk(x -> x .-= ones(2, 2), @thunk(-1.0 * ones(2, 2))),
+            AccumThunk(-ones(2, 2))
         )
             @testset "in place" begin
                 accumuland = [1.0 2.0; 3.0 4.0]
@@ -101,14 +102,18 @@
                 @test ret === accumuland  # must be same object
             end
 
+            @test unthunk(thunk) == -ones(2, 2)  # AccumThunk has not been mutated
+
             @testset "out of place" begin
                 accumuland = @SMatrix [1.0 2.0; 3.0 4.0]
 
                 ret = add!!(accumuland, thunk)
                 @test ret == [0.0 1.0; 2.0 3.0]  # must return right answer
                 @test ret !== accumuland  # must not be same object
-                @test accumuland == [1.0 2.0; 3.0 4.0]  # must not have mutated
+                @test accumuland == [1.0 2.0; 3.0 4.0]  # cannot ever be mutated
             end
+            
+            unthunk(thunk)  # AccumThunk may have been mutated, test has no opinion?
         end
 
         @testset "not actually inplace but said it was" begin
@@ -136,5 +141,26 @@
 
         msg_equal = sprint(showerror, BadInplaceException(ithunk, [22], [22]))
         @test occursin("equal", msg_equal)
+    end
+    
+    @testset "thunk + thunk" begin
+        s1 = @thunk([1.0]) + @thunk([2.0]) + @thunk([3.0])
+        @test unthunk(s1) == [6]
+        @test s1 isa AccumThunk
+        
+        list = [[1.0], @thunk([1.0]), InplaceableThunk(x -> x .+ 1, @thunk [1.0]), AccumThunk([1.0])]
+        for x in list, y in list
+            z = deepcopy(x) + deepcopy(y)
+            @test unthunk(z) == [2]
+            @test z isa AccumThunk || (x isa Array && y isa Array)
+        end
+        
+        triv = [1.0, @thunk(1.0), AccumThunk(1.0)]
+        for x in triv, y in triv
+            z = x + y
+            @test unthunk(z) === 2.0
+            @test z isa Float64 || (x isa AccumThunk && y isa AccumThunk)
+            # How much to se care about not applying these wrappers when not useful?
+        end
     end
 end
