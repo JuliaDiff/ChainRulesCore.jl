@@ -45,7 +45,7 @@ and that for structured matrices like `x isa Diagonal`, `y` shares this structur
 
 Wrapper array types should overload this function if they can be written into.
 Before ChainRulesCore 1.16, it would guess `true` for most wrappers based on `parent`,
-but this is not safe, e.g. it will lead to an error with ReadOnltArrays.jl. 
+but this is not safe, e.g. it will lead to an error with ReadOnlyArrays.jl. 
 
 There must always be a correct non-mutating path, so in uncertain cases,
 this function returns `false`.
