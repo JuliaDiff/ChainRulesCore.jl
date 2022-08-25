@@ -20,7 +20,7 @@ function add!!(x, t::InplaceableThunk)
             debug_add!(x, t)
         end
     else
-        x + t
+        x + unthunk(t)
     end
 end
 
@@ -28,7 +28,14 @@ add!!(x::AbstractArray, y::Thunk) = add!!(x, unthunk(y))
 
 function add!!(x::AbstractArray{<:Any,N}, y::AbstractArray{<:Any,N}) where {N}
     return if is_inplaceable_destination(x)
-        x .+= y
+        if !debug_mode()
+            x .+= y
+        else
+            z = x + y
+            # Now write junk into x, to test that nothing is relying on mutation, only using returned value:
+            x .*= NaN
+            z
+        end
     else
         x + y
     end
