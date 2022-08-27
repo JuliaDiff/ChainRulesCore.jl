@@ -43,17 +43,18 @@ For arrays this means `x .= y` will mutate `x`, if `y` is an appropriate tangent
 Here "appropriate" means that both are real or both are complex,
 and that for structured matrices like `x isa Diagonal`, `y` shares this structure.
 
-Wrapper array types should overload this function if they can be written into.
-Before ChainRulesCore 1.16, it would guess `true` for most wrappers based on `parent`,
-but this is not safe, e.g. it will lead to an error with ReadOnlyArrays.jl. 
+!!! note "history"
+    Wrapper array types should overload this function if they can be written into.
+    Before ChainRulesCore 1.16, it would guess `true` for most wrappers based on `parent`,
+    but this is not safe, e.g. it will lead to an error with ReadOnlyArrays.jl. 
 
 There must always be a correct non-mutating path, so in uncertain cases,
 this function returns `false`.
 """
 is_inplaceable_destination(::Any) = false
 
-is_inplaceable_destination(::DenseArray)= true
-is_inplaceable_destination(::DenseArray{<:Integer}) = false
+is_inplaceable_destination(::Array)= true
+is_inplaceable_destination(:: Array{<:Integer}) = false
 
 is_inplaceable_destination(::SparseVector) = true
 is_inplaceable_destination(::SparseMatrixCSC) = true
@@ -70,6 +71,8 @@ end
 for T in [:Adjoint, :Transpose, :Diagonal, :UpperTriangular, :LowerTriangular]
     @eval is_inplaceable_destination(x::LinearAlgebra.$T) = is_inplaceable_destination(parent(x))
 end
+# Hermitian and Symmetric are too fussy to deal with right now
+# https://github.com/JuliaLang/julia/issues/38056
 
 function debug_add!(accumuland, t::InplaceableThunk)
     returned_value = t.add!(accumuland)
