@@ -38,30 +38,41 @@ end
     is_inplaceable_destination(x) -> Bool
 
 Returns true if `x` is suitable for for storing inplace accumulation of gradients.
-For arrays this boils down `x .= y` if will work to mutate `x`, if `y` is an appropriate
-tangent.
-Wrapper array types do not need to overload this if they overload `Base.parent`, and are
-`is_inplaceable_destination` if and only if their parent array is.
-Other types should overload this, as it defaults to `false`.
+For arrays this means `x .= y` will mutate `x`, if `y` is an appropriate tangent.
+
+Here "appropriate" means that `y` cannot be complex unless `x` is too,
+and that for structured matrices like `x isa Diagonal`, `y` shares this structure.
+
+!!! note "history"
+    Wrapper array types should overload this function if they can be written into.
+    Before ChainRulesCore 1.16, it would guess `true` for most wrappers based on `parent`,
+    but this is not safe, e.g. it will lead to an error with ReadOnlyArrays.jl. 
+
+There must always be a correct non-mutating path, so in uncertain cases,
+this function returns `false`.
 """
 is_inplaceable_destination(::Any) = false
+
 is_inplaceable_destination(::Array) = true
+is_inplaceable_destination(:: Array{<:Integer}) = false
+
 is_inplaceable_destination(::SparseVector) = true
 is_inplaceable_destination(::SparseMatrixCSC) = true
-is_inplaceable_destination(::BitArray) = true
-function is_inplaceable_destination(x::AbstractArray)
-    p = parent(x)
-    p === x && return false  # no parent
-    # basically all wrapper types delegate `setindex!` to their `parent` after some
-    # processing and so are mutable if their `parent` is.
-    return is_inplaceable_destination(p)
+
+function is_inplaceable_destination(x::SubArray)
+    alpha = is_inplaceable_destination(parent(x))
+    beta = x.indices isa Tuple{Vararg{Union{Integer, Base.Slice, UnitRange}}}
+    return alpha && beta
 end
 
+for T in [:PermutedDimsArray, :ReshapedArray]
+    @eval is_inplaceable_destination(x::Base.$T) = is_inplaceable_destination(parent(x))
+end
+for T in [:Adjoint, :Transpose, :Diagonal, :UpperTriangular, :LowerTriangular]
+    @eval is_inplaceable_destination(x::LinearAlgebra.$T) = is_inplaceable_destination(parent(x))
+end
 # Hermitian and Symmetric are too fussy to deal with right now
 # https://github.com/JuliaLang/julia/issues/38056
-# TODO: https://github.com/JuliaDiff/ChainRulesCore.jl/issues/236
-is_inplaceable_destination(::LinearAlgebra.Hermitian) = false
-is_inplaceable_destination(::LinearAlgebra.Symmetric) = false
 
 function debug_add!(accumuland, t::InplaceableThunk)
     returned_value = t.add!(accumuland)
