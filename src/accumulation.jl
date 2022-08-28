@@ -40,7 +40,7 @@ end
 Returns true if `x` is suitable for for storing inplace accumulation of gradients.
 For arrays this means `x .= y` will mutate `x`, if `y` is an appropriate tangent.
 
-Here "appropriate" means that both are real or both are complex,
+Here "appropriate" means that `y` cannot be complex unless `x` is too,
 and that for structured matrices like `x isa Diagonal`, `y` shares this structure.
 
 !!! note "history"
@@ -53,7 +53,7 @@ this function returns `false`.
 """
 is_inplaceable_destination(::Any) = false
 
-is_inplaceable_destination(::Array)= true
+is_inplaceable_destination(::Array) = true
 is_inplaceable_destination(:: Array{<:Integer}) = false
 
 is_inplaceable_destination(::SparseVector) = true
@@ -61,7 +61,7 @@ is_inplaceable_destination(::SparseMatrixCSC) = true
 
 function is_inplaceable_destination(x::SubArray)
     alpha = is_inplaceable_destination(parent(x))
-    beta = x.indices isa Tuple{Vararg{ Union{Integer, Base.Slice, UnitRange}}}
+    beta = x.indices isa Tuple{Vararg{Union{Integer, Base.Slice, UnitRange}}}
     return alpha && beta
 end
 
