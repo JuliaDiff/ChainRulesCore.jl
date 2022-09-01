@@ -109,6 +109,7 @@ for T in (:AbstractThunk, :Tangent, :Any)
 end
 
 Base.real(z::AbstractZero) = z
+Base.imag(z::AbstractZero) = z
 
 Base.complex(::ZeroTangent) = ZeroTangent()
 Base.complex(::ZeroTangent, ::ZeroTangent) = ZeroTangent()
