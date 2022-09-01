@@ -108,8 +108,7 @@ for T in (:AbstractThunk, :Tangent, :Any)
     @eval LinearAlgebra.dot(::$T, ::ZeroTangent) = ZeroTangent()
 end
 
-Base.real(::ZeroTangent) = ZeroTangent()
-Base.imag(::ZeroTangent) = ZeroTangent()
+Base.real(z::AbstractZero) = z
 
 Base.complex(::ZeroTangent) = ZeroTangent()
 Base.complex(::ZeroTangent, ::ZeroTangent) = ZeroTangent()
