@@ -42,8 +42,8 @@ plot(abs)
 
 `abs` is the classic example of a function where the derivative is not defines as the limit from above is not equal to the limit from below
 
-$$\mathrm{abs}'(0) = \lim_{h->0^-} \dfrac{\mathrm{abs}(0)-\mathrm{abs}(0-h)}{0-h} = -1$$
-$$\mathrm{abs}'(0) = \lim_{h->0^+} \dfrac{abs(0)-\mathrm{abs}(0-h)}{0-h} = 1$$
+$$\operatorname{abs}'(0) = \lim_{h \to 0^-} \dfrac{\operatorname{abs}(0)-\operatorname{abs}(0-h)}{0-h} = -1$$
+$$\operatorname{abs}'(0) = \lim_{h \to 0^+} \dfrac{\operatorname{abs}(0)-\operatorname{abs}(0-h)}{0-h} = 1$$
 
 Now, as discussed in the introduction the AD system would on it's own choose either 1 or -1, depending on implementation.
 
