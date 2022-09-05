@@ -16,6 +16,10 @@ Base.iszero(::AbstractZero) = true
 Base.iterate(x::AbstractZero) = (x, nothing)
 Base.iterate(::AbstractZero, ::Any) = nothing
 
+Base.first(x::AbstractZero) = x
+Base.tail(x::AbstractZero) = x
+Base.last(x::AbstractZero) = x
+
 Base.Broadcast.broadcastable(x::AbstractZero) = Ref(x)
 Base.Broadcast.broadcasted(::Type{T}) where {T<:AbstractZero} = T()
 

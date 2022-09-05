@@ -2,23 +2,26 @@
     @testset "is_inplaceable_destination" begin
         is_inplaceable_destination = ChainRulesCore.is_inplaceable_destination
 
-        @test is_inplaceable_destination([1, 2, 3, 4])
-        @test !is_inplaceable_destination(1:4)
+        @test is_inplaceable_destination([1.0, 2.0, 3.0])
+        @test !is_inplaceable_destination([1, 2, 3, 4])  # gradients cannot reliably be written into integer arrays
+        @test !is_inplaceable_destination(1:4.0)
 
-        @test is_inplaceable_destination(Diagonal([1, 2, 3, 4]))
-        @test !is_inplaceable_destination(Diagonal(1:4))
+        @test is_inplaceable_destination(Diagonal([1.0, 2.0, 3.0]))
+        @test !is_inplaceable_destination(Diagonal(1:4.0))
 
-        @test is_inplaceable_destination(view([1, 2, 3, 4], :, :))
-        @test !is_inplaceable_destination(view(1:4, :, :))
+        @test is_inplaceable_destination(view([1.0, 2.0, 3.0], :, :))
+        @test is_inplaceable_destination(view([1.0 2.0; 3.0 4.0], :, 2))
+        @test !is_inplaceable_destination(view(1:4.0, :, :))
+        mat = view([1.0, 2.0, 3.0], :, fill(1, 10))
+        @test !is_inplaceable_destination(mat)  # The concern is that `mat .+= x` is unsafe on GPU / parallel.
 
-        @test is_inplaceable_destination(falses(4))
+        @test !is_inplaceable_destination(falses(4))  # gradients can never be written into boolean
         @test is_inplaceable_destination(spzeros(4))
         @test is_inplaceable_destination(spzeros(2, 2))
 
-        @test !is_inplaceable_destination(1.3)
-        @test !is_inplaceable_destination(@SVector [1, 2, 3])
-        @test !is_inplaceable_destination(Hermitian([1 2; 2 4]))
-        @test !is_inplaceable_destination(Symmetric([1 2; 2 4]))
+        @test !is_inplaceable_destination(1:3.0)
+        @test !is_inplaceable_destination(@SVector [1.0, 2.0, 3.0])
+        @test !is_inplaceable_destination(Hermitian([1.0 2.0; 2.0 4.0]))
     end
 
     @testset "add!!" begin
