@@ -65,7 +65,7 @@ end
 function Base.:(==)(a::Tangent{P,T}, b::Tangent{P,T}) where {P,T}
     return backing(a) == backing(b)
 end
-function Base.:(==)(a::Tangent{P}, b::Tangent{P}) where {P,T}
+function Base.:(==)(a::Tangent{P}, b::Tangent{P}) where {P}
     all_fields = union(keys(backing(a)), keys(backing(b)))
     return all(getproperty(a, f) == getproperty(b, f) for f in all_fields)
 end
@@ -117,7 +117,7 @@ function Base.getindex(tangent::Tangent{P,T}, idx::Symbol) where {P,T<:NamedTupl
     hasfield(T, idx) || return ZeroTangent()
     return unthunk(getfield(backing(tangent), idx))
 end
-function Base.getindex(tangent::Tangent, idx) where {P,T<:AbstractDict}
+function Base.getindex(tangent::Tangent, idx)
     return unthunk(getindex(backing(tangent), idx))
 end
 
@@ -237,8 +237,8 @@ canonicalize(tangent::Tangent{<:Any,<:AbstractDict}) = tangent
 # Tangents of unspecified primal types (indicated by specifying exactly `Any`)
 # all combinations of type-params are specified here to avoid ambiguities
 canonicalize(tangent::Tangent{Any,<:NamedTuple{L}}) where {L} = tangent
-canonicalize(tangent::Tangent{Any,<:Tuple}) where {L} = tangent
-canonicalize(tangent::Tangent{Any,<:AbstractDict}) where {L} = tangent
+canonicalize(tangent::Tangent{Any,<:Tuple}) = tangent
+canonicalize(tangent::Tangent{Any,<:AbstractDict}) = tangent
 
 """
     _zeroed_backing(P)
