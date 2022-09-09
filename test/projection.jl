@@ -149,7 +149,7 @@ struct NoSuperType end
 
     @testset "Base: Tuple" begin
         pt1 = ProjectTo((1.0,))
-        if VERSION > v"1.5"
+        if VERSION >= v"1.6"
             @test @inferred(pt1((1 + im,))) == Tangent{Tuple{Float64}}(1.0)
             @test @inferred(pt1(pt1((1,)))) == pt1(pt1((1,)))            # accepts correct Tangent
             @test @inferred(pt1(Tangent{Any}(1))) == pt1((1,))           # accepts Tangent{Any}
