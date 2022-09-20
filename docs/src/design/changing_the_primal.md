@@ -469,6 +469,15 @@ We don't have this in ChainRules.jl yet, because Julia is missing some definitio
 We have been promised them for Julia v1.7 though.
 You can see what the code would look like in [PR #302](https://github.com/JuliaDiff/ChainRules.jl/pull/302).
 
+## What things can be pulled out of the pullback?
+At this point you might wonder, is there a rule for what can be taken out of the pullback and computed in the augmented primal?
+We can deduce one, or infact two.
+The first and most practical one is that any computation that depends only on the primal input (or consequently its output) can be shifted to the augmented primal.
+The second and perhaps more insightful is that all nonlinear parts can moved out (this is a weaker statement but more interesting).
+We know this because pullbacks are linear operators -- they are linear in relation to the tangent they are pulling back.
+This means they are in turn composed only of functions that linear operators (in relation to the tangent).
+The fully minimized pullback function only calls linear operators -- the apparently nonlinear parts can all be shifted to the augmented primal.
+
 ## Conclusion
 This document has explained why [`rrule`](@ref) is the way it is.
 In particular it has highlighted why the primal computation is able to be changed from simply calling the function.
