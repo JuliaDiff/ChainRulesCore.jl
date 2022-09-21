@@ -43,6 +43,9 @@ Base.:/(x::NotImplemented, ::Any) = throw(NotImplementedException(x))
 Base.:/(::Any, x::NotImplemented) = throw(NotImplementedException(x))
 Base.:/(x::NotImplemented, ::NotImplemented) = throw(NotImplementedException(x))
 
+# Fix method ambiguity error
+Base.:/(x::AbstractZero, ::NotImplemented) = x
+
 Base.zero(x::NotImplemented) = throw(NotImplementedException(x))
 function Base.zero(::Type{<:NotImplemented})
     return throw(

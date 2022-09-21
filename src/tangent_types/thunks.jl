@@ -33,8 +33,13 @@ Base.:(==)(a::AbstractThunk, b::AbstractThunk) = unthunk(a) == unthunk(b)
 Base.:(-)(a::AbstractThunk) = -unthunk(a)
 Base.:(-)(a::AbstractThunk, b) = unthunk(a) - b
 Base.:(-)(a, b::AbstractThunk) = a - unthunk(b)
+Base.:(-)(a::AbstractThunk, b::AbstractThunk) = unthunk(a) - unthunk(b)
 Base.:(/)(a::AbstractThunk, b) = unthunk(a) / b
 Base.:(/)(a, b::AbstractThunk) = a / unthunk(b)
+Base.:(/)(a::AbstractThunk, b::AbstractThunk) = unthunk(a) / unthunk(b)
+
+# Fix method ambiguity issue
+Base.:/(a::AbstractZero, ::AbstractThunk) = a
 
 Base.real(a::AbstractThunk) = real(unthunk(a))
 Base.imag(a::AbstractThunk) = imag(unthunk(a))
