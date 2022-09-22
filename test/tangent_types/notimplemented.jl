@@ -21,7 +21,7 @@
         @test ni + ni2 === ni
         @test ni2 + ni === ni2
 
-        # multiplication and dot product
+        # multiplication, division, and dot product
         @test -ni == ni
         for a in (true, x, thunk)
             @test ni * a === ni
@@ -32,6 +32,7 @@
         for a in (NoTangent(), ZeroTangent())
             @test ni * a === a
             @test a * ni === a
+            @test a / ni === a
             @test dot(ni, a) === a
             @test dot(a, ni) === a
         end
@@ -52,8 +53,10 @@
             @test_throws E a - ni
         end
         @test_throws E ni - ni2
-        @test_throws E ni / x
-        @test_throws E x / ni
+        for a in (true, x, thunk)
+            @test_throws E ni / a
+            @test_throws E a / ni
+        end
         @test_throws E ni / ni2
         @test_throws E zero(ni)
         @test_throws E zero(typeof(ni))

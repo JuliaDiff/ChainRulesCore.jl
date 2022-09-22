@@ -32,12 +32,10 @@ for T in (:ZeroTangent, :NoTangent)
     @eval LinearAlgebra.dot(::NotImplemented, ::$T) = $T()
     @eval LinearAlgebra.dot(::$T, ::NotImplemented) = $T()
 end
-# `NotImplemented` "wins" *, /, and dot for other types
+# `NotImplemented` "wins" *, and dot for other types
 for T in (:AbstractThunk, :Tangent, :Any)
     @eval Base.:*(x::NotImplemented, ::$T) = x
     @eval Base.:*(::$T, x::NotImplemented) = x
-    @eval Base.:/(x::NotImplemented, ::$T) = x
-    @eval Base.:/(::$T, x::NotImplemented) = x
     @eval LinearAlgebra.dot(x::NotImplemented, ::$T) = x
     @eval LinearAlgebra.dot(::$T, x::NotImplemented) = x
 end

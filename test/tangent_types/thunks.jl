@@ -101,8 +101,15 @@
         @test 1 == -@thunk(-1)
         @test 1 == @thunk(2) - 1
         @test 1 == 2 - @thunk(1)
+        @test 1 == @thunk(2) - @thunk(1)
         @test 1.0 == @thunk(1) / 1.0
         @test 1.0 == 1.0 / @thunk(1)
+        @test 1 == @thunk(1) / @thunk(1)
+
+        # check method ambiguities (#589)
+        for a in (ZeroTangent(), NoTangent())
+            @test a / @thunk(2) === a
+        end
 
         @test 1 == real(@thunk(1 + 1im))
         @test 1 == imag(@thunk(1 + 1im))
