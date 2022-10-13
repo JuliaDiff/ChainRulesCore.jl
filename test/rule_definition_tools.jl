@@ -262,7 +262,7 @@ end
 
             @test frule((NoTangent(), 1.0, 1.0), suminv, 0.0, 1.0) === (Inf, -Inf)
             @test frule((NoTangent(), ZeroTangent(), 1.0), suminv, 0.0, 1.0) === (Inf, -1.0)
-            @test frule((NoTangent(), 0.0, 1.0), suminv, 0.0, 1.0) === (Inf, -1.0)            
+            @test frule((NoTangent(), 0.0, 1.0), suminv, 0.0, 1.0) === (Inf, -1.0)
 
             @test frule((NoTangent(), 1.0, 1.0), suminv, 1.0, 0.0) === (Inf, -Inf)
             @test frule((NoTangent(), 1.0, ZeroTangent()), suminv, 1.0, 0.0) === (Inf, -1.0)

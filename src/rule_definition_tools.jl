@@ -297,9 +297,9 @@ function propagation_expr(Δs, ∂s, _conj=false, proj=identity)
     (∂s_1, Δs_1), _∂s_Δs_tail = Iterators.peel(zip(_∂s, Δs))
     # zero gradients are treated as hard zeros. This avoids propagation of NaNs when
     # partials are non-finite
-    init_expr = :(ifelse(iszero($Δs_1), zero($∂s_1), $∂s_1) * $Δs_1)
+    init_expr = :((iszero($Δs_1) ? zero($∂s_1) : $∂s_1) * $Δs_1)
     summed_∂_mul_Δs = foldl(_∂s_Δs_tail; init=init_expr) do ex, (∂s_i, Δs_i)
-        :(muladd(ifelse(iszero($Δs_i), zero($∂s_i), $∂s_i), $Δs_i, $ex))
+        :(muladd((iszero($Δs_i) ? zero($∂s_i) : $∂s_i), $Δs_i, $ex))
     end
     return :($proj($summed_∂_mul_Δs))
 end
