@@ -65,7 +65,7 @@ end
 function Base.:(==)(a::Tangent{P,T}, b::Tangent{P,T}) where {P,T}
     return backing(a) == backing(b)
 end
-function Base.:(==)(a::Tangent{P}, b::Tangent{P}) where {P,T}
+function Base.:(==)(a::Tangent{P}, b::Tangent{P}) where {P}
     all_fields = union(keys(backing(a)), keys(backing(b)))
     return all(getproperty(a, f) == getproperty(b, f) for f in all_fields)
 end
@@ -75,7 +75,18 @@ Base.hash(a::Tangent, h::UInt) = Base.hash(backing(canonicalize(a)), h)
 
 function Base.show(io::IO, tangent::Tangent{P}) where {P}
     print(io, "Tangent{")
-    show(io, P)
+    str = sprint(show, P, context = io)
+    i = findfirst('{', str)
+    if isnothing(i)
+        print(io, str)
+    else  # for Tangent{T{A,B,C}}(stuff), print {A,B,C} in grey, and trim this part if longer than a line:
+        print(io, str[1:prevind(str, i)])
+        if length(str) < 80
+            printstyled(io, str[i:end], color=:light_black)
+        else
+           printstyled(io, str[i:prevind(str, 80)], "...", color=:light_black) 
+        end
+    end
     print(io, "}")
     if isempty(backing(tangent))
         print(io, "()")  # so it doesn't show `NamedTuple()`
@@ -85,6 +96,19 @@ function Base.show(io::IO, tangent::Tangent{P}) where {P}
     end
 end
 
+Base.first(tangent::Tangent{P,T}) where {P,T<:Union{Tuple,NamedTuple}} = first(backing(canonicalize(tangent)))
+Base.last(tangent::Tangent{P,T}) where {P,T<:Union{Tuple,NamedTuple}} = last(backing(canonicalize(tangent)))
+
+Base.tail(t::Tangent{P}) where {P<:Tuple} = Tangent{_tailtype(P)}(Base.tail(backing(canonicalize(t)))...)
+@generated _tailtype(::Type{P}) where {P<:Tuple} = Tuple{P.parameters[2:end]...}
+Base.tail(t::Tangent{<:Tuple{Any}}) = NoTangent()
+Base.tail(t::Tangent{<:Tuple{}}) = NoTangent()
+
+Base.tail(t::Tangent{P}) where {P<:NamedTuple} = Tangent{_tailtype(P)}(; Base.tail(backing(canonicalize(t)))...)
+_tailtype(::Type{NamedTuple{S,P}}) where {S,P} = NamedTuple{Base.tail(S), _tailtype(P)}
+Base.tail(t::Tangent{<:NamedTuple{<:Any, <:Tuple{Any}}}) = NoTangent()
+Base.tail(t::Tangent{<:NamedTuple{<:Any, <:Tuple{}}}) = NoTangent()
+
 function Base.getindex(tangent::Tangent{P,T}, idx::Int) where {P,T<:Union{Tuple,NamedTuple}}
     back = backing(canonicalize(tangent))
     return unthunk(getfield(back, idx))
@@ -93,7 +117,7 @@ function Base.getindex(tangent::Tangent{P,T}, idx::Symbol) where {P,T<:NamedTupl
     hasfield(T, idx) || return ZeroTangent()
     return unthunk(getfield(backing(tangent), idx))
 end
-function Base.getindex(tangent::Tangent, idx) where {P,T<:AbstractDict}
+function Base.getindex(tangent::Tangent, idx)
     return unthunk(getindex(backing(tangent), idx))
 end
 
@@ -116,6 +140,7 @@ end
 
 Base.iterate(tangent::Tangent, args...) = iterate(backing(tangent), args...)
 Base.length(tangent::Tangent) = length(backing(tangent))
+
 Base.eltype(::Type{<:Tangent{<:Any,T}}) where {T} = eltype(T)
 function Base.reverse(tangent::Tangent)
     rev_backing = reverse(backing(tangent))
@@ -212,8 +237,8 @@ canonicalize(tangent::Tangent{<:Any,<:AbstractDict}) = tangent
 # Tangents of unspecified primal types (indicated by specifying exactly `Any`)
 # all combinations of type-params are specified here to avoid ambiguities
 canonicalize(tangent::Tangent{Any,<:NamedTuple{L}}) where {L} = tangent
-canonicalize(tangent::Tangent{Any,<:Tuple}) where {L} = tangent
-canonicalize(tangent::Tangent{Any,<:AbstractDict}) where {L} = tangent
+canonicalize(tangent::Tangent{Any,<:Tuple}) = tangent
+canonicalize(tangent::Tangent{Any,<:AbstractDict}) = tangent
 
 """
     _zeroed_backing(P)

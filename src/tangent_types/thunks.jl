@@ -24,15 +24,22 @@ end
     return element, (underlying_object, new_state)
 end
 
+Base.first(x::AbstractThunk) = first(unthunk(x))
+Base.last(x::AbstractThunk) = last(unthunk(x))
+Base.tail(x::AbstractThunk) = Base.tail(unthunk(x))
+
 Base.:(==)(a::AbstractThunk, b::AbstractThunk) = unthunk(a) == unthunk(b)
-Base.:(==)(a::AbstractThunk, b) = unthunk(a) == b
-Base.:(==)(a, b::AbstractThunk) = a == unthunk(b)
 
 Base.:(-)(a::AbstractThunk) = -unthunk(a)
 Base.:(-)(a::AbstractThunk, b) = unthunk(a) - b
 Base.:(-)(a, b::AbstractThunk) = a - unthunk(b)
+Base.:(-)(a::AbstractThunk, b::AbstractThunk) = unthunk(a) - unthunk(b)
 Base.:(/)(a::AbstractThunk, b) = unthunk(a) / b
 Base.:(/)(a, b::AbstractThunk) = a / unthunk(b)
+Base.:(/)(a::AbstractThunk, b::AbstractThunk) = unthunk(a) / unthunk(b)
+
+# Fix method ambiguity issue
+Base.:/(a::AbstractZero, ::AbstractThunk) = a
 
 Base.real(a::AbstractThunk) = real(unthunk(a))
 Base.imag(a::AbstractThunk) = imag(unthunk(a))
@@ -188,7 +195,7 @@ with a field for each variable used in the expression, and call overloaded.
 Do not use `@thunk` if this would be equal or more work than actually evaluating the expression itself.
 This is commonly the case for scalar operators.
 
-For more details see the manual section [on using thunks effectively](http://www.juliadiff.org/ChainRulesCore.jl/dev/writing_good_rules.html#Use-Thunks-appropriately-1)
+For more details see the manual section [on using thunks effectively](https://juliadiff.org/ChainRulesCore.jl/dev/rule_author/writing_good_rules.html#Use-Thunks-appropriately).
 """
 struct Thunk{F} <: AbstractThunk
     f::F
@@ -198,7 +205,13 @@ end
 
 function Base.show(io::IO, x::Thunk)
     print(io, "Thunk(")
-    show(io, x.f)
+    str = sprint(show, x.f, context = io)  # often this name is like "ChainRules.var"#1398#1403"{Matrix{Float64}, Matrix{Float64}}"
+    ind = findfirst("var\"#", str)
+    if isnothing(ind) || length(str) < 80
+        printstyled(io, str, color=:light_black)
+    else
+        printstyled(io, str[1:ind[5]], "...", color=:light_black)
+    end
     print(io, ")")
 end
 
@@ -225,7 +238,13 @@ unthunk(x::InplaceableThunk) = unthunk(x.val)
 
 function Base.show(io::IO, x::InplaceableThunk)
     print(io, "InplaceableThunk(")
-    show(io, x.add!)
+    str = sprint(show, x.add!, context = io)
+    ind = findfirst("var\"#", str)  # look for auto-generated function names, often with huge types
+    if isnothing(ind)
+        printstyled(io, str, color=:light_black)
+    else
+        printstyled(io, str[1:ind[5]], "...", color=:light_black)
+    end
     print(io, ", ")
     show(io, x.val)
     print(io, ")")

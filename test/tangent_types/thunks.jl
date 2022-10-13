@@ -5,8 +5,6 @@
 
     @testset "==" begin
         @test @thunk(3.2) == InplaceableThunk(x -> x + 3.2, @thunk(3.2))
-        @test @thunk(3.2) == 3.2
-        @test 3.2 == InplaceableThunk(x -> x + 3.2, @thunk(3.2))
     end
 
     @testset "iterate" begin
@@ -17,6 +15,13 @@
         end
 
         @test nothing === iterate(@thunk ()) == iterate(())
+    end
+    
+    @testset "first, last, tail" begin
+        @test first(@thunk (1,2,3) .+ 4) === 5
+        @test last(@thunk (1,2,3) .+ 4) === 7
+        @test Base.tail(@thunk (1,2,3) .+ 4) === (6, 7)
+        @test Base.tail(@thunk NoTangent() * 5) === NoTangent()
     end
 
     @testset "show" begin
@@ -96,8 +101,15 @@
         @test 1 == -@thunk(-1)
         @test 1 == @thunk(2) - 1
         @test 1 == 2 - @thunk(1)
+        @test 1 == @thunk(2) - @thunk(1)
         @test 1.0 == @thunk(1) / 1.0
         @test 1.0 == 1.0 / @thunk(1)
+        @test 1 == @thunk(1) / @thunk(1)
+
+        # check method ambiguities (#589)
+        for a in (ZeroTangent(), NoTangent())
+            @test a / @thunk(2) === a
+        end
 
         @test 1 == real(@thunk(1 + 1im))
         @test 1 == imag(@thunk(1 + 1im))
@@ -191,5 +203,17 @@
 
         @test scal!(2, 2.0, v, 1) == scal!(2, @thunk(2.0), v, 1)
         @test_throws MutateThunkException LAPACK.trsyl!('C', 'C', m, m, @thunk(m))
+    end
+    
+    @testset "printing" begin
+        @test !contains(sprint(show, @thunk 1+1), "...")  # short thunks not abbreviated
+        th = let x = rand(100)
+            @thunk x .+ x'
+        end
+        @test contains(sprint(show, th), "...")  # but long ones are
+        
+        @test contains(sprint(show, InplaceableThunk(mul!, th)), "mul!")  # named functions left in InplaceableThunk
+        str = sprint(show, InplaceableThunk(z -> z .+ ones(100), th))
+        @test length(findall("...", str)) == 2  # now both halves shortened
     end
 end

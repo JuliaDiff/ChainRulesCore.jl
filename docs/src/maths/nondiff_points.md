@@ -42,8 +42,8 @@ plot(abs)
 
 `abs` is the classic example of a function where the derivative is not defines as the limit from above is not equal to the limit from below
 
-$$\mathrm{abs}'(0) = \lim_{h->0^-} \dfrac{\mathrm{abs}(0)-\mathrm{abs}(0-h)}{0-h} = -1$$
-$$\mathrm{abs}'(0) = \lim_{h->0^+} \dfrac{abs(0)-\mathrm{abs}(0-h)}{0-h} = 1$$
+$$\operatorname{abs}'(0) = \lim_{h \to 0^-} \dfrac{\operatorname{abs}(0)-\operatorname{abs}(0-h)}{0-h} = -1$$
+$$\operatorname{abs}'(0) = \lim_{h \to 0^+} \dfrac{\operatorname{abs}(0)-\operatorname{abs}(0-h)}{0-h} = 1$$
 
 Now, as discussed in the introduction the AD system would on it's own choose either 1 or -1, depending on implementation.
 
@@ -112,7 +112,7 @@ Here we have no real choice but to say the derivative at `0` is `Inf`.
 We could consider as an alternative saying some large but finite value.
 However, if too large it will just overflow rapidly anyway; and if too small it will not dominate over finite terms.
 It is not possible to find a given value that is always large enough.
-Our alternatives  woud be to consider the dederivative at `nextfloat(0.0)` or `prevfloat(0.0)`.
+Our alternatives  woud be to consider the derivative at `nextfloat(0.0)` or `prevfloat(0.0)`.
 But this is more or less the same as choosing some large value -- in this case an extremely large value that will rapidly overflow.
 
 

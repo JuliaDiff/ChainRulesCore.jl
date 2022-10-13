@@ -72,12 +72,22 @@ end
         end
         @test Tangent{Foo}(; x=2.5).x == 2.5
 
-        @test keys(Tangent{Tuple{Float64}}(2.0)) == Base.OneTo(1)
+        tang1 = Tangent{Tuple{Float64}}(2.0)
+        @test keys(tang1) == Base.OneTo(1)
         @test propertynames(Tangent{Tuple{Float64}}(2.0)) == (1,)
         @test getindex(Tangent{Tuple{Float64}}(2.0), 1) == 2.0
         @test getindex(Tangent{Tuple{Float64}}(@thunk 2.0^2), 1) == 4.0
         @test getproperty(Tangent{Tuple{Float64}}(2.0), 1) == 2.0
         @test getproperty(Tangent{Tuple{Float64}}(@thunk 2.0^2), 1) == 4.0
+        @test NoTangent() === @inferred Base.tail(tang1)
+        @test NoTangent() === @inferred Base.tail(Tangent{Tuple{}}())
+        
+        tang3 = Tangent{Tuple{Float64, String, Vector{Float64}}}(1.0, NoTangent(), @thunk [3.0] .+ 4)
+        @test @inferred(first(tang3)) === tang3[1] === 1.0
+        @test @inferred(last(tang3)) isa Thunk
+        @test unthunk(last(tang3)) == [7.0]
+        @test Tuple(@inferred Base.tail(tang3))[1] === NoTangent()
+        @test Tuple(Base.tail(tang3))[end] isa Thunk
 
         NT = NamedTuple{(:a, :b),Tuple{Float64,Float64}}
         @test getindex(Tangent{NT}(; a=(@thunk 2.0^2)), :a) == 4.0
@@ -89,13 +99,21 @@ end
         @test getproperty(Tangent{NT}(; a=(@thunk 2.0^2)), :b) == ZeroTangent()
         @test getproperty(Tangent{NT}(; b=(@thunk 2.0^2)), 1) == ZeroTangent()
         @test getproperty(Tangent{NT}(; b=(@thunk 2.0^2)), 2) == 4.0
+        
+        @test first(Tangent{NT}(; a=(@thunk 2.0^2))) isa Thunk
+        @test unthunk(first(Tangent{NT}(; a=(@thunk 2.0^2)))) == 4.0
+        @test last(Tangent{NT}(; a=(@thunk 2.0^2))) isa ZeroTangent
+        
+        ntang1 = @inferred Base.tail(Tangent{NT}(; b=(@thunk 2.0^2)))
+        @test ntang1 isa Tangent{<:NamedTuple{(:b,)}}
+        @test NoTangent() === @inferred Base.tail(ntang1)
 
         # TODO: uncomment this once https://github.com/JuliaLang/julia/issues/35516
-        if VERSION >= v"1.8-"
-            @test haskey(Tangent{Tuple{Float64}}(2.0), 1) == true
-        else
-            @test_broken haskey(Tangent{Tuple{Float64}}(2.0), 1) == true
-        end
+        # if VERSION >= v"1.8-"
+        #     @test haskey(Tangent{Tuple{Float64}}(2.0), 1) == true
+        # else
+        #     @test_broken haskey(Tangent{Tuple{Float64}}(2.0), 1) == true
+        # end
         @test_broken hasproperty(Tangent{Tuple{Float64}}(2.0), 2) == false
 
         @test length(Tangent{Foo}(; x=2.5)) == 1
@@ -130,12 +148,16 @@ end
         cr = Tangent{Tuple{String,Int,Int}}("something", 2, 1)
         @test reverse(c) === cr
 
-        # can't reverse a named tuple or a dict
-        @test_throws MethodError reverse(Tangent{Foo}(; x=1.0, y=2.0))
+        if VERSION < v"1.9-"
+            # can't reverse a named tuple or a dict
+            @test_throws MethodError reverse(Tangent{Foo}(; x=1.0, y=2.0))
 
-        d = Dict(:x => 1, :y => 2.0)
-        cdict = Tangent{typeof(d),typeof(d)}(d)
-        @test_throws MethodError reverse(Tangent{Foo}())
+            d = Dict(:x => 1, :y => 2.0)
+            cdict = Tangent{typeof(d),typeof(d)}(d)
+            @test_throws MethodError reverse(Tangent{Foo}())
+        else
+            # These now work but do we care?
+        end
     end
 
     @testset "unset properties" begin
@@ -379,5 +401,13 @@ end
         nt = (; a=1, b=2.0)
         c = Tangent{typeof(nt)}(; a=NoTangent(), b=0.1)
         @test nt + c == (; a=1, b=2.1)
+    end
+    
+    @testset "printing" begin
+        t5 = Tuple(rand(3))
+        nt3 = (x=t5, y=t5, z=nothing)
+        tang = ProjectTo(nt3)(nt3)  # moderately complicated Tangent
+        @test contains(sprint(show, tang), "...}(x = Tangent")  # gets shortened
+        @test contains(sprint(show, tang), sprint(show, tang.x))  # inner piece appears whole
     end
 end

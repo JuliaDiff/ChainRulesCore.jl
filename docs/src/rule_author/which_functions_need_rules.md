@@ -27,32 +27,40 @@ Other patterns can be AD'ed through, but the backward pass performance can be gr
 #### Functions which mutate arrays
 For example,
 ```julia
-function addone!(array)
-    array .+= 1
-    return sum(array)
+function addone(a::AbstractArray)
+    b = similar(a)
+    b .= a .+ 1
+    return sum(b)
 end
 ```
 complains that
 ```julia
 julia> using Zygote
-julia> gradient(addone!, a)
+julia> gradient(addone, a)
 ERROR: Mutating arrays is not supported
 ```
 However, upon adding the `rrule` (restart the REPL after calling `gradient`)
 ```julia
-function ChainRules.rrule(::typeof(addone!), a)
-    y = addone!(a)
-    function addone!_pullback(ȳ)
+function ChainRules.rrule(::typeof(addone), a)
+    y = addone(a)
+    function addone_pullback(ȳ)
         return NoTangent(), ones(length(a))
     end
-    return y, addone!_pullback
+    return y, addone_pullback
 end
 ```
 the gradient can be evaluated:
 ```julia
-julia> gradient(addone!, a)
+julia> gradient(addone, a)
 ([1.0, 1.0, 1.0],)
 ```
+Notice that `addone(a)` mutates another array `b` internally, but **not** its input.
+This is commonly done in less trivial functions, and is often what Zygote's `Mutating arrays is not supported` error is telling you,
+even though you did not intend to mutate anything.
+Functions which mutate their own input are much more problematic.
+These are the ones named (by convention) with an exclamation mark, such as `fill!(a, x)` or `push!(a, x)`.
+It is not possible to write rules which handle all uses of such a function correctly, on current Zygote.
+
 
 !!! note "Why restarting REPL after calling `gradient`?"
     When `gradient` is called in `Zygote` for a function with no `rrule` defined, a backward pass for the function call is generated and cached.
@@ -60,6 +68,8 @@ julia> gradient(addone!, a)
     
     If an `rrule` is defined before the first call to `gradient` it should register the rule and use it, but that prevents comparing what happens before and after the `rrule` is defined.
     To compare both versions with and without an `rrule` in the REPL simultaneously, define a function `f(x) = <body>` (no `rrule`), another function `f_cr(x) = f(x)`, and an `rrule` for `f_cr`.
+
+    Calling `Zygote.refresh()` will often have the same effect as restarting the REPL.
 
 #### Exception handling
 

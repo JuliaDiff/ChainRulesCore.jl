@@ -143,16 +143,21 @@ struct NoSuperType end
 
         @test ProjectTo(Ref(true)) isa ProjectTo{NoTangent}
         @test ProjectTo(Ref([false]')) isa ProjectTo{NoTangent}
+        
+        @test ProjectTo(Ref(1.0))(Ref(NoTangent())) === NoTangent()  # collapse all-zero
     end
 
     @testset "Base: Tuple" begin
         pt1 = ProjectTo((1.0,))
-        @test pt1((1 + im,)) == Tangent{Tuple{Float64}}(1.0,)
-        @test pt1(pt1((1,))) == pt1(pt1((1,)))            # accepts correct Tangent
-        @test pt1(Tangent{Any}(1)) == pt1((1,))           # accepts Tangent{Any}
+        if VERSION >= v"1.6"
+            @test @inferred(pt1((1 + im,))) == Tangent{Tuple{Float64}}(1.0)
+            @test @inferred(pt1(pt1((1,)))) == pt1(pt1((1,)))            # accepts correct Tangent
+            @test @inferred(pt1(Tangent{Any}(1))) == pt1((1,))           # accepts Tangent{Any}
+        end
         @test pt1([1,]) == Tangent{Tuple{Float64}}(1.0,)  # accepts Vector
-        @test pt1(NoTangent()) === NoTangent()
-        @test pt1(ZeroTangent()) === ZeroTangent()
+        @test @inferred(pt1(NoTangent())) === NoTangent()
+        @test @inferred(pt1(ZeroTangent())) === ZeroTangent()
+        @test @inferred(pt1((NoTangent(),))) === NoTangent()  # collapse all-zero
 
         @test_throws Exception pt1([1, 2]) # DimensionMismatch, wrong length
         @test_throws Exception pt1([])

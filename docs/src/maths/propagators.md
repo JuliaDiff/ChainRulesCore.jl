@@ -47,12 +47,12 @@ This document will explain this point of view in some detail.
 
 ##### Some terminology/conventions
 
-Let ``p`` be an element of type M, which is defined by some assignment of numbers ``x_1,...,x_m``,
-say ``(x_1,...,x_m) = (a_1,...,1_m)``
+Let ``p`` be an element of type ``M``, which is defined by some assignment of numbers ``x_1, \dots, x_m``,
+say ``(x_1, \dots, x_m) = (a_1, \dots, a_m)``
 
-A _function_ ``f:M \to K`` on ``M`` is (for simplicity) a polynomial ``K[x_1, ... x_m]``
+A _function_ ``f:M \to K`` on ``M`` is (for simplicity) a polynomial ``K[x_1, \dots, x_m]``
 
-The tangent space ``T_pM`` of ``T`` at point ``p`` is the ``K``-vector space spanned by derivations ``d/dx``.
+The tangent space ``T_pM`` of ``M`` at point ``p`` is the ``K``-vector space spanned by derivations ``d/dx``.
 The tangent space acts linearly on the space of functions. They act as usual on functions. Our starting point is
 that we know how to write down ``d/dx(f) = df/dx``.
 
@@ -60,8 +60,8 @@ The collection of tangent spaces ``{T_pM}`` for ``p\in M`` is called the _tangen
 
 Let ``df`` denote the first order information of ``f`` at each point. This is called the differential of ``f``.
 If the derivatives of ``f`` and ``g`` agree at ``p``, we say that ``df`` and ``dg`` represent the same cotangent at ``p``.
-The covectors ``dx_1, ..., dx_m`` form the basis of the cotangent space ``T^*_pM`` at ``p``. Notice that this vector space is
-dual to ``T_p``
+The covectors ``dx_1, \dots, dx_m`` form the basis of the cotangent space ``T^*_pM`` at ``p``. Notice that this vector space is
+dual to ``T_pM``.
 
 The collection of cotangent spaces ``{T^*_pM}`` for ``p\in M`` is called the _cotangent bundle_ of ``M``.
 
