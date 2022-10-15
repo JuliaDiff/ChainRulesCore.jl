@@ -260,15 +260,23 @@ end
             suminv(x, y) = inv(x) + inv(y)
             @scalar_rule suminv(x, y) (-(inv(x)^2), -(inv(y)^2))
 
-            @test @inferred(frule((NoTangent(), 1.0, 1.0), suminv, 0.0, 1.0)) === (Inf, -Inf)
-            @test @inferred(frule((NoTangent(), ZeroTangent(), 1.0), suminv, 0.0, 1.0)) === (Inf, -1.0)
-            @test @inferred(frule((NoTangent(), NoTangent(), 1.0), suminv, 0.0, 1.0)) === (Inf, -1.0)
-            @test @inferred(frule((NoTangent(), 0.0, 1.0), suminv, 0.0, 1.0)) === (Inf, -1.0)
+            @test @inferred(frule((NoTangent(), 1.0, 1.0), suminv, 0.0, 1.0)) ===
+                (Inf, -Inf)
+            @test @inferred(frule((NoTangent(), ZeroTangent(), 1.0), suminv, 0.0, 1.0)) ===
+                (Inf, -1.0)
+            @test @inferred(frule((NoTangent(), NoTangent(), 1.0), suminv, 0.0, 1.0)) ===
+                (Inf, -1.0)
+            @test @inferred(frule((NoTangent(), 0.0, 1.0), suminv, 0.0, 1.0)) ===
+                (Inf, -1.0)
 
-            @test @inferred(frule((NoTangent(), 1.0, 1.0), suminv, 1.0, 0.0)) === (Inf, -Inf)
-            @test @inferred(frule((NoTangent(), 1.0, ZeroTangent()), suminv, 1.0, 0.0)) === (Inf, -1.0)
-            @test @inferred(frule((NoTangent(), 1.0, NoTangent()), suminv, 1.0, 0.0)) === (Inf, -1.0)
-            @test @inferred(frule((NoTangent(), 1.0, 0.0), suminv, 1.0, 0.0)) === (Inf, -1.0)
+            @test @inferred(frule((NoTangent(), 1.0, 1.0), suminv, 1.0, 0.0)) ===
+                (Inf, -Inf)
+            @test @inferred(frule((NoTangent(), 1.0, ZeroTangent()), suminv, 1.0, 0.0)) ===
+                (Inf, -1.0)
+            @test @inferred(frule((NoTangent(), 1.0, NoTangent()), suminv, 1.0, 0.0)) ===
+                (Inf, -1.0)
+            @test @inferred(frule((NoTangent(), 1.0, 0.0), suminv, 1.0, 0.0)) ===
+                (Inf, -1.0)
 
             @test @inferred(rrule(suminv, 0.0, 1.0)[2](1.0)) === (NoTangent(), -Inf, -1.0)
             @test @inferred(rrule(suminv, 0.0, 1.0)[2](ZeroTangent())) ===
