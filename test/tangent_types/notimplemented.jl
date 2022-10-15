@@ -9,6 +9,11 @@
         x = rand()
         thunk = @thunk(x^2)
 
+        # zero
+        @test @inferred(zero(ni)) === ZeroTangent()
+        @test @inferred(zero(typeof(ni2))) === ZeroTangent()
+        @test !iszero(ni)
+
         # conjugate
         @test conj(ni) === ni
 
@@ -58,8 +63,6 @@
             @test_throws E a / ni
         end
         @test_throws E ni / ni2
-        @test_throws E zero(ni)
-        @test_throws E zero(typeof(ni))
         @test_throws E iterate(ni)
         @test_throws E iterate(ni, nothing)
         @test_throws E adjoint(ni)
