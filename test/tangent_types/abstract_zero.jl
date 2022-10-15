@@ -42,9 +42,7 @@
         end
         @test broadcastable(z) isa Ref{ZeroTangent}
         @test zero(@thunk(3)) === z
-        @test zero(NoTangent()) === z
         @test zero(ZeroTangent) === z
-        @test zero(NoTangent) === z
         @test zero(Tangent{Tuple{Int,Int}}((1, 2))) === z
         for f in (transpose, adjoint, conj)
             @test f(z) === z
@@ -94,6 +92,8 @@
 
     @testset "NoTangent" begin
         dne = NoTangent()
+        @test zero(dne) === NoTangent()
+        @test zero(NoTangent) === NoTangent()
         @test dne + dne == dne
         @test dne + 1 == 1
         @test 1 + dne == 1
