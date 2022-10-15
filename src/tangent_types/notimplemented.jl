@@ -48,8 +48,16 @@ Base.:/(x::AbstractZero, ::NotImplemented) = x
 Base.:/(x::NotImplemented, ::AbstractThunk) = throw(NotImplementedException(x))
 Base.:/(::AbstractThunk, x::NotImplemented) = throw(NotImplementedException(x))
 
-Base.zero(::NotImplemented) = ZeroTangent()
-Base.zero(::Type{<:NotImplemented}) = ZeroTangent()
+Base.zero(x::NotImplemented) = throw(NotImplementedException(x))
+function Base.zero(::Type{<:NotImplemented})
+    return throw(
+        NotImplementedException(
+            @not_implemented(
+                "`zero` is not defined for missing tangents of type `NotImplemented`"
+            )
+        ),
+    )
+end
 
 Base.iterate(x::NotImplemented) = throw(NotImplementedException(x))
 Base.iterate(x::NotImplemented, ::Any) = throw(NotImplementedException(x))
