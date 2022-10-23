@@ -40,6 +40,9 @@ function ChainRulesCore.rrule_via_ad(config::MockBothConfig, f, args...; kws...)
     return f(args...; kws...), pullback_via_ad
 end
 
+struct ReuseableConfig <: RuleConfig{Union{NoForwardsMode,HasReverseMode,Reuseable}} end
+struct NotReuseableConfig <: RuleConfig{Union{NoForwardsMode,HasReverseMode,NotReuseable}} end
+
 ##############################
 
 #define some functions for testing
@@ -153,6 +156,39 @@ end
         rconfig = MockReverseConfig()
         @test nothing !== rrule(rconfig, do_thing_4, identity, 32.1)
         @test rconfig.reverse_calls == [(identity, (32.1,))]
+    end
+
+    @testset "pullback capability" begin
+        f(x) = x .* fill(2, size(x))
+        function ChainRulesCore.rrule(::RuleConfig{>:NotReuseable}, ::typeof(f), x)
+            tmp = similar(x)
+            fill!(tmp, 2)
+            y = x .* tmp
+            function pullback(Ȳ)
+                tmp .*= Ȳ
+                ∂ = tmp
+                return (NoTangent(), ∂)
+            end
+            return y, pullback
+        end
+
+        function ChainRulesCore.rrule(::RuleConfig{>:Reuseable}, ::typeof(f), x)
+            tmp = similar(x)
+            fill!(tmp, 2)
+            y = x .* tmp
+            function pullback(Ȳ)
+                ∂ = tmp .* Ȳ
+                return (NoTangent(), ∂)
+            end
+            return y, pullback
+        end
+
+        reuseable_pullback = rrule(ReuseableConfig(), f, randn(3))[2]
+        @test reuseable_pullback([1.0, 2.0, 3.0])[2] == [2.0, 4.0, 6.0]
+        @test reuseable_pullback([1.0, 2.0, 3.0])[2] == [2.0, 4.0, 6.0]
+        notreuseable_pullback = rrule(NotReuseableConfig(), f, randn(3))[2]
+        @test notreuseable_pullback([1.0, 2.0, 3.0])[2] == [2.0, 4.0, 6.0]
+        @test notreuseable_pullback([1.0, 2.0, 3.0])[2] != [2.0, 4.0, 6.0]
     end
 
     @testset "RuleConfig broadcasts like a scaler" begin
