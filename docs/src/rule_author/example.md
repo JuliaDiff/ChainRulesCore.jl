@@ -8,8 +8,8 @@ If you want to learn about `frule`s, you should still read and understand this e
 
 We define a struct `Foo`
 ```julia
-struct Foo
-    A::Matrix
+struct Foo{T}
+    A::Matrix{T}
     c::Float64
 end
 ```
@@ -25,17 +25,27 @@ Note that field `c` is ignored in the calculation.
 
 The `rrule` method for our primal computation should extend the `ChainRulesCore.rrule` function.
 ```julia
-function ChainRulesCore.rrule(::typeof(foo_mul), foo::Foo, b::AbstractArray)
+function ChainRulesCore.rrule(::typeof(foo_mul), foo::Foo{T}, b::AbstractArray) where T
     y = foo_mul(foo, b)
     function foo_mul_pullback(ȳ)
         f̄ = NoTangent()
-        f̄oo = Tangent{Foo}(; A=ȳ * b', c=ZeroTangent())
+        f̄oo = Tangent{Foo{T}}(; A=ȳ * b', c=ZeroTangent())
         b̄ = @thunk(foo.A' * ȳ)
         return f̄, f̄oo, b̄
     end
     return y, foo_mul_pullback
 end
 ```
+
+We can check this rule against a finite-differences approach using [`ChainRulesTestUtils`](https://github.com/JuliaDiff/ChainRulesTestUtils.jl):
+```julia
+julia> using ChainRulesTestUtils
+julia> test_rrule(foo_mul, Foo(rand(3, 3), 3.0), rand(3, 3))
+Test Summary:                                       | Pass  Total
+test_rrule: foo_mul on Foo{Float64},Matrix{Float64} |   10     10
+Test.DefaultTestSet("test_rrule: foo_mul on Foo{Float64},Matrix{Float64}", Any[], 10, false, false)
+```
+
 Now let's examine the rule in more detail:
 ```julia
 function ChainRulesCore.rrule(::typeof(foo_mul), foo::Foo, b::AbstractArray)
@@ -84,5 +94,5 @@ The idea is that in case the tangent is not used anywhere, the computation never
 Use [`InplaceableThunk`](@ref) if you are interested in [accumulating gradients inplace](@ref grad_acc).
 Note that in practice one would also `@thunk` the `f̄oo.A` tangent, but it was omitted in this example for clarity.
 
-As a final note, Since `b` is an `AbstractArray`, its tangent `b̄` should be projected to the right subspace.
+As a final note, since `b` is an `AbstractArray`, its tangent `b̄` should be projected to the right subspace.
 See the [`ProjectTo` the primal subspace](@ref projectto) section for more information and an example that motivates the projection operation.
