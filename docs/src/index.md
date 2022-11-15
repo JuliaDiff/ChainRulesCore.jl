@@ -47,6 +47,8 @@ It also `unthunk`s every tangent.
 
 [ReversePropagation.jl](https://github.com/dpsanders/ReversePropagation.jl) is a reverse-mode AD that supports using `rrule`s for scalar functions, but not calling back into AD and opting out of rules.
 
+On the other hand, [ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl) is NOT natively compatible with ChainRules.
+You can use the package [ForwardDiffChainRules.jl](https://github.com/ThummeTo/ForwardDiffChainRules.jl) to bridge this gap.
 
 ## Key functionality
 
