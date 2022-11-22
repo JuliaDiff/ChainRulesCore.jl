@@ -88,7 +88,7 @@ function frule((Δself, Δargs...), ::typeof(foo), args...; kwargs...)
 end
 ```
 where `y = foo(args; kwargs...)` is the primal output, and `∂Y` is the result of propagating the input tangents `Δself`, `Δargs...` forwards at the point in the domain of `foo` described by `args`.
-This propagation is call the pushforward.
+This propagation is called the pushforward.
 Often we will think of the `frule` as having the primal computation `y = foo(args...; kwargs...)`, and the pushforward `∂Y = pushforward(Δself, Δargs...)`,
 even though they are not present in seperate forms in the code.
 
