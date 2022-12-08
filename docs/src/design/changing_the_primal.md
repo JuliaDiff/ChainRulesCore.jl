@@ -472,9 +472,10 @@ You can see what the code would look like in [PR #302](https://github.com/JuliaD
 ## What things can be pulled out of the pullback?
 At this point you might wonder, is there a rule for what can be taken out of the pullback and computed in the augmented primal?
 We can deduce one, or infact two.
-The first and most practical one is that any computation that depends only on the primal input (or consequently its output) can be shifted to the augmented primal.
-The second and perhaps more insightful is that all nonlinear parts can moved out (this is a weaker statement but more interesting).
-We know this because pullbacks are linear operators -- they are linear in relation to the tangent they are pulling back.
+The first and most practical one is that any computation that depends only on the primal input or output can be shifted to the augmented primal.
+The second, perhaps more insightful, rule is that all nonlinear parts can be moved out.
+This is a weaker but more interesting statement.
+We know this because pullbacks are linear operators -- linear w.r.t. the tangent they are pulling back.
 This means they are in turn composed only of functions that are linear operators w.r.t. the tangent.
 The minimal pullback function only calls linear operators -- the nonlinear parts can all be shifted to the augmented primal.
 
