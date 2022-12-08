@@ -475,7 +475,7 @@ We can deduce one, or infact two.
 The first and most practical one is that any computation that depends only on the primal input (or consequently its output) can be shifted to the augmented primal.
 The second and perhaps more insightful is that all nonlinear parts can moved out (this is a weaker statement but more interesting).
 We know this because pullbacks are linear operators -- they are linear in relation to the tangent they are pulling back.
-This means they are in turn composed only of functions that linear operators (in relation to the tangent).
+This means they are in turn composed only of functions that are linear operators w.r.t. the tangent.
 The minimal pullback function only calls linear operators -- the nonlinear parts can all be shifted to the augmented primal.
 
 ## Conclusion
