@@ -776,11 +776,11 @@ $$\ip{-Z}{A \dot{X}} + \ip{-Z}{\dot{X} B} = \ip{Z}{\dot{C}} + \ip{Z}{\dot{A} X} 
 
 Now permute:
 
-$$\ip{-A^\mathsf{H} Z}{\dot{X}} + \ip{-Z B^\mathsf{H}}{\dot{X}} = \ip{Z}{\dot{C}} + \ip{Z X^\mathsf{H}}{\dot{A}} + \ip{X^\mathsf{H} Z}{X \dot{B}}.$$
+$$\ip{-A^\mathsf{H} Z}{\dot{X}} + \ip{-Z B^\mathsf{H}}{\dot{X}} = \ip{Z}{\dot{C}} + \ip{Z X^\mathsf{H}}{\dot{A}} + \ip{X^\mathsf{H} Z}{\dot{B}}.$$
 
 Then combine:
 
-$$\ip{-(A^\mathsf{H} Z + Z B^\mathsf{H})}{\dot{X}} = \ip{Z X^\mathsf{H}}{\dot{A}} + \ip{X^\mathsf{H} Z}{X \dot{B}} + \ip{Z}{\dot{C}}.$$
+$$\ip{-(A^\mathsf{H} Z + Z B^\mathsf{H})}{\dot{X}} = \ip{Z X^\mathsf{H}}{\dot{A}} + \ip{X^\mathsf{H} Z}{\dot{B}} + \ip{Z}{\dot{C}}.$$
 
 This is almost exactly the identity we need to solve for $\overline{A}$, $\overline{B}$, and $\overline{C}$.
 To manipulate it to the right form, we need only define $A^\mathsf{H} Z + Z B^\mathsf{H} = -\overline{X}$.
