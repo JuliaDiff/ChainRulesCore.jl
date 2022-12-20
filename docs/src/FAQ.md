@@ -102,12 +102,12 @@ The list here is incomplete, but is vetted for quality.
 
  - ["What types work with differentiation?](https://github.com/google-research/dex-lang/issues/454#issuecomment-766089519) comment on DexLang GitHub issue by [Dan Zheng](https://github.com/dan-zheng): summarizes several years of insights from the Swift AD work.
 
- - MIT 18337 lecture notes 8-10 (by [Christopher Rackauckas](https://github.com/ChrisRackauckas) and [David P. Sanders](https://github.com/dpsanders)  : moves fast from basic to advanced, particularly good if you like applicable mathematics
+ - MIT 18337 lecture notes 8-10 by [Christopher Rackauckas](https://github.com/ChrisRackauckas) and [David P. Sanders](https://github.com/dpsanders): moves fast from basic to advanced, particularly good if you like applicable mathematics
    - [Automatic Differentiation and Application](https://mitmath.github.io/18337/lecture8/automatic_differentiation): Good introduction
    - [Solving Stiff Ordinary Differential Equations](https://mitmath.github.io/18337/lecture9/stiff_odes): ignore the ODE stuff, most of this is about Sparse AutoDiff, can skip/skim this one
    - [Basic Parameter Estimation, Reverse-Mode AD, and Inverse Problems](https://mitmath.github.io/18337/lecture10/estimation_identification): use in optimization, and details connections of other math.
    - [Differentiable Programming and Neural Differential Equations](https://mitmath.github.io/18337/lecture11/adjoints): Includes custom primitive derivations for equation solvers.
 
- - [Diff-Zoo Jupyter Notebook Book](https://github.com/MikeInnes/diff-zoo)  (by [Mike Innes](https://github.com/MikeInnes/diff-zoo), has implementations and explanations.
+ - [Diff-Zoo Jupyter Notebook Book](https://github.com/MikeInnes/diff-zoo) by [Mike Innes](https://github.com/MikeInnes/diff-zoo), has implementations and explanations.
 
- - ["Evaluating Derivatives"](https://dl.acm.org/doi/book/10.5555/1455489) (by Griewank and Walther) is the best book at least for reverse-mode. It also covers forward-mode though (by its own admission) not as well, it never mentioned dual numbers which is an unfortunate lack.
+ - ["Evaluating Derivatives"](https://dl.acm.org/doi/book/10.5555/1455489) by Griewank and Walther is the best book at least for reverse-mode. It also covers forward-mode though (by its own admission) not as well, it never mentioned dual numbers which is an unfortunate lack.
