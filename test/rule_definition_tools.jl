@@ -291,6 +291,23 @@ end
             @test @inferred(rrule(suminv, 1.0, 0.0)[2](NoTangent())) ===
                 (NoTangent(), NoTangent(), NoTangent())
             @test @inferred(rrule(suminv, 1.0, 0.0)[2](0.0)) === (NoTangent(), 0.0, 0.0)
+
+            # cases not covered
+            t = @thunk(0.0)
+            @inferred(frule((NoTangent(), t, 1.0), suminv, 0.0, 1.0))
+            @inferred(frule((NoTangent(), 1.0, t), suminv, 1.0, 0.0))
+            @inferred(rrule(suminv, 0.0, 1.0)[2](t))
+            @inferred(rrule(suminv, 1.0, 0.0)[2](t))
+            @test_broken rrule(suminv, 0.0, 1.0)[2](t) == (NoTangent(), 0.0, 0.0)
+            @test_broken rrule(suminv, 1.0, 0.0)[2](t) == (NoTangent(), 0.0, 0.0)
+            @test_broken frule((NoTangent(), t, 1.0), suminv, 0.0, 1.0) == (Inf, -1.0)
+            @test_broken frule((NoTangent(), 1.0, t), suminv, 1.0, 0.0) == (Inf, -1.0)
+
+            ni = @not_implemented("not implemented!")
+            @test_broken rrule(suminv, 0.0, 1.0)[2](ni) == (NoTangent(), 0.0, 0.0)
+            @test_broken rrule(suminv, 1.0, 0.0)[2](ni) == (NoTangent(), 0.0, 0.0)
+            @test_broken frule((NoTangent(), ni, 1.0), suminv, 0.0, 1.0) == (Inf, -1.0)
+            @test_broken frule((NoTangent(), 1.0, ni), suminv, 1.0, 0.0) == (Inf, -1.0)
         end
 
         @testset "Regression tests against #276 and #265" begin
