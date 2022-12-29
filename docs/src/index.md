@@ -47,6 +47,8 @@ It also `unthunk`s every tangent.
 
 [ReversePropagation.jl](https://github.com/dpsanders/ReversePropagation.jl) is a reverse-mode AD that supports using `rrule`s for scalar functions, but not calling back into AD and opting out of rules.
 
+On the other hand, [ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl) is NOT natively compatible with ChainRules.
+You can use the package [ForwardDiffChainRules.jl](https://github.com/ThummeTo/ForwardDiffChainRules.jl) to bridge this gap.
 
 ## Key functionality
 
@@ -86,7 +88,7 @@ function frule((Δself, Δargs...), ::typeof(foo), args...; kwargs...)
 end
 ```
 where `y = foo(args; kwargs...)` is the primal output, and `∂Y` is the result of propagating the input tangents `Δself`, `Δargs...` forwards at the point in the domain of `foo` described by `args`.
-This propagation is call the pushforward.
+This propagation is called the pushforward.
 Often we will think of the `frule` as having the primal computation `y = foo(args...; kwargs...)`, and the pushforward `∂Y = pushforward(Δself, Δargs...)`,
 even though they are not present in seperate forms in the code.
 
