@@ -510,7 +510,7 @@ function _target_rewrite!(expr::Expr, no_rule)
     length(expr.args) === 0 && error("Malformed method expression. $expr")
     if expr.head === :call || expr.head === :where
         expr.args[1] = _target_rewrite!(expr.args[1], no_rule)
-    elseif expr.head == :(.) && expr.args[1] == :ChainRulesCore
+    elseif expr.head === :(.) && expr.args[1] === :ChainRulesCore
         expr = _target_rewrite!(expr.args[end], no_rule)
     else
         error("Malformed method expression. $(expr)")
@@ -519,13 +519,13 @@ function _target_rewrite!(expr::Expr, no_rule)
 end
 _target_rewrite!(qt::QuoteNode, no_rule) = _target_rewrite!(qt.value, no_rule)
 function _target_rewrite!(call_target::Symbol, no_rule)
-    return if call_target == :rrule && no_rule
+    return if call_target === :rrule && no_rule
         :($ChainRulesCore.no_rrule)
-    elseif call_target == :rrule && !no_rule
+    elseif call_target === :rrule && !no_rule
         :($ChainRulesCore.rrule)
-    elseif call_target == :frule && no_rule
+    elseif call_target === :frule && no_rule
         :($ChainRulesCore.no_frule)
-    elseif call_target == :frule && !no_rule
+    elseif call_target === :frule && !no_rule
         :($ChainRulesCore.frule)
     else
         error("Unexpected opt-out target. Expected frule or rrule, got: $call_target")
@@ -571,8 +571,8 @@ function _isvararg(expr::Expr)
     Meta.isexpr(expr, :...) && return true
     if Meta.isexpr(expr, :(::))
         constraint = last(expr.args)
-        constraint == :Vararg && return true
-        Meta.isexpr(constraint, :curly) && first(constraint.args) == :Vararg && return true
+        constraint === :Vararg && return true
+        Meta.isexpr(constraint, :curly) && first(constraint.args) === :Vararg && return true
     end
     return false
 end
