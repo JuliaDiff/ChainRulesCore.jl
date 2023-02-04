@@ -226,8 +226,8 @@ end
 
     @testset "strong_mul" begin
         @testset for T in (Float32, Float64, BigFloat), S in (Float32, Float64, BigFloat)
-            x = randn(T)
-            y = randn(S)
+            x = T === BigFloat ? big(randn()) : randn(T)
+            y = S === BigFloat ? big(randn()) : randn(S)
             @test ChainRulesCore.strong_mul(x, y) == x * y
             @test ChainRulesCore.strong_mul(x, zero(y)) == zero(x * y)
             @test ChainRulesCore.strong_mul(oftype(Inf, x), zero(y)) == zero(x * y)
@@ -241,9 +241,9 @@ end
             S in (Float32, Float64, BigFloat),
             R in (Float32, Float64, BigFloat)
 
-            x = randn(T)
-            y = randn(S)
-            z = randn(R)
+            x = T === BigFloat ? big(randn()) : randn(T)
+            y = S === BigFloat ? big(randn()) : randn(S)
+            z = R === BigFloat ? big(randn()) : randn(R)
             @test ChainRulesCore.strong_muladd(x, y, z) == muladd(x, y, z)
             @test ChainRulesCore.strong_muladd(x, zero(y), z) == z
             @test ChainRulesCore.strong_muladd(oftype(Inf, x), zero(y), z) == z
