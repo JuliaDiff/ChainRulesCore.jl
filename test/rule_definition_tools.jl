@@ -224,6 +224,34 @@ end
         end
     end
 
+    @testset "strong_mul" begin
+        @testset for T in (Float32, Float64, BigFloat), S in (Float32, Float64, BigFloat)
+            x = randn(T)
+            y = randn(S)
+            @test ChainRulesCore.strong_mul(x, y) == x * y
+            @test ChainRulesCore.strong_mul(x, zero(y)) == zero(x * y)
+            @test ChainRulesCore.strong_mul(oftype(Inf, x), zero(y)) == zero(x * y)
+            @test ChainRulesCore.strong_mul(oftype(-Inf, x), zero(y)) == zero(x * y)
+            @test ChainRulesCore.strong_mul(oftype(NaN, x), zero(y)) == zero(x * y)
+        end
+    end
+
+    @testset "strong_muladd" begin
+        @testset for T in (Float32, Float64, BigFloat),
+            S in (Float32, Float64, BigFloat),
+            R in (Float32, Float64, BigFloat)
+
+            x = randn(T)
+            y = randn(S)
+            z = randn(R)
+            @test ChainRulesCore.strong_muladd(x, y, z) == muladd(x, y, z)
+            @test ChainRulesCore.strong_muladd(x, zero(y), z) == z
+            @test ChainRulesCore.strong_muladd(oftype(Inf, x), zero(y), z) == z
+            @test ChainRulesCore.strong_muladd(oftype(-Inf, x), zero(y), z) == z
+            @test ChainRulesCore.strong_muladd(oftype(NaN, x), zero(y), z) == z
+        end
+    end
+
     @testset "@scalar_rule" begin
         @testset "@scalar_rule with multiple output" begin
             simo(x) = (x, 2x)
