@@ -636,3 +636,7 @@ strong_muladd(x, y, z) = muladd(ifelse(iszero(y), zero(x), x), y, z)
 # slightly faster for BigFloats
 strong_mul(x::BigFloat, y::BigFloat) = (iszero(y) ? zero(x) : x) * y
 strong_muladd(x::BigFloat, y::BigFloat, z) = muladd((iszero(y) ? zero(x) : x), y, z)
+
+# avoid raising errors for NotImplemented
+strong_mul(x::NotImplemented, y) = (iszero(y) ? zero(x) : x) * y
+strong_muladd(x::NotImplemented, y, z) = muladd((iszero(y) ? zero(x) : x), y, z)
