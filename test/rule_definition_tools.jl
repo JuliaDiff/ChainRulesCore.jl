@@ -225,30 +225,57 @@ end
     end
 
     @testset "strong_mul" begin
-        @testset for T in (Float32, Float64, BigFloat), S in (Float32, Float64, BigFloat)
-            x = T === BigFloat ? big(randn()) : randn(T)
-            y = S === BigFloat ? big(randn()) : randn(S)
-            @test ChainRulesCore.strong_mul(x, y) == x * y
-            @test ChainRulesCore.strong_mul(x, zero(y)) == zero(x * y)
-            @test ChainRulesCore.strong_mul(oftype(Inf, x), zero(y)) == zero(x * y)
-            @test ChainRulesCore.strong_mul(oftype(-Inf, x), zero(y)) == zero(x * y)
-            @test ChainRulesCore.strong_mul(oftype(NaN, x), zero(y)) == zero(x * y)
+        ni = @not_implemented("not implemented!")
+        xvals = (
+            5,
+            randn(Float32),
+            randn(Float64),
+            randn(ComplexF64),
+            big(randn()),
+            ZeroTangent(),
+        )
+        yvals = (3, randn(Float32), randn(Float64), randn(ComplexF64), big(randn()))
+        yzerovals = (0, 0.0f0, 0.0, 0.0im, big(0.0), ZeroTangent(), NoTangent())
+        @testset for x in xvals
+            x === ni || @testset for y in yvals
+                @test @inferred(ChainRulesCore.strong_mul(x, y)) == x * y
+            end
+            @testset for y in yzerovals
+                @test @inferred(ChainRulesCore.strong_mul(x, y)) == zero(x * y)
+                if x isa AbstractFloat
+                    @test ChainRulesCore.strong_mul(oftype(x, Inf), y) == zero(x * y)
+                    @test ChainRulesCore.strong_mul(oftype(x, -Inf), y) == zero(x * y)
+                    @test ChainRulesCore.strong_mul(oftype(x, NaN), y) == zero(x * y)
+                end
+            end
         end
     end
 
     @testset "strong_muladd" begin
-        @testset for T in (Float32, Float64, BigFloat),
-            S in (Float32, Float64, BigFloat),
-            R in (Float32, Float64, BigFloat)
-
-            x = T === BigFloat ? big(randn()) : randn(T)
-            y = S === BigFloat ? big(randn()) : randn(S)
-            z = R === BigFloat ? big(randn()) : randn(R)
-            @test ChainRulesCore.strong_muladd(x, y, z) == muladd(x, y, z)
-            @test ChainRulesCore.strong_muladd(x, zero(y), z) == z
-            @test ChainRulesCore.strong_muladd(oftype(Inf, x), zero(y), z) == z
-            @test ChainRulesCore.strong_muladd(oftype(-Inf, x), zero(y), z) == z
-            @test ChainRulesCore.strong_muladd(oftype(NaN, x), zero(y), z) == z
+        ni = @not_implemented("not implemented!")
+        xvals = (
+            5,
+            randn(Float32),
+            randn(Float64),
+            randn(ComplexF64),
+            big(randn()),
+            ZeroTangent(),
+        )
+        yvals = (3, randn(Float32), randn(Float64), randn(ComplexF64), big(randn()))
+        zvals = (7, randn(Float32), randn(Float64), randn(ComplexF64), big(randn()))
+        yzerovals = (0, 0.0f0, 0.0, 0.0 * im, big(0.0), ZeroTangent(), NoTangent())
+        @testset for x in xvals, z in zvals
+            x === ni || @testset for y in yvals
+                @test @inferred(ChainRulesCore.strong_muladd(x, y, z)) == muladd(x, y, z)
+            end
+            @testset for y in yzerovals
+                @test @inferred(ChainRulesCore.strong_muladd(x, y, z)) == z
+                if x isa AbstractFloat
+                    @test ChainRulesCore.strong_muladd(oftype(x, Inf), y, z) == z
+                    @test ChainRulesCore.strong_muladd(oftype(x, -Inf), y, z) == z
+                    @test ChainRulesCore.strong_muladd(oftype(x, NaN), y, z) == z
+                end
+            end
         end
     end
 
