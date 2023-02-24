@@ -21,7 +21,7 @@ Further they often support other linear operators for convenience in writing rul
 
 ## The subtypes of AbstractTangent
 
-Not all tangents need to subtype the AbstractTangent type -- infact most don't: most are just numbers or arrays -- but ChainRulesCore does provide a number of special tangent types that can be very useful. 
+Not all tangents need to subtype the AbstractTangent type -- in fact most don't: most are just numbers or arrays -- but ChainRulesCore does provide a number of special tangent types that can be very useful. 
 
  - [`ZeroTangent`](@ref): It is a special representation of `0`. It does great things around avoiding expanding `Thunks` in addition.
  - [`NoTangent`](@ref): Zero-like, represents that the operation on this input is not differentiable. Its primal type is normally `Integer` or `Bool`.
