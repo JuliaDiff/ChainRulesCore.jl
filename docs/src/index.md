@@ -90,7 +90,7 @@ end
 where `y = foo(args; kwargs...)` is the primal output, and `∂Y` is the result of propagating the input tangents `Δself`, `Δargs...` forwards at the point in the domain of `foo` described by `args`.
 This propagation is called the pushforward.
 Often we will think of the `frule` as having the primal computation `y = foo(args...; kwargs...)`, and the pushforward `∂Y = pushforward(Δself, Δargs...)`,
-even though they are not present in seperate forms in the code.
+even though they are not present in separate forms in the code.
 
 For example, the `frule` for `sin(x)` is:
 ```julia
@@ -146,7 +146,7 @@ Vector, matrix, and higher rank tensor primals can be represented by vector, mat
 ChainRules defines a [`Tangent`](@ref) tangent type to represent tangents of `struct`s, `Tuple`s, `NamedTuple`s, and `Dict`s.
 
 Additionally, for signalling semantics, we distinguish between two tangent types representing a zero tangent.
-[`NoTangent`](@ref) type represent situtations in which the tangent space does not exist, e.g. an index into an array can not be perturbed.
+[`NoTangent`](@ref) type represent situations in which the tangent space does not exist, e.g. an index into an array can not be perturbed.
 [`ZeroTangent`](@ref) is used for cases where the tangent happens to be zero, e.g. because the primal argument is not used in the computation.
 
 We also define [`Thunk`](@ref)s to allow certain optimisation.

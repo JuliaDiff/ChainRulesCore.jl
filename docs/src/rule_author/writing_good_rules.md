@@ -40,7 +40,7 @@ They should be used where possible.
 However, sometimes for performance reasons this is not ideal.
 Especially, if it is to replace a scalar, and is in a type-unstable way.
 It causes problems if mapping over such pullbacks/pushforwards.
-This woull be solved once [JuliaLang/julia#38241](https://github.com/JuliaLang/julia/issues/38241) has been addressed.
+This would be solved once [JuliaLang/julia#38241](https://github.com/JuliaLang/julia/issues/38241) has been addressed.
 
 ## Use `Thunk`s appropriately
 

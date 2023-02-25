@@ -2,7 +2,7 @@
 
 For people who learn better by video we have a number of videos of talks we have given about the ChainRules project.
 Note however, that the videos are frozen in time reflecting the state of the packages at the time they were recorded.
-This documentation is the continously updated canonical source.
+This documentation is the continuously updated canonical source.
 However, we have tried to note below each video notes on its correctness.
 
 The talks that follow are in reverse chronological order (i.e. most recent video is first).
