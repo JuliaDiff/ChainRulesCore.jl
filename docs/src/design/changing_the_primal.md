@@ -471,7 +471,7 @@ You can see what the code would look like in [PR #302](https://github.com/JuliaD
 
 ## What things can be taken out of the pullback?
 At this point you might wonder, is there a rule for what can be taken out of the pullback and computed in the augmented primal?
-We can deduce one, or infact two.
+We can deduce one, or in fact two.
 The first and most practical one is that any computation that depends only on the primal input or output can be shifted to the augmented primal.
 The second, perhaps more insightful, rule is that all nonlinear parts can be moved out.
 This is a weaker but more interesting statement.
