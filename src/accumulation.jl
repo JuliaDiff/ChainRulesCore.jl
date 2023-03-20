@@ -24,6 +24,18 @@ function add!!(x, t::InplaceableThunk)
     end
 end
 
+function add!!(x, t::BroadcastThunk)
+    return if is_inplaceable_destination(x)
+        if !debug_mode()
+            x .+= t.bc
+        else
+            debug_add!(x, t)
+        end
+    else
+        x .+ t.bc
+    end
+end
+
 add!!(x::AbstractArray, y::Thunk) = add!!(x, unthunk(y))
 
 function add!!(x::AbstractArray{<:Any,N}, y::AbstractArray{<:Any,N}) where {N}

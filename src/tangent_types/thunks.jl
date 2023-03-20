@@ -249,3 +249,74 @@ function Base.show(io::IO, x::InplaceableThunk)
     show(io, x.val)
     print(io, ")")
 end
+
+
+"""
+    BroadcastThunk(bc::Broadcasted)
+
+A new kind of thunk, which wraps Base's lazy broadcasting. 
+
+Calling `unthunk` will materialise the array. But inserting it directly
+into a broadcast will fuse the old and the new, which is the whole point.
+
+That means that rules accepting thunks should not always `unthunk` them
+before use. Instead, they may rely on `broadcastable` to do so, as long as
+they only do this in one place.
+
+Does that mean we should use `BroadcastThunk` even for expensive operations,
+and rely on downstreadm rules to use it just once? Or would a better policy be
+to only use this for cheap operations, and downstreadm rules may then dispatch
+on `::BroadcastThunk` & fuse it into two different places?
+"""
+struct BroadcastThunk{T<:Broadcast.Broadcasted} <: AbstractThunk
+    bc::T
+end
+BroadcastThunk(x) = BroadcastThunk(Broadcast.broadcasted(identity, Broadcast.broadcastable(x)))
+
+@inline unthunk(x::BroadcastThunk) = copy(x.bc)
+
+# This is the whole point:
+Base.Broadcast.broadcastable(x::BroadcastThunk) = x.bc
+
+# This is just in case you write `sqrt.(-dx .+ 1)` and forget `.-`
+Base.:(-)(x::BroadcastThunk) = BroadcastThunk(Broadcast.broadcasted(-, x.bc))
+
+function Base.show(io::IO, x::BroadcastThunk)
+    print(io, "BroadcastThunk(")
+    str = sprint(show, x.bc, context = io)
+    if length(str) < 80
+        printstyled(io, str, color=:light_black)
+    else
+        printstyled(io, str[1:70], "...", color=:light_black)
+    end
+    print(io, ")")
+end
+
+"""
+    @bc_thunk f(a, g(b, c))
+
+This works like `@.` to produce something like `@thunk f.(a, g.(b, c))`.
+Except that instead of a `Thunk`, it's a `BroadcastThunk`.
+"""
+macro bc_thunk(ex)
+  bc = esc(Broadcast.__dot__(ex))
+  :($_lazy_bc.($bc))
+end
+
+function _lazy_bc end
+Broadcast.broadcasted(::typeof(_lazy_bc), x) = _Lazy_BC(x)
+struct _Lazy_BC{T}; bc::T; end
+Broadcast.materialize(x::_Lazy_BC) = BroadcastThunk(Broadcast.instantiate(x.bc))
+
+# The accumulation of thunks is a mess, no AD actually calls add!!, and + always unthunks.
+# But... these should be safe, and make more BroadcastThunks:
+Base.:(+)(x::BroadcastThunk, y::BroadcastThunk) = @bc_thunk x.bc + y.bc
+
+Base.:(+)(x::BroadcastThunk, y::AbstractArray) = @bc_thunk x.bc + y
+Base.:(+)(x::AbstractArray, y::BroadcastThunk) = @bc_thunk x + y.bc
+
+Base.:(+)(x::BroadcastThunk, y::Thunk) = x + unthunk(y)
+Base.:(+)(x::Thunk, y::BroadcastThunk) = unthunk(x) + y
+
+Base.:(+)(x::BroadcastThunk, y::InplaceableThunk) = BroadcastThunk(add!!(unthunk(x), y))
+Base.:(+)(x::InplaceableThunk, y::BroadcastThunk) = BroadcastThunk(add!!(unthunk(y), x))
