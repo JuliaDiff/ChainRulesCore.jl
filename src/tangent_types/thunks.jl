@@ -201,7 +201,7 @@ struct Thunk{F} <: AbstractThunk
     f::F
 end
 
-@inline unthunk(x::Thunk) = x.f()
+@inline unthunk(x::Thunk) = unthunk(x.f())
 
 function Base.show(io::IO, x::Thunk)
     print(io, "Thunk(")
@@ -252,9 +252,9 @@ end
 
 
 """
-    BroadcastThunk(bc::Broadcasted)
+    BroadcastThunk{T}(bc::Broadcasted)
 
-A new kind of thunk, which wraps Base's lazy broadcasting. 
+A new kind of thunk, which wraps Base's lazy broadcasting. `T` is the eltype.
 
 Calling `unthunk` will materialise the array. But inserting it directly
 into a broadcast will fuse the old and the new, which is the whole point.
@@ -268,21 +268,25 @@ and rely on downstreadm rules to use it just once? Or would a better policy be
 to only use this for cheap operations, and downstreadm rules may then dispatch
 on `::BroadcastThunk` & fuse it into two different places?
 """
-struct BroadcastThunk{T<:Broadcast.Broadcasted} <: AbstractThunk
-    bc::T
+struct BroadcastThunk{T, B<:Broadcast.Broadcasted} <: AbstractThunk
+    bc::B
 end
-BroadcastThunk(x) = BroadcastThunk(Broadcast.broadcasted(identity, Broadcast.broadcastable(x)))
+BroadcastThunk(bc::Broadcast.Broadcasted) =
+    BroadcastThunk{Base.@default_eltype(bc), typeof(bc)}(bc)
+BroadcastThunk(x::A) where {A<:AbstractArray{T}} where {T} =
+    BroadcastThunk{T,A}(Broadcast.broadcasted(identity, x))
+
+Base.eltype(x::BroadcastThunk{T}) where {T} = T
 
 @inline unthunk(x::BroadcastThunk) = copy(x.bc)
 
 # This is the whole point:
 Base.Broadcast.broadcastable(x::BroadcastThunk) = x.bc
 
-# This is just in case you write `sqrt.(-dx .+ 1)` and forget `.-`
-Base.:(-)(x::BroadcastThunk) = BroadcastThunk(Broadcast.broadcasted(-, x.bc))
-
 function Base.show(io::IO, x::BroadcastThunk)
-    print(io, "BroadcastThunk(")
+    print(io, "BroadcastThunk{")
+    show(io, eltype(x))
+    print(io, "}(")
     str = sprint(show, x.bc, context = io)
     if length(str) < 80
         printstyled(io, str, color=:light_black)
@@ -307,6 +311,34 @@ function _lazy_bc end
 Broadcast.broadcasted(::typeof(_lazy_bc), x) = _Lazy_BC(x)
 struct _Lazy_BC{T}; bc::T; end
 Broadcast.materialize(x::_Lazy_BC) = BroadcastThunk(Broadcast.instantiate(x.bc))
+
+macro bc_thunk(s::Symbol)
+    error("cannot apply @bc_thunk to one symbol, there is nothing to broadcast!")
+end
+
+# These prove useful for writing rules:
+
+Base.:(-)(x::BroadcastThunk) = @bc_thunk -(x.bc)
+
+for fun in [:conj, :real, :imag, :complex]
+    @eval Base.$fun(x::BroadcastThunk) = BroadcastThunk(Broadcast.instantiate(Broadcast.broadcasted($fun, x.bc)))
+end
+
+Base.sum(x::BroadcastThunk) = sum(x.bc)
+Base.sum(x::BroadcastThunk{<:Number}; dims=:) = sum(x.bc; dims, init=zero(eltype(x)))
+Base.sum(f, x::BroadcastThunk) = sum(f, x.bc)
+
+LinearAlgebra.dot(x::Base.AbstractArrayOrBroadcasted, y::BroadcastThunk{<:Number}) = sum(@bc_thunk conj(x) * y.bc)
+
+"""
+    unthunk_or_bc(dx)
+
+This removes most thunks, but turns a `BroadcastThunk` into a `Broadcasted`.
+For use in rrules which can handle the latter.
+"""
+unthunk_or_bc(x) = unthunk(x)
+unthunk_or_bc(x::BroadcastThunk) = x.bc
+unthunk_or_bc(x::Thunk) = unthunk_or_bc(x.f())  # bct = @bc_thunk 1+[2,3]; unthunk_or_bc(@thunk -bct) isa Broadcasted
 
 # The accumulation of thunks is a mess, no AD actually calls add!!, and + always unthunks.
 # But... these should be safe, and make more BroadcastThunks:

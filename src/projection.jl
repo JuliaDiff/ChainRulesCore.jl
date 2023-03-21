@@ -268,6 +268,51 @@ function _projection_mismatch(axes_x::Tuple, size_dx::Tuple)
     )
 end
 
+# Broadcasted we treat a lot like AbstractArray{<:Number}
+function ProjectTo(x::Broadcasted)
+    return ProjectTo{Broadcasted}(; element=_eltype_projectto(Base.@default_eltype x), axes=axes(x))
+end
+
+function (project::ProjectTo{Broadcasted})(dx::AbstractArray{S,M}) where {S,M}
+    dy = if axes(dx) === project.axes
+        dx
+    else
+        for d in 1:max(M, length(project.axes))
+            if size(dx, d) != length(get(project.axes, d, 1))
+                throw(_projection_mismatch(project.axes, size(dx)))
+            end
+        end
+        reshape(dx, project.axes)
+    end
+    T = project_type(project.element)
+    dz = S <: T ? dy : @bc_thunk project.element.(dy)
+    return dz
+end
+
+function (project::ProjectTo{Broadcasted})(dx::BroadcastThunk{S}) where {S}
+    if axes(dx.bc) !== project.axes
+        return project(unthunk(dx))
+    end
+    T = project_type(project.element)
+    return S <: T ? dx : @bc_thunk project.element(dx)
+end
+
+# We can allow BroadcastThunk as a gradient of an Array, but collect it to reshape etc.
+function (project::ProjectTo{AbstractArray})(dx::BroadcastThunk{S}) where {S}
+    if axes(dx.bc) !== project.axes
+        return project(unthunk(dx))
+    end
+    dz = if hasproperty(project, :element)
+        T = project_type(project.element)
+        S <: T ? dx : @bc_thunk project.element(dx)
+    else
+        @bc_thunk (|>)(dx, project.elements)
+    end
+    return dz
+end
+# Also collect BroadcastThunk for any structured array:
+(project::ProjectTo{<:AbstractArray})(dx::BroadcastThunk) = project(unthunk(dx))
+
 #####
 ##### `Base`, part II: return of the Tangent
 #####
@@ -384,6 +429,11 @@ function (project::ProjectTo{<:Tangent{<:Tuple}})(dx::AbstractArray)
         return project_type(project)(dz...)
     end
 end
+
+# Since Tuples participate in broadcasting, we may get a BroadcastThunk. 
+# function (project::ProjectTo{<:Tangent{<:Union{Tuple,NamedTuple}}})(dx::BroadcastThunk)
+#     return project(unthunk(dx))
+# end
 
 
 #####
