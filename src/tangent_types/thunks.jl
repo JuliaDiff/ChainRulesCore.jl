@@ -252,21 +252,23 @@ end
 
 
 """
-    BroadcastThunk{T}(bc::Broadcasted)
+    BroadcastThunk(bc::Broadcasted)
 
-A new kind of thunk, which wraps Base's lazy broadcasting. `T` is the eltype.
+Another kind of thunk, which wraps Base's lazy broadcasting.
+Usually constructed by `@bc_thunk expr`.
 
 Calling `unthunk` will materialise the array. But inserting it directly
 into a broadcast will fuse the old and the new, which is the whole point.
 
-That means that rules accepting thunks should not always `unthunk` them
-before use. Instead, they may rely on `broadcastable` to do so, as long as
-they only do this in one place.
+That means that rules accepting thunks should not always `unthunk(dy)` them
+before use. Instead, they may rely on broadcasting to do so, as long as
+they only do this in one place. Or they can call `unthunk_or_bc(dy)`
+to explicitly remove any other thunk, but keep a lazy `Broadcasted`.
+This can be fused into several different broadcasting expressions,
+for example in the `rrule` for `x ./ y`.
 
-Does that mean we should use `BroadcastThunk` even for expensive operations,
-and rely on downstreadm rules to use it just once? Or would a better policy be
-to only use this for cheap operations, and downstreadm rules may then dispatch
-on `::BroadcastThunk` & fuse it into two different places?
+This possibility of multiple use means that `BroadcastThunk` should
+only contain cheap operations.
 """
 struct BroadcastThunk{T, B<:Broadcast.Broadcasted} <: AbstractThunk
     bc::B
@@ -277,20 +279,11 @@ function BroadcastThunk(bc::Broadcast.Broadcasted)
         BroadcastThunk{T, typeof(bc)}(bc)
     else
         # We need init=zero(T) for unbroadcast to work.
-        # For things like arrays of arrays, we just don't thunk?
-        # copy(bc)
-        # Or perhaps we make a boring thunk?
+        # For things like arrays of arrays ... perhaps make an old-style thunk?
         InplaceableThunk(dx -> dx .+= bc, @thunk copy(bc))
     end
 end
-function BroadcastThunk(x::AbstractArray{T}) where {T}
-    return if T <: Number  # applicable(zero, T)
-        bc = Broadcast.instantiate(Broadcast.broadcasted(identity, x))
-        BroadcastThunk{T,typeof(bc)}(bc)
-    else
-        x
-    end
-end
+
 Base.eltype(x::BroadcastThunk{T}) where {T} = T
 
 @inline unthunk(x::BroadcastThunk) = copy(x.bc)
@@ -315,7 +308,12 @@ end
     @bc_thunk f(a, g(b, c))
 
 This works like `@.` to produce something like `@thunk f.(a, g.(b, c))`.
-Except that instead of a `Thunk`, it's a `BroadcastThunk`.
+Except that instead of a `Thunk`, it's usually a `BroadcastThunk`.
+(The exception is that, for broadcasts whose eltype is not `<:Number`,
+it will make an `InplaceableThunk` instead.)
+
+Some rules with `@thunk f.(a, g.(b, c))` should not use this!
+The resulting broadcast may be done a few times.
 """
 macro bc_thunk(ex)
   bc = esc(Broadcast.__dot__(ex))
@@ -339,9 +337,9 @@ for fun in [:conj, :real, :imag, :complex]
     @eval Base.$fun(x::BroadcastThunk) = BroadcastThunk(Broadcast.instantiate(Broadcast.broadcasted($fun, x.bc)))
 end
 
-Base.sum(x::BroadcastThunk) = sum(x.bc)
-Base.sum(x::BroadcastThunk; dims=:) = sum(x.bc; dims, init=zero(eltype(x)))
-Base.sum(f, x::BroadcastThunk) = sum(f, x.bc)
+Base.sum(x::BroadcastThunk; dims=:) = _sum_bc(x.bc, dims)
+_sum_bc(bc, ::Colon) = sum(bc)
+_sum_bc(bc, dims) = sum(bc; dims, init=zero(eltype(x)))
 
 LinearAlgebra.dot(x::Base.AbstractArrayOrBroadcasted, y::BroadcastThunk{<:Number}) = sum(@bc_thunk conj(x) * y.bc)
 
@@ -362,8 +360,5 @@ Base.:(+)(x::BroadcastThunk, y::BroadcastThunk) = @bc_thunk x.bc + y.bc
 Base.:(+)(x::BroadcastThunk, y::AbstractArray) = @bc_thunk x.bc + y
 Base.:(+)(x::AbstractArray, y::BroadcastThunk) = @bc_thunk x + y.bc
 
-Base.:(+)(x::BroadcastThunk, y::Thunk) = x + unthunk(y)
-Base.:(+)(x::Thunk, y::BroadcastThunk) = unthunk(x) + y
-
-Base.:(+)(x::BroadcastThunk, y::InplaceableThunk) = BroadcastThunk(add!!(unthunk(x), y))
-Base.:(+)(x::InplaceableThunk, y::BroadcastThunk) = BroadcastThunk(add!!(unthunk(y), x))
+Base.:(+)(x::BroadcastThunk, y::AbstractThunk) = x + unthunk(y)
+Base.:(+)(x::AbstractThunk, y::BroadcastThunk) = unthunk(x) + y

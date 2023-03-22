@@ -228,9 +228,6 @@ end
         @test unthunk(bth) === (4, 5)
         @test eltype(bth) === Int
 
-        @test BroadcastThunk([1,2]) isa BroadcastThunk{Int}
-        @test BroadcastThunk([[1,2], [3,4]]) isa Vector{Vector{Int}}
-
         nobc = @bc_thunk [[1,2], [3,4]] * [5,6]
         @test !(nobc isa BroadcastThunk)
         @test nobc isa InplaceableThunk
@@ -243,6 +240,10 @@ end
         @test bth .+ 1 === (5, 6)  # in fact fused, but this isn't tested
         @test Broadcast.broadcastable(bth) isa Broadcast.Broadcasted
         @test sum(bth) === 9  # in fact lazy
+
+        o2 = ones(2)
+        @test add!!(o2, bth) == [5, 6]
+        @test o2 == [5, 6]
     end
 
     @testset "preservation" begin

@@ -26,11 +26,7 @@ end
 
 function add!!(x, t::BroadcastThunk)
     return if is_inplaceable_destination(x)
-        if !debug_mode()
-            x .+= t.bc
-        else
-            debug_add!(x, t)
-        end
+        x .+= t.bc
     else
         x .+ t.bc
     end
