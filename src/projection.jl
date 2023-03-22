@@ -268,31 +268,21 @@ function _projection_mismatch(axes_x::Tuple, size_dx::Tuple)
     )
 end
 
-# Broadcasted we treat a lot like AbstractArray{<:Number}
+# Broadcasted shows up in forward pass of lazy broadcasting.
+# Choose not to reshape until we get back to an array etc, just handle eltype:
 function ProjectTo(x::Broadcasted)
-    return ProjectTo{Broadcasted}(; element=_eltype_projectto(Base.@default_eltype x), axes=axes(x))
+    T = Base.@default_eltype x
+    T <: Number || return identity
+    element = _eltype_projectto(T)
+    element isa ProjectTo{NoTangent} && return element
+    return ProjectTo{Broadcasted}(; element)
 end
 
 function (project::ProjectTo{Broadcasted})(dx::AbstractArray{S,M}) where {S,M}
-    dy = if axes(dx) === project.axes
-        dx
-    else
-        for d in 1:max(M, length(project.axes))
-            if size(dx, d) != length(get(project.axes, d, 1))
-                throw(_projection_mismatch(project.axes, size(dx)))
-            end
-        end
-        reshape(dx, project.axes)
-    end
     T = project_type(project.element)
-    dz = S <: T ? dy : @bc_thunk project.element.(dy)
-    return dz
+    return S <: T ? dx : @bc_thunk project.element(dx)
 end
-
 function (project::ProjectTo{Broadcasted})(dx::BroadcastThunk{S}) where {S}
-    if axes(dx.bc) !== project.axes
-        return project(unthunk(dx))
-    end
     T = project_type(project.element)
     return S <: T ? dx : @bc_thunk project.element(dx)
 end

@@ -271,11 +271,26 @@ on `::BroadcastThunk` & fuse it into two different places?
 struct BroadcastThunk{T, B<:Broadcast.Broadcasted} <: AbstractThunk
     bc::B
 end
-BroadcastThunk(bc::Broadcast.Broadcasted) =
-    BroadcastThunk{Base.@default_eltype(bc), typeof(bc)}(bc)
-BroadcastThunk(x::A) where {A<:AbstractArray{T}} where {T} =
-    BroadcastThunk{T,A}(Broadcast.broadcasted(identity, x))
-
+function BroadcastThunk(bc::Broadcast.Broadcasted)
+    T = Base.@default_eltype(bc)
+    return if T <: Number  # applicable(zero, T)  # will SVector work?
+        BroadcastThunk{T, typeof(bc)}(bc)
+    else
+        # We need init=zero(T) for unbroadcast to work.
+        # For things like arrays of arrays, we just don't thunk?
+        # copy(bc)
+        # Or perhaps we make a boring thunk?
+        InplaceableThunk(dx -> dx .+= bc, @thunk copy(bc))
+    end
+end
+function BroadcastThunk(x::AbstractArray{T}) where {T}
+    return if T <: Number  # applicable(zero, T)
+        bc = Broadcast.instantiate(Broadcast.broadcasted(identity, x))
+        BroadcastThunk{T,typeof(bc)}(bc)
+    else
+        x
+    end
+end
 Base.eltype(x::BroadcastThunk{T}) where {T} = T
 
 @inline unthunk(x::BroadcastThunk) = copy(x.bc)
@@ -325,7 +340,7 @@ for fun in [:conj, :real, :imag, :complex]
 end
 
 Base.sum(x::BroadcastThunk) = sum(x.bc)
-Base.sum(x::BroadcastThunk{<:Number}; dims=:) = sum(x.bc; dims, init=zero(eltype(x)))
+Base.sum(x::BroadcastThunk; dims=:) = sum(x.bc; dims, init=zero(eltype(x)))
 Base.sum(f, x::BroadcastThunk) = sum(f, x.bc)
 
 LinearAlgebra.dot(x::Base.AbstractArrayOrBroadcasted, y::BroadcastThunk{<:Number}) = sum(@bc_thunk conj(x) * y.bc)

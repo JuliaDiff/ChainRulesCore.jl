@@ -35,7 +35,10 @@
 
     @testset "unthunk" begin
         @test unthunk(@thunk(3)) == 3
-        @test unthunk(@thunk(@thunk(3))) isa Thunk
+        # @test unthunk(@thunk(@thunk(3))) isa Thunk
+        @test unthunk(@thunk(@thunk(3))) == 3
+        # Changed to ensure that un-thunking `@thunk unbroadcast(x, dx::BroadcastThunk)` predictably gives a non-thunk.
+        # That could be done more narrowly, to allow some double-thunks.
     end
 
     @testset "erroring thunks should include the source in the backtrack" begin
@@ -215,5 +218,73 @@
         @test contains(sprint(show, InplaceableThunk(mul!, th)), "mul!")  # named functions left in InplaceableThunk
         str = sprint(show, InplaceableThunk(z -> z .+ ones(100), th))
         @test length(findall("...", str)) == 2  # now both halves shortened
+    end
+end
+
+@testset "BroadcastThunk" begin
+    @testset "basics" begin
+        bth = @bc_thunk (1, 2) + 3
+        @test bth isa BroadcastThunk{Int}
+        @test unthunk(bth) === (4, 5)
+        @test eltype(bth) === Int
+
+        @test BroadcastThunk([1,2]) isa BroadcastThunk{Int}
+        @test BroadcastThunk([[1,2], [3,4]]) isa Vector{Vector{Int}}
+
+        nobc = @bc_thunk [[1,2], [3,4]] * [5,6]
+        @test !(nobc isa BroadcastThunk)
+        @test nobc isa InplaceableThunk
+        @test unthunk(nobc) == [[5, 10], [18, 24]]
+
+        @test unthunk(@thunk 1 .+ bth) === (5, 6)
+        @test ChainRulesCore.unthunk_or_bc(@thunk bth) isa Broadcast.Broadcasted
+        @test ChainRulesCore.unthunk_or_bc(@thunk 1 .+ bth) === (5, 6)
+
+        @test bth .+ 1 === (5, 6)  # in fact fused, but this isn't tested
+        @test Broadcast.broadcastable(bth) isa Broadcast.Broadcasted
+        @test sum(bth) === 9  # in fact lazy
+    end
+
+    @testset "preservation" begin
+        bth = @bc_thunk [1, 2] + 3im
+        @test -bth isa BroadcastThunk
+        @test unthunk(-bth) == [-1-3im, -2-3im]
+
+        for f in [real, imag, conj]
+            @test f(bth) isa BroadcastThunk
+            @test unthunk(f(bth)) == f.([1+3im, 2+3im])
+        end
+    end
+
+    @testset "accumulation" begin
+        bth = @bc_thunk [1, 2] + 3
+        bth2 = @bc_thunk [4, 5] - 6
+        arr = [7, 8]
+
+        @test bth + bth2 isa BroadcastThunk
+        @test bth + arr isa BroadcastThunk
+        @test arr + bth2 isa BroadcastThunk
+    end
+
+    @testset "ProjectTo" begin
+        bth = @bc_thunk [1, 2, 3] + 4
+
+        # When sizes match, we can be lazy:
+        @test ProjectTo([1,2,3])(@bc_thunk 4 + [5,6,7]) isa BroadcastThunk
+        @test ProjectTo(bth.bc)(@bc_thunk 4 + [5,6,7]) isa BroadcastThunk
+        @test ProjectTo(Float32[1,2,3])(@bc_thunk 4im + [5,6,7]) isa BroadcastThunk{Float32}
+        @test ProjectTo(bth.bc)(@bc_thunk 4im + [5,6,7]) isa BroadcastThunk{Float64}
+
+        # But when we must resize, or make a special matrix, give up & materialise:
+        @test ProjectTo([1; 2;;])(@bc_thunk 3 + [4, 5]) isa Matrix{Float64}
+        @test ProjectTo([1, 2]')(@bc_thunk 3 + [4 5]) isa Adjoint{Float64}
+
+        # There is also ProjectTo{Broadcasted} for fused forward pass.
+        # It makes a BroadcastThunk when it has to change eltype, but does not fix shape.
+        @test ProjectTo(bth.bc)(hcat([1.0, 2.0, 3.0])) isa Matrix{Float64}
+        @test ProjectTo(bth.bc)(hcat([1, 2, 3])) isa BroadcastThunk{Float64}
+        @test unthunk(ProjectTo(bth.bc)([4, 5im, 6])) == [4, 0, 6]
+
+        @test ProjectTo(@bc_thunk([1; 2;;] + 0).bc)(@bc_thunk 3 + [4, 5]) isa BroadcastThunk{Float64} 
     end
 end
