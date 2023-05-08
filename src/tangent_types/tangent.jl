@@ -96,8 +96,8 @@ function Base.show(io::IO, tangent::Tangent{P}) where {P}
     end
 end
 
-Base.iszero(::Tangent{<:, NamedTuple{}}) = true
-Base.iszero(::Tangent{<:, Tuple{}}) = true
+Base.iszero(::Tangent{<:,NamedTuple{}}) = true
+Base.iszero(::Tangent{<:,Tuple{}}) = true
 Base.iszero(t::Tangent) = all(iszero, backing(t))
 
 Base.first(tangent::Tangent{P,T}) where {P,T<:Union{Tuple,NamedTuple}} = first(backing(canonicalize(tangent)))

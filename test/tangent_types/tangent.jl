@@ -376,7 +376,7 @@ end
         @test iszero(Tangent{Foo}(; y=0.0))
         @test iszero(Tangent{Foo}(; x=Tangent{Tuple{}}(), y=0.0))
 
-        @test !iszero(Tangent{Foo}(;y=3.0))
+        @test !iszero(Tangent{Foo}(; y=3.0))
     end
 
     @testset "show" begin
