@@ -369,6 +369,16 @@ end
         @test_throws MethodError Tangent{Foo}(; y=1.5, x=2.5) * @thunk [1 2; 3 4]
     end
 
+    @testset "iszero" begin
+        @test iszero(Tangent{Foo}())
+        @test iszero(Tangent{Tuple{}}())
+        @test iszero(Tangent{Foo}(; x=ZeroTangent()))
+        @test iszero(Tangent{Foo}(; y=0.0))
+        @test iszero(Tangent{Foo}(; x=Tangent{Tuple{}}(), y=0.0))
+
+        @test !iszero(Tangent{Foo}(; y=3.0))
+    end
+
     @testset "show" begin
         @test repr(Tangent{Foo}(; x=1)) == "Tangent{Foo}(x = 1,)"
         # check for exact regex match not occurence( `^...$`)
