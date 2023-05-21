@@ -47,7 +47,7 @@ ChainRules as a philosophy avoids magic as much as possible, and thus require yo
 If it is a plain function (like `typeof(sin)`), then the tangent will be [`NoTangent`](@ref).
 
 
-[^1]: unless you write it in functor form (i.e. `@adjoint (f::MyType)(args...)=...`), in that case like for `rrule` you need to include it explictly.
+[^1]: unless you write it in functor form (i.e. `@adjoint (f::MyType)(args...)=...`), in that case like for `rrule` you need to include it explicitly.
 
 ## Tangent Type changes
 ChainRules uses tangent types that must represent vector spaces (i.e. tangent spaces).

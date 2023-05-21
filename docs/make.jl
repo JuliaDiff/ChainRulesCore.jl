@@ -68,7 +68,7 @@ makedocs(;
         ],
         "How to support ChainRules rules as an AD package author" => [
             "Usage in AD" => "ad_author/use_in_ad_system.md",
-            "Suport calling back into ADs" => "ad_author/call_back_into_ad.md",
+            "Support calling back into ADs" => "ad_author/call_back_into_ad.md",
             "Support opting out of rules" => "ad_author/opt_out.md",
         ],
         "The maths" => [

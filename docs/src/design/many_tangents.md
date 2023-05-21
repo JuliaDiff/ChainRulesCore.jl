@@ -163,7 +163,7 @@ Semantically we can handle these very easily in julia.
 Just put in a few more dispatching on `+`.
 Multiple-dispatch is great like that.
 The down-side is our type-inference becomes hard.
-If you have exactly 1 tangent type for each primal type, you can very easily workout what all the types on your reverse pass will be - you don't really need type inference - but you lose so much expressibility.
+If you have exactly 1 tangent type for each primal type, you can very easily work out what all the types on your reverse pass will be - you don't really need type inference - but you lose so much expressiveness.
 
 ## Appendix: What Swift does
 
