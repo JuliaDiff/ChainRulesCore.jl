@@ -32,7 +32,7 @@ Thus the sum is always going to be zero.
 As such the author of that matrix type would probably have overloaded `sum(x::SkewSymmetric{T}) where T = zero(T)`.
 ADing this would result in the tangent computed for `x` as `ZeroTangent()` and it would be very fast since AD can see that `x` is never used in the right-hand side.
 In contrast the generic method for `AbstractArray` defined above would have to allocate the fill array, and then compute the skew projection.
-Only to findout the output would be projected to `SkewSymmetric(zeros(T))` anyway (slower, and a less useful type).
+Only to find out the output would be projected to `SkewSymmetric(zeros(T))` anyway (slower, and a less useful type).
 
 To opt-out of using the generic `rrule` and to allow the AD system to do its own thing we use the
 [`@opt_out`](@ref) macro, to say to not use it for sum of `SkewSymmetric`.
@@ -41,7 +41,7 @@ To opt-out of using the generic `rrule` and to allow the AD system to do its own
 @opt_out rrule(::typeof(sum), ::SkewSymmetric)
 ```
 
-Perhaps we might not want to ever use rules for SkewSymmetric, because we have determined that it is always better to leave it to the AD, unless a verys specific rule has been written[^1].
+Perhaps we might not want to ever use rules for SkewSymmetric, because we have determined that it is always better to leave it to the AD, unless a very specific rule has been written[^1].
 We could then opt-out for all 1 arg functions.
 ```@julia
 @opt_out rrule(::Any, ::SkewSymmetric)

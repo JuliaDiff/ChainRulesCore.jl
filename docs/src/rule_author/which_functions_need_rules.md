@@ -147,10 +147,10 @@ julia> @btime gradient(mse, $y, $ŷ)
   143.697 ns (2 allocations: 672 bytes)
 ```
 
-#### Inplace accumulation
+#### In-place accumulation
 
-Inplace accumulation of gradients is slow in `Zygote`.
-The issue, demonstrated in the folowing example, is that the gradient of `getindex` allocates an array of zeros with a single non-zero element. 
+In-place accumulation of gradients is slow in `Zygote`.
+The issue, demonstrated in the following example, is that the gradient of `getindex` allocates an array of zeros with a single non-zero element. 
 ```julia
 function sum3(array)
     x = array[1]

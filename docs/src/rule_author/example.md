@@ -91,7 +91,7 @@ The tangent of the field `c` is `ZeroTangent()`, because `c` can be perturbed bu
 ```
 The tangent of `b` is `foo.A' * ȳ`, but we have wrapped it into a `Thunk`, a tangent type that represents delayed computation.
 The idea is that in case the tangent is not used anywhere, the computation never happens.
-Use [`InplaceableThunk`](@ref) if you are interested in [accumulating gradients inplace](@ref grad_acc).
+Use [`InplaceableThunk`](@ref) if you are interested in [accumulating gradients in-place](@ref grad_acc).
 Note that in practice one would also `@thunk` the `f̄oo.A` tangent, but it was omitted in this example for clarity.
 
 As a final note, since `b` is an `AbstractArray`, its tangent `b̄` should be projected to the right subspace.

@@ -12,4 +12,4 @@ However:
 - If you are writing rules with abstractly typed arguments, read about [`ProjectTo`](@ref projectto).
 - If you want to opt out of using the abstractly typed rule for certain argument types, read about [`@opt_out`](@ref opt_out).
 - If you are writing rules for higher order functions, read about [calling back into AD](@ref config).
-- If you want to accumulate gradients inplace to avoid extra allocations, read about [gradient accumulation](@ref grad_acc).
+- If you want to accumulate gradients in-place to avoid extra allocations, read about [gradient accumulation](@ref grad_acc).
