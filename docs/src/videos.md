@@ -8,7 +8,7 @@ However, we have tried to note below each video notes on its correctness.
 The talks that follow are in reverse chronological order (i.e. most recent video is first).
 
 ### EuroAD 2021: ChainRules.jl: AD system agnostic rules for JuliaLang
-Presented by Lyndon White.
+Presented by Frames White.
 [Slides](https://www.slideshare.net/LyndonWhite2/euroad-2021-chainrulesjl)
 
 This is the talk to watch if you want to understand why the ChainRules project exists, what its challenges are, and how those have been overcome.
@@ -54,7 +54,7 @@ Abstract:
 
 
 ### JuliaCon 2020: ChainRules.jl
-Presented by Lyndon White.
+Presented by Frames White.
 [Slides](https://raw.githack.com/oxinabox/ChainRulesJuliaCon2020/main/out/build/index.html)
 
 This talk is primarily of historical interest.
@@ -79,4 +79,4 @@ Most people shouldn't watch this talk now.
 Abstract:
 > The ChainRules project allows package authors to write rules for custom sensitivities (sometimes called custom adjoints) in a way that is not dependent on any particular autodiff (AD) package.
 > It allows authors of AD packages to access a wealth of prewritten custom sensitivities, saving them the effort of writing them all out themselves.
-> ChainRules is the successor to DiffRules.jl and is the native rule system currently used by ForwardDiff2,  Zygote and soon ReverseDiff
+> ChainRules is the successor to DiffRules.jl and is the native rule system currently used by ForwardDiff2, Zygote and soon ReverseDiff
