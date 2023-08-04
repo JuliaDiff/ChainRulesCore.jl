@@ -6,20 +6,21 @@ as an object with mirroring fields.
 """
 abstract type StructuralTangent{P} <: AbstractTangent end
 
-function StructuralTangent{P}(nt::NamedTuple) where P
-    return Tangent{P, typeof(nt)}(nt)
+function StructuralTangent{P}(nt::NamedTuple) where {P}
+    return Tangent{P,typeof(nt)}(nt)
 end
 
-StructuralTangent{P}(tup::Tuple) where P = Tangent{P, typeof(tup)}(tup)
-StructuralTangent{P}(dict::Dict) where P = Tangent{P}(dict)
-
+StructuralTangent{P}(tup::Tuple) where {P} = Tangent{P,typeof(tup)}(tup)
+StructuralTangent{P}(dict::Dict) where {P} = Tangent{P}(dict)
 
 Base.keys(tangent::StructuralTangent) = keys(backing(tangent))
 Base.propertynames(tangent::StructuralTangent) = propertynames(backing(tangent))
 
 Base.haskey(tangent::StructuralTangent, key) = haskey(backing(tangent), key)
 if isdefined(Base, :hasproperty)
-    Base.hasproperty(tangent::StructuralTangent, key::Symbol) = hasproperty(backing(tangent), key)
+    function Base.hasproperty(tangent::StructuralTangent, key::Symbol)
+        return hasproperty(backing(tangent), key)
+    end
 end
 
 Base.iszero(t::StructuralTangent) = all(iszero, backing(t))
@@ -29,12 +30,11 @@ function Base.map(f, tangent::StructuralTangent{P}) where {P}
     vals = map(f, Tuple(backing(tangent)))
     named_vals = NamedTuple{L,typeof(vals)}(vals)
     return if tangent isa Tangent
-        Tangent{P, typeof(named_vals)}(named_vals)
+        Tangent{P,typeof(named_vals)}(named_vals)
     else
         # Handle MutableTangent
     end
 end
-
 
 """
     backing(x)
@@ -76,7 +76,6 @@ function backing(x::T)::NamedTuple where {T}
         return NamedTuple{names,Tuple{types...}}(vals)
     end
 end
-
 
 """
     _zeroed_backing(P)
@@ -193,7 +192,6 @@ function Base.showerror(io::IO, err::PrimalAdditionFailedException{P}) where {P}
     return println(io)
 end
 
-
 """
     Tangent{P, T} <: StructuralTangent{P} <: AbstractTangent
 
@@ -257,7 +255,6 @@ function _backing_error(P, G, E)
     msg = "Tangent for the primal $P should be backed by a $E type, not by $G."
     return throw(ArgumentError(msg))
 end
-
 
 function Base.:(==)(a::Tangent{P,T}, b::Tangent{P,T}) where {P,T}
     return backing(a) == backing(b)
