@@ -1,174 +1,40 @@
 """
-    Tangent{P, T} <: AbstractTangent
+    StructuralTangent{P} <: AbstractTangent
 
-This type represents the tangent for a `struct`/`NamedTuple`, or `Tuple`.
-`P` is the the corresponding primal type that this is a tangent for.
-
-`Tangent{P}` should have fields (technically properties), that match to a subset of the
-fields of the primal type; and each should be a tangent type matching to the primal
-type of that field.
-Fields of the P that are not present in the Tangent are treated as `Zero`.
-
-`T` is an implementation detail representing the backing data structure.
-For Tuple it will be a Tuple, and for everything else it will be a `NamedTuple`.
-It should not be passed in by user.
-
-For `Tangent`s of `Tuple`s, `iterate` and `getindex` are overloaded to behave similarly
-to for a tuple.
-For `Tangent`s of `struct`s, `getproperty` is overloaded to allow for accessing values
-via `tangent.fieldname`.
-Any fields not explictly present in the `Tangent` are treated as being set to `ZeroTangent()`.
-To make a `Tangent` have all the fields of the primal the [`canonicalize`](@ref)
-function is provided.
+Representing the type of the tangent of a `struct` `P` (or a `Tuple`/`NamedTuple`).
+as an object with mirroring fields.
 """
-struct Tangent{P,T} <: AbstractTangent
-    # Note: If T is a Tuple/Dict, then P is also a Tuple/Dict
-    # (but potentially a different one, as it doesn't contain tangents)
-    backing::T
+abstract type StructuralTangent{P} <: AbstractTangent end
 
-    function Tangent{P,T}(backing) where {P,T}
-        if P <: Tuple
-            T <: Tuple || _backing_error(P, T, Tuple)
-        elseif P <: AbstractDict
-            T <: AbstractDict || _backing_error(P, T, AbstractDict)
-        elseif P === Any  # can be anything
-        else  # Any other struct (including NamedTuple)
-            T <: NamedTuple || _backing_error(P, T, NamedTuple)
-        end
-        return new(backing)
-    end
+function StructuralTangent{P}(nt::NamedTuple) where P
+    return Tangent{P, typeof(nt)}(nt)
 end
 
-function Tangent{P}(; kwargs...) where {P}
-    backing = (; kwargs...)  # construct as NamedTuple
-    return Tangent{P,typeof(backing)}(backing)
-end
+StructuralTangent{P}(tup::Tuple) where P = Tangent{P, typeof(tup)}(tup)
+StructuralTangent{P}(dict::Dict) where P = Tangent{P}(dict)
 
-function Tangent{P}(args...) where {P}
-    return Tangent{P,typeof(args)}(args)
-end
 
-function Tangent{P}() where {P<:Tuple}
-    backing = ()
-    return Tangent{P,typeof(backing)}(backing)
-end
+Base.keys(tangent::StructuralTangent) = keys(backing(tangent))
+Base.propertynames(tangent::StructuralTangent) = propertynames(backing(tangent))
 
-function Tangent{P}(d::Dict) where {P<:Dict}
-    return Tangent{P,typeof(d)}(d)
-end
-
-function _backing_error(P, G, E)
-    msg = "Tangent for the primal $P should be backed by a $E type, not by $G."
-    return throw(ArgumentError(msg))
-end
-
-function Base.:(==)(a::Tangent{P,T}, b::Tangent{P,T}) where {P,T}
-    return backing(a) == backing(b)
-end
-function Base.:(==)(a::Tangent{P}, b::Tangent{P}) where {P}
-    all_fields = union(keys(backing(a)), keys(backing(b)))
-    return all(getproperty(a, f) == getproperty(b, f) for f in all_fields)
-end
-Base.:(==)(a::Tangent{P}, b::Tangent{Q}) where {P,Q} = false
-
-Base.hash(a::Tangent, h::UInt) = Base.hash(backing(canonicalize(a)), h)
-
-function Base.show(io::IO, tangent::Tangent{P}) where {P}
-    print(io, "Tangent{")
-    str = sprint(show, P, context = io)
-    i = findfirst('{', str)
-    if isnothing(i)
-        print(io, str)
-    else  # for Tangent{T{A,B,C}}(stuff), print {A,B,C} in grey, and trim this part if longer than a line:
-        print(io, str[1:prevind(str, i)])
-        if length(str) < 80
-            printstyled(io, str[i:end], color=:light_black)
-        else
-           printstyled(io, str[i:prevind(str, 80)], "...", color=:light_black) 
-        end
-    end
-    print(io, "}")
-    if isempty(backing(tangent))
-        print(io, "()")  # so it doesn't show `NamedTuple()`
-    else
-        # allow Tuple or NamedTuple `show` to do the rendering of brackets etc
-        show(io, backing(tangent))
-    end
-end
-
-Base.iszero(::Tangent{<:,NamedTuple{}}) = true
-Base.iszero(::Tangent{<:,Tuple{}}) = true
-Base.iszero(t::Tangent) = all(iszero, backing(t))
-
-Base.first(tangent::Tangent{P,T}) where {P,T<:Union{Tuple,NamedTuple}} = first(backing(canonicalize(tangent)))
-Base.last(tangent::Tangent{P,T}) where {P,T<:Union{Tuple,NamedTuple}} = last(backing(canonicalize(tangent)))
-
-Base.tail(t::Tangent{P}) where {P<:Tuple} = Tangent{_tailtype(P)}(Base.tail(backing(canonicalize(t)))...)
-@generated _tailtype(::Type{P}) where {P<:Tuple} = Tuple{P.parameters[2:end]...}
-Base.tail(t::Tangent{<:Tuple{Any}}) = NoTangent()
-Base.tail(t::Tangent{<:Tuple{}}) = NoTangent()
-
-Base.tail(t::Tangent{P}) where {P<:NamedTuple} = Tangent{_tailtype(P)}(; Base.tail(backing(canonicalize(t)))...)
-_tailtype(::Type{NamedTuple{S,P}}) where {S,P} = NamedTuple{Base.tail(S), _tailtype(P)}
-Base.tail(t::Tangent{<:NamedTuple{<:Any, <:Tuple{Any}}}) = NoTangent()
-Base.tail(t::Tangent{<:NamedTuple{<:Any, <:Tuple{}}}) = NoTangent()
-
-function Base.getindex(tangent::Tangent{P,T}, idx::Int) where {P,T<:Union{Tuple,NamedTuple}}
-    back = backing(canonicalize(tangent))
-    return unthunk(getfield(back, idx))
-end
-function Base.getindex(tangent::Tangent{P,T}, idx::Symbol) where {P,T<:NamedTuple}
-    hasfield(T, idx) || return ZeroTangent()
-    return unthunk(getfield(backing(tangent), idx))
-end
-function Base.getindex(tangent::Tangent, idx)
-    return unthunk(getindex(backing(tangent), idx))
-end
-
-function Base.getproperty(tangent::Tangent, idx::Int)
-    back = backing(canonicalize(tangent))
-    return unthunk(getfield(back, idx))
-end
-function Base.getproperty(tangent::Tangent{P,T}, idx::Symbol) where {P,T<:NamedTuple}
-    hasfield(T, idx) || return ZeroTangent()
-    return unthunk(getfield(backing(tangent), idx))
-end
-
-Base.keys(tangent::Tangent) = keys(backing(tangent))
-Base.propertynames(tangent::Tangent) = propertynames(backing(tangent))
-
-Base.haskey(tangent::Tangent, key) = haskey(backing(tangent), key)
+Base.haskey(tangent::StructuralTangent, key) = haskey(backing(tangent), key)
 if isdefined(Base, :hasproperty)
-    Base.hasproperty(tangent::Tangent, key::Symbol) = hasproperty(backing(tangent), key)
+    Base.hasproperty(tangent::StructuralTangent, key::Symbol) = hasproperty(backing(tangent), key)
 end
 
-Base.iterate(tangent::Tangent, args...) = iterate(backing(tangent), args...)
-Base.length(tangent::Tangent) = length(backing(tangent))
+Base.iszero(t::StructuralTangent) = all(iszero, backing(t))
 
-Base.eltype(::Type{<:Tangent{<:Any,T}}) where {T} = eltype(T)
-function Base.reverse(tangent::Tangent)
-    rev_backing = reverse(backing(tangent))
-    return Tangent{typeof(rev_backing),typeof(rev_backing)}(rev_backing)
-end
-
-function Base.indexed_iterate(tangent::Tangent{P,<:Tuple}, i::Int, state=1) where {P}
-    return Base.indexed_iterate(backing(tangent), i, state)
-end
-
-function Base.map(f, tangent::Tangent{P,<:Tuple}) where {P}
-    vals::Tuple = map(f, backing(tangent))
-    return Tangent{P,typeof(vals)}(vals)
-end
-function Base.map(f, tangent::Tangent{P,<:NamedTuple{L}}) where {P,L}
+function Base.map(f, tangent::StructuralTangent{P}) where {P}
+    L = propertynames(backing(tangent))
     vals = map(f, Tuple(backing(tangent)))
     named_vals = NamedTuple{L,typeof(vals)}(vals)
-    return Tangent{P,typeof(named_vals)}(named_vals)
-end
-function Base.map(f, tangent::Tangent{P,<:Dict}) where {P<:Dict}
-    return Tangent{P}(Dict(k => f(v) for (k, v) in backing(tangent)))
+    return if tangent isa Tangent
+        Tangent{P, typeof(named_vals)}(named_vals)
+    else
+        # Handle MutableTangent
+    end
 end
 
-Base.conj(tangent::Tangent) = map(conj, tangent)
 
 """
     backing(x)
@@ -183,7 +49,7 @@ primal types.
 backing(x::Tuple) = x
 backing(x::NamedTuple) = x
 backing(x::Dict) = x
-backing(x::Tangent) = getfield(x, :backing)
+backing(x::StructuralTangent) = getfield(x, :backing)
 
 # For generic structs
 function backing(x::T)::NamedTuple where {T}
@@ -211,38 +77,6 @@ function backing(x::T)::NamedTuple where {T}
     end
 end
 
-"""
-    canonicalize(tangent::Tangent{P}) -> Tangent{P}
-
-Return the canonical `Tangent` for the primal type `P`.
-The property names of the returned `Tangent` match the field names of the primal,
-and all fields of `P` not present in the input `tangent` are explictly set to `ZeroTangent()`.
-"""
-function canonicalize(tangent::Tangent{P,<:NamedTuple{L}}) where {P,L}
-    nil = _zeroed_backing(P)
-    combined = merge(nil, backing(tangent))
-    if length(combined) !== fieldcount(P)
-        throw(
-            ArgumentError(
-                "Tangent fields do not match primal fields.\n" *
-                "Tangent fields: $L. Primal ($P) fields: $(fieldnames(P))",
-            ),
-        )
-    end
-    return Tangent{P,typeof(combined)}(combined)
-end
-
-# Tuple tangents are always in their canonical form
-canonicalize(tangent::Tangent{<:Tuple,<:Tuple}) = tangent
-
-# Dict tangents are always in their canonical form.
-canonicalize(tangent::Tangent{<:Any,<:AbstractDict}) = tangent
-
-# Tangents of unspecified primal types (indicated by specifying exactly `Any`)
-# all combinations of type-params are specified here to avoid ambiguities
-canonicalize(tangent::Tangent{Any,<:NamedTuple{L}}) where {L} = tangent
-canonicalize(tangent::Tangent{Any,<:Tuple}) = tangent
-canonicalize(tangent::Tangent{Any,<:AbstractDict}) = tangent
 
 """
     _zeroed_backing(P)
@@ -339,7 +173,7 @@ elementwise_add(a::Dict, b::Dict) = merge(+, a, b)
 
 struct PrimalAdditionFailedException{P} <: Exception
     primal::P
-    tangent::Tangent{P}
+    tangent
     original::Exception
 end
 
@@ -358,3 +192,200 @@ function Base.showerror(io::IO, err::PrimalAdditionFailedException{P}) where {P}
     printstyled(io, err.original; color=:yellow)
     return println(io)
 end
+
+
+"""
+    Tangent{P, T} <: StructuralTangent{P} <: AbstractTangent
+
+This type represents the tangent for a `struct`/`NamedTuple`, or `Tuple`.
+`P` is the the corresponding primal type that this is a tangent for.
+
+`Tangent{P}` should have fields (technically properties), that match to a subset of the
+fields of the primal type; and each should be a tangent type matching to the primal
+type of that field.
+Fields of the P that are not present in the Tangent are treated as `Zero`.
+
+`T` is an implementation detail representing the backing data structure.
+For Tuple it will be a Tuple, and for everything else it will be a `NamedTuple`.
+It should not be passed in by user.
+
+For `Tangent`s of `Tuple`s, `iterate` and `getindex` are overloaded to behave similarly
+to for a tuple.
+For `Tangent`s of `struct`s, `getproperty` is overloaded to allow for accessing values
+via `tangent.fieldname`.
+Any fields not explictly present in the `Tangent` are treated as being set to `ZeroTangent()`.
+To make a `Tangent` have all the fields of the primal the [`canonicalize`](@ref)
+function is provided.
+"""
+struct Tangent{P,T} <: StructuralTangent{P}
+    # Note: If T is a Tuple/Dict, then P is also a Tuple/Dict
+    # (but potentially a different one, as it doesn't contain tangents)
+    backing::T
+
+    function Tangent{P,T}(backing) where {P,T}
+        if P <: Tuple
+            T <: Tuple || _backing_error(P, T, Tuple)
+        elseif P <: AbstractDict
+            T <: AbstractDict || _backing_error(P, T, AbstractDict)
+        elseif P === Any  # can be anything
+        else  # Any other struct (including NamedTuple)
+            T <: NamedTuple || _backing_error(P, T, NamedTuple)
+        end
+        return new(backing)
+    end
+end
+
+function Tangent{P}(; kwargs...) where {P}
+    backing = (; kwargs...)  # construct as NamedTuple
+    return Tangent{P,typeof(backing)}(backing)
+end
+
+function Tangent{P}(args...) where {P}
+    return Tangent{P,typeof(args)}(args)
+end
+
+function Tangent{P}() where {P<:Tuple}
+    backing = ()
+    return Tangent{P,typeof(backing)}(backing)
+end
+
+function Tangent{P}(d::Dict) where {P<:Dict}
+    return Tangent{P,typeof(d)}(d)
+end
+
+function _backing_error(P, G, E)
+    msg = "Tangent for the primal $P should be backed by a $E type, not by $G."
+    return throw(ArgumentError(msg))
+end
+
+
+function Base.:(==)(a::Tangent{P,T}, b::Tangent{P,T}) where {P,T}
+    return backing(a) == backing(b)
+end
+function Base.:(==)(a::Tangent{P}, b::Tangent{P}) where {P}
+    all_fields = union(keys(backing(a)), keys(backing(b)))
+    return all(getproperty(a, f) == getproperty(b, f) for f in all_fields)
+end
+Base.:(==)(a::Tangent{P}, b::Tangent{Q}) where {P,Q} = false
+
+Base.hash(a::Tangent, h::UInt) = Base.hash(backing(canonicalize(a)), h)
+
+function Base.show(io::IO, tangent::Tangent{P}) where {P}
+    print(io, "Tangent{")
+    str = sprint(show, P, context = io)
+    i = findfirst('{', str)
+    if isnothing(i)
+        print(io, str)
+    else  # for Tangent{T{A,B,C}}(stuff), print {A,B,C} in grey, and trim this part if longer than a line:
+        print(io, str[1:prevind(str, i)])
+        if length(str) < 80
+            printstyled(io, str[i:end], color=:light_black)
+        else
+           printstyled(io, str[i:prevind(str, 80)], "...", color=:light_black) 
+        end
+    end
+    print(io, "}")
+    if isempty(backing(tangent))
+        print(io, "()")  # so it doesn't show `NamedTuple()`
+    else
+        # allow Tuple or NamedTuple `show` to do the rendering of brackets etc
+        show(io, backing(tangent))
+    end
+end
+
+Base.iszero(::Tangent{<:,NamedTuple{}}) = true
+Base.iszero(::Tangent{<:,Tuple{}}) = true
+
+
+Base.first(tangent::Tangent{P,T}) where {P,T<:Union{Tuple,NamedTuple}} = first(backing(canonicalize(tangent)))
+Base.last(tangent::Tangent{P,T}) where {P,T<:Union{Tuple,NamedTuple}} = last(backing(canonicalize(tangent)))
+
+Base.tail(t::Tangent{P}) where {P<:Tuple} = Tangent{_tailtype(P)}(Base.tail(backing(canonicalize(t)))...)
+@generated _tailtype(::Type{P}) where {P<:Tuple} = Tuple{P.parameters[2:end]...}
+Base.tail(t::Tangent{<:Tuple{Any}}) = NoTangent()
+Base.tail(t::Tangent{<:Tuple{}}) = NoTangent()
+
+Base.tail(t::Tangent{P}) where {P<:NamedTuple} = Tangent{_tailtype(P)}(; Base.tail(backing(canonicalize(t)))...)
+_tailtype(::Type{NamedTuple{S,P}}) where {S,P} = NamedTuple{Base.tail(S), _tailtype(P)}
+Base.tail(t::Tangent{<:NamedTuple{<:Any, <:Tuple{Any}}}) = NoTangent()
+Base.tail(t::Tangent{<:NamedTuple{<:Any, <:Tuple{}}}) = NoTangent()
+
+function Base.getindex(tangent::Tangent{P,T}, idx::Int) where {P,T<:Union{Tuple,NamedTuple}}
+    back = backing(canonicalize(tangent))
+    return unthunk(getfield(back, idx))
+end
+function Base.getindex(tangent::Tangent{P,T}, idx::Symbol) where {P,T<:NamedTuple}
+    hasfield(T, idx) || return ZeroTangent()
+    return unthunk(getfield(backing(tangent), idx))
+end
+function Base.getindex(tangent::Tangent, idx)
+    return unthunk(getindex(backing(tangent), idx))
+end
+
+function Base.getproperty(tangent::Tangent, idx::Int)
+    back = backing(canonicalize(tangent))
+    return unthunk(getfield(back, idx))
+end
+function Base.getproperty(tangent::Tangent{P,T}, idx::Symbol) where {P,T<:NamedTuple}
+    hasfield(T, idx) || return ZeroTangent()
+    return unthunk(getfield(backing(tangent), idx))
+end
+
+
+Base.iterate(tangent::Tangent, args...) = iterate(backing(tangent), args...)
+Base.length(tangent::Tangent) = length(backing(tangent))
+
+Base.eltype(::Type{<:Tangent{<:Any,T}}) where {T} = eltype(T)
+function Base.reverse(tangent::Tangent)
+    rev_backing = reverse(backing(tangent))
+    return Tangent{typeof(rev_backing),typeof(rev_backing)}(rev_backing)
+end
+
+function Base.indexed_iterate(tangent::Tangent{P,<:Tuple}, i::Int, state=1) where {P}
+    return Base.indexed_iterate(backing(tangent), i, state)
+end
+
+function Base.map(f, tangent::Tangent{P,<:Tuple}) where {P}
+    vals::Tuple = map(f, backing(tangent))
+    return Tangent{P,typeof(vals)}(vals)
+end
+function Base.map(f, tangent::Tangent{P,<:Dict}) where {P<:Dict}
+    return Tangent{P}(Dict(k => f(v) for (k, v) in backing(tangent)))
+end
+
+Base.conj(tangent::Tangent) = map(conj, tangent)
+
+
+
+"""
+    canonicalize(tangent::Tangent{P}) -> Tangent{P}
+
+Return the canonical `Tangent` for the primal type `P`.
+The property names of the returned `Tangent` match the field names of the primal,
+and all fields of `P` not present in the input `tangent` are explictly set to `ZeroTangent()`.
+"""
+function canonicalize(tangent::Tangent{P,<:NamedTuple{L}}) where {P,L}
+    nil = _zeroed_backing(P)
+    combined = merge(nil, backing(tangent))
+    if length(combined) !== fieldcount(P)
+        throw(
+            ArgumentError(
+                "Tangent fields do not match primal fields.\n" *
+                "Tangent fields: $L. Primal ($P) fields: $(fieldnames(P))",
+            ),
+        )
+    end
+    return Tangent{P,typeof(combined)}(combined)
+end
+
+# Tuple tangents are always in their canonical form
+canonicalize(tangent::Tangent{<:Tuple,<:Tuple}) = tangent
+
+# Dict tangents are always in their canonical form.
+canonicalize(tangent::Tangent{<:Any,<:AbstractDict}) = tangent
+
+# Tangents of unspecified primal types (indicated by specifying exactly `Any`)
+# all combinations of type-params are specified here to avoid ambiguities
+canonicalize(tangent::Tangent{Any,<:NamedTuple{L}}) where {L} = tangent
+canonicalize(tangent::Tangent{Any,<:Tuple}) = tangent
+canonicalize(tangent::Tangent{Any,<:AbstractDict}) = tangent
