@@ -20,7 +20,7 @@ Base.:+(x::NotImplemented, ::NotImplemented) = x
 Base.:*(x::NotImplemented, ::NotImplemented) = x
 LinearAlgebra.dot(x::NotImplemented, ::NotImplemented) = x
 # `NotImplemented` always "wins" +
-for T in (:ZeroTangent, :NoTangent, :AbstractThunk, :Tangent, :Any)
+for T in (:ZeroTangent, :NoTangent, :AbstractThunk, :StructuralTangent, :Any)
     @eval Base.:+(x::NotImplemented, ::$T) = x
     @eval Base.:+(::$T, x::NotImplemented) = x
 end
@@ -33,7 +33,7 @@ for T in (:ZeroTangent, :NoTangent)
     @eval LinearAlgebra.dot(::$T, ::NotImplemented) = $T()
 end
 # `NotImplemented` "wins" * and dot for other types
-for T in (:AbstractThunk, :Tangent, :Any)
+for T in (:AbstractThunk, :StructuralTangent, :Any)
     @eval Base.:*(x::NotImplemented, ::$T) = x
     @eval Base.:*(::$T, x::NotImplemented) = x
     @eval LinearAlgebra.dot(x::NotImplemented, ::$T) = x
@@ -55,7 +55,7 @@ Base.:-(::NoTangent, ::NoTangent) = NoTangent()
 Base.:-(::NoTangent) = NoTangent()
 Base.:*(::NoTangent, ::NoTangent) = NoTangent()
 LinearAlgebra.dot(::NoTangent, ::NoTangent) = NoTangent()
-for T in (:AbstractThunk, :Tangent, :Any)
+for T in (:AbstractThunk, :StructuralTangent, :Any)
     @eval Base.:+(::NoTangent, b::$T) = b
     @eval Base.:+(a::$T, ::NoTangent) = a
     @eval Base.:-(::NoTangent, b::$T) = -b
@@ -95,7 +95,7 @@ Base.:-(::ZeroTangent, ::ZeroTangent) = ZeroTangent()
 Base.:-(::ZeroTangent) = ZeroTangent()
 Base.:*(::ZeroTangent, ::ZeroTangent) = ZeroTangent()
 LinearAlgebra.dot(::ZeroTangent, ::ZeroTangent) = ZeroTangent()
-for T in (:AbstractThunk, :Tangent, :Any)
+for T in (:AbstractThunk, :StructuralTangent, :Any)
     @eval Base.:+(::ZeroTangent, b::$T) = b
     @eval Base.:+(a::$T, ::ZeroTangent) = a
     @eval Base.:-(::ZeroTangent, b::$T) = -b
@@ -126,11 +126,11 @@ for T in (:Tangent, :Any)
     @eval Base.:*(a::$T, b::AbstractThunk) = a * unthunk(b)
 end
 
-function Base.:+(a::Tangent{P}, b::Tangent{P}) where {P}
+function Base.:+(a::StructuralTangent{P}, b::StructuralTangent{P}) where {P}
     data = elementwise_add(backing(a), backing(b))
-    return Tangent{P,typeof(data)}(data)
+    return StructuralTangent{P}(data)
 end
-function Base.:+(a::P, d::Tangent{P}) where {P}
+function Base.:+(a::P, d::StructuralTangent{P}) where {P}
     net_backing = elementwise_add(backing(a), backing(d))
     if debug_mode()
         try
@@ -143,14 +143,14 @@ function Base.:+(a::P, d::Tangent{P}) where {P}
     end
 end
 Base.:+(a::Dict, d::Tangent{P}) where {P} = merge(+, a, backing(d))
-Base.:+(a::Tangent{P}, b::P) where {P} = b + a
+Base.:+(a::StructuralTangent{P}, b::P) where {P} = b + a
 
-Base.:-(tangent::Tangent{P}) where {P} = map(-, tangent)
+Base.:-(tangent::StructuralTangent{P}) where {P} = map(-, tangent)
 
 # We intentionally do not define, `Base.*(::Tangent, ::Tangent)` as that is not meaningful
 # In general one doesn't have to represent multiplications of 2 tangents
 # Only of a tangent and a scaling factor (generally `Real`)
 for T in (:Number,)
-    @eval Base.:*(s::$T, tangent::Tangent) = map(x -> s * x, tangent)
-    @eval Base.:*(tangent::Tangent, s::$T) = map(x -> x * s, tangent)
+    @eval Base.:*(s::$T, tangent::StructuralTangent) = map(x -> s * x, tangent)
+    @eval Base.:*(tangent::StructuralTangent, s::$T) = map(x -> x * s, tangent)
 end
