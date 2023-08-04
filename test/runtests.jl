@@ -11,7 +11,7 @@ using Test
     @testset "differentials" begin
         include("tangent_types/abstract_zero.jl")
         include("tangent_types/thunks.jl")
-        include("tangent_types/tangent.jl")
+        include("tangent_types/structural_tangent.jl")
         include("tangent_types/notimplemented.jl")
     end
 
