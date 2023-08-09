@@ -35,6 +35,8 @@ struct NoSuperType end
         @test ProjectTo(1.0f0 + 2im)(3) === 3.0f0 + 0im
         @test ProjectTo(big(1.0))(2) === 2
         @test ProjectTo(1.0)(2) === 2.0
+        @test ProjectTo(1.0f0)(2) === 2.0f0
+        @test ProjectTo(1)(2.0f0) === 2.0
 
         # Tangents
         ProjectTo(1.0f0 + 2im)(Tangent{ComplexF64}(; re=1, im=NoTangent())) ===
