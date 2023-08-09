@@ -69,7 +69,7 @@ struct NoSuperType end
         
         @test pvec3(1:3) == 1.0:3.0  # would prefer ===, map(Float64, dx) would do that, not important
         @test pvec3([1, 2, 3 + 4im]) == 1:3
-        @test eltype(pvec3([1, 2, 3.0f0])) === Float32
+        @test eltype(pvec3([1, 2, 3.0f0])) === typeof(int2float(1))
 
         # reshape
         @test pvec3(reshape([1, 2, 3], 3, 1)) isa Vector
