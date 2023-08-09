@@ -159,7 +159,16 @@ ProjectTo(::Real) = ProjectTo{Real}()
 ProjectTo(::Complex) = ProjectTo{Complex}()
 ProjectTo(::Number) = ProjectTo{Number}()
 
-ProjectTo(x::Integer) = ProjectTo(float(x))
+function ProjectTo(x::Integer)
+    @static if int2float_type == "Float64"
+        return ProjectTo{Float64}()
+    elseif int2float_type == "Float32"
+        return ProjectTo{Float32}()
+    else
+        return nothing
+    end
+end
+
 ProjectTo(x::Complex{<:Integer}) = ProjectTo(float(x))
 
 # Preserve low-precision floats as accidental promotion is a common performance bug

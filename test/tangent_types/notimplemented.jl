@@ -104,7 +104,7 @@
         f̄, x̄1, x̄2 = pb(3.1)
         @test f̄ == NoTangent()
         @test x̄1 isa ChainRulesCore.NotImplemented
-        @test x̄2 == 3.1
+        @test x̄2 == int2float(3.1)
 
         notimplemented2(x, y) = (x + y, x - y)
         @scalar_rule notimplemented2(x, y) (@not_implemented("notimplemented2"), 1) (1, -1)
@@ -119,6 +119,6 @@
         f̄, x̄1, x̄2 = pb((3.1, 4.5))
         @test f̄ == NoTangent()
         @test x̄1 isa ChainRulesCore.NotImplemented
-        @test x̄2 == -1.4
+        @test x̄2 == int2float(-1.4)
     end
 end

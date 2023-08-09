@@ -17,6 +17,7 @@ export ignore_derivatives, @ignore_derivatives
 # tangents
 export Tangent, NoTangent, InplaceableThunk, Thunk, ZeroTangent, AbstractZero, AbstractThunk
 
+include("preferences.jl")
 include("debug_mode.jl")
 
 include("tangent_types/abstract_tangent.jl")

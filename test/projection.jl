@@ -36,7 +36,7 @@ struct NoSuperType end
         @test ProjectTo(big(1.0))(2) === 2
         @test ProjectTo(1.0)(2) === 2.0
         @test ProjectTo(1.0f0)(2) === 2.0f0
-        @test ProjectTo(1)(2.0f0) === 2.0
+        @test ProjectTo(1)(2.0f0) === int2float(2.0)
 
         # Tangents
         ProjectTo(1.0f0 + 2im)(Tangent{ComplexF64}(; re=1, im=NoTangent())) ===
@@ -61,7 +61,12 @@ struct NoSuperType end
 
     @testset "Base: arrays of numbers" begin
         pvec3 = ProjectTo([1, 2, 3])
-        @test pvec3(1.0:3.0) === 1.0:3.0
+        if int2float(1) isa Float64
+            @test pvec3(1.0:3.0) === 1.0:3.0
+        else
+            @test pvec3(1.0:3.0) == int2float.(1.0:3.0)
+        end
+        
         @test pvec3(1:3) == 1.0:3.0  # would prefer ===, map(Float64, dx) would do that, not important
         @test pvec3([1, 2, 3 + 4im]) == 1:3
         @test eltype(pvec3([1, 2, 3.0f0])) === Float32
@@ -106,7 +111,7 @@ struct NoSuperType end
         @test ProjectTo([(1, 2), (3, 4), (5, 6)]) isa ProjectTo{AbstractArray}
 
         @test ProjectTo(Any[1, 2])(1:2) == [1.0, 2.0]  # projects each number.
-        @test Tuple(ProjectTo(Any[1, 2 + 3im])(1:2)) === (1.0, 2.0 + 0.0im)
+        @test Tuple(ProjectTo(Any[1, 2 + 3im])(1:2)) === (int2float(1.0), 2.0 + 0.0im)
         @test ProjectTo(Any[true, false]) isa ProjectTo{NoTangent}
 
         # empty arrays
@@ -217,7 +222,7 @@ struct NoSuperType end
 
     @testset "UniformScaling" begin
         @test ProjectTo(I)(123) === NoTangent()
-        @test ProjectTo(2 * I)(I * 3im) === 0.0 * I
+        @test ProjectTo(2 * I)(I * 3im) === int2float(0.0) * I
         @test ProjectTo((4 + 5im) * I)(Tangent{typeof(im * I)}(; λ = 6)) === (6.0 + 0.0im) * I
         @test ProjectTo(7 * I)(Tangent{typeof(2I)}()) == ZeroTangent()
     end
@@ -225,7 +230,7 @@ struct NoSuperType end
     @testset "LinearAlgebra: $adj vectors" for adj in [transpose, adjoint]
         # adjoint vectors
         padj = ProjectTo(adj([1, 2, 3]))
-        adjT = typeof(adj([1, 2, 3.0]))
+        adjT = typeof(adj(int2float.([1, 2, 3.0])))
         @test padj(transpose(1:3)) isa adjT
         @test padj([4 5 6 + 7im]) isa adjT
         @test padj([4.0 5.0 6.0]) isa adjT
@@ -296,7 +301,12 @@ struct NoSuperType end
         @test pdiag(reshape(1:9, 3, 3)) == Diagonal([1, 5, 9])
         @test pdiag(pdiag(reshape(1:9, 3, 3))) == pdiag(reshape(1:9, 3, 3))
         @test pdiag(rand(ComplexF32, 3, 3)) isa Diagonal{Float32}
-        @test pdiag(Diagonal(1.0:3.0)) === Diagonal(1.0:3.0)
+        if int2float(1) isa Float64
+            @test pdiag(Diagonal(1.0:3.0)) === Diagonal(int2float.(1.0:3.0))
+        else
+            @test pdiag(Diagonal(1.0:3.0)) == Diagonal(int2float.(1.0:3.0))
+        end
+        
         @test ProjectTo(Diagonal(randn(3) .> 0))(randn(3, 3)) == NoTangent()
         @test ProjectTo(Diagonal(randn(3) .> 0))(Diagonal(rand(3))) == NoTangent()
 
@@ -455,10 +465,11 @@ struct NoSuperType end
     end
 
     @testset "display" begin
+        int2float_type_ = typeof(int2float(2))
         @test repr(ProjectTo(1.1)) == "ProjectTo{Float64}()"
         @test occursin("ProjectTo{AbstractArray}(element", repr(ProjectTo([1, 2, 3])))
         str = repr(ProjectTo([1, 2, 3]'))
-        @test eval(Meta.parse(str))(ones(1, 3)) isa Adjoint{Float64,Vector{Float64}}
+        @test eval(Meta.parse(str))(ones(1, 3)) isa Adjoint{int2float_type_,Vector{int2float_type_}}
     end
 
     VERSION > v"1.1" && @testset "allocation tests" begin

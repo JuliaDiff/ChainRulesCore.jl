@@ -7,6 +7,8 @@ using StaticArrays
 using SparseArrays
 using Test
 
+int2float(x) = ProjectTo(1)(x)
+
 @testset "ChainRulesCore" begin
     @testset "differentials" begin
         include("tangent_types/abstract_zero.jl")
