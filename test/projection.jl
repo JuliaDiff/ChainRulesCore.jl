@@ -52,7 +52,7 @@ struct NoSuperType end
         # real & complex
         @test ProjectTo(1.0 + 1im)(Dual(1.0, 2.0)) isa Complex{<:Dual}
         @test ProjectTo(1.0 + 1im)(Complex(Dual(1.0, 2.0), Dual(1.0, 2.0))) isa
-              Complex{<:Dual}
+            Complex{<:Dual}
         @test ProjectTo(1.0)(Complex(Dual(1.0, 2.0), Dual(1.0, 2.0))) isa Dual
 
         # Tangent
@@ -66,7 +66,7 @@ struct NoSuperType end
         else
             @test pvec3(1.0:3.0) == int2float.(1.0:3.0)
         end
-        
+
         @test pvec3(1:3) == 1.0:3.0  # would prefer ===, map(Float64, dx) would do that, not important
         @test pvec3([1, 2, 3 + 4im]) == 1:3
         @test eltype(pvec3([1, 2, 3.0f0])) === typeof(int2float(1))
@@ -150,7 +150,7 @@ struct NoSuperType end
 
         @test ProjectTo(Ref(true)) isa ProjectTo{NoTangent}
         @test ProjectTo(Ref([false]')) isa ProjectTo{NoTangent}
-        
+
         @test ProjectTo(Ref(1.0))(Ref(NoTangent())) === NoTangent()  # collapse all-zero
     end
 
@@ -161,7 +161,7 @@ struct NoSuperType end
             @test @inferred(pt1(pt1((1,)))) == pt1(pt1((1,)))            # accepts correct Tangent
             @test @inferred(pt1(Tangent{Any}(1))) == pt1((1,))           # accepts Tangent{Any}
         end
-        @test pt1([1,]) == Tangent{Tuple{Float64}}(1.0,)  # accepts Vector
+        @test pt1([1]) == Tangent{Tuple{Float64}}(1.0)  # accepts Vector
         @test @inferred(pt1(NoTangent())) === NoTangent()
         @test @inferred(pt1(ZeroTangent())) === ZeroTangent()
         @test @inferred(pt1((NoTangent(),))) === NoTangent()  # collapse all-zero
@@ -170,7 +170,9 @@ struct NoSuperType end
         @test_throws Exception pt1([])
 
         pt3 = ProjectTo(([1, 2, 3], false, :gamma)) # partly non-differentiable
-        @test pt3((1:3, 4, 5)) == Tangent{Tuple{Vector{Int}, Bool, Symbol}}([1.0, 2.0, 3.0], NoTangent(), NoTangent())
+        @test pt3((1:3, 4, 5)) == Tangent{Tuple{Vector{Int},Bool,Symbol}}(
+            [1.0, 2.0, 3.0], NoTangent(), NoTangent()
+        )
         @test ProjectTo((true, [false])) isa ProjectTo{NoTangent}
     end
 
@@ -223,7 +225,7 @@ struct NoSuperType end
     @testset "UniformScaling" begin
         @test ProjectTo(I)(123) === NoTangent()
         @test ProjectTo(2 * I)(I * 3im) === int2float(0.0) * I
-        @test ProjectTo((4 + 5im) * I)(Tangent{typeof(im * I)}(; λ = 6)) === (6.0 + 0.0im) * I
+        @test ProjectTo((4 + 5im) * I)(Tangent{typeof(im * I)}(; λ=6)) === (6.0 + 0.0im) * I
         @test ProjectTo(7 * I)(Tangent{typeof(2I)}()) == ZeroTangent()
     end
 
@@ -306,7 +308,7 @@ struct NoSuperType end
         else
             @test pdiag(Diagonal(1.0:3.0)) == Diagonal(int2float.(1.0:3.0))
         end
-        
+
         @test ProjectTo(Diagonal(randn(3) .> 0))(randn(3, 3)) == NoTangent()
         @test ProjectTo(Diagonal(randn(3) .> 0))(Diagonal(rand(3))) == NoTangent()
 
@@ -387,29 +389,29 @@ struct NoSuperType end
         pvec3 = ProjectTo([1, 2, 3])
         @test axes(pvec3(OffsetArray(rand(3), 0:2))) == (1:3,)
         @test pvec3(OffsetArray(rand(3), 0:2)) isa Vector  # relies on axes === axes test 
-        @test pvec3(OffsetArray(rand(3,1), 0:2, 0:0)) isa Vector
+        @test pvec3(OffsetArray(rand(3, 1), 0:2, 0:0)) isa Vector
     end
 
     #####
     ##### `StaticArrays`
     #####
 
-        @testset "StaticArrays" begin
-            # There is no code for this, but when argument isa StaticArray, axes(x) === axes(dx)
-            # implies a check, and reshape will wrap a Vector into a static SizedVector:
-            pstat = ProjectTo(SA[1, 2, 3])
-            @test axes(pstat(rand(3))) === (SOneTo(3),)
+    @testset "StaticArrays" begin
+        # There is no code for this, but when argument isa StaticArray, axes(x) === axes(dx)
+        # implies a check, and reshape will wrap a Vector into a static SizedVector:
+        pstat = ProjectTo(SA[1, 2, 3])
+        @test axes(pstat(rand(3))) === (SOneTo(3),)
 
-            # This recurses into structured arrays:
-            pst = ProjectTo(transpose(SA[1, 2, 3]))
-            @test axes(pst(rand(1,3))) === (SOneTo(1), SOneTo(3))
-            @test pst(rand(1,3)) isa Transpose
+        # This recurses into structured arrays:
+        pst = ProjectTo(transpose(SA[1, 2, 3]))
+        @test axes(pst(rand(1, 3))) === (SOneTo(1), SOneTo(3))
+        @test pst(rand(1, 3)) isa Transpose
 
-            # When the argument is an ordinary Array, static gradients are allowed to pass,
-            # like FillArrays. Collecting to an Array would cost a copy.
-            pvec3 = ProjectTo([1, 2, 3])
-            @test pvec3(SA[1, 2, 3]) isa StaticArray
-        end
+        # When the argument is an ordinary Array, static gradients are allowed to pass,
+        # like FillArrays. Collecting to an Array would cost a copy.
+        pvec3 = ProjectTo([1, 2, 3])
+        @test pvec3(SA[1, 2, 3]) isa StaticArray
+    end
 
     #####
     ##### `ChainRulesCore`
@@ -469,7 +471,8 @@ struct NoSuperType end
         @test repr(ProjectTo(1.1)) == "ProjectTo{Float64}()"
         @test occursin("ProjectTo{AbstractArray}(element", repr(ProjectTo([1, 2, 3])))
         str = repr(ProjectTo([1, 2, 3]'))
-        @test eval(Meta.parse(str))(ones(1, 3)) isa Adjoint{int2float_type_,Vector{int2float_type_}}
+        @test eval(Meta.parse(str))(ones(1, 3)) isa
+            Adjoint{int2float_type_,Vector{int2float_type_}}
     end
 
     VERSION > v"1.1" && @testset "allocation tests" begin
