@@ -430,7 +430,7 @@ if Julia changes the algorithm it uses to compute `exp(::Matrix)`, then during a
 This may actually happen, as there are many other algorithms that can compute the matrix exponential.
 Further, perhaps there might be an improvement to the exact coefficient or cut-offs used by Julia's current Padé approximation.
 If Julia made this change it would not be considered breaking.
-[Exact floating point numerical values are not generally considered part of the SemVer-bound API](http://colprac.sciml.ai/#changes-that-are-not-considered-breaking).
+[Exact floating point numerical values are not generally considered part of the SemVer-bound API](https://docs.sciml.ai/ColPrac/stable/#Changes-that-are-not-considered-breaking).
 Rather only the general accuracy of the computed value relative to the true mathematical value (e.g. for common scalar operations Julia promises 1 [ULP](https://en.wikipedia.org/wiki/Unit_in_the_last_place)).
 
 This change will result in the output of the AD primal pass not being exactly equal to what would be seen from just running the primal code.
