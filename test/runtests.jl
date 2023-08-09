@@ -1,6 +1,7 @@
 using Base.Broadcast: broadcastable
 using BenchmarkTools
 using Preferences
+using UUIDs
 
 # Test Float32 value for int2float
 if "INT2FLOAT" ∈ keys(ENV) && ENV["INT2FLOAT"] == "Float32"
