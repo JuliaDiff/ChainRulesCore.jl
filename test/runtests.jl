@@ -7,6 +7,8 @@ using UUIDs
 if "INT2FLOAT" ∈ keys(ENV) && ENV["INT2FLOAT"] == "Float32"
     chainrulescore_uuid = UUID("d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4")
     set_preferences!(chainrulescore_uuid, "int2float" => "Float32")
+    println("")
+    println("Running ChainRulesCore tests with Float32")
 end
 
 using ChainRulesCore
