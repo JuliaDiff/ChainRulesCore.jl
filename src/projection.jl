@@ -394,7 +394,6 @@ function (project::ProjectTo{<:Tangent{<:Tuple}})(dx::AbstractArray)
     end
 end
 
-
 #####
 ##### `LinearAlgebra`
 #####
