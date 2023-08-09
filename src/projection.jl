@@ -169,15 +169,7 @@ function ProjectTo(x::Integer)
     end
 end
 
-function ProjectTo(x::Complex{<:Integer})
-    @static if int2float_type == "Float16"
-        return ProjectTo(Float16(x))
-    elseif int2float_type == "Float32"
-        return ProjectTo(Float32(x))
-    else # Float64
-        return ProjectTo(Float64(x))
-    end
-end
+ProjectTo(x::Complex{<:Integer}) = ProjectTo(float(x))
 
 # Preserve low-precision floats as accidental promotion is a common performance bug
 for T in (Float16, Float32, Float64, ComplexF16, ComplexF32, ComplexF64)
