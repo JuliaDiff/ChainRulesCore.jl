@@ -9,5 +9,7 @@ function set_int2float!(int2float_type::String)
 
     # Set it in our runtime values, as well as saving it to disk
     @set_preferences!("int2float" => int2float_type)
-    @info("New int2float type set; restart your Julia session for this change to take effect!")
+    @info(
+        "New int2float type set; restart your Julia session for this change to take effect!"
+    )
 end
