@@ -35,6 +35,8 @@ struct NoSuperType end
         @test ProjectTo(1.0f0 + 2im)(3) === 3.0f0 + 0im
         @test ProjectTo(big(1.0))(2) === 2
         @test ProjectTo(1.0)(2) === 2.0
+        @test ProjectTo(1.0f0)(2) === 2.0f0
+        @test ProjectTo(1)(2.0f0) === 2.0
 
         # Tangents
         ProjectTo(1.0f0 + 2im)(Tangent{ComplexF64}(; re=1, im=NoTangent())) ===
@@ -62,7 +64,7 @@ struct NoSuperType end
         @test pvec3(1.0:3.0) === 1.0:3.0
         @test pvec3(1:3) == 1.0:3.0  # would prefer ===, map(Float64, dx) would do that, not important
         @test pvec3([1, 2, 3 + 4im]) == 1:3
-        @test eltype(pvec3([1, 2, 3.0f0])) === Float64
+        @test eltype(pvec3([1, 2, 3.0f0])) === Float32
 
         # reshape
         @test pvec3(reshape([1, 2, 3], 3, 1)) isa Vector
@@ -293,7 +295,7 @@ struct NoSuperType end
         pdiag = ProjectTo(Diagonal(1:3))
         @test pdiag(reshape(1:9, 3, 3)) == Diagonal([1, 5, 9])
         @test pdiag(pdiag(reshape(1:9, 3, 3))) == pdiag(reshape(1:9, 3, 3))
-        @test pdiag(rand(ComplexF32, 3, 3)) isa Diagonal{Float64}
+        @test pdiag(rand(ComplexF32, 3, 3)) isa Diagonal{Float32}
         @test pdiag(Diagonal(1.0:3.0)) === Diagonal(1.0:3.0)
         @test ProjectTo(Diagonal(randn(3) .> 0))(randn(3, 3)) == NoTangent()
         @test ProjectTo(Diagonal(randn(3) .> 0))(Diagonal(rand(3))) == NoTangent()
