@@ -160,12 +160,12 @@ ProjectTo(::Complex) = ProjectTo{Complex}()
 ProjectTo(::Number) = ProjectTo{Number}()
 
 function ProjectTo(x::Integer)
-    @static if int2float_type == "Float64"
-        return ProjectTo{Float64}()
+    @static if int2float_type == "Float16"
+        return ProjectTo{Float16}()
     elseif int2float_type == "Float32"
         return ProjectTo{Float32}()
-    else
-        return nothing
+    else # Float64
+        return ProjectTo{Float64}()
     end
 end
 
