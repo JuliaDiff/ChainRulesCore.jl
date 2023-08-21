@@ -3,15 +3,31 @@
 
 Representing the type of the tangent of a `struct` `P` (or a `Tuple`/`NamedTuple`).
 as an object with mirroring fields.
+
+!!!!!! warning Exprimental
+    The `StructuralTangent` constructor returns a `MutableTangent` for mutable structs.
+    `MutableTangent` is an experimental feature.
+    Thus use of `StructuralTangent` (rather than `Tangent` directly) is also experimental.
+    While this notice remains it may have changes in behavour, and interface in any _minor_ version of ChainRulesCore.
+    
 """
 abstract type StructuralTangent{P} <: AbstractTangent end
 
 function StructuralTangent{P}(nt::NamedTuple) where {P}
-    return Tangent{P,typeof(nt)}(nt)
+    if ismutabletype(P)
+        return MutableTangent{P}(nt)
+    else
+        return Tangent{P,typeof(nt)}(nt)
+    end
 end
 
-StructuralTangent{P}(tup::Tuple) where {P} = Tangent{P,typeof(tup)}(tup)
-StructuralTangent{P}(dict::Dict) where {P} = Tangent{P}(dict)
+ismutabletype(::Type{P}) where P = ismutable(P)
+ismutabletype(::Type{String}) = false
+ismutabletype(::Type{Symbol}) = false
+
+
+StructuralTangent{P}(tup::Tuple) where P = Tangent{P,typeof(tup)}(tup)
+StructuralTangent{P}(dict::Dict) where P = Tangent{P}(dict)
 
 Base.keys(tangent::StructuralTangent) = keys(backing(tangent))
 Base.propertynames(tangent::StructuralTangent) = propertynames(backing(tangent))
@@ -29,10 +45,10 @@ function Base.map(f, tangent::StructuralTangent{P}) where {P}
     L = propertynames(backing(tangent))
     vals = map(f, Tuple(backing(tangent)))
     named_vals = NamedTuple{L,typeof(vals)}(vals)
-    return if tangent isa Tangent
-        Tangent{P,typeof(named_vals)}(named_vals)
+    return if tangent isa MutableTangent
+        MutableTangent{P}(named_vals)
     else
-        # Handle MutableTangent
+        Tangent{P,typeof(named_vals)}(named_vals)
     end
 end
 
@@ -386,3 +402,24 @@ canonicalize(tangent::Tangent{<:Any,<:AbstractDict}) = tangent
 canonicalize(tangent::Tangent{Any,<:NamedTuple{L}}) where {L} = tangent
 canonicalize(tangent::Tangent{Any,<:Tuple}) = tangent
 canonicalize(tangent::Tangent{Any,<:AbstractDict}) = tangent
+
+
+"""
+    MutableTangent{P}(fields) <: StructuralTangent{P} <: AbstractTangent
+
+This type represents the tangent to a mutable struct.
+It itself is also mutable.
+
+!!!!!! warning Exprimental
+    MutableTangent is an experimental feature.
+    While this notice remains it may have changes in behavour, and interface in any _minor_ version of ChainRulesCore.
+    Exactly how it should be used (e.g. is it forward-mode only?)
+"""
+mutable struct MutableTangent{P}
+        # Note: If T is a Tuple/Dict, then P is also a Tuple/Dict
+        # (but potentially a different one, as it doesn't contain tangents)
+        backing::NamedTuple
+end
+
+Base.getproperty(tangent::MutableTangent, idx::Symbol) = unthunk(getfield(backing(tangent), idx))
+Base.setproperty!
