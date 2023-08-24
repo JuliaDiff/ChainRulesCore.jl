@@ -1,6 +1,7 @@
 using ChainRulesCore, Test
 using LinearAlgebra, SparseArrays
 using OffsetArrays, StaticArrays, BenchmarkTools
+using JLArrays
 
 # Like ForwardDiff.jl's Dual
 struct Dual{T<:Real} <: Real
@@ -50,7 +51,7 @@ struct NoSuperType end
         # real & complex
         @test ProjectTo(1.0 + 1im)(Dual(1.0, 2.0)) isa Complex{<:Dual}
         @test ProjectTo(1.0 + 1im)(Complex(Dual(1.0, 2.0), Dual(1.0, 2.0))) isa
-              Complex{<:Dual}
+            Complex{<:Dual}
         @test ProjectTo(1.0)(Complex(Dual(1.0, 2.0), Dual(1.0, 2.0))) isa Dual
 
         # Tangent
@@ -143,7 +144,7 @@ struct NoSuperType end
 
         @test ProjectTo(Ref(true)) isa ProjectTo{NoTangent}
         @test ProjectTo(Ref([false]')) isa ProjectTo{NoTangent}
-        
+
         @test ProjectTo(Ref(1.0))(Ref(NoTangent())) === NoTangent()  # collapse all-zero
     end
 
@@ -154,7 +155,7 @@ struct NoSuperType end
             @test @inferred(pt1(pt1((1,)))) == pt1(pt1((1,)))            # accepts correct Tangent
             @test @inferred(pt1(Tangent{Any}(1))) == pt1((1,))           # accepts Tangent{Any}
         end
-        @test pt1([1,]) == Tangent{Tuple{Float64}}(1.0,)  # accepts Vector
+        @test pt1([1]) == Tangent{Tuple{Float64}}(1.0)  # accepts Vector
         @test @inferred(pt1(NoTangent())) === NoTangent()
         @test @inferred(pt1(ZeroTangent())) === ZeroTangent()
         @test @inferred(pt1((NoTangent(),))) === NoTangent()  # collapse all-zero
@@ -163,7 +164,9 @@ struct NoSuperType end
         @test_throws Exception pt1([])
 
         pt3 = ProjectTo(([1, 2, 3], false, :gamma)) # partly non-differentiable
-        @test pt3((1:3, 4, 5)) == Tangent{Tuple{Vector{Int}, Bool, Symbol}}([1.0, 2.0, 3.0], NoTangent(), NoTangent())
+        @test pt3((1:3, 4, 5)) == Tangent{Tuple{Vector{Int},Bool,Symbol}}(
+            [1.0, 2.0, 3.0], NoTangent(), NoTangent()
+        )
         @test ProjectTo((true, [false])) isa ProjectTo{NoTangent}
     end
 
@@ -216,7 +219,7 @@ struct NoSuperType end
     @testset "UniformScaling" begin
         @test ProjectTo(I)(123) === NoTangent()
         @test ProjectTo(2 * I)(I * 3im) === 0.0 * I
-        @test ProjectTo((4 + 5im) * I)(Tangent{typeof(im * I)}(; λ = 6)) === (6.0 + 0.0im) * I
+        @test ProjectTo((4 + 5im) * I)(Tangent{typeof(im * I)}(; λ=6)) === (6.0 + 0.0im) * I
         @test ProjectTo(7 * I)(Tangent{typeof(2I)}()) == ZeroTangent()
     end
 
@@ -375,29 +378,86 @@ struct NoSuperType end
         pvec3 = ProjectTo([1, 2, 3])
         @test axes(pvec3(OffsetArray(rand(3), 0:2))) == (1:3,)
         @test pvec3(OffsetArray(rand(3), 0:2)) isa Vector  # relies on axes === axes test 
-        @test pvec3(OffsetArray(rand(3,1), 0:2, 0:0)) isa Vector
+        @test pvec3(OffsetArray(rand(3, 1), 0:2, 0:0)) isa Vector
     end
 
     #####
     ##### `StaticArrays`
     #####
 
-        @testset "StaticArrays" begin
-            # There is no code for this, but when argument isa StaticArray, axes(x) === axes(dx)
-            # implies a check, and reshape will wrap a Vector into a static SizedVector:
-            pstat = ProjectTo(SA[1, 2, 3])
-            @test axes(pstat(rand(3))) === (SOneTo(3),)
+    @testset "StaticArrays" begin
+        # There is no code for this, but when argument isa StaticArray, axes(x) === axes(dx)
+        # implies a check, and reshape will wrap a Vector into a static SizedVector:
+        pstat = ProjectTo(SA[1, 2, 3])
+        @test axes(pstat(rand(3))) === (SOneTo(3),)
 
-            # This recurses into structured arrays:
-            pst = ProjectTo(transpose(SA[1, 2, 3]))
-            @test axes(pst(rand(1,3))) === (SOneTo(1), SOneTo(3))
-            @test pst(rand(1,3)) isa Transpose
+        # This recurses into structured arrays:
+        pst = ProjectTo(transpose(SA[1, 2, 3]))
+        @test axes(pst(rand(1, 3))) === (SOneTo(1), SOneTo(3))
+        @test pst(rand(1, 3)) isa Transpose
 
-            # When the argument is an ordinary Array, static gradients are allowed to pass,
-            # like FillArrays. Collecting to an Array would cost a copy.
-            pvec3 = ProjectTo([1, 2, 3])
-            @test pvec3(SA[1, 2, 3]) isa StaticArray
+        # When the argument is an ordinary Array, static gradients are allowed to pass,
+        # like FillArrays. Collecting to an Array would cost a copy.
+        pvec3 = ProjectTo([1, 2, 3])
+        @test pvec3(SA[1, 2, 3]) isa StaticArray
+    end
+
+    #####
+    ##### `GPU arrays`
+    #####
+
+    # issue #624
+    @testset "GPUArrays" begin
+        JLVector = JLArray{T,1} where {T}
+        JLMatrix = JLArray{T,2} where {T}
+
+        pvec3 = ProjectTo(JLArray([1, 2, 3]))
+        @test pvec3(JLArray(1.0:3.0)) == JLArray(1.0:3.0)
+        @test pvec3(JLArray(1:3)) == JLArray(1.0:3.0)  # would prefer ===, map(Float64, dx) would do that, not important
+        @test pvec3(JLArray([1, 2, 3 + 4im])) == JLArray(1:3)
+        @test eltype(pvec3(JLArray([1, 2, 3.0f0]))) === Float64
+
+        # reshape
+        @test pvec3(reshape(JLArray([1, 2, 3]), 3, 1)) isa JLVector
+        @test_throws DimensionMismatch pvec3(reshape(JLArray([1, 2, 3]), 1, 3))
+        @test_throws DimensionMismatch pvec3(JLArray([1, 2, 3, 4]))
+
+        pmat = ProjectTo(JLArray(rand(2, 2) .+ im))
+        @test pmat(JLArray([1 2; 3 4.0+5im])') isa Adjoint     # pass-through
+        @test pmat(JLArray([1 2; 3 4])') isa JLMatrix # broadcast type change
+
+        pmat2 = ProjectTo(JLArray(rand(2, 2))')
+        @test pmat2(JLArray([1 2; 3 4.0+5im])) isa JLMatrix  # adjoint matrices are not re-created
+
+        prow = ProjectTo(JLArray([1im 2 3im]))
+        @test prow(transpose(JLArray([1, 2, 3 + 4.0im]))) == JLArray([1 2 3 + 4im])
+        @test prow(transpose(JLArray([1, 2, 3 + 4.0im]))) isa JLMatrix  # row vectors may not pass through 
+        @test prow(adjoint(JLArray([1, 2, 3 + 5im]))) == JLArray([1 2 3 - 5im])
+        @test prow(adjoint(JLArray([1, 2, 3]))) isa JLMatrix
+
+        # some bugs
+        @test pvec3(JLArray(fill(NoTangent(), 3))) === NoTangent()  #410, was an array of such
+        @test ProjectTo(JLArray([pi]))(JLArray([1])) isa JLVector{Int}  #423, was Irrational -> Bool -> NoTangent
+
+        # adjoint vectors
+        @testset "GPUArrays: $adj vectors" for adj in [transpose, adjoint]
+            padj = ProjectTo(adj(JLArray([1, 2, 3])))
+            adjT = typeof(adj(JLArray([1, 2, 3.0])))
+            @test padj(transpose(JLArray(1:3))) isa adjT
+            @test padj(JLArray([4 5 6 + 7im])) isa adjT
+            @test padj(JLArray([4.0 5.0 6.0])) isa adjT
+
+            @test_throws DimensionMismatch padj(JLArray([1, 2, 3]))
+            @test_throws DimensionMismatch padj(JLArray([1 2 3]'))
+            @test_throws DimensionMismatch padj(JLArray([1 2 3 4]))
+
+            padj_complex = ProjectTo(adj(JLArray([1, 2, 3 + 4im])))
+            @test padj_complex(JLArray([4 5 6 + 7im])) == JLArray([4 5 6 + 7im])
+            @test padj_complex(transpose(JLArray([4, 5, 6 + 7im]))) ==
+                JLArray([4 5 6 + 7im])
+            @test padj_complex(adjoint(JLArray([4, 5, 6 + 7im]))) == JLArray([4 5 6 - 7im])
         end
+    end
 
     #####
     ##### `ChainRulesCore`
