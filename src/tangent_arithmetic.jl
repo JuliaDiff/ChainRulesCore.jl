@@ -76,6 +76,10 @@ Base.:-(::NoTangent, ::ZeroTangent) = NoTangent()
 Base.:-(::ZeroTangent, ::NoTangent) = NoTangent()
 Base.:*(::NoTangent, ::ZeroTangent) = ZeroTangent()
 Base.:*(::ZeroTangent, ::NoTangent) = ZeroTangent()
+Base.var"=="(x, ::ZeroTangent) = iszero(x)
+Base.var"=="(x, ::NoTangent)   = false
+Base.var"=="(::ZeroTangent, x) = iszero(x)
+Base.var"=="(::NoTangent,   x) = false
 
 LinearAlgebra.dot(::NoTangent, ::ZeroTangent) = ZeroTangent()
 LinearAlgebra.dot(::ZeroTangent, ::NoTangent) = ZeroTangent()
