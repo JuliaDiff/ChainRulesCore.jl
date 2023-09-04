@@ -248,6 +248,14 @@ function (project::ProjectTo{AbstractArray})(dx::LinearAlgebra.AdjOrTransAbsVec)
     return project(reshape(vec(dx), 1, :))
 end
 
+# Nested GPUArray wrappers lead to scalar indexing, try to prevent that:
+function (project::ProjectTo{AbstractArray})(dx::Transpose{T,A}) where {T,A<:AbstractGPUVector}
+    return project(copy(reshape(vec(dx), 1, :)))
+end
+function (project::ProjectTo{AbstractArray})(dx::Adjoint{T,A}) where {T,A<:AbstractGPUVector}
+    return project(copy(reshape(conj.(adjoint(dx)), 1, :)))
+end
+
 # Zero-dimensional arrays -- these have a habit of going missing,
 # although really Ref() is probably a better structure.
 function (project::ProjectTo{AbstractArray})(dx::Number) # ... so we restore from numbers
@@ -384,7 +392,6 @@ function (project::ProjectTo{<:Tangent{<:Tuple}})(dx::AbstractArray)
         return project_type(project)(dz...)
     end
 end
-
 
 #####
 ##### `LinearAlgebra`
