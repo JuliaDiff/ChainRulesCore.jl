@@ -229,7 +229,7 @@ function (project::ProjectTo{AbstractArray})(dx::AbstractArray{S,M}) where {S,M}
         end
         # Reshape, copying to remove the wrapper if a GPUArray, see
         # https://github.com/JuliaDiff/ChainRulesCore.jl/issues/624
-        if dx isa AbstractGPUArray 
+        if dx isa AbstractGPUArray
             copy(reshape(dx, project.axes))
         else
             reshape(dx, project.axes)
