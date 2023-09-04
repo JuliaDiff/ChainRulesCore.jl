@@ -621,6 +621,8 @@ end
 ##### `GPUArrays`
 #####
 
+# https://github.com/JuliaDiff/ChainRulesCore.jl/issues/624
+
 # Row vectors aren't acceptable as gradients for 1-row matrices:
 # Nested GPUArray wrappers lead to scalar indexing, try to prevent that:
 function (project::ProjectTo{AbstractArray})(
@@ -634,6 +636,8 @@ function (project::ProjectTo{AbstractArray})(
     return project(copy(reshape(conj(adjoint(dx)), 1, :)))
 end
 
+# Make sure wrappers are either cancelled or materialized to maintain a maximum
+# wrapper depth of 1:
 AdjOrTransAbsGPUVec = Union{Adjoint{T,A},Transpose{T,A}} where {T,A<:AbstractGPUVector}
 function (project::ProjectTo{Adjoint})(dx::AdjOrTransAbsGPUVec)
     return adjoint(project.parent(conj(transpose(dx))))
