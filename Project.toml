@@ -20,7 +20,15 @@ BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 FiniteDifferences = "26cc04aa-876d-5657-8c51-4c34ba976000"
 OffsetArrays = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+JLArrays = "27aeb0d3-9eb9-45fb-866b-73c2ecf80fcb"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test", "BenchmarkTools", "FiniteDifferences", "OffsetArrays", "StaticArrays"]
+test = [
+    "Test",
+    "BenchmarkTools",
+    "FiniteDifferences",
+    "OffsetArrays",
+    "StaticArrays",
+    "JLArrays",
+]

@@ -456,6 +456,13 @@ struct NoSuperType end
             @test padj_complex(transpose(JLArray([4, 5, 6 + 7im]))) ==
                 JLArray([4 5 6 + 7im])
             @test padj_complex(adjoint(JLArray([4, 5, 6 + 7im]))) == JLArray([4 5 6 - 7im])
+
+            # issue #410
+            @test padj(JLArray([NoTangent() NoTangent() NoTangent()])) === NoTangent()
+
+            @test ProjectTo(adj(JLArray([true, false])))(JLArray([1 2])) isa AbstractZero
+            @test ProjectTo(adj([JLArray([true]), JLArray([false])])) isa
+                ProjectTo{<:AbstractZero}
         end
     end
 
