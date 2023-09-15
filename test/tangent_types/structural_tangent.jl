@@ -425,3 +425,21 @@ end
         @test contains(sprint(show, tang), sprint(show, tang.x))  # inner piece appears whole
     end
 end
+
+@testset "MutableTangent" begin
+    mutable struct MDemo
+        x::Float64
+    end
+    function ChainRulesCore.frule((_, ȯbj, _, ẋ), ::typeof(setfield!), obj::MDemo, field, x)
+        y = setfield!(obj, field, x)
+        ẏ = setproperty!(ȯbj, field, ẋ)
+        return y, ẏ
+    end
+
+    obj = MDemo(99.0)
+    ∂obj = MutableTangent{MDemo}(;x=1.5)
+    frule((NoTangent(), ∂obj, NoTangent(), 10.0), setfield!, obj, :x, 95.0)
+
+    @test ∂obj.x == 10.0
+    @test obj.x == 95.0
+end

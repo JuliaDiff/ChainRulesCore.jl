@@ -14,7 +14,7 @@ export ProjectTo, canonicalize, unthunk  # tangent operations
 export add!!, is_inplaceable_destination  # gradient accumulation operations
 export ignore_derivatives, @ignore_derivatives
 # tangents
-export Tangent, NoTangent, InplaceableThunk, Thunk, ZeroTangent, AbstractZero, AbstractThunk
+export Tangent, MutableTangent, NoTangent, InplaceableThunk, Thunk, ZeroTangent, AbstractZero, AbstractThunk
 
 include("debug_mode.jl")
 
