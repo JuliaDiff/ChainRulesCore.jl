@@ -14,16 +14,14 @@ as an object with mirroring fields.
 abstract type StructuralTangent{P} <: AbstractTangent end
 
 function StructuralTangent{P}(nt::NamedTuple) where {P}
-    if ismutabletype(P)
+    if has_mutable_tangent(P)
         return MutableTangent{P}(nt)
     else
         return Tangent{P,typeof(nt)}(nt)
     end
 end
 
-ismutabletype(::Type{P}) where P = ismutable(P)
-ismutabletype(::Type{String}) = false
-ismutabletype(::Type{Symbol}) = false
+has_mutable_tangent(::Type{P}) where P = ismutabletype(P) && (!isabstracttype(P) && fieldcount(T) > 0)
 
 
 StructuralTangent{P}(tup::Tuple) where P = Tangent{P,typeof(tup)}(tup)
@@ -410,16 +408,22 @@ canonicalize(tangent::Tangent{Any,<:AbstractDict}) = tangent
 This type represents the tangent to a mutable struct.
 It itself is also mutable.
 
-!!!!!! warning Exprimental
+!!! warning Exprimental
     MutableTangent is an experimental feature.
     While this notice remains it may have changes in behavour, and interface in any _minor_ version of ChainRulesCore.
     Exactly how it should be used (e.g. is it forward-mode only?)
+
+!!! warning Do not directly mess with the tangent backing data
+    It is relatively straight forward for a forwards-mode AD to work correctly in the presence of mutation and aliasing of primal values.
+    However, this requires that the tangent is aliased in turn and conversely that it is copied when the primal is).
+    If you seperately alias the backing data, etc by using the internal `ChainRulesCore.backing` function you can break this.
 """
 mutable struct MutableTangent{P}
-        # Note: If T is a Tuple/Dict, then P is also a Tuple/Dict
-        # (but potentially a different one, as it doesn't contain tangents)
-        backing::NamedTuple
+    #TODO: we may want to absolutely lock the type of this down
+    backing::NamedTuple
 end
 
 Base.getproperty(tangent::MutableTangent, idx::Symbol) = unthunk(getfield(backing(tangent), idx))
-Base.setproperty!
+function Base.setproperty!(tangent::MutableTangent, name::Symbol, x)
+    new_backing = Base.setindex(backing(tangent), x, name)
+end
