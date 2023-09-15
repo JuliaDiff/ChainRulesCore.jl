@@ -418,12 +418,15 @@ It itself is also mutable.
     However, this requires that the tangent is aliased in turn and conversely that it is copied when the primal is).
     If you seperately alias the backing data, etc by using the internal `ChainRulesCore.backing` function you can break this.
 """
-mutable struct MutableTangent{P}
+mutable struct MutableTangent{P} <: StructuralTangent{P}
     #TODO: we may want to absolutely lock the type of this down
     backing::NamedTuple
 end
 
-Base.getproperty(tangent::MutableTangent, idx::Symbol) = unthunk(getfield(backing(tangent), idx))
+MutableTangent{P}(;kwargs...) where P = MutableTangent{P}(NamedTuple(kwargs))
+Base.getproperty(tangent::MutableTangent, idx::Symbol) = getfield(backing(tangent), idx)
 function Base.setproperty!(tangent::MutableTangent, name::Symbol, x)
     new_backing = Base.setindex(backing(tangent), x, name)
+    setfield!(tangent, :backing, new_backing)
+    return x
 end
