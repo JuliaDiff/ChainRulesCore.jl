@@ -424,9 +424,20 @@ mutable struct MutableTangent{P} <: StructuralTangent{P}
 end
 
 MutableTangent{P}(;kwargs...) where P = MutableTangent{P}(NamedTuple(kwargs))
+
 Base.getproperty(tangent::MutableTangent, idx::Symbol) = getfield(backing(tangent), idx)
+Base.getproperty(tangent::MutableTangent, idx::Int) = getfield(backing(tangent), idx)  # break ambig
+
 function Base.setproperty!(tangent::MutableTangent, name::Symbol, x)
     new_backing = Base.setindex(backing(tangent), x, name)
     setfield!(tangent, :backing, new_backing)
     return x
 end
+
+function Base.setproperty!(tangent::MutableTangent, idx::Int, x)
+    # needed due to https://github.com/JuliaLang/julia/issues/43155
+    name = idx2sym(backing(tangent), idx)
+    return setproperty!(tangent, name, x)
+end
+
+idx2sym(::NamedTuple{names}, idx) where names = names[idx]

@@ -439,7 +439,11 @@ end
     obj = MDemo(99.0)
     ∂obj = MutableTangent{MDemo}(;x=1.5)
     frule((NoTangent(), ∂obj, NoTangent(), 10.0), setfield!, obj, :x, 95.0)
-
     @test ∂obj.x == 10.0
     @test obj.x == 95.0
+
+    frule((NoTangent(), ∂obj, NoTangent(), 20.0), setfield!, obj, 1, 96.0)
+    @test ∂obj.x == 20.0
+    @test getproperty(∂obj, 1) == 20.0
+    @test obj.x == 96.0
 end
