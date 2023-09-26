@@ -22,7 +22,7 @@ function StructuralTangent{P}(nt::NamedTuple) where {P}
     end
 end
 
-has_mutable_tangent(::Type{P}) where P = ismutabletype(P) && (!isabstracttype(P) && fieldcount(T) > 0)
+has_mutable_tangent(::Type{P}) where P = ismutabletype(P) && (!isabstracttype(P) && fieldcount(P) > 0)
 
 
 StructuralTangent{P}(tup::Tuple) where P = Tangent{P,typeof(tup)}(tup)

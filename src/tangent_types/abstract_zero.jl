@@ -91,3 +91,32 @@ arguments.
 ```
 """
 struct NoTangent <: AbstractZero end
+
+"""
+    zero_tangent(primal)
+
+This returns an appropriate zero tangent suitable for accumulating tangents of the primal.
+For mutable composites types this is a structural []`MutableTangent`](@ref)
+For `Array`s, it is applied recursively for each element.
+For immutable types, this is simply [`ZeroTangent()`](@ref) as accumulation is default out-of-place for contexts where mutation does not apply.
+(Where mutation is not to be supported even for mutable types, then [`ZeroTangent()`](@ref) should be used for everything)
+
+!!! warning Exprimental
+    `zero_tangent`is an experimental feature, and is part of the mutation support featureset.
+    While this notice remains it may have changes in behavour, and interface in any _minor_ version of ChainRulesCore.
+    Exactly how it should be used (e.g. is it forward-mode only?)
+"""
+function zero_tangent end
+zero_tangent(::AbstractString) = ZeroTangent()
+# zero_tangent(::Number) = zero(x) # TODO: do we want this?
+zero_tangent(primal::Array{<:Number}) = zero(primal)  # TODO: do we want this?
+zero_tangent(primal::Array) = map(zero_tangent, primal)
+@generated function zero_tangent(primal)
+    has_mutable_tangent(primal) || return ZeroTangent()  # note this takes care of tuples
+    zfield_exprs = map(fieldnames(primal)) do fname
+        fval = Expr(:call, zero_tangent, Expr(:call, getfield, :primal, QuoteNode(fname)))
+        Expr(:kw, fname, fval)
+    end
+    backing_expr = Expr(:tuple, Expr(:parameters, zfield_exprs...))
+    return :($MutableTangent{$primal}($backing_expr))
+end
