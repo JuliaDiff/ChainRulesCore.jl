@@ -5,6 +5,7 @@ Representing the type of the tangent of a `struct` `P` (or a `Tuple`/`NamedTuple
 as an object with mirroring fields.
 
 !!!!!! warning Exprimental
+    `StructuralTangent` is an experimental feature, and is part of the mutation support featureset.
     The `StructuralTangent` constructor returns a `MutableTangent` for mutable structs.
     `MutableTangent` is an experimental feature.
     Thus use of `StructuralTangent` (rather than `Tangent` directly) is also experimental.
@@ -409,7 +410,7 @@ This type represents the tangent to a mutable struct.
 It itself is also mutable.
 
 !!! warning Exprimental
-    MutableTangent is an experimental feature.
+    MutableTangent is an experimental feature, and is part of the mutation support featureset.
     While this notice remains it may have changes in behavour, and interface in any _minor_ version of ChainRulesCore.
     Exactly how it should be used (e.g. is it forward-mode only?)
 
@@ -441,3 +442,9 @@ function Base.setproperty!(tangent::MutableTangent, idx::Int, x)
 end
 
 idx2sym(::NamedTuple{names}, idx) where names = names[idx]
+
+Base.hash(tangent::MutableTangent, h::UInt64) = hash(backing(tangent), h)
+function Base.:(==)(t1::MutableTangent{T1}, t2::MutableTangent{T2}) where {T1, T2}
+    typeintersect(T1, T2) == Union{} && return false
+    backing(t1)==backing(t2)
+end
