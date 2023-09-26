@@ -436,14 +436,28 @@ end
         return y, ẏ
     end
 
-    obj = MDemo(99.0)
-    ∂obj = MutableTangent{MDemo}(;x=1.5)
-    frule((NoTangent(), ∂obj, NoTangent(), 10.0), setfield!, obj, :x, 95.0)
-    @test ∂obj.x == 10.0
-    @test obj.x == 95.0
+    @testset "usecase" begin
+        obj = MDemo(99.0)
+        ∂obj = MutableTangent{MDemo}(;x=1.5)
+        frule((NoTangent(), ∂obj, NoTangent(), 10.0), setfield!, obj, :x, 95.0)
+        @test ∂obj.x == 10.0
+        @test obj.x == 95.0
 
-    frule((NoTangent(), ∂obj, NoTangent(), 20.0), setfield!, obj, 1, 96.0)
-    @test ∂obj.x == 20.0
-    @test getproperty(∂obj, 1) == 20.0
-    @test obj.x == 96.0
+        frule((NoTangent(), ∂obj, NoTangent(), 20.0), setfield!, obj, 1, 96.0)
+        @test ∂obj.x == 20.0
+        @test getproperty(∂obj, 1) == 20.0
+        @test obj.x == 96.0
+    end
+
+    @testset "== and hash" begin
+        @test MutableTangent{Any}(x=1.0) == MutableTangent{MDemo}(x=1.0)
+        @test MutableTangent{MDemo}(x=1.0) == MutableTangent{Any}(x=1.0)
+        @test MutableTangent{Any}(x=2.0) != MutableTangent{MDemo}(x=1.0)
+        @test MutableTangent{MDemo}(x=1.0) != MutableTangent{Any}(x=2.0)
+
+        nt = (;x=1.0)
+        @test MutableTangent{typeof(nt)}(nt) != MutableTangent{MDemo}(x=1.0)
+
+        @test hash(MutableTangent{Any}(x=1.0)) == hash(MutableTangent{MDemo}(x=1.0))
+    end
 end
