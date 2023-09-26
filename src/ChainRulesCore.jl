@@ -10,7 +10,7 @@ export RuleConfig, HasReverseMode, NoReverseMode, HasForwardsMode, NoForwardsMod
 export frule_via_ad, rrule_via_ad
 # definition helper macros
 export @non_differentiable, @opt_out, @scalar_rule, @thunk, @not_implemented
-export ProjectTo, canonicalize, unthunk  # tangent operations
+export ProjectTo, canonicalize, unthunk, zero_tangent  # tangent operations
 export add!!, is_inplaceable_destination  # gradient accumulation operations
 export ignore_derivatives, @ignore_derivatives
 # tangents
