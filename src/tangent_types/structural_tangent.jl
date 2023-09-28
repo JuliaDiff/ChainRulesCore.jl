@@ -10,7 +10,6 @@ as an object with mirroring fields.
     `MutableTangent` is an experimental feature.
     Thus use of `StructuralTangent` (rather than `Tangent` directly) is also experimental.
     While this notice remains it may have changes in behavour, and interface in any _minor_ version of ChainRulesCore.
-    
 """
 abstract type StructuralTangent{P} <: AbstractTangent end
 
