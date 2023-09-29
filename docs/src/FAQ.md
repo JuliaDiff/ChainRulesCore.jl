@@ -58,6 +58,19 @@ For example, in `fst(x, y) = x`, the derivative of `fst` with respect to `y` is 
 For example, in `access(xs, n) = xs[n]`, the derivative of `access` with respect to `n` is `NoTangent()`.
 `access([10, 20, 30], 2) == 20`, but if we add `0.1` to `2` we get `access([10, 20, 30], 2.1)` which errors as indexing can't be applied at fractional indexes.
 
+## Why do I get an error involving `nothing`?
+
+When no custom `frule` or `rrule` exists, if you try to call one of those, it will return `nothing` by default.
+As a result, you may encounter errors like
+
+```julia
+MethodError: no method matching iterate(::Nothing)
+```
+
+Sometimes you think you have implemented the right rule, but it is called with a slightly different set of arguments than you expected.
+You can use [Cthulhu.jl](https://github.com/JuliaDebug/Cthulhu.jl) to dive into the call stack and figure out which method you are missing.
+
+An alternative is to call back into AD: read the documentation on [rule configuration](@ref config) to know more.
 
 ## When to use ChainRules vs ChainRulesCore?
 
