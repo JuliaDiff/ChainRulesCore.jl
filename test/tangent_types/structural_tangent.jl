@@ -430,7 +430,9 @@ end
     mutable struct MDemo
         x::Float64
     end
-    function ChainRulesCore.frule((_, ȯbj, _, ẋ), ::typeof(setfield!), obj::MDemo, field, x)
+    function ChainRulesCore.frule(
+        (_, ȯbj, _, ẋ), ::typeof(setfield!), obj::MDemo, field, x
+    )
         y = setfield!(obj, field, x)
         ẏ = setproperty!(ȯbj, field, ẋ)
         return y, ẏ
@@ -438,7 +440,7 @@ end
 
     @testset "usecase" begin
         obj = MDemo(99.0)
-        ∂obj = MutableTangent{MDemo}(;x=1.5)
+        ∂obj = MutableTangent{MDemo}(; x=1.5)
         frule((NoTangent(), ∂obj, NoTangent(), 10.0), setfield!, obj, :x, 95.0)
         @test ∂obj.x == 10.0
         @test obj.x == 95.0
@@ -450,14 +452,14 @@ end
     end
 
     @testset "== and hash" begin
-        @test MutableTangent{Any}(x=1.0) == MutableTangent{MDemo}(x=1.0)
-        @test MutableTangent{MDemo}(x=1.0) == MutableTangent{Any}(x=1.0)
-        @test MutableTangent{Any}(x=2.0) != MutableTangent{MDemo}(x=1.0)
-        @test MutableTangent{MDemo}(x=1.0) != MutableTangent{Any}(x=2.0)
+        @test MutableTangent{Any}(; x=1.0) == MutableTangent{MDemo}(; x=1.0)
+        @test MutableTangent{MDemo}(; x=1.0) == MutableTangent{Any}(; x=1.0)
+        @test MutableTangent{Any}(; x=2.0) != MutableTangent{MDemo}(; x=1.0)
+        @test MutableTangent{MDemo}(; x=1.0) != MutableTangent{Any}(; x=2.0)
 
-        nt = (;x=1.0)
-        @test MutableTangent{typeof(nt)}(nt) != MutableTangent{MDemo}(x=1.0)
+        nt = (; x=1.0)
+        @test MutableTangent{typeof(nt)}(nt) != MutableTangent{MDemo}(; x=1.0)
 
-        @test hash(MutableTangent{Any}(x=1.0)) == hash(MutableTangent{MDemo}(x=1.0))
+        @test hash(MutableTangent{Any}(; x=1.0)) == hash(MutableTangent{MDemo}(; x=1.0))
     end
 end
