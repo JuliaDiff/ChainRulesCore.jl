@@ -168,9 +168,8 @@ end
     @test zero_tangent(MutDemo(1.5)) isa MutableTangent{MutDemo}
     @test iszero(zero_tangent(MutDemo(1.5)))
 
-    @test zero_tangent((;a=1)) isa ZeroTangent
+    @test zero_tangent((; a=1)) isa ZeroTangent
 
     @test zero_tangent([1.0, 2.0]) == [0.0, 0.0]
     @test zero_tangent([[1.0, 2.0], [3.0]]) == [[0.0, 0.0], [0.0]]
 end
-
