@@ -224,6 +224,61 @@ end
         end
     end
 
+    @testset "strong_mul" begin
+        ni = @not_implemented("not implemented!")
+        xvals = (
+            5,
+            randn(Float32),
+            randn(Float64),
+            randn(ComplexF64),
+            big(randn()),
+            ZeroTangent(),
+        )
+        yvals = (3, randn(Float32), randn(Float64), randn(ComplexF64), big(randn()))
+        yzerovals = (0, 0.0f0, 0.0, 0.0im, big(0.0), ZeroTangent(), NoTangent())
+        @testset for x in xvals
+            x === ni || @testset for y in yvals
+                @test @inferred(ChainRulesCore.strong_mul(x, y)) == x * y
+            end
+            @testset for y in yzerovals
+                @test @inferred(ChainRulesCore.strong_mul(x, y)) == zero(x * y)
+                if x isa AbstractFloat
+                    @test ChainRulesCore.strong_mul(oftype(x, Inf), y) == zero(x * y)
+                    @test ChainRulesCore.strong_mul(oftype(x, -Inf), y) == zero(x * y)
+                    @test ChainRulesCore.strong_mul(oftype(x, NaN), y) == zero(x * y)
+                end
+            end
+        end
+    end
+
+    @testset "strong_muladd" begin
+        ni = @not_implemented("not implemented!")
+        xvals = (
+            5,
+            randn(Float32),
+            randn(Float64),
+            randn(ComplexF64),
+            big(randn()),
+            ZeroTangent(),
+        )
+        yvals = (3, randn(Float32), randn(Float64), randn(ComplexF64), big(randn()))
+        zvals = (7, randn(Float32), randn(Float64), randn(ComplexF64), big(randn()))
+        yzerovals = (0, 0.0f0, 0.0, 0.0 * im, big(0.0), ZeroTangent(), NoTangent())
+        @testset for x in xvals, z in zvals
+            x === ni || @testset for y in yvals
+                @test @inferred(ChainRulesCore.strong_muladd(x, y, z)) == muladd(x, y, z)
+            end
+            @testset for y in yzerovals
+                @test @inferred(ChainRulesCore.strong_muladd(x, y, z)) == z
+                if x isa AbstractFloat
+                    @test ChainRulesCore.strong_muladd(oftype(x, Inf), y, z) == z
+                    @test ChainRulesCore.strong_muladd(oftype(x, -Inf), y, z) == z
+                    @test ChainRulesCore.strong_muladd(oftype(x, NaN), y, z) == z
+                end
+            end
+        end
+    end
+
     @testset "@scalar_rule" begin
         @testset "@scalar_rule with multiple output" begin
             simo(x) = (x, 2x)
@@ -254,6 +309,60 @@ end
 
             @test (NoTangent(), 1.0 + 0.0im) === rrule(make_imaginary, 2.0im)[2](1.0 * im)
             @test (NoTangent(), 0.0 - 1.0im) === rrule(make_imaginary, 2.0im)[2](1.0)
+        end
+
+        @testset "@scalar_rule strong zero (co)tangents" begin
+            suminv(x, y) = inv(x) + inv(y)
+            @scalar_rule suminv(x, y) (-(inv(x)^2), -(inv(y)^2))
+
+            @test @inferred(frule((NoTangent(), 1.0, 1.0), suminv, 0.0, 1.0)) ===
+                (Inf, -Inf)
+            @test @inferred(frule((NoTangent(), ZeroTangent(), 1.0), suminv, 0.0, 1.0)) ===
+                (Inf, -1.0)
+            @test @inferred(frule((NoTangent(), NoTangent(), 1.0), suminv, 0.0, 1.0)) ===
+                (Inf, -1.0)
+            @test @inferred(frule((NoTangent(), 0.0, 1.0), suminv, 0.0, 1.0)) ===
+                (Inf, -1.0)
+
+            @test @inferred(frule((NoTangent(), 1.0, 1.0), suminv, 1.0, 0.0)) ===
+                (Inf, -Inf)
+            @test @inferred(frule((NoTangent(), 1.0, ZeroTangent()), suminv, 1.0, 0.0)) ===
+                (Inf, -1.0)
+            @test @inferred(frule((NoTangent(), 1.0, NoTangent()), suminv, 1.0, 0.0)) ===
+                (Inf, -1.0)
+            @test @inferred(frule((NoTangent(), 1.0, 0.0), suminv, 1.0, 0.0)) ===
+                (Inf, -1.0)
+
+            @test @inferred(rrule(suminv, 0.0, 1.0)[2](1.0)) === (NoTangent(), -Inf, -1.0)
+            @test @inferred(rrule(suminv, 0.0, 1.0)[2](ZeroTangent())) ===
+                (NoTangent(), ZeroTangent(), ZeroTangent())
+            @test @inferred(rrule(suminv, 0.0, 1.0)[2](NoTangent())) ===
+                (NoTangent(), NoTangent(), NoTangent())
+            @test @inferred(rrule(suminv, 0.0, 1.0)[2](0.0)) === (NoTangent(), 0.0, 0.0)
+
+            @test @inferred(rrule(suminv, 1.0, 0.0)[2](1.0)) === (NoTangent(), -1.0, -Inf)
+            @test @inferred(rrule(suminv, 1.0, 0.0)[2](ZeroTangent())) ===
+                (NoTangent(), ZeroTangent(), ZeroTangent())
+            @test @inferred(rrule(suminv, 1.0, 0.0)[2](NoTangent())) ===
+                (NoTangent(), NoTangent(), NoTangent())
+            @test @inferred(rrule(suminv, 1.0, 0.0)[2](0.0)) === (NoTangent(), 0.0, 0.0)
+
+            # cases not covered
+            t = @thunk(0.0)
+            @inferred(frule((NoTangent(), t, 1.0), suminv, 0.0, 1.0))
+            @inferred(frule((NoTangent(), 1.0, t), suminv, 1.0, 0.0))
+            @inferred(rrule(suminv, 0.0, 1.0)[2](t))
+            @inferred(rrule(suminv, 1.0, 0.0)[2](t))
+            @test_broken rrule(suminv, 0.0, 1.0)[2](t) == (NoTangent(), 0.0, 0.0)
+            @test_broken rrule(suminv, 1.0, 0.0)[2](t) == (NoTangent(), 0.0, 0.0)
+            @test_broken frule((NoTangent(), t, 1.0), suminv, 0.0, 1.0) == (Inf, -1.0)
+            @test_broken frule((NoTangent(), 1.0, t), suminv, 1.0, 0.0) == (Inf, -1.0)
+
+            ni = @not_implemented("not implemented!")
+            @test_broken rrule(suminv, 0.0, 1.0)[2](ni) == (NoTangent(), 0.0, 0.0)
+            @test_broken rrule(suminv, 1.0, 0.0)[2](ni) == (NoTangent(), 0.0, 0.0)
+            @test_broken frule((NoTangent(), ni, 1.0), suminv, 0.0, 1.0) == (Inf, -1.0)
+            @test_broken frule((NoTangent(), 1.0, ni), suminv, 1.0, 0.0) == (Inf, -1.0)
         end
 
         @testset "Regression tests against #276 and #265" begin

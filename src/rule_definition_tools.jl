@@ -292,12 +292,14 @@ function propagation_expr(Δs, ∂s, _conj=false, proj=identity)
         end
     end
 
-    # Apply `muladd` iteratively.
+    # Apply `strong_muladd` iteratively.
     # Explicit multiplication is only performed for the first pair of partial and gradient.
     (∂s_1, Δs_1), _∂s_Δs_tail = Iterators.peel(zip(_∂s, Δs))
-    init_expr = :($∂s_1 * $Δs_1)
+    # zero gradients are treated as hard zeros. This avoids propagation of NaNs when
+    # partials are non-finite
+    init_expr = :(strong_mul($∂s_1, $Δs_1))
     summed_∂_mul_Δs = foldl(_∂s_Δs_tail; init=init_expr) do ex, (∂s_i, Δs_i)
-        :(muladd($∂s_i, $Δs_i, $ex))
+        :(strong_muladd($∂s_i, $Δs_i, $ex))
     end
     return :($proj($summed_∂_mul_Δs))
 end
@@ -615,3 +617,26 @@ function _constrain_and_name(arg::Expr, _)
     return error("malformed arguments: $arg")
 end
 _constrain_and_name(name::Symbol, constraint) = Expr(:(::), name, constraint)  # add type
+
+"""
+    strong_mul(x, y)
+
+Multiply `x` and `y`. If `iszero(y)`, treat `y` as a hard zero even for non-finite `x`.
+"""
+strong_mul(x, y) = ifelse(iszero(y), zero(x), x) * y
+
+"""
+    strong_muladd(x, y, z)
+
+Multiply `x` and `y` and add to `z`. If `iszero(y)`, treat `y` as a hard zero even for
+non-finite `x`.
+"""
+strong_muladd(x, y, z) = muladd(ifelse(iszero(y), zero(x), x), y, z)
+
+# slightly faster for BigFloats
+strong_mul(x::BigFloat, y::BigFloat) = (iszero(y) ? zero(x) : x) * y
+strong_muladd(x::BigFloat, y::BigFloat, z) = muladd((iszero(y) ? zero(x) : x), y, z)
+
+# avoid raising errors for NotImplemented
+strong_mul(x::NotImplemented, y) = (iszero(y) ? zero(x) : x) * y
+strong_muladd(x::NotImplemented, y, z) = muladd((iszero(y) ? zero(x) : x), y, z)

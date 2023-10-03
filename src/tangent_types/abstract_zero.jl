@@ -87,3 +87,6 @@ arguments.
 ```
 """
 struct NoTangent <: AbstractZero end
+
+Base.zero(::NoTangent) = NoTangent()
+Base.zero(::Type{NoTangent}) = NoTangent()
