@@ -120,12 +120,13 @@ zero_tangent(x::Number) = zero(x)
     return :($MutableTangent{$primal}($backing_expr))
 end
 
-function zero_tangent(x::Array{P, N}) where {P, N}
-    (isbitstype(P) || all(i->isassigned(x,i), eachindex(x))) && return map(zero_tangent, x)
-    
+function zero_tangent(x::Array{P,N}) where {P,N}
+    (isbitstype(P) || all(i -> isassigned(x, i), eachindex(x))) &&
+        return map(zero_tangent, x)
+
     # Now we need to handle nonfully assigned arrays
     # see discussion at https://github.com/JuliaDiff/ChainRulesCore.jl/pull/626#discussion_r1345235265
-    y = Array{guess_zero_tangent_type(P), N}(undef, size(x)...)
+    y = Array{guess_zero_tangent_type(P),N}(undef, size(x)...)
     @inbounds for n in eachindex(y)
         if isassigned(x, n)
             y[n] = zero_tangent(x[n])
@@ -135,6 +136,8 @@ function zero_tangent(x::Array{P, N}) where {P, N}
 end
 
 guess_zero_tangent_type(::Type{T}) where {T<:Number} = T
-guess_zero_tangent_type(::Type{<:Array{T,N}}) where {T,N} = Array{guess_zero_tangent_type(T), N}
+function guess_zero_tangent_type(::Type{<:Array{T,N}}) where {T,N}
+    return Array{guess_zero_tangent_type(T),N}
+end
 guess_zero_tangent_type(::Any) = Any  # if we had a general way to handle determining tangent type # https://github.com/JuliaDiff/ChainRulesCore.jl/issues/634
-                                      # TODO: we might be able to do better than this. even without.
+# TODO: we might be able to do better than this. even without.

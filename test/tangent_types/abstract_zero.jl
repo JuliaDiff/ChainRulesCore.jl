@@ -182,14 +182,13 @@ end
 
     @testset "undef elements" begin
         x = Vector{Vector{Float64}}(undef, 3)
-        x[2] = [1.0,2.0]
+        x[2] = [1.0, 2.0]
         dx = zero_tangent(x)
         @test dx isa Vector{Vector{Float64}}
         @test length(dx) == 3
         @test !isassigned(dx, 1)
         @test dx[2] == [0.0, 0.0]
         @test !isassigned(dx, 3)
-
 
         a = Vector{MutDemo}(undef, 3)
         a[2] = MutDemo(1.5)
@@ -198,10 +197,9 @@ end
         @test iszero(da[2])
         @test !isassigned(da, 3)
 
-
         db = zero_tangent(Vector{MutDemo}(undef, 3))
-        @test all(ii->!isassigned(db,ii), eachindex(db))
-        @test length(db)==3
+        @test all(ii -> !isassigned(db, ii), eachindex(db))
+        @test length(db) == 3
         @test db isa Vector
-    end   
+    end
 end
