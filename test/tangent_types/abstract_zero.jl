@@ -165,10 +165,17 @@ end
     mutable struct MutDemo
         x::Float64
     end
+    struct Demo
+        x::Float64
+    end
     @test zero_tangent(MutDemo(1.5)) isa MutableTangent{MutDemo}
     @test iszero(zero_tangent(MutDemo(1.5)))
 
     @test zero_tangent((; a=1)) isa ZeroTangent
+    @test zero_tangent(Demo(1.2)) isa ZeroTangent
+
+    @test zero_tangent(1) === 0
+    @test zero_tangent(1.0) === 0.0
 
     @test zero_tangent([1.0, 2.0]) == [0.0, 0.0]
     @test zero_tangent([[1.0, 2.0], [3.0]]) == [[0.0, 0.0], [0.0]]
