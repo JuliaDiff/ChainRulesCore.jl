@@ -107,10 +107,9 @@ For immutable types, this is simply [`ZeroTangent()`](@ref) as accumulation is d
     Exactly how it should be used (e.g. is it forward-mode only?)
 """
 function zero_tangent end
-zero_tangent(::AbstractString) = ZeroTangent()
-# zero_tangent(::Number) = zero(x) # TODO: do we want this?
-zero_tangent(primal::Array{<:Number}) = zero(primal)  # TODO: do we want this?
-zero_tangent(primal::Array) = map(zero_tangent, primal)
+
+zero_tangent(x::Number) = zero(x)
+
 @generated function zero_tangent(primal)
     has_mutable_tangent(primal) || return ZeroTangent()  # note this takes care of tuples
     zfield_exprs = map(fieldnames(primal)) do fname
@@ -120,3 +119,22 @@ zero_tangent(primal::Array) = map(zero_tangent, primal)
     backing_expr = Expr(:tuple, Expr(:parameters, zfield_exprs...))
     return :($MutableTangent{$primal}($backing_expr))
 end
+
+function zero_tangent(x::Array{P, N}) where {P, N}
+    (isbitstype(P) || all(i->isassigned(x,i), eachindex(x))) && return map(zero_tangent, x)
+    
+    # Now we need to handle nonfully assigned arrays
+    # see discussion at https://github.com/JuliaDiff/ChainRulesCore.jl/pull/626#discussion_r1345235265
+    y = Array{guess_zero_tangent_type(P), N}(undef, size(x)...)
+    @inbounds for n in eachindex(y)
+        if isassigned(x, n)
+            y[n] = zero_tangent(x[n])
+        end
+    end
+    return y
+end
+
+guess_zero_tangent_type(::Type{T}) where {T<:Number} = T
+guess_zero_tangent_type(::Type{<:Array{T,N}}) where {T,N} = Array{guess_zero_tangent_type(T), N}
+guess_zero_tangent_type(::Any) = Any  # if we had a general way to handle determining tangent type # https://github.com/JuliaDiff/ChainRulesCore.jl/issues/634
+                                      # TODO: we might be able to do better than this. even without.
