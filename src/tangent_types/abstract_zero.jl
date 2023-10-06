@@ -113,7 +113,11 @@ zero_tangent(x::Number) = zero(x)
 @generated function zero_tangent(primal)
     has_mutable_tangent(primal) || return ZeroTangent()  # note this takes care of tuples
     zfield_exprs = map(fieldnames(primal)) do fname
-        fval = Expr(:call, zero_tangent, Expr(:call, getfield, :primal, QuoteNode(fname)))
+        fval = if isdefined(primal, fname)
+            Expr(:call, zero_tangent, Expr(:call, getfield, :primal, QuoteNode(fname)))
+        else
+            ZeroTangent()
+        end
         Expr(:kw, fname, fval)
     end
     backing_expr = Expr(:tuple, Expr(:parameters, zfield_exprs...))

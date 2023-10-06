@@ -180,7 +180,7 @@ end
     @test zero_tangent([1.0, 2.0]) == [0.0, 0.0]
     @test zero_tangent([[1.0, 2.0], [3.0]]) == [[0.0, 0.0], [0.0]]
 
-    @testset "undef elements" begin
+    @testset "undef elements Vector" begin
         x = Vector{Vector{Float64}}(undef, 3)
         x[2] = [1.0, 2.0]
         dx = zero_tangent(x)
@@ -201,5 +201,21 @@ end
         @test all(ii -> !isassigned(db, ii), eachindex(db))
         @test length(db) == 3
         @test db isa Vector
+    end
+
+    @testset "undef fields struct" begin
+        dx = zero_tangent(Core.Box())
+        @test dx.contents isa ZeroTangent
+        @test (dx.contents = 2.0) == 2.0  # should be assignable
+
+        mutable struct MyPartiallyDefinedStruct
+            intro::Float64
+            contents::Number
+            MyPartiallyDefinedStruct(x) = new(x)
+        end
+        dy = zero_tangent(MyPartiallyDefinedStruct(1.5))
+        @test iszero(dy.intro)
+        @test iszero(dy.contents)
+        @test (dy.contents = 2.0) == 2.0  # should be assignable
     end
 end
