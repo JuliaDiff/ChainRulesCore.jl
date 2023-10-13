@@ -136,7 +136,6 @@
         @test dne[1:3] === dne
         @test dne[1, 2] === dne
         @test getindex(dne) === dne
-        
         @test dne.foo === dne
     end
 
