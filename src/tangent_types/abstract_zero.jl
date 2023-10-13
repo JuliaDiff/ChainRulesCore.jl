@@ -35,6 +35,8 @@ Base.convert(::Type{T}, x::AbstractZero) where {T<:Number} = zero(T)
 (::Type{Complex})(x::Real, y::AbstractZero) = Complex(x, false)
 
 Base.getindex(z::AbstractZero, args...) = z
+Base.getproperty(z::AbstractZero, name::Symbol) = z
+
 
 Base.view(z::AbstractZero, ind...) = z
 Base.sum(z::AbstractZero; dims=:) = z
