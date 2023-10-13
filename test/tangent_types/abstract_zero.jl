@@ -86,6 +86,8 @@
         @test z[1:3] === z
         @test z[1, 2] === z
         @test getindex(z) === z
+
+        @test z.foo === z
         
         @test first(z) === z
         @test last(z) === z
@@ -134,6 +136,7 @@
         @test dne[1:3] === dne
         @test dne[1, 2] === dne
         @test getindex(dne) === dne
+        @test dne.foo === dne
     end
 
     @testset "ambiguities" begin
