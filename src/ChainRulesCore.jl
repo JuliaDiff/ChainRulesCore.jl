@@ -3,6 +3,7 @@ using Base.Broadcast: broadcasted, Broadcasted, broadcastable, materialize, mate
 using Base.Meta
 using LinearAlgebra
 using SparseArrays: SparseVector, SparseMatrixCSC
+using GPUArraysCore
 using Compat: hasfield, hasproperty
 
 export frule, rrule  # core function

@@ -227,7 +227,13 @@ function (project::ProjectTo{AbstractArray})(dx::AbstractArray{S,M}) where {S,M}
                 throw(_projection_mismatch(project.axes, size(dx)))
             end
         end
-        reshape(dx, project.axes)
+        # Reshape, copying to remove the wrapper if a GPUArray, see
+        # https://github.com/JuliaDiff/ChainRulesCore.jl/issues/624
+        if dx isa AbstractGPUArray
+            copy(reshape(dx, project.axes))
+        else
+            reshape(dx, project.axes)
+        end
     end
     # Then deal with the elements. One projector if AbstractArray{<:Number},
     # or one per element for arrays of anything else, including arrays of arrays:
@@ -384,7 +390,6 @@ function (project::ProjectTo{<:Tangent{<:Tuple}})(dx::AbstractArray)
         return project_type(project)(dz...)
     end
 end
-
 
 #####
 ##### `LinearAlgebra`
@@ -612,4 +617,47 @@ function (project::ProjectTo{SparseMatrixCSC})(dx::SparseMatrixCSC)
     else
         invoke(project, Tuple{AbstractArray}, dx)
     end
+end
+
+#####
+##### `GPUArrays`
+#####
+
+# https://github.com/JuliaDiff/ChainRulesCore.jl/issues/624
+
+# Row vectors aren't acceptable as gradients for 1-row matrices:
+# Nested GPUArray wrappers lead to scalar indexing, try to prevent that:
+function (project::ProjectTo{AbstractArray})(
+    dx::Transpose{T,A}
+) where {T,A<:AbstractGPUVector}
+    return project(copy(reshape(vec(dx), 1, :)))
+end
+function (project::ProjectTo{AbstractArray})(
+    dx::Adjoint{T,A}
+) where {T,A<:AbstractGPUVector}
+    return project(copy(reshape(conj(adjoint(dx)), 1, :)))
+end
+
+# Make sure wrappers either cancel out or are materialized to maintain a maximum
+# wrapper depth of 1:
+AdjOrTransAbsGPUVec = Union{Adjoint{T,A},Transpose{T,A}} where {T,A<:AbstractGPUVector}
+function (project::ProjectTo{Adjoint})(dx::AdjOrTransAbsGPUVec)
+    return adjoint(project.parent(conj(transpose(dx))))
+end
+function (project::ProjectTo{Adjoint})(dx::AbstractGPUArray)
+    if size(dx, 1) != 1 || size(dx, 2) != length(project.parent.axes[1])
+        throw(_projection_mismatch((1:1, project.parent.axes...), size(dx)))
+    end
+    dy = eltype(dx) <: Real ? copy(vec(dx)) : copy(adjoint(dx))
+    return adjoint(project.parent(dy))
+end
+function (project::ProjectTo{Transpose})(dx::AdjOrTransAbsGPUVec)
+    return transpose(project.parent(conj(adjoint(dx))))
+end
+function (project::ProjectTo{Transpose})(dx::AbstractGPUArray)
+    if size(dx, 1) != 1 || size(dx, 2) != length(project.parent.axes[1])
+        throw(_projection_mismatch((1:1, project.parent.axes...), size(dx)))
+    end
+    dy = eltype(dx) <: Number ? copy(vec(dx)) : copy(transpose(dx))
+    return transpose(project.parent(dy))
 end
