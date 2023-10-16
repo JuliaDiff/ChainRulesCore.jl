@@ -2,7 +2,6 @@ module ChainRulesCore
 using Base.Broadcast: broadcasted, Broadcasted, broadcastable, materialize, materialize!
 using Base.Meta
 using LinearAlgebra
-using SparseArrays: SparseVector, SparseMatrixCSC
 using Compat: hasfield, hasproperty
 
 export frule, rrule  # core function
@@ -35,5 +34,10 @@ include("rule_definition_tools.jl")
 include("ignore_derivatives.jl")
 
 include("deprecated.jl")
+
+# SparseArrays support on Julia < 1.9
+if !isdefined(Base, :get_extension)
+    include("../ext/ChainRulesCoreSparseArraysExt.jl")
+end
 
 end # module

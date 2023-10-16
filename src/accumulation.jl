@@ -56,9 +56,6 @@ is_inplaceable_destination(::Any) = false
 is_inplaceable_destination(::Array) = true
 is_inplaceable_destination(:: Array{<:Integer}) = false
 
-is_inplaceable_destination(::SparseVector) = true
-is_inplaceable_destination(::SparseMatrixCSC) = true
-
 function is_inplaceable_destination(x::SubArray)
     alpha = is_inplaceable_destination(parent(x))
     beta = x.indices isa Tuple{Vararg{Union{Integer, Base.Slice, UnitRange}}}
