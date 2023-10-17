@@ -29,7 +29,7 @@ gr(framestyle=:origin, legend=false)
 ```@example nondiff
 plot(x->x^3)
 ```
-This is the standard case, one can returned the derivative that is defined according to school room calculus.
+This is the standard case, one can return the derivative that is defined according to school room calculus.
 Here we would reasonably say that at `x=0` the derivative is `3*0^2=0`. 
 
 
@@ -40,18 +40,18 @@ Here we would reasonably say that at `x=0` the derivative is `3*0^2=0`.
 plot(abs)
 ```
 
-`abs` is the classic example of a function where the derivative is not defines as the limit from above is not equal to the limit from below
+`abs` is the classic example of a function where the derivative is not defined, as the limit from above is not equal to the limit from below.
 
 $$\operatorname{abs}'(0) = \lim_{h \to 0^-} \dfrac{\operatorname{abs}(0)-\operatorname{abs}(0-h)}{0-h} = -1$$
 $$\operatorname{abs}'(0) = \lim_{h \to 0^+} \dfrac{\operatorname{abs}(0)-\operatorname{abs}(0-h)}{0-h} = 1$$
 
-Now, as discussed in the introduction the AD system would on it's own choose either 1 or -1, depending on implementation.
+Now, as discussed in the introduction, the AD system would on it's own choose either 1 or -1, depending on implementation.
 
 We however have a potentially much nicer answer available to use: 0.
 
 This has a number of advantages.
 - It follows the rule that derivatives are zero at local minima (and maxima).
-- If you leave a gradient decent optimizer running it will eventually actually converge absolutely to the point -- where as with it being 1 or -1 it would never outright converge it would always flee.
+- If you leave a gradient descent optimizer running it will eventually actually converge absolutely to the point -- where as with it being 1 or -1 it would never outright converge it would always flee.
 
 Further:
 - It is a perfectly nice member of the [subderivative](https://en.wikipedia.org/wiki/Subderivative).
@@ -61,9 +61,9 @@ Further:
 plot(x-> x < 0 ? x : 5x)
 ```
 
-Here was have 3 main options, all are good.
+Here we have 3 main options, all are good.
 
-We could say there derivative at 0 is:
+We could say the derivative at 0 is:
  - 1: which agrees with backwards finite differencing
  - 5: which agrees with forwards finite differencing
  - 3: which is the mean of `[1, 5]`, and agrees with central finite differencing
@@ -82,9 +82,9 @@ plot(ceil)
 Here it is most useful to say the derivative is zero everywhere.
 The limits are zero from both sides.
 
-The other option for `x->ceil(x)` would be relax the problem into `x->x`, and thus  say it is 1 everywhere
-But that it too weird, if the use wanted a relaxation of the problem then they would provide one.
-We can not be imposing that relaxation on to `ceil` for everyone is not reasonable.
+The other option for `x->ceil(x)` would be to relax the problem into `x->x`, and thus  say it is 1 everywhere.
+But that it too weird, if the user wanted a relaxation of the problem then they would provide one.
+We can not be imposing that relaxation on to `ceil`, as it is not reasonable for everyone.
 
 ### Not defined on one-side
 ```@example nondiff
@@ -122,17 +122,17 @@ But this is more or less the same as choosing some large value -- in this case a
 plot(x-> sign(x) * cbrt(x))
 ```
 
-In this example, the primal is defined and finite, so we would like a derivative to defined.
-We are back in the case of a local minimal like we were for `abs`.
+In this example, the primal is defined and finite, so we would like a derivative to be defined.
+We are back in the case of a local minimum like we were for `abs`.
 We can make most of the same arguments as we made there to justify saying the derivative is zero.
 
 ## Conclusion
 
 From the case studies a few general rules can be seen for how to choose a value that is _useful_.
 These rough rules are:
- - Say the derivative is 0 at local optima
- - If the derivative from one side is defined and the other isn't, say it is the derivative taken from defined side.
- - If the derivative from one side is finite and the other isn't, say it is the derivative taken from finite side.
- - When derivative from each side is not equal, strongly consider reporting the average
+ - Say the derivative is 0 at local optima.
+ - If the derivative from one side is defined and the other isn't, say it is the derivative taken from the defined side.
+ - If the derivative from one side is finite and the other isn't, say it is the derivative taken from the finite side.
+ - When derivative from each side is not equal, strongly consider reporting the average.
 
 Our goal as always, is to get a pragmatically useful result for everyone, which must by necessity also avoid a pathological result for anyone.
