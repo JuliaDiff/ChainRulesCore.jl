@@ -179,6 +179,25 @@ So every `pushforward` takes in an extra argument, which is ignored unless the o
 It is common to write `function foo_pushforward(_, Δargs...)` in the case when `foo` does not have fields.
 Similarly every `pullback` returns an extra `∂self`, which for things without fields is `NoTangent()`, indicating there are no fields within the function itself.
 
+Here's an example showing how to define `∂self` in an `rrule` when the primal function has
+internal fields (implicit arguments):
+
+```julia
+struct Multiplier{T}
+    x::T
+end
+(m::Multiplier)(y) = m.x * y
+
+function ChainRulesCore.rrule(m::Multiplier, y)
+    product = m(y)
+    function pullback(Δproduct) 
+        ∂self = Tangent{Multiplier}(; x = Δproduct * y')
+        ∂y = m.x' * Δproduct
+        return ∂self, ∂y
+    end 
+    return product, pullback
+end
+```
 
 ### Pushforward / Pullback summary
 
