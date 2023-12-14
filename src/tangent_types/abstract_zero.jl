@@ -23,6 +23,8 @@ Base.last(x::AbstractZero) = x
 Base.Broadcast.broadcastable(x::AbstractZero) = Ref(x)
 Base.Broadcast.broadcasted(::Type{T}) where {T<:AbstractZero} = T()
 
+LinearAlgebra.norm(::AbstractZero) = 0
+
 # Linear operators
 Base.adjoint(z::AbstractZero) = z
 Base.transpose(z::AbstractZero) = z
