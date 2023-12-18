@@ -329,11 +329,15 @@ end
         @test c * NoTangent() == NoTangent()
         @test dot(NoTangent(), c) == NoTangent()
         @test dot(c, NoTangent()) == NoTangent()
+        @test norm(Tangent{Foo}(; y=c.y, x=NoTangent())) == c.y
+        @test norm(NoTangent(), Inf) == 0
 
         @test ZeroTangent() * c == ZeroTangent()
         @test c * ZeroTangent() == ZeroTangent()
         @test dot(ZeroTangent(), c) == ZeroTangent()
         @test dot(c, ZeroTangent()) == ZeroTangent()
+        @test norm(ZeroTangent()) == 0
+        @test norm(ZeroTangent(), 0.4) == 0
 
         @test true * c === c
         @test c * true === c

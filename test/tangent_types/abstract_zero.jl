@@ -120,6 +120,9 @@
         @test dot(ZeroTangent(), dne) == ZeroTangent()
         @test dot(dne, ZeroTangent()) == ZeroTangent()
 
+        @test norm(ZeroTangent()) == 0
+        @test norm(ZeroTangent(), 0.4) == 0
+
         for x in dne
             @test x === dne
         end
