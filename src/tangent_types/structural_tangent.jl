@@ -13,6 +13,90 @@ as an object with mirroring fields.
 """
 abstract type StructuralTangent{P} <: AbstractTangent end
 
+"""
+    Tangent{P, T} <: StructuralTangent{P} <: AbstractTangent
+
+This type represents the tangent for a `struct`/`NamedTuple`, or `Tuple`.
+`P` is the the corresponding primal type that this is a tangent for.
+
+`Tangent{P}` should have fields (technically properties), that match to a subset of the
+fields of the primal type; and each should be a tangent type matching to the primal
+type of that field.
+Fields of the P that are not present in the Tangent are treated as `Zero`.
+
+`T` is an implementation detail representing the backing data structure.
+For Tuple it will be a Tuple, and for everything else it will be a `NamedTuple`.
+It should not be passed in by user.
+
+For `Tangent`s of `Tuple`s, `iterate` and `getindex` are overloaded to behave similarly
+to for a tuple.
+For `Tangent`s of `struct`s, `getproperty` is overloaded to allow for accessing values
+via `tangent.fieldname`.
+Any fields not explictly present in the `Tangent` are treated as being set to `ZeroTangent()`.
+To make a `Tangent` have all the fields of the primal the [`canonicalize`](@ref)
+function is provided.
+"""
+struct Tangent{P,T} <: StructuralTangent{P}
+    # Note: If T is a Tuple/Dict, then P is also a Tuple/Dict
+    # (but potentially a different one, as it doesn't contain tangents)
+    backing::T
+
+    function Tangent{P,T}(backing) where {P,T}
+        if P <: Tuple
+            T <: Tuple || _backing_error(P, T, Tuple)
+        elseif P <: AbstractDict
+            T <: AbstractDict || _backing_error(P, T, AbstractDict)
+        elseif P === Any  # can be anything
+        else  # Any other struct (including NamedTuple)
+            T <: NamedTuple || _backing_error(P, T, NamedTuple)
+        end
+        return new(backing)
+    end
+end
+
+"""
+    MutableTangent{P}(fields) <: StructuralTangent{P} <: AbstractTangent
+
+This type represents the tangent to a mutable struct.
+It itself is also mutable.
+
+!!! warning Exprimental
+    MutableTangent is an experimental feature, and is part of the mutation support featureset.
+    While this notice remains it may have changes in behavour, and interface in any _minor_ version of ChainRulesCore.
+    Exactly how it should be used (e.g. is it forward-mode only?)
+
+!!! warning Do not directly mess with the tangent backing data
+    It is relatively straight forward for a forwards-mode AD to work correctly in the presence of mutation and aliasing of primal values.
+    However, this requires that the tangent is aliased in turn and conversely that it is copied when the primal is).
+    If you seperately alias the backing data, etc by using the internal `ChainRulesCore.backing` function you can break this.
+"""
+struct MutableTangent{P,F} <: StructuralTangent{P}
+    backing::F
+
+    function MutableTangent{P}(fieldvals) where P
+        backing = map(Ref, fieldvals)
+        return new{P, typeof(backing)}(backing)
+    end
+    function MutableTangent{P}(
+        any_mask::NamedTuple{names, <:NTuple{<:Any, Bool}}, fvals::NamedTuple{names}
+    ) where {names, P}
+
+        backing = map(any_mask, fvals) do isany, fval
+            ref = if isany
+                Ref{Any}
+            else
+                Ref
+            end
+            return ref(fval)
+        end
+        return new{P, typeof(backing)}(backing)
+    end
+end
+
+####################################################################
+# StructuralTangent Common
+
+
 function StructuralTangent{P}(nt::NamedTuple) where {P}
     if has_mutable_tangent(P)
         return MutableTangent{P}(nt)
@@ -20,6 +104,7 @@ function StructuralTangent{P}(nt::NamedTuple) where {P}
         return Tangent{P,typeof(nt)}(nt)
     end
 end
+
 
 has_mutable_tangent(::Type{P}) where P = ismutabletype(P) && (!isabstracttype(P) && fieldcount(P) > 0)
 
@@ -40,6 +125,9 @@ end
 Base.iszero(t::StructuralTangent) = all(iszero, backing(t))
 
 function Base.map(f, tangent::StructuralTangent{P}) where {P}
+    #TODO: is it even useful to support this on MutableTangents?
+    #TODO: we implictly assume only linear `f` are called and that it is safe to ignore noncanonical Zeros
+    # This feels like a fair assumption since all normal operations on tangents are linear
     L = propertynames(backing(tangent))
     vals = map(f, Tuple(backing(tangent)))
     named_vals = NamedTuple{L,typeof(vals)}(vals)
@@ -63,7 +151,8 @@ primal types.
 backing(x::Tuple) = x
 backing(x::NamedTuple) = x
 backing(x::Dict) = x
-backing(x::StructuralTangent) = getfield(x, :backing)
+backing(x::Tangent) = getfield(x, :backing)
+backing(x::MutableTangent) = map(getindex, getfield(x, :backing))
 
 # For generic structs
 function backing(x::T)::NamedTuple where {T}
@@ -206,46 +295,8 @@ function Base.showerror(io::IO, err::PrimalAdditionFailedException{P}) where {P}
     return println(io)
 end
 
-"""
-    Tangent{P, T} <: StructuralTangent{P} <: AbstractTangent
-
-This type represents the tangent for a `struct`/`NamedTuple`, or `Tuple`.
-`P` is the the corresponding primal type that this is a tangent for.
-
-`Tangent{P}` should have fields (technically properties), that match to a subset of the
-fields of the primal type; and each should be a tangent type matching to the primal
-type of that field.
-Fields of the P that are not present in the Tangent are treated as `Zero`.
-
-`T` is an implementation detail representing the backing data structure.
-For Tuple it will be a Tuple, and for everything else it will be a `NamedTuple`.
-It should not be passed in by user.
-
-For `Tangent`s of `Tuple`s, `iterate` and `getindex` are overloaded to behave similarly
-to for a tuple.
-For `Tangent`s of `struct`s, `getproperty` is overloaded to allow for accessing values
-via `tangent.fieldname`.
-Any fields not explictly present in the `Tangent` are treated as being set to `ZeroTangent()`.
-To make a `Tangent` have all the fields of the primal the [`canonicalize`](@ref)
-function is provided.
-"""
-struct Tangent{P,T} <: StructuralTangent{P}
-    # Note: If T is a Tuple/Dict, then P is also a Tuple/Dict
-    # (but potentially a different one, as it doesn't contain tangents)
-    backing::T
-
-    function Tangent{P,T}(backing) where {P,T}
-        if P <: Tuple
-            T <: Tuple || _backing_error(P, T, Tuple)
-        elseif P <: AbstractDict
-            T <: AbstractDict || _backing_error(P, T, AbstractDict)
-        elseif P === Any  # can be anything
-        else  # Any other struct (including NamedTuple)
-            T <: NamedTuple || _backing_error(P, T, NamedTuple)
-        end
-        return new(backing)
-    end
-end
+#######################################
+# immutable Tangent
 
 function Tangent{P}(; kwargs...) where {P}
     backing = (; kwargs...)  # construct as NamedTuple
@@ -401,46 +452,19 @@ canonicalize(tangent::Tangent{Any,<:NamedTuple{L}}) where {L} = tangent
 canonicalize(tangent::Tangent{Any,<:Tuple}) = tangent
 canonicalize(tangent::Tangent{Any,<:AbstractDict}) = tangent
 
-
-"""
-    MutableTangent{P}(fields) <: StructuralTangent{P} <: AbstractTangent
-
-This type represents the tangent to a mutable struct.
-It itself is also mutable.
-
-!!! warning Exprimental
-    MutableTangent is an experimental feature, and is part of the mutation support featureset.
-    While this notice remains it may have changes in behavour, and interface in any _minor_ version of ChainRulesCore.
-    Exactly how it should be used (e.g. is it forward-mode only?)
-
-!!! warning Do not directly mess with the tangent backing data
-    It is relatively straight forward for a forwards-mode AD to work correctly in the presence of mutation and aliasing of primal values.
-    However, this requires that the tangent is aliased in turn and conversely that it is copied when the primal is).
-    If you seperately alias the backing data, etc by using the internal `ChainRulesCore.backing` function you can break this.
-"""
-mutable struct MutableTangent{P} <: StructuralTangent{P}
-    #TODO: we may want to absolutely lock the type of this down
-    backing::NamedTuple
-end
+###################################################
+# MutableTangent
 
 MutableTangent{P}(;kwargs...) where P = MutableTangent{P}(NamedTuple(kwargs))
 
-Base.getproperty(tangent::MutableTangent, idx::Symbol) = getfield(backing(tangent), idx)
-Base.getproperty(tangent::MutableTangent, idx::Int) = getfield(backing(tangent), idx)  # break ambig
+ref_backing(t::MutableTangent) = getfield(t, :backing)
 
-function Base.setproperty!(tangent::MutableTangent, name::Symbol, x)
-    new_backing = Base.setindex(backing(tangent), x, name)
-    setfield!(tangent, :backing, new_backing)
-    return x
-end
+Base.getproperty(tangent::MutableTangent, idx::Symbol) = getfield(ref_backing(tangent), idx)[]
+Base.getproperty(tangent::MutableTangent, idx::Int) = getfield(ref_backing(tangent), idx)[]  # break ambig
 
-function Base.setproperty!(tangent::MutableTangent, idx::Int, x)
-    # needed due to https://github.com/JuliaLang/julia/issues/43155
-    name = idx2sym(backing(tangent), idx)
-    return setproperty!(tangent, name, x)
-end
+Base.setproperty!(tangent::MutableTangent, name::Symbol, x) = getproperty(ref_backing(tangent), name)[] = x
+Base.setproperty!(tangent::MutableTangent, idx::Int, x) = getproperty(ref_backing(tangent), idx)[] = x  # break ambig
 
-idx2sym(::NamedTuple{names}, idx) where names = names[idx]
 
 Base.hash(tangent::MutableTangent, h::UInt64) = hash(backing(tangent), h)
 function Base.:(==)(t1::MutableTangent{T1}, t2::MutableTangent{T2}) where {T1, T2}

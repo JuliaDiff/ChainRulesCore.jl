@@ -162,6 +162,8 @@
 end
 
 @testset "zero_tangent" begin
+    @test zero_tangent(1) === 0
+    @test zero_tangent(1.0) === 0.0
     mutable struct MutDemo
         x::Float64
     end
@@ -171,34 +173,34 @@ end
     @test zero_tangent(MutDemo(1.5)) isa MutableTangent{MutDemo}
     @test iszero(zero_tangent(MutDemo(1.5)))
 
-    @test zero_tangent((; a=1)) isa ZeroTangent
-    @test zero_tangent(Demo(1.2)) isa ZeroTangent
-
-    @test zero_tangent(1) === 0
-    @test zero_tangent(1.0) === 0.0
+    @test zero_tangent((; a=1)) isa Tangent{typeof((;a=1))}
+    @test zero_tangent(Demo(1.2)) isa Tangent{Demo}
+    @test zero_tangent(Demo(1.2)).x === 0.0
 
     @test zero_tangent([1.0, 2.0]) == [0.0, 0.0]
     @test zero_tangent([[1.0, 2.0], [3.0]]) == [[0.0, 0.0], [0.0]]
 
+    @test zero_tangent((1.0, 2.0)) == Tangent{Tuple{Float64,Float64}}(0.0, 0.0)
+    
     @testset "undef elements Vector" begin
         x = Vector{Vector{Float64}}(undef, 3)
         x[2] = [1.0, 2.0]
         dx = zero_tangent(x)
         @test dx isa Vector{Vector{Float64}}
         @test length(dx) == 3
-        @test !isassigned(dx, 1)
+        @test !isassigned(dx, 1)  # We may reconsider this later
         @test dx[2] == [0.0, 0.0]
-        @test !isassigned(dx, 3)
+        @test !isassigned(dx, 3)  # We may reconsider this later
 
         a = Vector{MutDemo}(undef, 3)
         a[2] = MutDemo(1.5)
         da = zero_tangent(a)
-        @test !isassigned(da, 1)
+        @test !isassigned(da, 1)  # We may reconsider this later
         @test iszero(da[2])
-        @test !isassigned(da, 3)
+        @test !isassigned(da, 3)  # We may reconsider this later
 
         db = zero_tangent(Vector{MutDemo}(undef, 3))
-        @test all(ii -> !isassigned(db, ii), eachindex(db))
+        @test all(ii -> !isassigned(db, ii), eachindex(db))  # We may reconsider this later
         @test length(db) == 3
         @test db isa Vector
     end
@@ -217,5 +219,40 @@ end
         @test iszero(dy.intro)
         @test iszero(dy.contents)
         @test (dy.contents = 2.0) == 2.0  # should be assignable
+
+        mutable struct MyPartiallyDefinedStructWithAnys
+            intro::Float64
+            contents::Any
+            MyPartiallyDefinedStructWithAnys(x) = new(x)
+        end
+        dy = zero_tangent(MyPartiallyDefinedStructWithAnys(1.5))
+        @test iszero(dy.intro)
+        @test iszero(dy.contents)
+        @test dy.contents === ZeroTangent()  # we just don't know anything about this data
+        @test (dy.contents = 2.0) == 2.0  # should be assignable
+        @test (dy.contents = [2.0, 4.0]) == [2.0, 4.0]  # should be assignable to different values
+
+        mutable struct MyStructWithNonConcreteFields
+            x::Any
+            y::Union{Float64, Vector{Float64}}
+            z::AbstractVector
+        end
+        d = zero_tangent(MyStructWithNonConcreteFields(1.0, 2.0, [3.0]))
+        @test iszero(d.x)
+        d.x = Tangent{Base.RefValue{Float64}}(x=1.5)
+        @test d.x == Tangent{Base.RefValue{Float64}}(x=1.5)  #should be assignable
+        d.x=2.4
+        @test d.x == 2.4  #should be assignable
+        @test iszero(d.y)
+        d.y=2.4
+        @test d.y == 2.4  #should be assignable
+        d.y=[2.4]
+        @test d.y == [2.4]  #should be assignable
+        @test iszero(d.z)
+        d.z = [1.0, 2.0]
+        @test d.z == [1.0, 2.0]
+        d.z = @view [2.0,3.0,4.0][1:2]
+        @test d.z == [2.0, 3.0]
+        @test d.z isa SubArray
     end
 end
