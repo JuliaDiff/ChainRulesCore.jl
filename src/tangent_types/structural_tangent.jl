@@ -462,8 +462,8 @@ ref_backing(t::MutableTangent) = getfield(t, :backing)
 Base.getproperty(tangent::MutableTangent, idx::Symbol) = getfield(ref_backing(tangent), idx)[]
 Base.getproperty(tangent::MutableTangent, idx::Int) = getfield(ref_backing(tangent), idx)[]  # break ambig
 
-Base.setproperty!(tangent::MutableTangent, name::Symbol, x) = getproperty(ref_backing(tangent), name)[] = x
-Base.setproperty!(tangent::MutableTangent, idx::Int, x) = getproperty(ref_backing(tangent), idx)[] = x  # break ambig
+Base.setproperty!(tangent::MutableTangent, name::Symbol, x) = getfield(ref_backing(tangent), name)[] = x
+Base.setproperty!(tangent::MutableTangent, idx::Int, x) = getfield(ref_backing(tangent), idx)[] = x  # break ambig
 
 
 Base.hash(tangent::MutableTangent, h::UInt64) = hash(backing(tangent), h)
