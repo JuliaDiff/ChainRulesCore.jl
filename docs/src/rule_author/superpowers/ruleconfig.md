@@ -59,34 +59,10 @@ end
 
 The `>:HasReverseMode` and `>:HasForwardsMode` are two examples of special properties that a `RuleConfig` could allow.
 Others could also exist, but right now they are the only two.
-It is likely that in the future such will be provided for e.g. mutation support.
-
-Such a thing would look like:
-```julia
-struct SupportsMutation end
-
-function rrule(
-    ::RuleConfig{>:SupportsMutation}, typeof(push!), x::Vector
-)
-    y = push!(x)
-
-    function push!_pullback(ȳ)
-        pop!(x)  # undo change to primal incase it is used in another pullback we haven't called yet
-        pop!(ȳ)  # accumulate gradient via mutating ȳ, then return ZeroTangent
-        return NoTangent(), ZeroTangent()
-    end
-
-    return y, push!_pullback
-end
-```
-and it would be used in the AD e.g. as follows:
-```julia
-struct EnzymeRuleConfig <: RuleConfig{Union{SupportsMutation, HasReverseMode, NoForwardsMode}}
-```
+It is likely that in the future other such will be provided 
 
 Note: you can only depend on the presence of a feature, not its absence.
 This means we may need to define features and their complements, when one is not the obvious default (as in the case of [`HasReverseMode`](@ref)/[`NoReverseMode`](@ref) and [`HasForwardsMode`](@ref)/[`NoForwardsMode`](@ref).).
-
 
 Such special properties generally should only be defined in `ChainRulesCore`.
 (Theoretically, they could be defined elsewhere, but the AD and the package containing the rule need to load them, and ChainRulesCore is the place for things like that.)
