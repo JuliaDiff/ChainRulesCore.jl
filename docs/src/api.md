@@ -20,7 +20,7 @@ Modules = [ChainRulesCore]
 Pages = [
     "tangent_types/abstract_zero.jl",
     "tangent_types/one.jl",
-    "tangent_types/tangent.jl",
+    "tangent_types/structural_tangent.jl",
     "tangent_types/thunks.jl",
     "tangent_types/abstract_tangent.jl",
     "tangent_types/notimplemented.jl",
