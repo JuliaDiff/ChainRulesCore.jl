@@ -173,7 +173,7 @@ end
     @test zero_tangent(MutDemo(1.5)) isa MutableTangent{MutDemo}
     @test iszero(zero_tangent(MutDemo(1.5)))
 
-    @test zero_tangent((; a=1)) isa Tangent{typeof((;a=1))}
+    @test zero_tangent((; a=1)) isa Tangent{typeof((; a = 1))}
     @test zero_tangent(Demo(1.2)) isa Tangent{Demo}
     @test zero_tangent(Demo(1.2)).x === 0.0
 
@@ -181,7 +181,6 @@ end
     @test zero_tangent([[1.0, 2.0], [3.0]]) == [[0.0, 0.0], [0.0]]
 
     @test zero_tangent((1.0, 2.0)) == Tangent{Tuple{Float64,Float64}}(0.0, 0.0)
-    
     @testset "undef elements Vector" begin
         x = Vector{Vector{Float64}}(undef, 3)
         x[2] = [1.0, 2.0]
@@ -234,24 +233,24 @@ end
 
         mutable struct MyStructWithNonConcreteFields
             x::Any
-            y::Union{Float64, Vector{Float64}}
+            y::Union{Float64,Vector{Float64}}
             z::AbstractVector
         end
         d = zero_tangent(MyStructWithNonConcreteFields(1.0, 2.0, [3.0]))
         @test iszero(d.x)
-        d.x = Tangent{Base.RefValue{Float64}}(x=1.5)
-        @test d.x == Tangent{Base.RefValue{Float64}}(x=1.5)  #should be assignable
-        d.x=2.4
+        d.x = Tangent{Base.RefValue{Float64}}(; x=1.5)
+        @test d.x == Tangent{Base.RefValue{Float64}}(; x=1.5)  #should be assignable
+        d.x = 2.4
         @test d.x == 2.4  #should be assignable
         @test iszero(d.y)
-        d.y=2.4
+        d.y = 2.4
         @test d.y == 2.4  #should be assignable
-        d.y=[2.4]
+        d.y = [2.4]
         @test d.y == [2.4]  #should be assignable
         @test iszero(d.z)
         d.z = [1.0, 2.0]
         @test d.z == [1.0, 2.0]
-        d.z = @view [2.0,3.0,4.0][1:2]
+        d.z = @view [2.0, 3.0, 4.0][1:2]
         @test d.z == [2.0, 3.0]
         @test d.z isa SubArray
     end
