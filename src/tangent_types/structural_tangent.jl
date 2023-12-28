@@ -73,10 +73,6 @@ It itself is also mutable.
 struct MutableTangent{P,F} <: StructuralTangent{P}
     backing::F
 
-    function MutableTangent{P}(fieldvals) where P
-        backing = map(Ref, fieldvals)
-        return new{P, typeof(backing)}(backing)
-    end
     function MutableTangent{P}(
         any_mask::NamedTuple{names, <:NTuple{<:Any, Bool}}, fvals::NamedTuple{names}
     ) where {names, P}
@@ -91,7 +87,13 @@ struct MutableTangent{P,F} <: StructuralTangent{P}
         end
         return new{P, typeof(backing)}(backing)
     end
+
+    function MutableTangent{P}(fvals) where P
+        any_mask = NamedTuple{fieldnames(P)}((!isconcretetype).(fieldtypes(P)))
+        return MutableTangent{P}(any_mask, fvals)
+    end
 end
+
 
 ####################################################################
 # StructuralTangent Common
