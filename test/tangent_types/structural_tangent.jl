@@ -457,40 +457,40 @@ end
     end
 
     @testset "== and hash" begin
-        @test MutableTangent{MDemo}(; x=1f0) == MutableTangent{MDemo}(; x=1.0)
-        @test MutableTangent{MDemo}(; x=1.0) == MutableTangent{MDemo}(; x=1f0)
+        @test MutableTangent{MDemo}(; x=1.0f0) == MutableTangent{MDemo}(; x=1.0)
+        @test MutableTangent{MDemo}(; x=1.0) == MutableTangent{MDemo}(; x=1.0f0)
         @test MutableTangent{MDemo}(; x=2.0) != MutableTangent{MDemo}(; x=1.0)
         @test MutableTangent{MDemo}(; x=1.0) != MutableTangent{MDemo}(; x=2.0)
 
         nt = (; x=1.0)
         @test MutableTangent{typeof(nt)}(nt) != MutableTangent{MDemo}(; x=1.0)
 
-        @test hash(MutableTangent{MDemo}(; x=1f0)) == hash(MutableTangent{MDemo}(; x=1.0))
+        @test hash(MutableTangent{MDemo}(; x=1.0f0)) == hash(MutableTangent{MDemo}(; x=1.0))
     end
 
     @testset "Mutation" begin
-        v = MutableTangent{MFoo}(x=1.5, y=2.4)
+        v = MutableTangent{MFoo}(; x=1.5, y=2.4)
         v.x = 1.6
-        @test v == MutableTangent{MFoo}(x=1.6, y=2.4)
+        @test v == MutableTangent{MFoo}(; x=1.6, y=2.4)
         v.y = [1.0, 2.0]  # change type, because primal can change type
-        @test v == MutableTangent{MFoo}(x=1.6, y=[1.0, 2.0])
+        @test v == MutableTangent{MFoo}(; x=1.6, y=[1.0, 2.0])
     end
 end
 
 @testset "map" begin
     @testset "Tangent" begin
-        ∂foo = Tangent{Foo}(x=1.5, y=2.4)
-        @test map(v->2*v, ∂foo) == Tangent{Foo}(x=3.0, y=4.8)
+        ∂foo = Tangent{Foo}(; x=1.5, y=2.4)
+        @test map(v -> 2 * v, ∂foo) == Tangent{Foo}(; x=3.0, y=4.8)
 
-        ∂foo = Tangent{Foo}(x=1.5)
-        @test map(v->2*v, ∂foo) == Tangent{Foo}(x=3.0)
+        ∂foo = Tangent{Foo}(; x=1.5)
+        @test map(v -> 2 * v, ∂foo) == Tangent{Foo}(; x=3.0)
     end
     @testset "MutableTangent" begin
-        ∂foo = MutableTangent{MFoo}(x=1.5, y=2.4)
-        ∂foo2 = map(v->2*v, ∂foo)
-        @test ∂foo2 == MutableTangent{MFoo}(x=3.0, y=4.8)
+        ∂foo = MutableTangent{MFoo}(; x=1.5, y=2.4)
+        ∂foo2 = map(v -> 2 * v, ∂foo)
+        @test ∂foo2 == MutableTangent{MFoo}(; x=3.0, y=4.8)
         # Check can still be mutated to new typ
-        ∂foo2.y=[1.0, 2.0]
-        @test ∂foo2 == MutableTangent{MFoo}(x=3.0, y=[1.0, 2.0])
+        ∂foo2.y = [1.0, 2.0]
+        @test ∂foo2 == MutableTangent{MFoo}(; x=3.0, y=[1.0, 2.0])
     end
 end

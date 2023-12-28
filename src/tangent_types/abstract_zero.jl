@@ -123,7 +123,6 @@ zero_tangent(x::Number) = zero(x)
         )
         Expr(:kw, fname, fval)
     end
-    
     return if has_mutable_tangent(primal)
         any_mask = map(fieldnames(primal), fieldtypes(primal)) do fname, ftype
             # If it is is unassigned, or if it doesn't have a concrete type, let it take any value for its tangent
@@ -132,11 +131,11 @@ zero_tangent(x::Number) = zero(x)
         end
         :($MutableTangent{$primal}(
             $(Expr(:tuple, Expr(:parameters, any_mask...))),
-            $(Expr(:tuple, Expr(:parameters, zfield_exprs...)))
+            $(Expr(:tuple, Expr(:parameters, zfield_exprs...))),
         ))
     else
         :($Tangent{$primal}($(Expr(:parameters, zfield_exprs...))))
-    end    
+    end
 end
 
 zero_tangent(primal::Tuple) = Tangent{typeof(primal)}(map(zero_tangent, primal)...)
@@ -160,5 +159,7 @@ end
 # Sad heauristic methods we need because of unassigned values
 guess_zero_tangent_type(::Type{T}) where {T<:Number} = T
 guess_zero_tangent_type(::Type{T}) where {T<:Integer} = typeof(float(zero(T)))
-guess_zero_tangent_type(::Type{<:Array{T,N}}) where {T,N} = return Array{guess_zero_tangent_type(T),N}
-guess_zero_tangent_type(T::Type)=  Any
+function guess_zero_tangent_type(::Type{<:Array{T,N}}) where {T,N}
+    return Array{guess_zero_tangent_type(T),N}
+end
+guess_zero_tangent_type(T::Type) = Any
