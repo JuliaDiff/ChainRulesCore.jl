@@ -61,6 +61,7 @@ makedocs(;
                 "`@opt_out`" => "rule_author/superpowers/opt_out.md",
                 "`RuleConfig`" => "rule_author/superpowers/ruleconfig.md",
                 "Gradient accumulation" => "rule_author/superpowers/gradient_accumulation.md",
+                "Mutation Support (experimental)" => "rule_author/superpowers/mutation_support.md",
             ],
             "Converting ZygoteRules.@adjoint to rrules" => "rule_author/converting_zygoterules.md",
             "Tips for making your package work with AD" => "rule_author/tips_for_packages.md",
