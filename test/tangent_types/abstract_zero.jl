@@ -162,25 +162,38 @@
 end
 
 @testset "zero_tangent" begin
-    @test zero_tangent(1) === 0
-    @test zero_tangent(1.0) === 0.0
-    mutable struct MutDemo
-        x::Float64
+    @testset "basics" begin
+        @test zero_tangent(1) === 0
+        @test zero_tangent(1.0) === 0.0
+        mutable struct MutDemo
+            x::Float64
+        end
+        struct Demo
+            x::Float64
+        end
+        @test zero_tangent(MutDemo(1.5)) isa MutableTangent{MutDemo}
+        @test iszero(zero_tangent(MutDemo(1.5)))
+
+        @test zero_tangent((; a=1)) isa Tangent{typeof((; a = 1))}
+        @test zero_tangent(Demo(1.2)) isa Tangent{Demo}
+        @test zero_tangent(Demo(1.2)).x === 0.0
+
+        @test zero_tangent([1.0, 2.0]) == [0.0, 0.0]
+        @test zero_tangent([[1.0, 2.0], [3.0]]) == [[0.0, 0.0], [0.0]]
+
+        @test zero_tangent((1.0, 2.0)) == Tangent{Tuple{Float64,Float64}}(0.0, 0.0)
     end
-    struct Demo
-        x::Float64
+
+    @testset "Weird types" begin
+        @test iszero(zero_tangent(typeof(Int)))  # primative type
+        @test iszero(zero_tangent(typeof(Base.RefValue)))  # struct
+        @test iszero(zero_tangent(Vector))  # UnionAll
+        @test iszero(zero_tangent(Union{Int, Float64}))  # Union
+        @test iszero(zero_tangent(:abc))
+        @test iszero(zero_tangent("abc"))
+        @test iszero(zero_tangent(sin))
     end
-    @test zero_tangent(MutDemo(1.5)) isa MutableTangent{MutDemo}
-    @test iszero(zero_tangent(MutDemo(1.5)))
 
-    @test zero_tangent((; a=1)) isa Tangent{typeof((; a = 1))}
-    @test zero_tangent(Demo(1.2)) isa Tangent{Demo}
-    @test zero_tangent(Demo(1.2)).x === 0.0
-
-    @test zero_tangent([1.0, 2.0]) == [0.0, 0.0]
-    @test zero_tangent([[1.0, 2.0], [3.0]]) == [[0.0, 0.0], [0.0]]
-
-    @test zero_tangent((1.0, 2.0)) == Tangent{Tuple{Float64,Float64}}(0.0, 0.0)
     @testset "undef elements Vector" begin
         x = Vector{Vector{Float64}}(undef, 3)
         x[2] = [1.0, 2.0]
