@@ -96,10 +96,11 @@ struct NoTangent <: AbstractZero end
     zero_tangent(primal)
 
 This returns an appropriate zero tangent suitable for accumulating tangents of the primal.
-For mutable composites types this is a structural []`MutableTangent`](@ref)
+For mutable composites types this is a structural [`MutableTangent`](@ref)
 For `Array`s, it is applied recursively for each element.
-For immutable types, this is simply [`ZeroTangent()`](@ref) as accumulation is default out-of-place for contexts where mutation does not apply.
-(Where mutation is not to be supported even for mutable types, then [`ZeroTangent()`](@ref) should be used for everything)
+For other types, in particular immutable types, we do not make promises beyond that it will be `iszero`
+and suitable for accumulating against.
+In general though, it is more likely to produce a structural tangent.
 
 !!! warning Exprimental
     `zero_tangent`is an experimental feature, and is part of the mutation support featureset.
@@ -110,7 +111,10 @@ function zero_tangent end
 
 zero_tangent(x::Number) = zero(x)
 
+zero_tangent(::Type) = NoTangent()
+
 @generated function zero_tangent(primal)
+    fieldcount(primal) == 0 && return NoTangent()  # no tangent space at all, no need for structural zero.
     zfield_exprs = map(fieldnames(primal)) do fname
         fval = :(
             if isdefined(primal, $(QuoteNode(fname)))
