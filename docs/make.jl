@@ -85,7 +85,6 @@ makedocs(;
         "FAQ" => "FAQ.md",
         "API" => "api.md",
     ],
-    strict=true,
     checkdocs=:exports,
 )
 
