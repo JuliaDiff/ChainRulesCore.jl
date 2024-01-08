@@ -225,7 +225,7 @@ end
             @test r1 == string(2.0)
             @test pb1(NoTangent()) == (NoTangent(), NoTangent())
 
-            foo_ndc2(x; y=0) = string(x+y)
+            foo_ndc2(x; y=0) = string(x + y)
             @non_differentiable foo_ndc2(x)
             @test frule(AllConfig(), foo_ndc2, 2.0; y=4.0) == (string(6.0), NoTangent())
             r2, pb2 = rrule(AllConfig(), foo_ndc2, 2.0; y=4.0)
