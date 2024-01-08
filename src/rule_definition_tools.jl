@@ -403,13 +403,13 @@ function _nondiff_frule_expr(__source__, primal_sig_parts, primal_invoke)
         function (::Core.kwftype(typeof(ChainRulesCore.frule)))(
             @nospecialize($kwargs::Any),
             frule::typeof(ChainRulesCore.frule),
-            @nospecialize(::Any),
+            @nospecialize(::RuleConfig),
             $(map(esc, primal_sig_parts)...),
         )
             return ($(esc(_with_kwargs_expr(primal_invoke, kwargs))), NoTangent())
         end
         function ChainRulesCore.frule(
-            @nospecialize(::Any), $(map(esc, primal_sig_parts)...)
+            @nospecialize(::RuleConfig), $(map(esc, primal_sig_parts)...)
         )
             $(__source__)
             # Julia functions always only have 1 output, so return a single NoTangent()
