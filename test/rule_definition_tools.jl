@@ -215,6 +215,24 @@ end
             @test pullback(4.5) == (NoTangent(), NoTangent(), NoTangent())
         end
 
+        @testset "interactions with configs" begin
+            struct AllConfig <: RuleConfig{Union{HasForwardsMode,NoReverseMode}} end
+
+            foo_ndc1(x) = string(x)
+            @non_differentiable foo_ndc1(x)
+            @test frule(AllConfig(), (NoTangent(), NoTangent()), foo_ndc1, 2.0) == (string(2.0), NoTangent())
+            r1, pb1 = rrule(AllConfig(), foo_ndc1, 2.0)
+            @test r1 == string(2.0)
+            @test pb1(NoTangent()) == (NoTangent(), NoTangent())
+
+            foo_ndc2(x; y=0) = string(x + y)
+            @non_differentiable foo_ndc2(x)
+            @test frule(AllConfig(), (NoTangent(), NoTangent()), foo_ndc2, 2.0; y=4.0) == (string(6.0), NoTangent())
+            r2, pb2 = rrule(AllConfig(), foo_ndc2, 2.0; y=4.0)
+            @test r2 == string(6.0)
+            @test pb2(NoTangent()) == (NoTangent(), NoTangent())
+        end
+
         @testset "Not supported (Yet)" begin
             # Where clauses are not supported.
             @test_macro_throws(
