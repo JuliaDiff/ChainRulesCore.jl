@@ -209,7 +209,7 @@ function scalar_frule_expr(__source__, f, call, setup_stmts, inputs, partials)
     return @strip_linenos quote
         # _ is the input derivative w.r.t. function internals. since we do not
         # allow closures/functors with @scalar_rule, it is always ignored
-        function ChainRulesCore.frule((_, $(Δs...)), ::Core.Typeof($f), $(inputs...))
+        function ChainRulesCore.frule((_, $(Δs...))::Tuple, ::Core.Typeof($f), $(inputs...))
             $(__source__)
             $(esc(:Ω)) = $call
             $(setup_stmts...)
