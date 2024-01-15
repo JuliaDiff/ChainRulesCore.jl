@@ -218,6 +218,15 @@ function scalar_frule_expr(__source__, f, call, setup_stmts, inputs, partials)
             )
             return $(esc(:Ω)), $pushforward_returns
         end
+        function ChainRulesCore.frule((_, $(Δs...)), ::Core.Typeof($f), $(inputs...))
+            $(__source__)
+            $(esc(:Ω)) = $call
+            $(setup_stmts...)
+            $(Expr(:tuple, partials...)) = ChainRulesCore.derivatives_given_output(
+                $(esc(:Ω)), $f, $(inputs...)
+            )
+            return $(esc(:Ω)), $pushforward_returns
+        end
     end
 end
 
