@@ -19,9 +19,9 @@ export StructuralTangent, Tangent, MutableTangent, NoTangent, InplaceableThunk, 
 include("debug_mode.jl")
 
 include("tangent_types/abstract_tangent.jl")
+include("tangent_types/structural_tangent.jl")
 include("tangent_types/abstract_zero.jl")
 include("tangent_types/thunks.jl")
-include("tangent_types/structural_tangent.jl")
 include("tangent_types/notimplemented.jl")
 
 include("tangent_arithmetic.jl")
