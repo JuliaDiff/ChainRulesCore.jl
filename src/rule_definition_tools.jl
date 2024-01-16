@@ -209,15 +209,6 @@ function scalar_frule_expr(__source__, f, call, setup_stmts, inputs, partials)
     return @strip_linenos quote
         # _ is the input derivative w.r.t. function internals. since we do not
         # allow closures/functors with @scalar_rule, it is always ignored
-        function ChainRulesCore.frule((_, $(Δs...))::Tuple, ::Core.Typeof($f), $(inputs...))
-            $(__source__)
-            $(esc(:Ω)) = $call
-            $(setup_stmts...)
-            $(Expr(:tuple, partials...)) = ChainRulesCore.derivatives_given_output(
-                $(esc(:Ω)), $f, $(inputs...)
-            )
-            return $(esc(:Ω)), $pushforward_returns
-        end
         function ChainRulesCore.frule((_, $(Δs...)), ::Core.Typeof($f), $(inputs...))
             $(__source__)
             $(esc(:Ω)) = $call
@@ -418,7 +409,7 @@ function _nondiff_frule_expr(__source__, primal_sig_parts, primal_invoke)
             return ($(esc(_with_kwargs_expr(primal_invoke, kwargs))), NoTangent())
         end
         function ChainRulesCore.frule(
-            @nospecialize(::Tuple), $(map(esc, primal_sig_parts)...)
+            @nospecialize(::Any), $(map(esc, primal_sig_parts)...)
         )
             $(__source__)
             # Julia functions always only have 1 output, so return a single NoTangent()
