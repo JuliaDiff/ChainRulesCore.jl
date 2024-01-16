@@ -113,6 +113,9 @@ zero_tangent(x::Number) = zero(x)
 
 zero_tangent(::Type) = NoTangent()
 
+zero_tangent(x::Tangent) = ZeroTangent()
+# TODO: zero_tangent(x::MutableTangent)
+
 @generated function zero_tangent(primal)
     fieldcount(primal) == 0 && return NoTangent()  # no tangent space at all, no need for structural zero.
     zfield_exprs = map(fieldnames(primal)) do fname
