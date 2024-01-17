@@ -334,7 +334,10 @@ Base.:(==)(a::Tangent{P}, b::Tangent{Q}) where {P,Q} = false
 
 Base.hash(a::Tangent, h::UInt) = Base.hash(backing(canonicalize(a)), h)
 
-function Base.show(io::IO, tangent::Tangent{P}) where {P}
+function Base.show(io::IO, tangent::StructuralTangent{P}) where {P}
+    if tangent isa MutableTangent
+        print(io, "Mutable")
+    end
     print(io, "Tangent{")
     str = sprint(show, P, context = io)
     i = findfirst('{', str)
