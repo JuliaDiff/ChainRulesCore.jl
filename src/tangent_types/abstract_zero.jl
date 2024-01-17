@@ -113,7 +113,7 @@ zero_tangent(x::Number) = zero(x)
 
 zero_tangent(::Type) = NoTangent()
 
-function zero_tangent(x::MutableTangent{P}) where P
+function zero_tangent(x::MutableTangent{P}) where {P}
     zb = backing(zero_tangent(backing(x)))
     return MutableTangent{P}(zb)
 end
