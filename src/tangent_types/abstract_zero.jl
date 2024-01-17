@@ -113,8 +113,15 @@ zero_tangent(x::Number) = zero(x)
 
 zero_tangent(::Type) = NoTangent()
 
-zero_tangent(x::Tangent) = ZeroTangent()
-# TODO: zero_tangent(x::MutableTangent)
+function zero_tangent(x::MutableTangent{P}) where P
+    zb = backing(zero_tangent(backing(x)))
+    return MutableTangent{P}(zb)
+end
+
+function zero_tangent(x::Tangent{P}) where P
+    zb = backing(zero_tangent(backing(x)))
+    return Tangent{P, typeof(zb)}(zb)
+end
 
 @generated function zero_tangent(primal)
     fieldcount(primal) == 0 && return NoTangent()  # no tangent space at all, no need for structural zero.
