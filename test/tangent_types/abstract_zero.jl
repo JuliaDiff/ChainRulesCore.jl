@@ -182,6 +182,14 @@ end
         @test zero_tangent([[1.0, 2.0], [3.0]]) == [[0.0, 0.0], [0.0]]
 
         @test zero_tangent((1.0, 2.0)) == Tangent{Tuple{Float64,Float64}}(0.0, 0.0)
+
+        # Higher order
+        # StructuralTangents are valid tangents for themselves (just like Numbers)
+        # and indeed we prefer that, otherwise higher order structural tangents are kinda
+        # nightmarishly complex types.
+        @test zero_tangent(zero_tangent(Demo(1.5))) == zero_tangent(Demo(1.5))
+        @test zero_tangent(zero_tangent((1.5, 2.5))) == Tangent{Tuple{Float64, Float64}}(0.0, 0.0)
+        @test zero_tangent(zero_tangent(MutDemo(1.5))) == zero_tangent(MutDemo(1.5))
     end
 
     @testset "Weird types" begin
