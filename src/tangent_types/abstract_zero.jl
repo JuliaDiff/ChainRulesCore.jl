@@ -118,9 +118,9 @@ function zero_tangent(x::MutableTangent{P}) where {P}
     return MutableTangent{P}(zb)
 end
 
-function zero_tangent(x::Tangent{P}) where P
+function zero_tangent(x::Tangent{P}) where {P}
     zb = backing(zero_tangent(backing(x)))
-    return Tangent{P, typeof(zb)}(zb)
+    return Tangent{P,typeof(zb)}(zb)
 end
 
 @generated function zero_tangent(primal)
