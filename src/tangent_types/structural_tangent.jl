@@ -94,7 +94,6 @@ struct MutableTangent{P,F} <: StructuralTangent{P}
     end
 end
 
-
 ####################################################################
 # StructuralTangent Common
 
