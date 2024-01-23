@@ -400,8 +400,8 @@ end
             @test repr(Tangent{Foo}()) == "Tangent{Foo}()"
 
             @test ==(
-                repr(MutableTangent{MFoo}((;x=1.5, y=[1.0, 2.0]))),
-                "MutableTangent{MFoo}(x = 1.5, y = [1.0, 2.0])"
+                repr(MutableTangent{MFoo}((; x=1.5, y=[1.0, 2.0]))),
+                "MutableTangent{MFoo}(x = 1.5, y = [1.0, 2.0])",
             )
         end
 
