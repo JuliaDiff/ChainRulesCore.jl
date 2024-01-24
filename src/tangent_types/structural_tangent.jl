@@ -54,6 +54,7 @@ struct Tangent{P,T} <: StructuralTangent{P}
     end
 end
 
+function _MutableTangent end
 """
     MutableTangent{P}(fields) <: StructuralTangent{P} <: AbstractTangent
 
@@ -73,6 +74,23 @@ It itself is also mutable.
 struct MutableTangent{P,F} <: StructuralTangent{P}
     backing::F
 
+    # Uninitialized constructor
+    global function _MutableTangent(::Val{P}, is_defined_mask, tangent_types) where {P}
+        backing_vals = map(is_defined_mask, tangent_types) do is_def, tangent_type
+            ref = if !is_def
+                Ref{Union{ZeroTangent, tangent_type}}  # allow a Zero which will be used for uninitialized values
+            else
+                Ref{tangent_type}
+            end
+            return ref() # undefined, but it will be filled later
+        end
+        backing = NamedTuple{fieldnames(P)}(backing_vals)
+        return new{P, typeof(backing)}(backing)
+    end
+
+    # TODO: are the following two correct?
+    # Are they useful?
+    # The place they are used is just `map`, maybe we should instead just copy types the thing being mapped?
     function MutableTangent{P}(
         any_mask::NamedTuple{names, <:NTuple{<:Any, Bool}}, fvals::NamedTuple{names}
     ) where {names, P}
@@ -87,6 +105,7 @@ struct MutableTangent{P,F} <: StructuralTangent{P}
         end
         return new{P, typeof(backing)}(backing)
     end
+
 
     function MutableTangent{P}(fvals) where P
         any_mask = NamedTuple{fieldnames(P)}((!isconcretetype).(fieldtypes(P)))

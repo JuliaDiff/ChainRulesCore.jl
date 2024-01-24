@@ -174,7 +174,7 @@ end
         @test zero_tangent(MutDemo(1.5)) isa MutableTangent{MutDemo}
         @test iszero(zero_tangent(MutDemo(1.5)))
 
-        @test zero_tangent((; a=1)) isa Tangent{typeof((; a = 1))}
+        @test zero_tangent((; a=1.3)) isa Tangent{typeof((; a = 1.3))}
         @test zero_tangent(Demo(1.2)) isa Tangent{Demo}
         @test zero_tangent(Demo(1.2)).x === 0.0
 
@@ -274,5 +274,42 @@ end
         d.z = @view [2.0, 3.0, 4.0][1:2]
         @test d.z == [2.0, 3.0]
         @test d.z isa SubArray
+    end
+
+    @testset "cyclic references" begin
+        mutable struct Link
+            data::Float64
+            next::Link
+            Link(data) = new(data)
+        end
+
+        lk = Link(1.5)
+        lk.next = lk
+
+        d = zero_tangent(lk)
+        @test d.data == 0.0
+        @test d.next === d
+
+        # The following two cases are broken
+        # We hope they are not too significant, because in general if you AD step by step they should work
+        # (as should the one above so maybe we should get rid of this extra complex logic)
+        # It's only a problem if you first do the multistep build then `zero_tangent` rather than `zero_tangent` at the constructor.
+
+        # Idea: check if `!isbitstype` only if so do we need to worry about caching etc
+        struct CarryingArray
+            x::Vector
+        end
+        ca = CarryingArray(Any[1.5])
+        push!(ca.x, ca)
+        @test_broken d_ca = zero_tangent(ca)
+        @test_broken d_ca[1] == 0.0
+        @test_broken d_ca[2] === _ca
+
+        # Idea: check if typeof(xs) <: eltype(xs), if so need to cache it before computing
+        xs = Any[1.5]
+        push!(xs, xs)
+        @test_broken d_xs = zero_tangent(xs)
+        @test_broken d_xs[1] == 0.0
+        @test_broken d_xs[2] == d_xs
     end
 end

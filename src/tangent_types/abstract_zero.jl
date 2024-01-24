@@ -93,7 +93,7 @@ arguments.
 struct NoTangent <: AbstractZero end
 
 """
-    zero_tangent(primal)
+    zero_tangent(primal, _cache=nothing)
 
 This returns an appropriate zero tangent suitable for accumulating tangents of the primal.
 For mutable composites types this is a structural [`MutableTangent`](@ref)
@@ -107,55 +107,77 @@ In general, it is more likely to produce a structural tangent.
     `zero_tangent`is an experimental feature, and is part of the mutation support featureset.
     While this notice remains it may have changes in behavour, and interface in any _minor_ version of ChainRulesCore.
     Exactly how it should be used (e.g. is it forward-mode only?)
+
+The `_cache=nothing` is an internal implementation detail that the user should never need to set.
+(It is used to hold references to tangents for that might appear in self-referential structures)
 """
 function zero_tangent end
 
-zero_tangent(x::Number) = zero(x)
+zero_tangent(x::Number, _cache=nothing) = zero(x)
 
-zero_tangent(::Type) = NoTangent()
+zero_tangent(::Type, _cache=nothing) = NoTangent()
 
-function zero_tangent(x::MutableTangent{P}) where {P}
-    zb = backing(zero_tangent(backing(x)))
+function zero_tangent(x::MutableTangent{P}, _cache=nothing) where {P}
+    zb = backing(zero_tangent(backing(x), _cache))
     return MutableTangent{P}(zb)
 end
 
-function zero_tangent(x::Tangent{P}) where {P}
-    zb = backing(zero_tangent(backing(x)))
+function zero_tangent(x::Tangent{P}, _cache=nothing) where {P}
+    zb = backing(zero_tangent(backing(x), _cache))
     return Tangent{P,typeof(zb)}(zb)
 end
 
-@generated function zero_tangent(primal)
+@generated function zero_tangent(primal, _cache=nothing)
     fieldcount(primal) == 0 && return NoTangent()  # no tangent space at all, no need for structural zero.
     zfield_exprs = map(fieldnames(primal)) do fname
-        fval = :(
+        :(
             if isdefined(primal, $(QuoteNode(fname)))
-                zero_tangent(getfield(primal, $(QuoteNode(fname))))
+                zero_tangent(getfield(primal, $(QuoteNode(fname))), _cache)
             else
                 # This is going to be potentially bad, but that's what they get for not giving us a primal
                 # This will never me mutated inplace, rather it will alway be replaced with an actual value first
                 ZeroTangent()
             end
         )
-        Expr(:kw, fname, fval)
     end
     return if has_mutable_tangent(primal)
-        any_mask = map(fieldnames(primal), fieldtypes(primal)) do fname, ftype
-            # If it is is unassigned, or if it doesn't have a concrete type, let it take any value for its tangent
-            fdef = :(!isdefined(primal, $(QuoteNode(fname))) || !isconcretetype($ftype))
-            Expr(:kw, fname, fdef)
+        # This is a little complex because we need to support-self referential types
+        # So we need to:
+        # 1. create the tangent,
+        # 2. put it in the cache
+        # 3. Do all the calls to create the zeros for the fields giving them that cache)
+        # 4. put those zeros into the object
+        tangent_types = map(guess_zero_tangent_type, fieldtypes(primal))
+        is_defined_mask = Expr(:tuple, map(fieldnames(primal)) do fname
+            :(isdefined(primal, $(QuoteNode(fname))))
+        end...)
+        
+        quote
+            isnothing(_cache) && (_cache = IdDict())
+            found_tangent = get(_cache, primal, nothing)
+            !isnothing(found_tangent) && return found_tangent
+
+            # Now we need to put into the cache a placeholder tangent so we can construct our fields using that cache
+            # then put those fields into the placeholder
+            tangent = $_MutableTangent(Val{$primal}(), $is_defined_mask, $tangent_types)
+            _cache[primal] = tangent
+            $(
+                map(fieldnames(primal), zfield_exprs) do fname, fval_expr
+                    :(setproperty!(tangent, $(QuoteNode(fname)), $fval_expr))
+                end...
+            )
+            return tangent            
         end
-        :($MutableTangent{$primal}(
-            $(Expr(:tuple, Expr(:parameters, any_mask...))),
-            $(Expr(:tuple, Expr(:parameters, zfield_exprs...))),
-        ))
     else
-        :($Tangent{$primal}($(Expr(:parameters, zfield_exprs...))))
+        :($Tangent{$primal}($(Expr(:parameters, Expr.(:kw, fieldnames(primal), zfield_exprs)...))))
     end
 end
 
-zero_tangent(primal::Tuple) = Tangent{typeof(primal)}(map(zero_tangent, primal)...)
+function zero_tangent(primal::Tuple, _cache=nothing)
+    return Tangent{typeof(primal)}(map(x -> zero_tangent(x, _cache), primal)...)
+end
 
-function zero_tangent(x::Array{P,N}) where {P,N}
+function zero_tangent(x::Array{P,N}, _cache=nothing) where {P,N}
     if (isbitstype(P) || all(i -> isassigned(x, i), eachindex(x)))
         return map(zero_tangent, x)
     end
@@ -165,16 +187,20 @@ function zero_tangent(x::Array{P,N}) where {P,N}
     y = Array{guess_zero_tangent_type(P),N}(undef, size(x)...)
     @inbounds for n in eachindex(y)
         if isassigned(x, n)
-            y[n] = zero_tangent(x[n])
+            y[n] = zero_tangent(x[n], _cache)
         end
     end
     return y
 end
 
-# Sad heauristic methods we need because of unassigned values
-guess_zero_tangent_type(::Type{T}) where {T<:Number} = T
-guess_zero_tangent_type(::Type{T}) where {T<:Integer} = typeof(float(zero(T)))
+# Sad heauristic methods
+#guess_zero_tangent_type(::Type{T}) where {T<:Number} = T
+#guess_zero_tangent_type(::Type{T}) where {T<:Integer} = typeof(float(zero(T)))
 function guess_zero_tangent_type(::Type{<:Array{T,N}}) where {T,N}
     return Array{guess_zero_tangent_type(T),N}
 end
-guess_zero_tangent_type(T::Type) = Any
+
+# The following will fall back to `Any` if it is hard to infer
+function guess_zero_tangent_type(::Type{T}) where {T}
+    return Core.Compiler.return_type(zero_tangent, Tuple{T})
+end
