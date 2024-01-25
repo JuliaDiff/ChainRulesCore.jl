@@ -91,3 +91,90 @@ arguments.
 ```
 """
 struct NoTangent <: AbstractZero end
+
+"""
+    zero_tangent(primal)
+
+This returns an appropriate zero tangent suitable for accumulating tangents of the primal.
+For mutable composites types this is a structural [`MutableTangent`](@ref)
+For `Array`s, it is applied recursively for each element.
+For other types, in particular immutable types, we do not make promises beyond that it will be `iszero`
+and suitable for accumulating against.
+For types without a tangent space (e.g. singleton structs) this returns `NoTangent()`.
+In general, it is more likely to produce a structural tangent.
+
+!!! warning Exprimental
+    `zero_tangent`is an experimental feature, and is part of the mutation support featureset.
+    While this notice remains it may have changes in behavour, and interface in any _minor_ version of ChainRulesCore.
+    Exactly how it should be used (e.g. is it forward-mode only?)
+"""
+function zero_tangent end
+
+zero_tangent(x::Number) = zero(x)
+
+zero_tangent(::Type) = NoTangent()
+
+function zero_tangent(x::MutableTangent{P}) where {P}
+    zb = backing(zero_tangent(backing(x)))
+    return MutableTangent{P}(zb)
+end
+
+function zero_tangent(x::Tangent{P}) where {P}
+    zb = backing(zero_tangent(backing(x)))
+    return Tangent{P,typeof(zb)}(zb)
+end
+
+@generated function zero_tangent(primal)
+    fieldcount(primal) == 0 && return NoTangent()  # no tangent space at all, no need for structural zero.
+    zfield_exprs = map(fieldnames(primal)) do fname
+        fval = :(
+            if isdefined(primal, $(QuoteNode(fname)))
+                zero_tangent(getfield(primal, $(QuoteNode(fname))))
+            else
+                # This is going to be potentially bad, but that's what they get for not giving us a primal
+                # This will never me mutated inplace, rather it will alway be replaced with an actual value first
+                ZeroTangent()
+            end
+        )
+        Expr(:kw, fname, fval)
+    end
+    return if has_mutable_tangent(primal)
+        any_mask = map(fieldnames(primal), fieldtypes(primal)) do fname, ftype
+            # If it is is unassigned, or if it doesn't have a concrete type, let it take any value for its tangent
+            fdef = :(!isdefined(primal, $(QuoteNode(fname))) || !isconcretetype($ftype))
+            Expr(:kw, fname, fdef)
+        end
+        :($MutableTangent{$primal}(
+            $(Expr(:tuple, Expr(:parameters, any_mask...))),
+            $(Expr(:tuple, Expr(:parameters, zfield_exprs...))),
+        ))
+    else
+        :($Tangent{$primal}($(Expr(:parameters, zfield_exprs...))))
+    end
+end
+
+zero_tangent(primal::Tuple) = Tangent{typeof(primal)}(map(zero_tangent, primal)...)
+
+function zero_tangent(x::Array{P,N}) where {P,N}
+    if (isbitstype(P) || all(i -> isassigned(x, i), eachindex(x)))
+        return map(zero_tangent, x)
+    end
+
+    # Now we need to handle nonfully assigned arrays
+    # see discussion at https://github.com/JuliaDiff/ChainRulesCore.jl/pull/626#discussion_r1345235265
+    y = Array{guess_zero_tangent_type(P),N}(undef, size(x)...)
+    @inbounds for n in eachindex(y)
+        if isassigned(x, n)
+            y[n] = zero_tangent(x[n])
+        end
+    end
+    return y
+end
+
+# Sad heauristic methods we need because of unassigned values
+guess_zero_tangent_type(::Type{T}) where {T<:Number} = T
+guess_zero_tangent_type(::Type{T}) where {T<:Integer} = typeof(float(zero(T)))
+function guess_zero_tangent_type(::Type{<:Array{T,N}}) where {T,N}
+    return Array{guess_zero_tangent_type(T),N}
+end
+guess_zero_tangent_type(T::Type) = Any
