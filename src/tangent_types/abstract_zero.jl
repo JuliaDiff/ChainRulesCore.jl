@@ -138,7 +138,19 @@ end
         )
         Expr(:kw, fname, fval)
     end
-    return if has_mutable_tangent(primal)
+    
+    # easy case exit early, can't hold references, can't be a reference.
+    if isbitstype(primal)
+        return :($Tangent{$primal}($(Expr(:parameters, zfield_exprs...))))
+    end
+
+    # hard case need to be prepared for cycic references to this, or that are contained within this
+    quote
+        counts = $count_references!(primal)
+    end
+
+## TODO rewrite below
+    has_mutable_tangent(primal)
         any_mask = map(fieldnames(primal), fieldtypes(primal)) do fname, ftype
             # If it is is unassigned, or if it doesn't have a concrete type, let it take any value for its tangent
             fdef = :(!isdefined(primal, $(QuoteNode(fname))) || !isconcretetype($ftype))
@@ -170,6 +182,36 @@ function zero_tangent(x::Array{P,N}) where {P,N}
     end
     return y
 end
+
+###############################################
+count_references!(x) = count_references(IdDict{Any, Int}(), x)
+function count_references!(counts::IdDict{Any, Int}, x)
+    isbits(x) && return counts  # can't be a refernece and can't hold a reference
+    counts[x] = get(counts, x, 0) + 1  # Increment *before* recursing
+    if counts[x] == 1  # Only recurse the first time
+        for ii in fieldcount(typeof(x))
+            field = getfield(x, ii)
+            count_references!(counts, field)
+        end
+    end
+    return counts
+end
+
+function count_references!(counts::IdDict{Any, Int}, x::Array)
+    counts[x] = get(counts, x, 0) + 1  # increment before recursing
+    isbitstype(eltype(x)) && return counts  # no need to look inside, it can't hold references
+    if counts[x] == 1  # only recurse the first time
+        for ele in x
+            count_references!(counts, ele)
+        end
+    end
+    return counts
+end
+
+count_references!(counts::IdDict{Any, Int}, ::DataType) = counts
+
+###############################################
+
 
 # Sad heauristic methods we need because of unassigned values
 guess_zero_tangent_type(::Type{T}) where {T<:Number} = T
