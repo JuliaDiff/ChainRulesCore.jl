@@ -41,7 +41,7 @@ There are a few key points to follow:
  - There must be a mutable tangent input for every mutated primal input
  - When the primal value is changed, the corresponding change must be made to its tangent partner
  - When a value is returned, return its partnered tangent.
-
+ - If two primals alias, then their tangents must also alias.
 
 ### Example
 For example, consider the primal function with:
@@ -61,14 +61,14 @@ end
 
 The frule for this would be:
 ```julia
-function ChainRulesCore.frule((ȧ, ḃ), ::typeof(foo!), a::Base.RefValue, b::Base.RefValue)
+function ChainRulesCore.frule((_, ȧ, ḃ), ::typeof(foo!), a::Base.RefValue, b::Base.RefValue)
     @assert ȧ isa MutableTangent{typeof(a)}
     @assert ḃ isa MutableTangent{typeof(b)}
 
     a[] *= 2
     ȧ.x *= 2  # `.x` is the field that lives behind RefValues
 
-    b[]=5.0
+    b[] = 5.0
     ḃ.x = zero_tangent(5.0)  # or since we know that the zero for a Float64 is zero could write `ḃ.x = 0.0`
 
     return a, ȧ
