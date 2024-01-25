@@ -275,4 +275,52 @@ end
         @test d.z == [2.0, 3.0]
         @test d.z isa SubArray
     end
+
+
+    @testset "aliasing" begin
+        a = Base.RefValue(1.5)
+        b = (a, 1.0, a)
+        db = zero_tangent(b)
+        @test iszero(db)
+        @test_broken db[1] === db[3]
+        @test db[2] == 0.0
+
+        x = [1.5]
+        y = [x, [1.0], x]
+        dy = zero_tangent(y)
+        @test iszero(dy)
+        @test_broken dy[1] === dy[3]
+        @test dy[2] == [0.0]
+    end
+
+    @testset "cyclic references" begin
+        mutable struct Link
+            data::Float64
+            next::Link
+            Link(data) = new(data)
+        end
+
+        lk = Link(1.5)
+        lk.next = lk
+
+        @test_broken d = zero_tangent(lk)
+        @test_broken d.data == 0.0
+        @test_broken d.next === d
+
+        struct CarryingArray
+            x::Vector
+        end
+        ca = CarryingArray(Any[1.5])
+        push!(ca.x, ca)
+        @test_broken d_ca = zero_tangent(ca)
+        @test_broken d_ca[1] == 0.0
+        @test_broken d_ca[2] === _ca
+
+        # Idea: check if typeof(xs) <: eltype(xs), if so need to cache it before computing
+        xs = Any[1.5]
+        push!(xs, xs)
+        @test_broken d_xs = zero_tangent(xs)
+        @test_broken d_xs[1] == 0.0
+        @test_broken d_xs[2] == d_xs
+    end
 end
