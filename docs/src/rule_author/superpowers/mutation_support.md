@@ -41,7 +41,7 @@ There are a few key points to follow:
  - There must be a mutable tangent input for every mutated primal input
  - When the primal value is changed, the corresponding change must be made to its tangent partner
  - When a value is returned, return its partnered tangent.
- - If two primals alias, then their tangents must also alias.
+ - If (and only if) primal values alias, then their tangents must also alias.
 
 ### Example
 For example, consider the primal function with:
