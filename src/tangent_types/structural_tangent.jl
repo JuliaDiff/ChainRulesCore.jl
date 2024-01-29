@@ -474,7 +474,7 @@ function Base.setproperty!(tangent::MutableTangent, idx::Int, x)
     return getfield(ref_backing(tangent), idx)[] = x
 end  # break ambig
 
-Base.hash(tangent::MutableTangent, h::UInt64) = hash(backing(tangent), h)
+Base.hash(tangent::MutableTangent, h::UInt) = hash(backing(tangent), h)
 function Base.:(==)(t1::MutableTangent{T1}, t2::MutableTangent{T2}) where {T1, T2}
     typeintersect(T1, T2) == Union{} && return false
     backing(t1)==backing(t2)
