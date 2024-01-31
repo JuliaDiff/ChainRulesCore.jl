@@ -303,24 +303,24 @@ end
         lk = Link(1.5)
         lk.next = lk
 
-        @test_broken d = zero_tangent(lk)
-        @test_broken d.data == 0.0
-        @test_broken d.next === d
+        d = zero_tangent(lk)
+        @test d.data == 0.0
+        @test d.next === d
 
         struct CarryingArray
             x::Vector
         end
         ca = CarryingArray(Any[1.5])
         push!(ca.x, ca)
-        @test_broken d_ca = zero_tangent(ca)
-        @test_broken d_ca[1] == 0.0
-        @test_broken d_ca[2] === _ca
+        @test d_ca = zero_tangent(ca)
+        @test d_ca[1] == 0.0
+        @test d_ca[2] === _ca
 
         # Idea: check if typeof(xs) <: eltype(xs), if so need to cache it before computing
         xs = Any[1.5]
         push!(xs, xs)
-        @test_broken d_xs = zero_tangent(xs)
-        @test_broken d_xs[1] == 0.0
-        @test_broken d_xs[2] == d_xs
+        @test d_xs = zero_tangent(xs)
+        @test d_xs[1] == 0.0
+        @test d_xs[2] == d_xs
     end
 end
