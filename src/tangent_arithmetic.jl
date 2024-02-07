@@ -146,6 +146,7 @@ Base.:+(a::Dict, d::Tangent{P}) where {P} = merge(+, a, backing(d))
 Base.:+(a::StructuralTangent{P}, b::P) where {P} = b + a
 
 Base.:-(tangent::StructuralTangent{P}) where {P} = map(-, tangent)
+Base.:-(a::StructuralTangent{P}, b::StructuralTangent{P}) where {P} = a + (-b)
 
 # We intentionally do not define, `Base.*(::Tangent, ::Tangent)` as that is not meaningful
 # In general one doesn't have to represent multiplications of 2 tangents
