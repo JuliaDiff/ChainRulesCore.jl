@@ -358,6 +358,24 @@ end
             @test -1.0 * t == -t
         end
 
+        @testset "subtraction" begin
+            a = Tangent{Foo}(; x=2.0, y=-2.0)
+            b = Tangent{Foo}(; x=1.0, y=2.0)
+            @test (a - b) == Tangent{Foo}(; x=1.0, y=-4.0)
+
+            a = Tangent{Foo}(; x=2.0, y=-2.0)
+            b = Tangent{Foo}(; x=1.0)
+            @test (a - b) == Tangent{Foo}(; x=1.0, y=-2.0)
+
+            a = Tangent{Tuple{Float64,Float64}}(2.0, 3.0)
+            b = Tangent{Tuple{Float64,Float64}}(1.0, 1.0)
+            @test (a - b) == Tangent{Tuple{Float64,Float64}}(1.0, 2.0)
+
+            a = MutableTangent{MFoo}(; x=1.5, y=1.5)
+            b = MutableTangent{MFoo}(; x=0.5, y=0.5)
+            @test (a - b) == MutableTangent{MFoo}(; x=1.0, y=1.0)
+        end
+
         @testset "scaling" begin
             @test (
                 2 * Tangent{Foo}(; y=1.5, x=2.5) ==
