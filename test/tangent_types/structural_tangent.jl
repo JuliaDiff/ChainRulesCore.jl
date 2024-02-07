@@ -358,7 +358,7 @@ end
             @test -1.0 * t == -t
         end
 
-        @test "subtraction" begin
+        @testset "subtraction" begin
             a = Tangent{Foo}(; x=2.0, y=-2.0)
             b = Tangent{Foo}(; x=1.0, y=2.0)
             @test (a - b) == Tangent{Foo}(; x=1.0, y=-4.0)
