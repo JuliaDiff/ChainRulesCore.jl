@@ -340,7 +340,7 @@ function Tangent{P}() where {P<:Tuple}
     return Tangent{P,typeof(backing)}(backing)
 end
 
-function Tangent{P}(d::Dict) where {P<:Dict}
+function Tangent{P}(d::Dict) where {P<:AbstractDict}
     return Tangent{P,typeof(d)}(d)
 end
 
