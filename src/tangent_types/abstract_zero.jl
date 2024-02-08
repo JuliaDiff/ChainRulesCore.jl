@@ -112,8 +112,6 @@ function zero_tangent end
 
 zero_tangent(x::Number) = zero(x)
 
-zero_tangent(::Type) = NoTangent()
-
 function zero_tangent(x::MutableTangent{P}) where {P}
     zb = backing(zero_tangent(backing(x)))
     return MutableTangent{P}(zb)
@@ -171,6 +169,10 @@ function zero_tangent(x::Array{P,N}) where {P,N}
     return y
 end
 
+function zero_tangent(::T) where {K,V,T<:AbstractDict{K,V}}
+    return Tangent{T}(Dict{K,guess_zero_tangent_type(V)}())
+end
+
 # Sad heauristic methods we need because of unassigned values
 guess_zero_tangent_type(::Type{T}) where {T<:Number} = T
 guess_zero_tangent_type(::Type{T}) where {T<:Integer} = typeof(float(zero(T)))
@@ -178,3 +180,14 @@ function guess_zero_tangent_type(::Type{<:Array{T,N}}) where {T,N}
     return Array{guess_zero_tangent_type(T),N}
 end
 guess_zero_tangent_type(T::Type) = Any
+
+# Stuff that conceptually has its own identity regardless of structual implementation and doesn't have a tangent
+zero_tangent(::Base.AbstractLogger) = NoTangent()
+
+# Prevent zero_tangent going wild on the internals
+zero_tangent(::Type) = NoTangent()
+zero_tangent(::Expr) = NoTangent()
+zero_tangent(::Core.Compiler.AbstractInterpreter) = NoTangent()
+zero_tangent(::Core.Compiler.InstructionStream) = NoTangent()
+zero_tangent(::Core.CodeInfo) = NoTangent()
+zero_tangent(::Core.MethodInstance) = NoTangent()
