@@ -183,6 +183,9 @@ end
 
         @test zero_tangent((1.0, 2.0)) == Tangent{Tuple{Float64,Float64}}(0.0, 0.0)
 
+        @test zero_tangent(Dict{Int, Float64}(1=>2.4)) == Tangent{Dict{Int,Float64}}(Dict{Int, Float64}())
+
+
         # Higher order
         # StructuralTangents are valid tangents for themselves (just like Numbers)
         # and indeed we prefer that, otherwise higher order structural tangents are kinda
@@ -200,6 +203,8 @@ end
         @test iszero(zero_tangent(:abc))
         @test iszero(zero_tangent("abc"))
         @test iszero(zero_tangent(sin))
+
+        @test iszero(zero_tangent(:(1+1)))
     end
 
     @testset "undef elements Vector" begin
