@@ -184,13 +184,15 @@ end
         @test zero_tangent((1.0, 2.0)) == Tangent{Tuple{Float64,Float64}}(0.0, 0.0)
 
         @test ==(
-            zero_tangent(Dict{Int, Float64}(1=>2.4)),
+            zero_tangent(Dict{Int, Float64}(1 => 2.4)),
              Tangent{Dict{Int,Float64}}(Dict{Int, Float64}())
         )
-        @test ==(
-            zero_tangent(Base.PersistentDict(1=>2.4)),
-             Tangent{Base.PersistentDict{Int,Float64}}(Dict{Int, Float64}())
-        )
+        if isdefined(Base, :PersistentDict)
+            @test ==(
+                zero_tangent(Base.PersistentDict(1 => 2.4)),
+                Tangent{Base.PersistentDict{Int,Float64}}(Dict{Int, Float64}())
+            )
+        end
 
 
         # Higher order
