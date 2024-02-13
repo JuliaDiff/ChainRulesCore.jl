@@ -182,9 +182,7 @@ function guess_zero_tangent_type(::Type{<:Array{T,N}}) where {T,N}
     return Array{guess_zero_tangent_type(T),N}
 end
 guess_zero_tangent_type(T::Type) = Any
-guess_zero_tangent_type(::Union{}) = Union{}  # This will only show up for empty containers
-
-
+guess_zero_tangent_type(::Type{Union{}}) = Union{}  # This will only show up for empty containers
 
 # Stuff that conceptually has its own identity regardless of structual implementation and doesn't have a tangent
 zero_tangent(::Base.AbstractLogger) = NoTangent()
