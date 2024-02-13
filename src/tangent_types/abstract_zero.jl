@@ -172,8 +172,7 @@ end
 function zero_tangent(::T) where {K,V,T<:AbstractDict{K,V}}
     return Tangent{T}(Dict{K,guess_zero_tangent_type(V)}())
 end
-zero_tangent(::Base.Pairs{Symbol, Union{}, Tuple{}, @NamedTuple{}}) = NoTangent()
-
+zero_tangent(::Base.Pairs{Symbol,Union{},Tuple{},@NamedTuple{}}) = NoTangent()
 
 # Sad heauristic methods we need because of unassigned values
 guess_zero_tangent_type(::Type{T}) where {T<:Number} = T
