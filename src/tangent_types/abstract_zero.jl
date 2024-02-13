@@ -172,6 +172,8 @@ end
 function zero_tangent(::T) where {K,V,T<:AbstractDict{K,V}}
     return Tangent{T}(Dict{K,guess_zero_tangent_type(V)}())
 end
+zero_tangent(::Base.Pairs{Symbol, Union{}, Tuple{}, @NamedTuple{}}) = NoTangent()
+
 
 # Sad heauristic methods we need because of unassigned values
 guess_zero_tangent_type(::Type{T}) where {T<:Number} = T
@@ -180,6 +182,9 @@ function guess_zero_tangent_type(::Type{<:Array{T,N}}) where {T,N}
     return Array{guess_zero_tangent_type(T),N}
 end
 guess_zero_tangent_type(T::Type) = Any
+guess_zero_tangent_type(::Union{}) = Union{}  # This will only show up for empty containers
+
+
 
 # Stuff that conceptually has its own identity regardless of structual implementation and doesn't have a tangent
 zero_tangent(::Base.AbstractLogger) = NoTangent()
