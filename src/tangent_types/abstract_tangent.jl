@@ -38,3 +38,6 @@ abstract type AbstractTangent end
 Base.:+(x::AbstractTangent) = x
 
 @inline Base.conj(x::AbstractTangent) = x
+
+Base.:/(x::AbstractTangent, y) = x * inv(y)
+Base.:\(x, y::AbstractTangent) = inv(x) * y

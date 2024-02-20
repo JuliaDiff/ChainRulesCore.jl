@@ -396,6 +396,19 @@ end
             @test_throws MethodError Tangent{Foo}(; y=1.5, x=2.5) * @thunk [1 2; 3 4]
         end
 
+        @testset "scaling division" begin
+            a = Tangent{Foo}(; x=2.0, y=-2.0)
+            @test a / 2.0 == Tangent{Foo}(; x=1.0, y=-1.0) == 2.0 \ a
+            @test (
+                Tangent{Tuple{Float64,Float64}}(2.0, 4.0) / 2.0 ==
+                Tangent{Tuple{Float64,Float64}}(1.0, 2.0) ==
+                2.0 \ Tangent{Tuple{Float64,Float64}}(2.0, 4.0)
+            )
+
+
+        end
+
+
         @testset "iszero" begin
             @test iszero(Tangent{Foo}())
             @test iszero(Tangent{Tuple{}}())
