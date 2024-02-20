@@ -404,10 +404,7 @@ end
                 Tangent{Tuple{Float64,Float64}}(1.0, 2.0) ==
                 2.0 \ Tangent{Tuple{Float64,Float64}}(2.0, 4.0)
             )
-
-
         end
-
 
         @testset "iszero" begin
             @test iszero(Tangent{Foo}())
