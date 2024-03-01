@@ -179,7 +179,7 @@ end
 
 # Sad heauristic methods we need because of unassigned values
 guess_zero_tangent_type(::Type{T}) where {T<:Number} = T
-guess_zero_tangent_type(::Type{Bool}) = NoTangent()
+guess_zero_tangent_type(::Type{Bool}) = NoTangent
 
 guess_zero_tangent_type(::Type{T}) where {T<:Integer} = typeof(float(zero(T)))
 function guess_zero_tangent_type(::Type{<:Array{T,N}}) where {T,N}
