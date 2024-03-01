@@ -111,6 +111,7 @@ In general, it is more likely to produce a structural tangent.
 function zero_tangent end
 
 zero_tangent(x::Number) = zero(x)
+zero_tangent(x::Bool) = NoTangent()
 
 function zero_tangent(x::MutableTangent{P}) where {P}
     zb = backing(zero_tangent(backing(x)))
@@ -178,6 +179,8 @@ end
 
 # Sad heauristic methods we need because of unassigned values
 guess_zero_tangent_type(::Type{T}) where {T<:Number} = T
+guess_zero_tangent_type(::Type{Bool}) = NoTangent()
+
 guess_zero_tangent_type(::Type{T}) where {T<:Integer} = typeof(float(zero(T)))
 function guess_zero_tangent_type(::Type{<:Array{T,N}}) where {T,N}
     return Array{guess_zero_tangent_type(T),N}

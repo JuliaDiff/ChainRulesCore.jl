@@ -165,6 +165,8 @@ end
     @testset "basics" begin
         @test zero_tangent(1) === 0
         @test zero_tangent(1.0) === 0.0
+        @test zero_tangent(true) === NoTangent()
+
         mutable struct MutDemo
             x::Float64
         end
