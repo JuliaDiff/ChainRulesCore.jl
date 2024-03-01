@@ -1,6 +1,6 @@
 name = "ChainRulesCore"
 uuid = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
-version = "1.22.1"
+version = "1.23.0"
 
 [deps]
 Compat = "34da2185-b29b-5c13-b0c7-acf172513d20"
