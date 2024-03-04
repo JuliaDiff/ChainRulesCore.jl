@@ -45,7 +45,7 @@ makedocs(;
         ),
     ),
     sitename="ChainRules",
-    authors="Jarrett Revels and other contributors",
+    authors="Frames White and other contributors",
     pages=[
         "Introduction" => "index.md",
         "How to use ChainRules as a rule author" => [
