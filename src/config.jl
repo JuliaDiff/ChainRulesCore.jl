@@ -64,6 +64,24 @@ that do not support performing forwards mode AD should be `RuleConfig{>:NoForwar
 """
 struct NoForwardsMode <: ForwardsModeCapability end
 
+abstract type PullbackCapability end
+
+"""
+NotReuseable
+
+This trait indicate that a pullback acquired by `RuleConfig{>:NotReuseable}` can only be called once.
+So optimizations like reusing array buffers can be done in the pullback.
+"""
+struct NotReuseable <: PullbackCapability end
+
+"""
+Reuseable
+
+This is the complement to [`NotReuseable`](@ref). If it is set then the pullback must return correct
+result when being called multiple times. This is useful for computing jacobian.
+"""
+struct Reuseable <: PullbackCapability end
+
 """
     frule_via_ad(::RuleConfig{>:HasForwardsMode}, ȧrgs, f, args...; kwargs...)
 
