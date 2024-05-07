@@ -29,7 +29,7 @@ jobs:
           - {user: invenia, repo: PDMatsExtras.jl}
           - {user: chrisbrahms, repo: Hankel.jl}
           - {user: SciML, repo: DiffEqBase.jl}
-          - {user: PumasAI, repo: DataInterpolations.jl}
+          - {user: SciML, repo: DataInterpolations.jl}
           - {user: dfdx, repo: Yota.jl}
           - {user: JuliaStats, repo: StatsFuns.jl}
           - {user: JuliaStats, repo: LogExpFunctions.jl}
