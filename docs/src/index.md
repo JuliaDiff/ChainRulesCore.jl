@@ -50,7 +50,7 @@ Several packages do not automatically load rules from ChainRules by default, but
 
 [ReverseDiff.jl](https://github.com/JuliaDiff/ReverseDiff.jl) is a reverse-mode AD that supports using `rrule`s, but not calling back into AD and opting out of rules. It requires opting in to each rule using a macro.
 
-[Tapir.jl](https://github.com/withbayes/Tapir.jl/) is a reverse-mode add that supports importing rules defined using `rrule`, though support is experimental except when the tangent type is `Float64` or `NoTangent`.
+[Tapir.jl](https://github.com/withbayes/Tapir.jl/) is a reverse-mode add that supports importing a restricted subset of rules defined using `rrule`. Specifically, rules for functions whose inputs have tangent type `Float64` or `NoTangent`.
 
 [ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl) is not natively compatible with ChainRules.
 But you can use the package [ForwardDiffChainRules.jl](https://github.com/ThummeTo/ForwardDiffChainRules.jl) to bridge this gap, which is one of the nicest ways to add rules to ForwardDiff.jl.
