@@ -52,7 +52,7 @@ Several packages do not automatically load rules from ChainRules by default, but
 
 [ReverseDiff.jl](https://github.com/JuliaDiff/ReverseDiff.jl) is a reverse-mode AD that supports using `rrule`s, but not calling back into AD and opting out of rules.
 [Tracker.jl](https://github.com/FluxML/Tracker.jl) is a reverse mode AD that supports importing `rrules`
-[Enzyme.jl](https://github.com/EnzymeAD/Enzyme.jl) supports import of `frule`s and `rrule`s.
+[Enzyme.jl](https://github.com/EnzymeAD/Enzyme.jl) is a forward and reverse mode AD and supports import of `frule`s and `rrule`s.
 
 [Tapir.jl](https://github.com/withbayes/Tapir.jl/) is a reverse-mode add that supports importing a restricted subset of rules defined using `rrule`. Specifically, rules for functions whose inputs have tangent type `Float64` or `NoTangent`.
 
