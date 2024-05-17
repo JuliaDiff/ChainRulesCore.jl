@@ -45,10 +45,14 @@ It also `unthunk`s every tangent.
 
 [ReversePropagation.jl](https://github.com/dpsanders/ReversePropagation.jl) is a reverse-mode AD that supports using `rrule`s for scalar functions, but not calling back into AD and opting out of rules.
 
+[TaylorDiff.jl](https://github.com/JuliaDiff/TaylorDiff.jl) is a forward taylor mode AD.
+
 ### Packages supporting importing rules from ChainRules.
 Several packages do not automatically load rules from ChainRules by default, but support importing rules that were defined using it, e.g. with a macro.
 
-[ReverseDiff.jl](https://github.com/JuliaDiff/ReverseDiff.jl) is a reverse-mode AD that supports using `rrule`s, but not calling back into AD and opting out of rules. It requires opting in to each rule using a macro.
+[ReverseDiff.jl](https://github.com/JuliaDiff/ReverseDiff.jl) is a reverse-mode AD that supports using `rrule`s, but not calling back into AD and opting out of rules.
+
+[Enzyme.jl](https://github.com/EnzymeAD/Enzyme.jl) supports import of `frule`s and `rrule`s.
 
 [Tapir.jl](https://github.com/withbayes/Tapir.jl/) is a reverse-mode add that supports importing a restricted subset of rules defined using `rrule`. Specifically, rules for functions whose inputs have tangent type `Float64` or `NoTangent`.
 
