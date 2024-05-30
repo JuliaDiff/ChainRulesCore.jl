@@ -42,6 +42,32 @@ end
 
 @testset "rule_definition_tools.jl" begin
     @testset "@non_differentiable" begin
+        @testset "`NonDiffPullback`" begin
+            NDP = ChainRulesCore.NonDiffPullback
+            for i in 0:5
+                tup = ntuple((_ -> NoTangent()), i)
+                ndp = NDP(tup)
+                @test ndp === @inferred NDP(tup)
+                @test tup === @inferred ndp(:arbitrary)
+                @test_throws MethodError ndp()
+                @test_throws MethodError ndp(1, 2)
+            end
+        end
+
+        @testset "issue #678: identical pullback objects" begin
+            issue_678_f(::Any) = nothing
+            issue_678_g(::Any) = nothing
+            issue_678_h(::Any...) = nothing
+            @non_differentiable issue_678_f(::Any)
+            @non_differentiable issue_678_g(::Any)
+            @non_differentiable issue_678_h(::Any...)
+            @test (
+                last(rrule(issue_678_f, 0.1)) ===
+                last(rrule(issue_678_g, 0.2)) ===
+                last(rrule(issue_678_h, 0.3))
+            )
+        end
+
         @testset "two input one output function" begin
             nondiff_2_1(x, y) = fill(7.5, 100)[x + y]
             @non_differentiable nondiff_2_1(::Any, ::Any)
