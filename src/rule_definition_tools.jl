@@ -418,14 +418,6 @@ function _nondiff_frule_expr(__source__, primal_sig_parts, primal_invoke)
     end
 end
 
-struct NonDiffPullback{T<:Tuple{Vararg{NoTangent}}} <: Function
-    v::T
-end
-
-function (@nospecialize pb::NonDiffPullback)(@nospecialize ::Any)
-    return pb.v
-end
-
 function tuple_expression(primal_sig_parts)
     has_vararg = _isvararg(primal_sig_parts[end])
     return if !has_vararg
@@ -444,7 +436,7 @@ function _nondiff_rrule_expr(__source__, primal_sig_parts, primal_invoke)
     tup_expr = tuple_expression(primal_sig_parts)
     primal_name = first(primal_invoke.args)
     pullback_expr = @strip_linenos quote
-        NonDiffPullback($(tup_expr))
+        Returns($(tup_expr))
     end
 
     @gensym kwargs

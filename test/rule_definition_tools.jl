@@ -42,18 +42,6 @@ end
 
 @testset "rule_definition_tools.jl" begin
     @testset "@non_differentiable" begin
-        @testset "`NonDiffPullback`" begin
-            NDP = ChainRulesCore.NonDiffPullback
-            for i in 0:5
-                tup = ntuple((_ -> NoTangent()), i)
-                ndp = NDP(tup)
-                @test ndp === @inferred NDP(tup)
-                @test tup === @inferred ndp(:arbitrary)
-                @test_throws MethodError ndp()
-                @test_throws MethodError ndp(1, 2)
-            end
-        end
-
         @testset "issue #678: identical pullback objects" begin
             issue_678_f(::Any) = nothing
             issue_678_g(::Any) = nothing

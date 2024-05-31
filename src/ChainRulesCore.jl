@@ -2,7 +2,7 @@ module ChainRulesCore
 using Base.Broadcast: broadcasted, Broadcasted, broadcastable, materialize, materialize!
 using Base.Meta
 using LinearAlgebra
-using Compat: hasfield, hasproperty, ismutabletype
+using Compat: hasfield, hasproperty, ismutabletype, Returns
 
 export frule, rrule  # core function
 # rule configurations
