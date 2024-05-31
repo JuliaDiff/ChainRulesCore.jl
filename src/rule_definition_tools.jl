@@ -436,9 +436,7 @@ function _nondiff_rrule_expr(__source__, primal_sig_parts, primal_invoke)
     tup_expr = tuple_expression(primal_sig_parts)
     primal_name = first(primal_invoke.args)
     pullback_expr = @strip_linenos quote
-        function $(esc(propagator_name(primal_name, :pullback)))(@nospecialize(_))
-            return $(tup_expr)
-        end
+        Returns($(tup_expr))
     end
 
     @gensym kwargs

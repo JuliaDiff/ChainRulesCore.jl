@@ -42,6 +42,20 @@ end
 
 @testset "rule_definition_tools.jl" begin
     @testset "@non_differentiable" begin
+        @testset "issue #678: identical pullback objects" begin
+            issue_678_f(::Any) = nothing
+            issue_678_g(::Any) = nothing
+            issue_678_h(::Any...) = nothing
+            @non_differentiable issue_678_f(::Any)
+            @non_differentiable issue_678_g(::Any)
+            @non_differentiable issue_678_h(::Any...)
+            @test (
+                last(rrule(issue_678_f, 0.1)) ===
+                last(rrule(issue_678_g, 0.2)) ===
+                last(rrule(issue_678_h, 0.3))
+            )
+        end
+
         @testset "two input one output function" begin
             nondiff_2_1(x, y) = fill(7.5, 100)[x + y]
             @non_differentiable nondiff_2_1(::Any, ::Any)
