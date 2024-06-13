@@ -191,6 +191,7 @@ end
 # understands, including a mix of Zeros & reals. Other cases, we just let through:
 (project::ProjectTo{<:Number})(dx::Tangent{<:Complex}) = project(Complex(dx.re, dx.im))
 (::ProjectTo{<:Number})(dx::Tangent{<:Number}) = dx
+(::ProjectTo{T})(::ZeroTangent) where {T<:Real} = zero(T)
 
 # Arrays
 # If we don't have a more specialized `ProjectTo` rule, we just assume that there is
