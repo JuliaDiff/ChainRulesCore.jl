@@ -7,7 +7,7 @@ We provide two ways to know that a rule has been opted out of.
 `@opt_out` defines a `frule` or `rrule` matching the signature that returns `nothing`.
 
 If you are in a position to generate code, in response to values returned by function calls then you can do something like:
-```@julia
+```julia
 res = rrule(f, xs)
 if res === nothing
     y, pullback = perform_ad_via_decomposition(r, xs)  # do AD without hitting the rrule

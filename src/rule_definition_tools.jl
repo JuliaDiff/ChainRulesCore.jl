@@ -19,26 +19,28 @@ A convenience macro that generates simple scalar forward or reverse rules using
 the provided partial derivatives. Specifically, generates the corresponding
 methods for `frule` and `rrule`:
 
-    function ChainRulesCore.frule((NoTangent(), Δx₁, Δx₂, ...), ::typeof(f), x₁::Number, x₂::Number, ...)
-        Ω = f(x₁, x₂, ...)
-        \$(statement₁, statement₂, ...)
-        return Ω, (
-                (∂f₁_∂x₁ * Δx₁ + ∂f₁_∂x₂ * Δx₂ + ...),
-                (∂f₂_∂x₁ * Δx₁ + ∂f₂_∂x₂ * Δx₂ + ...),
-                ...
-            )
-    end
+```julia
+function ChainRulesCore.frule((NoTangent(), Δx₁, Δx₂, ...), ::typeof(f), x₁::Number, x₂::Number, ...)
+    Ω = f(x₁, x₂, ...)
+    \$(statement₁, statement₂, ...)
+    return Ω, (
+            (∂f₁_∂x₁ * Δx₁ + ∂f₁_∂x₂ * Δx₂ + ...),
+            (∂f₂_∂x₁ * Δx₁ + ∂f₂_∂x₂ * Δx₂ + ...),
+            ...
+        )
+end
 
-    function ChainRulesCore.rrule(::typeof(f), x₁::Number, x₂::Number, ...)
-        Ω = f(x₁, x₂, ...)
-        \$(statement₁, statement₂, ...)
-        return Ω, ((ΔΩ₁, ΔΩ₂, ...)) -> (
-                NoTangent(),
-                ∂f₁_∂x₁ * ΔΩ₁ + ∂f₂_∂x₁ * ΔΩ₂ + ...),
-                ∂f₁_∂x₂ * ΔΩ₁ + ∂f₂_∂x₂ * ΔΩ₂ + ...),
-                ...
-            )
-    end
+function ChainRulesCore.rrule(::typeof(f), x₁::Number, x₂::Number, ...)
+    Ω = f(x₁, x₂, ...)
+    \$(statement₁, statement₂, ...)
+    return Ω, ((ΔΩ₁, ΔΩ₂, ...)) -> (
+            NoTangent(),
+            ∂f₁_∂x₁ * ΔΩ₁ + ∂f₂_∂x₁ * ΔΩ₂ + ...),
+            ∂f₁_∂x₂ * ΔΩ₁ + ∂f₂_∂x₂ * ΔΩ₂ + ...),
+            ...
+        )
+end
+```
 
 If no type constraints in `f(x₁, x₂, ...)` within the call to `@scalar_rule` are
 provided, each parameter in the resulting `frule`/`rrule` definition is given a
@@ -65,18 +67,22 @@ general multiplicative identity.
 The `@setup` argument can be elided if no setup code is need. In other
 words:
 
-    @scalar_rule(f(x₁, x₂, ...),
-                 (∂f₁_∂x₁, ∂f₁_∂x₂, ...),
-                 (∂f₂_∂x₁, ∂f₂_∂x₂, ...),
-                 ...)
+```julia
+@scalar_rule(f(x₁, x₂, ...),
+             (∂f₁_∂x₁, ∂f₁_∂x₂, ...),
+             (∂f₂_∂x₁, ∂f₂_∂x₂, ...),
+             ...)
+```
 
 is equivalent to:
 
-    @scalar_rule(f(x₁, x₂, ...),
-                 @setup(nothing),
-                 (∂f₁_∂x₁, ∂f₁_∂x₂, ...),
-                 (∂f₂_∂x₁, ∂f₂_∂x₂, ...),
-                 ...)
+```julia
+@scalar_rule(f(x₁, x₂, ...),
+             @setup(nothing),
+             (∂f₁_∂x₁, ∂f₁_∂x₂, ...),
+             (∂f₂_∂x₁, ∂f₂_∂x₂, ...),
+             ...)
+```
 
 For examples, see ChainRules' `rulesets` directory.
 
@@ -313,11 +319,13 @@ by `frule` or `rrule`, but a good name make debugging easier.
 
 This is able to deal with fairly complex expressions for `f`:
 
-    julia> propagator_name(:bar, :pushforward)
-    :bar_pushforward
+```jldoctest; setup = :(using ChainRulesCore: propagator_name)
+julia> propagator_name(:bar, :pushforward)
+:bar_pushforward
 
-    julia> propagator_name(esc(:(Base.Random.foo)), :pullback)
-    :foo_pullback
+julia> propagator_name(esc(:(Base.Random.foo)), :pullback)
+:foo_pullback
+```
 """
 propagator_name(f::Expr, propname::Symbol) = propagator_name(f.args[end], propname)
 propagator_name(fname::Symbol, propname::Symbol) = Symbol(fname, :_, propname)

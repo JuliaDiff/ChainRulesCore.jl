@@ -82,12 +82,12 @@ An optimization package making use of this might want to check for such a case.
 
 This mostly shows up as the derivative with respect to dimension, index, or size
 arguments.
-```
-    function rrule(fill, x, len::Int)
-        y = fill(x, len)
-        fill_pullback(ȳ) = (NoTangent(), @thunk(sum(Ȳ)), NoTangent())
-        return y, fill_pullback
-    end
+```julia
+function rrule(fill, x, len::Int)
+    y = fill(x, len)
+    fill_pullback(ȳ) = (NoTangent(), @thunk(sum(Ȳ)), NoTangent())
+    return y, fill_pullback
+end
 ```
 """
 struct NoTangent <: AbstractZero end

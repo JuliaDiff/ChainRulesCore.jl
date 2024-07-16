@@ -63,7 +63,7 @@ What about using `sincos`?
 ```@raw html
 <details open><summary>Example for `sin`</summary>
 ```
-```julia
+```julia-repl
 julia> using BenchmarkTools
 
 julia> @btime sin(x) setup=(x=rand());
@@ -76,7 +76,7 @@ julia> 3.838 + 4.795
 8.633
 ```
 vs computing both together:
-```julia
+```julia-repl
 julia> @btime sincos(x) setup=(x=rand());
   6.028 ns (0 allocations: 0 bytes)
 ```
@@ -96,7 +96,7 @@ So we can save time, if we can reuse that `exp(x)`.
 <details open><summary>Example for the logistic sigmoid</summary>
 ```
 If we have to computing separately:
-```julia
+```julia-repl
 julia> @btime 1/(1+exp(x)) setup=(x=rand());
   5.622 ns (0 allocations: 0 bytes)
 
@@ -108,7 +108,7 @@ julia> 5.622 + 6.036
 ```
 
 vs reusing `exp(x)`:
-```julia
+```julia-repl
 julia> @btime exp(x) setup=(x=rand());
   5.367 ns (0 allocations: 0 bytes)
 
