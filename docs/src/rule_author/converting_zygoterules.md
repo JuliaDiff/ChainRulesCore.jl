@@ -1,4 +1,4 @@
-# Converting ZygoteRules.@adjoint to `rrule`s
+# Converting `ZygoteRules.@adjoint` to `rrule`s
 
 [ZygoteRules.jl](https://github.com/FluxML/ZygoteRules.jl) is a legacy package similar to ChainRulesCore but supporting [Zygote.jl](https://github.com/FluxML/Zygote.jl) only.
 
