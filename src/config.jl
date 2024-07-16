@@ -31,7 +31,7 @@ Base.Broadcast.broadcastable(config::RuleConfig) = Ref(config)
 abstract type ReverseModeCapability end
 
 """
-HasReverseMode
+    HasReverseMode <: ReverseModeCapability
 
 This trait indicates that a `RuleConfig{>:HasReverseMode}` can perform reverse mode AD.
 If it is set then [`rrule_via_ad`](@ref) must be implemented.
@@ -39,7 +39,7 @@ If it is set then [`rrule_via_ad`](@ref) must be implemented.
 struct HasReverseMode <: ReverseModeCapability end
 
 """
-NoReverseMode
+    NoReverseMode <: ReverseModeCapability
 
 This is the complement to [`HasReverseMode`](@ref). To avoid ambiguities [`RuleConfig`]s
 that do not support performing reverse mode AD should be `RuleConfig{>:NoReverseMode}`.
@@ -49,7 +49,7 @@ struct NoReverseMode <: ReverseModeCapability end
 abstract type ForwardsModeCapability end
 
 """
-HasForwardsMode
+    HasForwardsMode <: ForwardsModeCapability
 
 This trait indicates that a `RuleConfig{>:HasForwardsMode}` can perform forward mode AD.
 If it is set then [`frule_via_ad`](@ref) must be implemented.
@@ -57,7 +57,7 @@ If it is set then [`frule_via_ad`](@ref) must be implemented.
 struct HasForwardsMode <: ForwardsModeCapability end
 
 """
-NoForwardsMode
+    NoForwardsMode <: ForwardsModeCapability
 
 This is the complement to [`HasForwardsMode`](@ref). To avoid ambiguities [`RuleConfig`]s
 that do not support performing forwards mode AD should be `RuleConfig{>:NoForwardsMode}`.

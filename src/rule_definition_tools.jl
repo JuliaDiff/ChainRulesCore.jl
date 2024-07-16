@@ -269,10 +269,18 @@ end
 
 # For context on why this is important, see
 # https://github.com/JuliaDiff/ChainRulesCore.jl/pull/276
-"Declares properly hygenic inputs for propagation expressions"
+"""
+    _propagator_inputs(n)
+
+Declares properly hygenic inputs for propagation expressions
+"""
 _propagator_inputs(n) = [esc(gensym(Symbol(:Δ, i))) for i in 1:n]
 
-"given the variable names, escaped but without types, makes setup expressions for projection operators"
+"""
+    _make_projectors(xs)
+
+Given the variable names, escaped but without types, makes setup expressions for projection operators
+"""
 function _make_projectors(xs)
     projs = map(x -> Symbol(:proj_, x.args[1]), xs)
     setups = map((x, p) -> :($p = ProjectTo($x)), xs, projs)
@@ -393,7 +401,11 @@ macro non_differentiable(sig_expr)
     end
 end
 
-"changes `f(x,y)` into `f(x,y; kwargs....)`"
+"""
+    _with_kwargs_expr(call_expr, kwargs)
+
+Changes `f(x,y)` into `f(x,y; kwargs....)`
+"""
 function _with_kwargs_expr(call_expr::Expr, kwargs)
     @assert isexpr(call_expr, :call)
     return Expr(
@@ -584,7 +596,9 @@ function _isvararg(expr::Expr)
 end
 
 """
-splits the first arg of the `call` expression into an expression to use in the signature
+    _split_primal_name(primal_name)
+
+Splits the first arg of the `call` expression into an expression to use in the signature
 and one to use for calling that function
 """
 function _split_primal_name(primal_name)
@@ -604,7 +618,11 @@ function _split_primal_name(primal_name)
     end
 end
 
-"turn both `a` and `a::S` into `a`"
+"""
+    _unconstrain(a)
+
+Turn both `a` and `a::S` into `a`
+"""
 _unconstrain(arg::Symbol) = arg
 function _unconstrain(arg::Expr)
     Meta.isexpr(arg, :(::), 2) && return arg.args[1]  # drop constraint.
@@ -612,7 +630,11 @@ function _unconstrain(arg::Expr)
     return error("malformed arguments: $arg")
 end
 
-"turn both `a` and `::constraint` into `a::constraint` etc"
+"""
+    _constrain_and_name(arg::Expr, _)
+
+Turn both `a` and `::constraint` into `a::constraint` etc
+"""
 function _constrain_and_name(arg::Expr, _)
     Meta.isexpr(arg, :(::), 2) && return arg  # it is already fine.
     Meta.isexpr(arg, :(::), 1) && return Expr(:(::), gensym(), arg.args[1]) # add name
