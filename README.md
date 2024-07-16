@@ -12,6 +12,10 @@
 [![](https://img.shields.io/badge/docs-main-blue.svg)](https://juliadiff.org/ChainRulesCore.jl/dev)
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliadiff.org/ChainRulesCore.jl/stable)
 
+| ⚠️ The ChainRules project is currently seeking a new primary maintainer ⚠️                                                                                                                                                                                                                                                                    |
+|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| See this [Discourse thread](https://discourse.julialang.org/t/chainrules-project-looking-for-a-new-primary-maintainer/115636). We currently have many secondary maintainers and contributors with commit rights, but noone who has committed to leading the efforts. Until this is resolved PRs and issues may not recieve timely response. |
+
 The ChainRulesCore package provides a light-weight dependency for defining sensitivities for functions in your packages, without you needing to depend on ChainRules itself.
 
 This will allow your package to be used with [ChainRules.jl](https://github.com/JuliaDiff/ChainRules.jl), which aims to provide a variety of common utilities that can be used by downstream automatic differentiation (AD) tools to define and execute forward-, reverse-, and mixed-mode primitives.
