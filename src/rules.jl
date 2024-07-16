@@ -169,7 +169,7 @@ note: when the text below says methods `==` it actually means:
 
 To decide if should opt-out using this mechanism.
  - find the most specific method of `rrule` and `no_rule` e.g with `Base.which`
-  - if the method of `no_rrule` `==` the method of `rrule`, then should opt-out
+ - if the method of `no_rrule` `==` the method of `rrule`, then should opt-out
 
 To just ignore the fact that rules can be opted-out from, and that some rules thus return
 `nothing`, then filter the list of methods of `rrule` to remove those that are `==` to ones

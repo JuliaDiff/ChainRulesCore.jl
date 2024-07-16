@@ -124,11 +124,11 @@ end
     _normalize_scalarrules_macro_input(call, maybe_setup, partials)
 
 returns (in order) the correctly escaped:
-    - `call` with out any type constraints
-    - `setup_stmts`: the content of `@setup` or `[]` if that is not provided,
-    -  `inputs`: with all args having the constraints removed from call, or
-        defaulting to `Number`
-    - `partials`: which are all `Expr{:tuple,...}`
+- `call` with out any type constraints
+- `setup_stmts`: the content of `@setup` or `[]` if that is not provided,
+-  `inputs`: with all args having the constraints removed from call, or
+    defaulting to `Number`
+- `partials`: which are all `Expr{:tuple,...}`
 """
 function _normalize_scalarrules_macro_input(call, maybe_setup, partials)
     # Setup: normalizing input form etc
@@ -286,7 +286,7 @@ Returns the expression for the propagation of
 the input gradient `Δs` though the partials `∂s`.
 Specify `_conj = true` to conjugate the partials.
 Projector `proj` is a function that will be applied at the end;
-    for `rrules` it is usually a `ProjectTo(x)`, for `frules` it is `identity`
+for `rrules` it is usually a `ProjectTo(x)`, for `frules` it is `identity`
 """
 function propagation_expr(Δs, ∂s, _conj=false, proj=identity)
     # This is basically Δs ⋅ ∂s
