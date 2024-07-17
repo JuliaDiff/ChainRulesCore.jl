@@ -19,10 +19,10 @@ unary input, unary output scalar function:
 julia> dself = NoTangent();
 
 julia> x = rand()
-0.4056994708920292
+0.8236475079774124
 
 julia> sinx, Δsinx = frule((dself, 1), sin, x)
-(0.3946615493032566, 0.918826567694662)
+(0.7336293678134624, 0.6795498147167869)
 
 julia> sinx == sin(x)
 true
@@ -51,7 +51,7 @@ that return a single output that is iterable, like a `Tuple`.
 So this is actually a [`Tangent`](@ref):
 ```jldoctest frule
 julia> Δsincosx
-Tangent{Tuple{Float64, Float64}}(0.918826567694662, -0.3946615493032566)
+Tangent{Tuple{Float64, Float64}}(0.6795498147167869, -0.7336293678134624)
 ```
 
 The optional [`RuleConfig`](@ref) option allows specifying frules only for AD systems that
