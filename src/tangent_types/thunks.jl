@@ -162,6 +162,7 @@ Base.transpose(x::AbstractThunk) = @thunk(transpose(unthunk(x)))
 
 """
     Thunk(()->v)
+
 A thunk is a deferred computation.
 It wraps a zero argument closure that when invoked returns a tangent.
 `@thunk(v)` is a macro that expands into `Thunk(()->v)`.

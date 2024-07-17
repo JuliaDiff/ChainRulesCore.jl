@@ -6,7 +6,7 @@ Defaults to `false`, but if the user redefines it to return `true` then extra
 information will be shown when errors occur.
 
 Enable via:
-```
+```julia
 ChainRulesCore.debug_mode() = true
 ```
 """

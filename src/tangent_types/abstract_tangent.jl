@@ -3,6 +3,8 @@
 #####
 
 """
+    AbstractTangent
+
 The subtypes of `AbstractTangent` define a custom \"algebra\" for chain
 rule evaluation that attempts to factor various features like complex derivative
 support, broadcast fusion, zero-elision, etc. into nicely separated parts.

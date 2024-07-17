@@ -63,7 +63,7 @@ For example, in `access(xs, n) = xs[n]`, the derivative of `access` with respect
 When no custom `frule` or `rrule` exists, if you try to call one of those, it will return `nothing` by default.
 As a result, you may encounter errors like
 
-```julia
+```plain
 MethodError: no method matching iterate(::Nothing)
 ```
 

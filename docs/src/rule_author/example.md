@@ -38,8 +38,9 @@ end
 ```
 
 We can check this rule against a finite-differences approach using [`ChainRulesTestUtils`](https://github.com/JuliaDiff/ChainRulesTestUtils.jl):
-```julia
+```julia-repl
 julia> using ChainRulesTestUtils
+
 julia> test_rrule(foo_mul, Foo(rand(3, 3), 3.0), rand(3, 3))
 Test Summary:                                       | Pass  Total
 test_rrule: foo_mul on Foo{Float64},Matrix{Float64} |   10     10
