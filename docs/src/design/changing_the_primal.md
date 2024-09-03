@@ -63,7 +63,7 @@ What about using `sincos`?
 ```@raw html
 <details open><summary>Example for `sin`</summary>
 ```
-```julia
+```julia-repl
 julia> using BenchmarkTools
 
 julia> @btime sin(x) setup=(x=rand());
@@ -76,7 +76,7 @@ julia> 3.838 + 4.795
 8.633
 ```
 vs computing both together:
-```julia
+```julia-repl
 julia> @btime sincos(x) setup=(x=rand());
   6.028 ns (0 allocations: 0 bytes)
 ```
@@ -96,7 +96,7 @@ So we can save time, if we can reuse that `exp(x)`.
 <details open><summary>Example for the logistic sigmoid</summary>
 ```
 If we have to computing separately:
-```julia
+```julia-repl
 julia> @btime 1/(1+exp(x)) setup=(x=rand());
   5.622 ns (0 allocations: 0 bytes)
 
@@ -108,7 +108,7 @@ julia> 5.622 + 6.036
 ```
 
 vs reusing `exp(x)`:
-```julia
+```julia-repl
 julia> @btime exp(x) setup=(x=rand());
   5.367 ns (0 allocations: 0 bytes)
 
@@ -148,8 +148,8 @@ x̄ = pullback_at(f, x, y, ȳ, intermediates)
 ```
 ```julia
 function augmented_primal(::typeof(sin), x)
-  y, cx = sincos(x)
-  return y, (; cx=cx)  # use a NamedTuple for the intermediates
+    y, cx = sincos(x)
+    return y, (; cx=cx)  # use a NamedTuple for the intermediates
 end
 
 pullback_at(::typeof(sin), x, y, ȳ, intermediates) = ȳ * intermediates.cx
@@ -163,9 +163,9 @@ pullback_at(::typeof(sin), x, y, ȳ, intermediates) = ȳ * intermediates.cx
 ```
 ```julia
 function augmented_primal(::typeof(σ), x)
-  ex = exp(x)
-  y = ex / (1 + ex)
-  return y, (; ex=ex)  # use a NamedTuple for the intermediates
+    ex = exp(x)
+    y = ex / (1 + ex)
+    return y, (; ex=ex)  # use a NamedTuple for the intermediates
 end
 
 pullback_at(::typeof(σ), x, y, ȳ, intermediates) = ȳ * y / (1 + intermediates.ex)
@@ -189,8 +189,8 @@ And storing all these things on the tape — inputs, outputs, sensitivities, int
 What if we generalized the idea of the `intermediate` named tuple, and had `augmented_primal` return a struct that just held anything we might want put on the tape.
 ```julia
 struct PullbackMemory{P, S}
-  primal_function::P
-  state::S
+    primal_function::P
+    state::S
 end
 # convenience constructor:
 PullbackMemory(primal_function; state...) = PullbackMemory(primal_function, state)
@@ -211,8 +211,8 @@ which is much cleaner.
 ```
 ```julia
 function augmented_primal(::typeof(sin), x)
-  y, cx = sincos(x)
-  return y, PullbackMemory(sin; cx=cx)
+    y, cx = sincos(x)
+    return y, PullbackMemory(sin; cx=cx)
 end
 
 pullback_at(pb::PullbackMemory{typeof(sin)}, ȳ) = ȳ * pb.cx
@@ -226,9 +226,9 @@ pullback_at(pb::PullbackMemory{typeof(sin)}, ȳ) = ȳ * pb.cx
 ```
 ```julia
 function augmented_primal(::typeof(σ), x)
-  ex = exp(x)
-  y = ex / (1 + ex)
-  return y, PullbackMemory(σ; y=y, ex=ex)
+    ex = exp(x)
+    y = ex / (1 + ex)
+    return y, PullbackMemory(σ; y=y, ex=ex)
 end
 
 pullback_at(pb::PullbackMemory{typeof(σ)}, ȳ) = ȳ * pb.y / (1 + pb.ex)
@@ -256,8 +256,8 @@ x̄ = pb(ȳ)
 ```
 ```julia
 function augmented_primal(::typeof(sin), x)
-  y, cx = sincos(x)
-  return y, PullbackMemory(sin; cx=cx)
+    y, cx = sincos(x)
+    return y, PullbackMemory(sin; cx=cx)
 end
 (pb::PullbackMemory{typeof(sin)})(ȳ) = ȳ * pb.cx
 ```
@@ -271,9 +271,9 @@ end
 ```
 ```julia
 function augmented_primal(::typeof(σ), x)
-  ex = exp(x)
-  y = ex / (1 + ex)
-  return y, PullbackMemory(σ; y=y, ex=ex)
+    ex = exp(x)
+    y = ex / (1 + ex)
+    return y, PullbackMemory(σ; y=y, ex=ex)
 end
 
 (pb::PullbackMemory{typeof(σ)})(ȳ) = ȳ * pb.y / (1 + pb.ex)
@@ -295,16 +295,16 @@ Let's go back and think about the changes we would have make to go from our orig
 To rewrite that original formulation in the new pullback form we have:
 ```julia
 function augmented_primal(::typeof(sin), x)
-  y = sin(x)
-  return y, PullbackMemory(sin; x=x)
+    y = sin(x)
+    return y, PullbackMemory(sin; x=x)
 end
 (pb::PullbackMemory)(ȳ) = ȳ * cos(pb.x)
 ```
 To go from that to:
 ```julia
 function augmented_primal(::typeof(sin), x)
-  y, cx = sincos(x)
-  return y, PullbackMemory(sin; cx=cx)
+    y, cx = sincos(x)
+    return y, PullbackMemory(sin; cx=cx)
 end
 (pb::PullbackMemory)(ȳ) = ȳ * pb.cx
 ```
@@ -317,17 +317,17 @@ end
 ```
 ```julia
 function augmented_primal(::typeof(σ), x)
-  y = σ(x)
-  return y, PullbackMemory(σ; y=y, x=x)
+    y = σ(x)
+    return y, PullbackMemory(σ; y=y, x=x)
 end
 (pb::PullbackMemory{typeof(σ)})(ȳ) = ȳ * pb.y * σ(-pb.x)
 ```
 to get to:
 ```julia
 function augmented_primal(::typeof(σ), x)
-  ex = exp(x)
-  y = ex/(1 + ex)
-  return y, PullbackMemory(σ; y=y, ex=ex)
+    ex = exp(x)
+    y = ex/(1 + ex)
+    return y, PullbackMemory(σ; y=y, ex=ex)
 end
 (pb::PullbackMemory{typeof(σ)})(ȳ) = ȳ * pb.y/(1 + pb.ex)
 ```
@@ -356,9 +356,9 @@ Replacing `PullbackMemory` with a closure that works the same way lets us avoid 
 ```
 ```julia
 function augmented_primal(::typeof(sin), x)
-  y, cx = sincos(x)
-  pb = ȳ -> cx * ȳ  # pullback closure. closes over `cx`
-  return y, pb
+    y, cx = sincos(x)
+    pb = ȳ -> cx * ȳ  # pullback closure. closes over `cx`
+    return y, pb
 end
 ```
 ```@raw html
@@ -370,10 +370,10 @@ end
 ```
 ```julia
 function augmented_primal(::typeof(σ), x)
-  ex = exp(x)
-  y = ex / (1 + ex)
-  pb = ȳ -> ȳ * y / (1 + ex)  # pullback closure. closes over `y` and `ex`
-  return y, pb
+    ex = exp(x)
+    y = ex / (1 + ex)
+    pb = ȳ -> ȳ * y / (1 + ex)  # pullback closure. closes over `y` and `ex`
+    return y, pb
 end
 ```
 ```@raw html

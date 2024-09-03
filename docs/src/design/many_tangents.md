@@ -45,7 +45,7 @@ Structural tangents are derived from the structure of the input.
 Either automatically, as part of the AD, or manually, as part of a custom rule.
 
 Consider the structure of `DateTime`:
-```julia
+```julia-repl
 julia> dump(now())
 DateTime
   instant: UTInstant{Millisecond}
@@ -83,7 +83,7 @@ Where there is no natural tangent type for the outermost type but there is for s
 
 Consider if we had a representation of a country's GDP as output by some continuous time model like a Gaussian Process, where that representation is as a sequence of `TimeSample`s
 structured as follows:
-```julia
+```julia-repl
 julia> struct TimeSample
            time::DateTime
            value::Float64
@@ -91,7 +91,7 @@ julia> struct TimeSample
 ```
 
 We can look at its structure:
-```julia
+```julia-repl
 julia> dump(TimeSample(now(), 2.6e9))
 TimeSample
   time: DateTime

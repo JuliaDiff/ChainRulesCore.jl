@@ -34,8 +34,9 @@ function addone(a::AbstractArray)
 end
 ```
 complains that
-```julia
+```julia-repl
 julia> using Zygote
+
 julia> gradient(addone, a)
 ERROR: Mutating arrays is not supported
 ```
@@ -50,7 +51,7 @@ function ChainRules.rrule(::typeof(addone), a)
 end
 ```
 the gradient can be evaluated:
-```julia
+```julia-repl
 julia> gradient(addone, a)
 ([1.0, 1.0, 1.0],)
 ```
@@ -86,7 +87,7 @@ function exception(x)
 end
 ```
 does not work
-```julia
+```julia-repl
 julia> gradient(exception, 3.0)
 ERROR: Compiling Tuple{typeof(exception),Int64}: try/catch is not supported.
 ```
@@ -101,7 +102,7 @@ function ChainRulesCore.rrule(::typeof(exception), x)
 end
 ```
 
-```julia
+```julia-repl
 julia> gradient(exception, 3.0)
 (6.0,)
 ```
@@ -123,9 +124,11 @@ function mse(y, ŷ)
 end
 ```
 takes a lot longer to AD through
-```julia
-julia> y = rand(30)
-julia> ŷ = rand(30)
+```julia-repl
+julia> y = rand(30);
+
+julia> ŷ = rand(30);
+
 julia> @btime gradient(mse, $y, $ŷ)
   38.180 μs (993 allocations: 65.00 KiB)
 ```
@@ -142,7 +145,7 @@ function ChainRules.rrule(::typeof(mse), x, x̂)
 end
 ```
 which is much faster
-```julia
+```julia-repl
 julia> @btime gradient(mse, $y, $ŷ)
   143.697 ns (2 allocations: 672 bytes)
 ```
@@ -159,7 +162,7 @@ function sum3(array)
     return x+y+z
 end
 ```
-```julia
+```julia-repl
 julia> @btime gradient(sum3, rand(30))
   424.510 ns (9 allocations: 2.06 KiB)
 ```
@@ -176,7 +179,7 @@ function ChainRulesCore.rrule(::typeof(sum3), a)
 end
 ```
 turns out to be significantly faster 
-```julia
+```julia-repl
 julia> @btime gradient(sum3, rand(30))
   192.818 ns (3 allocations: 784 bytes)
 ```

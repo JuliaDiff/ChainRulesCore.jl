@@ -3,7 +3,9 @@
 
 Expressing the output of `f(x...)` as `Ω`, return the tuple:
 
-    (Ω, ΔΩ)
+```julia
+(Ω, ΔΩ)
+```
 
 The second return value is the tangent w.r.t. the output.
 
@@ -84,7 +86,9 @@ end
 Expressing `x` as the tuple `(x₁, x₂, ...)` and the output tuple of `f(x...)`
 as `Ω`, return the tuple:
 
-    (Ω, (Ω̄₁, Ω̄₂, ...) -> (s̄elf, x̄₁, x̄₂, ...))
+```julia
+(Ω, (Ω̄₁, Ω̄₂, ...) -> (s̄elf, x̄₁, x̄₂, ...))
+```
 
 Where the second return value is the the propagation rule or pullback.
 It takes in cotangents corresponding to the outputs (`x̄₁, x̄₂, ...`),
@@ -165,7 +169,7 @@ note: when the text below says methods `==` it actually means:
 
 To decide if should opt-out using this mechanism.
  - find the most specific method of `rrule` and `no_rule` e.g with `Base.which`
-  - if the method of `no_rrule` `==` the method of `rrule`, then should opt-out
+ - if the method of `no_rrule` `==` the method of `rrule`, then should opt-out
 
 To just ignore the fact that rules can be opted-out from, and that some rules thus return
 `nothing`, then filter the list of methods of `rrule` to remove those that are `==` to ones

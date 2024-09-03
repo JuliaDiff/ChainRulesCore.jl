@@ -19,26 +19,28 @@ A convenience macro that generates simple scalar forward or reverse rules using
 the provided partial derivatives. Specifically, generates the corresponding
 methods for `frule` and `rrule`:
 
-    function ChainRulesCore.frule((NoTangent(), Δx₁, Δx₂, ...), ::typeof(f), x₁::Number, x₂::Number, ...)
-        Ω = f(x₁, x₂, ...)
-        \$(statement₁, statement₂, ...)
-        return Ω, (
-                (∂f₁_∂x₁ * Δx₁ + ∂f₁_∂x₂ * Δx₂ + ...),
-                (∂f₂_∂x₁ * Δx₁ + ∂f₂_∂x₂ * Δx₂ + ...),
-                ...
-            )
-    end
+```julia
+function ChainRulesCore.frule((NoTangent(), Δx₁, Δx₂, ...), ::typeof(f), x₁::Number, x₂::Number, ...)
+    Ω = f(x₁, x₂, ...)
+    \$(statement₁, statement₂, ...)
+    return Ω, (
+            (∂f₁_∂x₁ * Δx₁ + ∂f₁_∂x₂ * Δx₂ + ...),
+            (∂f₂_∂x₁ * Δx₁ + ∂f₂_∂x₂ * Δx₂ + ...),
+            ...
+        )
+end
 
-    function ChainRulesCore.rrule(::typeof(f), x₁::Number, x₂::Number, ...)
-        Ω = f(x₁, x₂, ...)
-        \$(statement₁, statement₂, ...)
-        return Ω, ((ΔΩ₁, ΔΩ₂, ...)) -> (
-                NoTangent(),
-                ∂f₁_∂x₁ * ΔΩ₁ + ∂f₂_∂x₁ * ΔΩ₂ + ...),
-                ∂f₁_∂x₂ * ΔΩ₁ + ∂f₂_∂x₂ * ΔΩ₂ + ...),
-                ...
-            )
-    end
+function ChainRulesCore.rrule(::typeof(f), x₁::Number, x₂::Number, ...)
+    Ω = f(x₁, x₂, ...)
+    \$(statement₁, statement₂, ...)
+    return Ω, ((ΔΩ₁, ΔΩ₂, ...)) -> (
+            NoTangent(),
+            ∂f₁_∂x₁ * ΔΩ₁ + ∂f₂_∂x₁ * ΔΩ₂ + ...),
+            ∂f₁_∂x₂ * ΔΩ₁ + ∂f₂_∂x₂ * ΔΩ₂ + ...),
+            ...
+        )
+end
+```
 
 If no type constraints in `f(x₁, x₂, ...)` within the call to `@scalar_rule` are
 provided, each parameter in the resulting `frule`/`rrule` definition is given a
@@ -65,18 +67,22 @@ general multiplicative identity.
 The `@setup` argument can be elided if no setup code is need. In other
 words:
 
-    @scalar_rule(f(x₁, x₂, ...),
-                 (∂f₁_∂x₁, ∂f₁_∂x₂, ...),
-                 (∂f₂_∂x₁, ∂f₂_∂x₂, ...),
-                 ...)
+```julia
+@scalar_rule(f(x₁, x₂, ...),
+             (∂f₁_∂x₁, ∂f₁_∂x₂, ...),
+             (∂f₂_∂x₁, ∂f₂_∂x₂, ...),
+             ...)
+```
 
 is equivalent to:
 
-    @scalar_rule(f(x₁, x₂, ...),
-                 @setup(nothing),
-                 (∂f₁_∂x₁, ∂f₁_∂x₂, ...),
-                 (∂f₂_∂x₁, ∂f₂_∂x₂, ...),
-                 ...)
+```julia
+@scalar_rule(f(x₁, x₂, ...),
+             @setup(nothing),
+             (∂f₁_∂x₁, ∂f₁_∂x₂, ...),
+             (∂f₂_∂x₁, ∂f₂_∂x₂, ...),
+             ...)
+```
 
 For examples, see ChainRules' `rulesets` directory.
 
@@ -118,11 +124,11 @@ end
     _normalize_scalarrules_macro_input(call, maybe_setup, partials)
 
 returns (in order) the correctly escaped:
-    - `call` with out any type constraints
-    - `setup_stmts`: the content of `@setup` or `[]` if that is not provided,
-    -  `inputs`: with all args having the constraints removed from call, or
-        defaulting to `Number`
-    - `partials`: which are all `Expr{:tuple,...}`
+- `call` with out any type constraints
+- `setup_stmts`: the content of `@setup` or `[]` if that is not provided,
+-  `inputs`: with all args having the constraints removed from call, or
+    defaulting to `Number`
+- `partials`: which are all `Expr{:tuple,...}`
 """
 function _normalize_scalarrules_macro_input(call, maybe_setup, partials)
     # Setup: normalizing input form etc
@@ -263,10 +269,18 @@ end
 
 # For context on why this is important, see
 # https://github.com/JuliaDiff/ChainRulesCore.jl/pull/276
-"Declares properly hygenic inputs for propagation expressions"
+"""
+    _propagator_inputs(n)
+
+Declares properly hygenic inputs for propagation expressions
+"""
 _propagator_inputs(n) = [esc(gensym(Symbol(:Δ, i))) for i in 1:n]
 
-"given the variable names, escaped but without types, makes setup expressions for projection operators"
+"""
+    _make_projectors(xs)
+
+Given the variable names, escaped but without types, makes setup expressions for projection operators
+"""
 function _make_projectors(xs)
     projs = map(x -> Symbol(:proj_, x.args[1]), xs)
     setups = map((x, p) -> :($p = ProjectTo($x)), xs, projs)
@@ -280,7 +294,7 @@ Returns the expression for the propagation of
 the input gradient `Δs` though the partials `∂s`.
 Specify `_conj = true` to conjugate the partials.
 Projector `proj` is a function that will be applied at the end;
-    for `rrules` it is usually a `ProjectTo(x)`, for `frules` it is `identity`
+for `rrules` it is usually a `ProjectTo(x)`, for `frules` it is `identity`
 """
 function propagation_expr(Δs, ∂s, _conj=false, proj=identity)
     # This is basically Δs ⋅ ∂s
@@ -313,11 +327,13 @@ by `frule` or `rrule`, but a good name make debugging easier.
 
 This is able to deal with fairly complex expressions for `f`:
 
-    julia> propagator_name(:bar, :pushforward)
-    :bar_pushforward
+```jldoctest; setup = :(using ChainRulesCore: propagator_name)
+julia> propagator_name(:bar, :pushforward)
+:bar_pushforward
 
-    julia> propagator_name(esc(:(Base.Random.foo)), :pullback)
-    :foo_pullback
+julia> propagator_name(esc(:(Base.Random.foo)), :pullback)
+:foo_pullback
+```
 """
 propagator_name(f::Expr, propname::Symbol) = propagator_name(f.args[end], propname)
 propagator_name(fname::Symbol, propname::Symbol) = Symbol(fname, :_, propname)
@@ -385,7 +401,11 @@ macro non_differentiable(sig_expr)
     end
 end
 
-"changes `f(x,y)` into `f(x,y; kwargs....)`"
+"""
+    _with_kwargs_expr(call_expr, kwargs)
+
+Changes `f(x,y)` into `f(x,y; kwargs....)`
+"""
 function _with_kwargs_expr(call_expr::Expr, kwargs)
     @assert isexpr(call_expr, :call)
     return Expr(
@@ -576,7 +596,9 @@ function _isvararg(expr::Expr)
 end
 
 """
-splits the first arg of the `call` expression into an expression to use in the signature
+    _split_primal_name(primal_name)
+
+Splits the first arg of the `call` expression into an expression to use in the signature
 and one to use for calling that function
 """
 function _split_primal_name(primal_name)
@@ -596,7 +618,11 @@ function _split_primal_name(primal_name)
     end
 end
 
-"turn both `a` and `a::S` into `a`"
+"""
+    _unconstrain(a)
+
+Turn both `a` and `a::S` into `a`
+"""
 _unconstrain(arg::Symbol) = arg
 function _unconstrain(arg::Expr)
     Meta.isexpr(arg, :(::), 2) && return arg.args[1]  # drop constraint.
@@ -604,7 +630,11 @@ function _unconstrain(arg::Expr)
     return error("malformed arguments: $arg")
 end
 
-"turn both `a` and `::constraint` into `a::constraint` etc"
+"""
+    _constrain_and_name(arg::Expr, _)
+
+Turn both `a` and `::constraint` into `a::constraint` etc
+"""
 function _constrain_and_name(arg::Expr, _)
     Meta.isexpr(arg, :(::), 2) && return arg  # it is already fine.
     Meta.isexpr(arg, :(::), 1) && return Expr(:(::), gensym(), arg.args[1]) # add name

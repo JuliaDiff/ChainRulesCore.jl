@@ -110,7 +110,7 @@ Because `typeof(Bar)` is `DataType`, using this to define an `rrule`/`frule` wil
 
 You can check which to use with `Core.Typeof`:
 
-```julia
+```julia-repl
 julia> function foo end
 foo (generic function with 0 methods)
 
@@ -254,7 +254,7 @@ function ChainRulesCore.rrule(::typeof(double_it), x)
 end
 ```
 Ends up infering a return type of `Any`
-```julia
+```julia-repl
 julia> _, pullback = rrule(double_it, [2.0, 3.0])
 ([4.0, 6.0], var"#double_it_pullback#8"(Core.Box(var"#double_it_pullback#8"(#= circular reference @-2 =#))))
 
@@ -289,7 +289,7 @@ function ChainRulesCore.rrule(::typeof(double_it), x)
 end
 ```
 This infers just fine:
-```julia
+```julia-repl
 julia> _, pullback = rrule(double_it, [2.0, 3.0])
 ([4.0, 6.0], _double_it_pullback)
 
