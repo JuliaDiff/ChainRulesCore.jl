@@ -32,6 +32,7 @@ Base.:/(z::AbstractZero, ::Any) = z
 
 Base.convert(::Type{T}, x::AbstractZero) where {T<:Number} = zero(T)
 # (::Type{T})(::AbstractZero, ::AbstractZero...) where {T<:Number} = zero(T)
+Base.promote_rule(T::Type{<:Number}, S::Type{<:AbstractZero}) = T
 
 (::Type{Complex})(x::AbstractZero, y::Real) = Complex(false, y)
 (::Type{Complex})(x::Real, y::AbstractZero) = Complex(x, false)
@@ -91,6 +92,8 @@ end
 ```
 """
 struct NoTangent <: AbstractZero end
+
+Base.eltype(::Type{NoTangent}) = NoTangent
 
 """
     zero_tangent(primal)

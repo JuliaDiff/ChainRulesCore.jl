@@ -82,6 +82,15 @@
         @test convert(Float32, ZeroTangent()) === 0.0f0
         @test convert(ComplexF64, ZeroTangent()) === 0.0 + 0.0im
 
+        @test promote_type(ZeroTangent, Bool) == Bool
+        @test promote_type(Bool, ZeroTangent) == Bool
+        @test promote_type(ZeroTangent, Int64) == Int64
+        @test promote_type(Int64, ZeroTangent) == Int64
+        @test promote_type(ZeroTangent, Float32) == Float32
+        @test promote_type(Float32, ZeroTangent) == Float32
+        @test promote_type(ZeroTangent, ComplexF64) == ComplexF64
+        @test promote_type(ComplexF64, ZeroTangent) == ComplexF64
+
         @test z[1] === z
         @test z[1:3] === z
         @test z[1, 2] === z
@@ -109,6 +118,18 @@
         @test dot(dne, dne) == dne
         @test dot(dne, 17.2) == dne
         @test dot(11.9, dne) == dne
+
+        @test eltype(dne) === NoTangent
+        @test eltype(NoTangent) === NoTangent
+
+        @test promote_type(NoTangent, Bool) == Bool
+        @test promote_type(Bool, NoTangent) == Bool
+        @test promote_type(NoTangent, Int64) == Int64
+        @test promote_type(Int64, NoTangent) == Int64
+        @test promote_type(NoTangent, Float32) == Float32
+        @test promote_type(Float32, NoTangent) == Float32
+        @test promote_type(NoTangent, ComplexF64) == ComplexF64
+        @test promote_type(ComplexF64, NoTangent) == ComplexF64
 
         @test ZeroTangent() + dne == dne
         @test dne + ZeroTangent() == dne
