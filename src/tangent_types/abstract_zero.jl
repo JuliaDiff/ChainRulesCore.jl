@@ -93,6 +93,8 @@ end
 """
 struct NoTangent <: AbstractZero end
 
+Base.eltype(::Type{NoTangent}) = NoTangent
+
 """
     zero_tangent(primal)
 

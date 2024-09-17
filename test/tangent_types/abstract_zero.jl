@@ -119,6 +119,9 @@
         @test dot(dne, 17.2) == dne
         @test dot(11.9, dne) == dne
 
+        @test eltype(dne) === NoTangent
+        @test eltype(NoTangent) === NoTangent
+
         @test promote_type(NoTangent, Bool) == Bool
         @test promote_type(Bool, NoTangent) == Bool
         @test promote_type(NoTangent, Int64) == Int64
