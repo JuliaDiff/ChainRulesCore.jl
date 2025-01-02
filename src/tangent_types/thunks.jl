@@ -1,3 +1,4 @@
+# Disable thunks for 2nd order AD.
 _usethunks() = true
 rrule(::typeof(_usethunks)) = false, (NoTangent(),)
 
