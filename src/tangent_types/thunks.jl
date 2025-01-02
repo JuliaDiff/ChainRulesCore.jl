@@ -1,6 +1,6 @@
 # Disable thunks for 2nd order AD.
 _usethunks() = true
-rrule(::typeof(_usethunks)) = false, (NoTangent(),)
+rrule(::typeof(_usethunks)) = false, Returns((NoTangent(),))
 
 abstract type AbstractThunk <: AbstractTangent end
 
@@ -146,9 +146,9 @@ macro thunk(body)
     # so we get useful stack traces if it errors.
     func = Expr(:->, Expr(:tuple), Expr(:block, __source__, body))
     return quote
-        $(esc(_usethunks))() ?
+        _usethunks() ?
             Thunk($(esc(func))) :
-            $(esc(func))()
+            $(esc(body))
     end
 end
 
