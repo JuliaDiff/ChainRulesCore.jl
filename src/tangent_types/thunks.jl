@@ -1,4 +1,5 @@
-const UTILIZE_THUNKS = Ref{Function}(() -> true)
+_usethunks() = true
+rrule(::typeof(_usethunks)) = false, (NoTangent(),)
 
 abstract type AbstractThunk <: AbstractTangent end
 
@@ -144,7 +145,7 @@ macro thunk(body)
     # so we get useful stack traces if it errors.
     func = Expr(:->, Expr(:tuple), Expr(:block, __source__, body))
     return quote
-        $(esc(UTILIZE_THUNKS))[]() ?
+        $(esc(_usethunks))() ?
             Thunk($(esc(func))) :
             $(esc(func))()
     end
@@ -241,7 +242,7 @@ struct InplaceableThunk{T<:Thunk,F} <: AbstractThunk
     val::T
 
     function InplaceableThunk(add!::F, val::T) where {F, T}
-        UTILIZE_THUNKS[]() ?
+        _usethunks() ?
             new{T, F}(add!, val) :
             val
     end
