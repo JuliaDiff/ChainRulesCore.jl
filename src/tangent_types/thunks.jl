@@ -1,3 +1,6 @@
+const UTILIZE_THUNKS = Ref{Function}(() -> true)
+@noinline utilize_thunks() = UTILIZE_THUNKS[]()
+
 abstract type AbstractThunk <: AbstractTangent end
 
 struct MutateThunkException <: Exception end
@@ -141,7 +144,11 @@ macro thunk(body)
     # Basically `:(Thunk(() -> $(esc(body))))` but use the location where it is defined.
     # so we get useful stack traces if it errors.
     func = Expr(:->, Expr(:tuple), Expr(:block, __source__, body))
-    return :(Thunk($(esc(func))))
+    return quote
+        $(esc(utilize_thunks))() ?
+            Thunk($(esc(func))) :
+            $(esc(func))()
+    end
 end
 
 """
@@ -233,6 +240,12 @@ and destroy its inplacability.
 struct InplaceableThunk{T<:Thunk,F} <: AbstractThunk
     add!::F
     val::T
+
+    function InplaceableThunk(add!::F, val::T) where {F, T}
+        utilize_thunks() ?
+            new{T, F}(add!, val) :
+            val
+    end
 end
 
 unthunk(x::InplaceableThunk) = unthunk(x.val)
