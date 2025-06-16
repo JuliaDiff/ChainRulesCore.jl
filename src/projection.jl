@@ -128,8 +128,8 @@ ProjectTo(::Any) = identity
 ProjectTo(::AbstractZero) = ProjectTo{NoTangent}()  # Any x::Zero in forward pass makes this one projector,
 (::ProjectTo{NoTangent})(dx) = NoTangent()          # but this is the projection only for nonzero gradients,
 (::ProjectTo{NoTangent})(dx::AbstractZero) = dx     # and this one solves an ambiguity.
-(::ProjectTo{NoTangent})(::AbstractThunk) = NoTangent() # #685
-(::ProjectTo{NoTangent})(::Thunk) = NoTangent()
+(::ProjectTo{NoTangent})(::AbstractThunk) = NoTangent() # solves ambiguity, #685
+(::ProjectTo{NoTangent})(::Thunk) = NoTangent() # solves ambiguity, #685
 
 # Also, any explicit construction with fields, where all fields project to zero, itself
 # projects to zero. This simplifies projectors for wrapper types like Diagonal([true, false]).
