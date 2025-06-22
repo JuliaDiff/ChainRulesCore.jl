@@ -465,6 +465,10 @@ struct NoSuperType end
     end
 
     @testset "#685" begin
-        @test ProjectTo(BitArray([0]))(@thunk[1.0]) == NoTangent()
+        @test ProjectTo(BitArray([0]))([1.0]) == NoTangent()
+        @test ProjectTo(BitArray([0]))(@thunk [1.0]) == NoTangent()
+
+        it = InplaceableThunk(x -> x + [1], @thunk [1.0])
+        @test ProjectTo(BitArray([0]))(it) == NoTangent()
     end
 end
