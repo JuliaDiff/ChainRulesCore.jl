@@ -128,6 +128,8 @@ ProjectTo(::Any) = identity
 ProjectTo(::AbstractZero) = ProjectTo{NoTangent}()  # Any x::Zero in forward pass makes this one projector,
 (::ProjectTo{NoTangent})(dx) = NoTangent()          # but this is the projection only for nonzero gradients,
 (::ProjectTo{NoTangent})(dx::AbstractZero) = dx     # and this one solves an ambiguity.
+(::ProjectTo{NoTangent})(::InplaceableThunk) = NoTangent() # solves ambiguity, #685
+(::ProjectTo{NoTangent})(::Thunk) = NoTangent() # solves ambiguity, #685
 
 # Also, any explicit construction with fields, where all fields project to zero, itself
 # projects to zero. This simplifies projectors for wrapper types like Diagonal([true, false]).
@@ -277,7 +279,7 @@ end
 # but as `Ref{Any}((x=val,))`. Here we use a Tangent, there is at present no mutable version, but see
 # https://github.com/JuliaDiff/ChainRulesCore.jl/issues/105
 function ProjectTo(x::Ref)
-    sub = ProjectTo(x[])  # should we worry about isdefined(Ref{Vector{Int}}(), :x)? 
+    sub = ProjectTo(x[])  # should we worry about isdefined(Ref{Vector{Int}}(), :x)?
     return ProjectTo{Tangent{typeof(x)}}(; x=sub)
 end
 (project::ProjectTo{<:Tangent{<:Ref}})(dx::Tangent) = project(Ref(first(backing(dx))))

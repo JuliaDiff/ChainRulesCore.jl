@@ -80,7 +80,7 @@ struct NoSuperType end
 
         prow = ProjectTo([1im 2 3im])
         @test prow(transpose([1, 2, 3 + 4.0im])) == [1 2 3 + 4im]
-        @test prow(transpose([1, 2, 3 + 4.0im])) isa Matrix  # row vectors may not pass through 
+        @test prow(transpose([1, 2, 3 + 4.0im])) isa Matrix  # row vectors may not pass through
         @test prow(adjoint([1, 2, 3 + 5im])) == [1 2 3 - 5im]
         @test prow(adjoint([1, 2, 3])) isa Matrix
 
@@ -145,7 +145,7 @@ struct NoSuperType end
 
         @test ProjectTo(Ref(true)) isa ProjectTo{NoTangent}
         @test ProjectTo(Ref([false]')) isa ProjectTo{NoTangent}
-        
+
         @test ProjectTo(Ref(1.0))(Ref(NoTangent())) === NoTangent()  # collapse all-zero
     end
 
@@ -376,7 +376,7 @@ struct NoSuperType end
 
         pvec3 = ProjectTo([1, 2, 3])
         @test axes(pvec3(OffsetArray(rand(3), 0:2))) == (1:3,)
-        @test pvec3(OffsetArray(rand(3), 0:2)) isa Vector  # relies on axes === axes test 
+        @test pvec3(OffsetArray(rand(3), 0:2)) isa Vector  # relies on axes === axes test
         @test pvec3(OffsetArray(rand(3,1), 0:2, 0:0)) isa Vector
     end
 
@@ -462,5 +462,13 @@ struct NoSuperType end
 
         psymm = ProjectTo(Symmetric(rand(10^3, 10^3)))
         @test_broken 0 == @ballocated $psymm(dx) setup = (dx = Symmetric(rand(10^3, 10^3)))  # 64
+    end
+
+    @testset "#685" begin
+        @test ProjectTo(BitArray([0]))([1.0]) == NoTangent()
+        @test ProjectTo(BitArray([0]))(@thunk [1.0]) == NoTangent()
+
+        it = InplaceableThunk(x -> x + [1], @thunk [1.0])
+        @test ProjectTo(BitArray([0]))(it) == NoTangent()
     end
 end
