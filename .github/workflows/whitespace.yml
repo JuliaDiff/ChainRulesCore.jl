@@ -1,0 +1,32 @@
+name: Whitespace Check
+# Run only on pull requests
+on:
+  pull_request:
+jobs:
+  check-whitespace:
+    name: Check Whitespace
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: | # adapted from https://github.com/JuliaLang/julia/blob/f5ce7c4cb9b3e2140819b6b089530ee69aea3d2f/contrib/check-whitespace.sh
+          set -f # disable glob expansion in this script
+          file_patterns='
+          *.jl
+          *.md
+          *.toml
+          *.yml
+          '
+
+          # TODO: Look also for trailing empty lines, and missing '\n' after the last line
+          if git --no-pager grep --color -n --full-name -e ' $' -- $file_patterns; then
+              echo "Error: trailing whitespace found in source file(s)"
+              echo ""
+              echo "This can often be fixed with:"
+              echo "    git rebase --whitespace=fix HEAD~1"
+              echo "or"
+              echo "    git rebase --whitespace=fix master"
+              echo "and then a forced push of the correct branch"
+              exit 1
+          fi
+
+          echo "Whitespace check found no issues"
