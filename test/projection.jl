@@ -39,10 +39,10 @@ struct NoSuperType end
         @test ProjectTo(1)(2.0f0) === 2.0
 
         # Tangents
-        ProjectTo(1.0f0 + 2im)(Tangent{ComplexF64}(; re=1, im=NoTangent())) ===
-        1.0f0 + 0.0f0im
-
-        @test 1.0 === ProjectTo(1.0)(Tangent{ComplexF64}(; re=1, im=NoTangent()))
+        complex_tangent = Tangent{ComplexF64}(; re=1, im=NoTangent())
+        @test ProjectTo(1.0f0 + 2im)(complex_tangent) === 1.0f0 + 0.0f0im
+        @test ProjectTo(1.0)(complex_tangent) === 1.0
+        @test ProjectTo(1.0)(ZeroTangent()) === 0.0
     end
 
     @testset "Dual" begin # some weird Real subtype that we should basically leave alone
@@ -219,7 +219,7 @@ struct NoSuperType end
         @test ProjectTo(I)(123) === NoTangent()
         @test ProjectTo(2 * I)(I * 3im) === 0.0 * I
         @test ProjectTo((4 + 5im) * I)(Tangent{typeof(im * I)}(; λ = 6)) === (6.0 + 0.0im) * I
-        @test ProjectTo(7 * I)(Tangent{typeof(2I)}()) == ZeroTangent()
+        @test ProjectTo(7 * I)(Tangent{typeof(2I)}()) == 0.0I
     end
 
     @testset "LinearAlgebra: $adj vectors" for adj in [transpose, adjoint]
@@ -399,7 +399,6 @@ struct NoSuperType end
         @test pb(ZeroTangent()) isa AbstractZero  # was a method ambiguity!
 
         # all projectors preserve Zero, and specific type, via one fallback method:
-        @test ProjectTo(pi)(ZeroTangent()) === ZeroTangent()
         @test ProjectTo(pi)(NoTangent()) === NoTangent()
         pv = ProjectTo(sprand(30, 0.3))
         @test pv(ZeroTangent()) === ZeroTangent()
