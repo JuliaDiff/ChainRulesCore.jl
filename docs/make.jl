@@ -27,7 +27,7 @@ makedocs(;
     modules=[ChainRulesCore],
     format=Documenter.HTML(;
         prettyurls=false,
-        assets=[indigo],
+        assets=[indigo, "assets/favicon.ico"],
         mathengine=MathJax3(
             Dict(
                 :tex => Dict(
