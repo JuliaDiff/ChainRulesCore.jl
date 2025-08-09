@@ -124,10 +124,8 @@
         m = rand(3, 3)
         tm = @thunk(m)
 
-        if VERSION >= v"1.2"
-            @test 3 == mapreduce(_ -> 1, +, t)
-            @test 3 == mapreduce((_, _) -> 1, +, v, t)
-        end
+        @test 3 == mapreduce(_ -> 1, +, t)
+        @test 3 == mapreduce((_, _) -> 1, +, v, t)
         @test 10 == sum(@thunk([1 2; 3 4]))
         @test [4 6] == sum!([1 1], @thunk([1 2; 3 4]))
 
@@ -156,14 +154,12 @@
         @test Symmetric(a) == Symmetric(t)
         @test Hermitian(a) == Hermitian(t)
 
-        if VERSION >= v"1.2"
-            @test diagm(0 => v) == diagm(0 => tv)
-            @test diagm(3, 4, 0 => v) == diagm(3, 4, 0 => tv)
-            # Check against accidential type piracy
-            # https://github.com/JuliaDiff/ChainRulesCore.jl/issues/472
-            @test Base.which(diagm, Tuple{}()).module != ChainRulesCore
-            @test Base.which(diagm, Tuple{Int,Int}).module != ChainRulesCore
-        end
+        @test diagm(0 => v) == diagm(0 => tv)
+        @test diagm(3, 4, 0 => v) == diagm(3, 4, 0 => tv)
+        # Check against accidential type piracy
+        # https://github.com/JuliaDiff/ChainRulesCore.jl/issues/472
+        @test Base.which(diagm, Tuple{}()).module != ChainRulesCore
+        @test Base.which(diagm, Tuple{Int,Int}).module != ChainRulesCore
         @test tril(a) == tril(t)
         @test tril(a, 1) == tril(t, 1)
         @test triu(a) == triu(t)
@@ -176,12 +172,10 @@
         @test dot(v, v) == dot(tv, v)
         @test dot(v, v) == dot(tv, tv)
 
-        if VERSION >= v"1.2"
-            @test_throws MutateThunkException ldiv!(2.0, deepcopy(t)) ==
-                                              ldiv!(2.0, deepcopy(a))
-            @test_throws MutateThunkException rdiv!(deepcopy(t), 2.0) ==
-                                              rdiv!(deepcopy(a), 2.0)
-        end
+        @test_throws MutateThunkException ldiv!(2.0, deepcopy(t)) ==
+                                          ldiv!(2.0, deepcopy(a))
+        @test_throws MutateThunkException rdiv!(deepcopy(t), 2.0) ==
+                                          rdiv!(deepcopy(a), 2.0)
 
         @test mul!(deepcopy(a), a, a) == mul!(deepcopy(a), t, a)
 
