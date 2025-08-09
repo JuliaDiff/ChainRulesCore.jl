@@ -7,16 +7,9 @@ macro test_macro_throws(err_expr, expr)
         err = nothing
         try
             @macroexpand($(esc(expr)))
-        catch _err
+        catch err
             # https://github.com/JuliaLang/julia/pull/38379
-            if VERSION >= v"1.7.0-DEV.937"
-                err = _err
-            else
-                # until Julia v1.7
-                # all errors thrown at macro expansion time are LoadErrors, we need to unwrap
-                @assert _err isa LoadError
-                err = _err.error
-            end
+            # Since Julia 1.7, errors are not wrapped in LoadError
         end
         # Reuse `@test_throws` logic
         if err !== nothing

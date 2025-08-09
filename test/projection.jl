@@ -151,11 +151,9 @@ struct NoSuperType end
 
     @testset "Base: Tuple" begin
         pt1 = ProjectTo((1.0,))
-        if VERSION >= v"1.6"
-            @test @inferred(pt1((1 + im,))) == Tangent{Tuple{Float64}}(1.0)
-            @test @inferred(pt1(pt1((1,)))) == pt1(pt1((1,)))            # accepts correct Tangent
-            @test @inferred(pt1(Tangent{Any}(1))) == pt1((1,))           # accepts Tangent{Any}
-        end
+        @test @inferred(pt1((1 + im,))) == Tangent{Tuple{Float64}}(1.0)
+        @test @inferred(pt1(pt1((1,)))) == pt1(pt1((1,)))            # accepts correct Tangent
+        @test @inferred(pt1(Tangent{Any}(1))) == pt1((1,))           # accepts Tangent{Any}
         @test pt1([1,]) == Tangent{Tuple{Float64}}(1.0,)  # accepts Vector
         @test @inferred(pt1(NoTangent())) === NoTangent()
         @test @inferred(pt1(ZeroTangent())) === ZeroTangent()
@@ -240,25 +238,23 @@ struct NoSuperType end
         @test padj_complex(adjoint([4, 5, 6 + 7im])) == [4 5 6 - 7im]
 
         # evil test case
-        if VERSION >= v"1.7-"  # up to 1.6  Vector[[1,2,3]]'  is an error, not sure why it's called
-            xs = adj(Any[Any[1, 2, 3], Any[4 + im, 5 - im, 6 + im, 7 - im]])
-            pvecvec3 = ProjectTo(xs)
-            @test pvecvec3(xs)[1] == [1 2 3]
-            @test pvecvec3(xs)[2] == adj.([4 + im 5 - im 6 + im 7 - im])
-            @test pvecvec3(xs)[2] isa LinearAlgebra.AdjOrTransAbsMat{ComplexF64,<:Vector}
-            @test pvecvec3(collect(xs))[1] == [1 2 3]
-            ys = permutedims([[1 2 3 + im], Any[4 5 6 7 + 8im]])
-            @test pvecvec3(ys)[1] == [1 2 3]
-            @test pvecvec3(ys)[2] == [4 5 6 7 + 8im]
-            @test pvecvec3(xs)[2] isa LinearAlgebra.AdjOrTransAbsMat{ComplexF64,<:Vector}
-            @test pvecvec3(ys) isa LinearAlgebra.AdjOrTransAbsVec
+        xs = adj(Any[Any[1, 2, 3], Any[4 + im, 5 - im, 6 + im, 7 - im]])
+        pvecvec3 = ProjectTo(xs)
+        @test pvecvec3(xs)[1] == [1 2 3]
+        @test pvecvec3(xs)[2] == adj.([4 + im 5 - im 6 + im 7 - im])
+        @test pvecvec3(xs)[2] isa LinearAlgebra.AdjOrTransAbsMat{ComplexF64,<:Vector}
+        @test pvecvec3(collect(xs))[1] == [1 2 3]
+        ys = permutedims([[1 2 3 + im], Any[4 5 6 7 + 8im]])
+        @test pvecvec3(ys)[1] == [1 2 3]
+        @test pvecvec3(ys)[2] == [4 5 6 7 + 8im]
+        @test pvecvec3(xs)[2] isa LinearAlgebra.AdjOrTransAbsMat{ComplexF64,<:Vector}
+        @test pvecvec3(ys) isa LinearAlgebra.AdjOrTransAbsVec
 
-            zs = adj([[1 2; 3 4], [5 6; 7 8+im]'])
-            pvecmat = ProjectTo(zs)
-            @test pvecmat(zs) == zs
-            @test pvecmat(collect.(zs)) == zs
-            @test pvecmat(collect.(zs)) isa LinearAlgebra.AdjOrTransAbsVec
-        end
+        zs = adj([[1 2; 3 4], [5 6; 7 8+im]'])
+        pvecmat = ProjectTo(zs)
+        @test pvecmat(zs) == zs
+        @test pvecmat(collect.(zs)) == zs
+        @test pvecmat(collect.(zs)) isa LinearAlgebra.AdjOrTransAbsVec
 
         # issue #410
         @test padj([NoTangent() NoTangent() NoTangent()]) === NoTangent()
@@ -440,7 +436,7 @@ struct NoSuperType end
         @test eval(Meta.parse(str))(ones(1, 3)) isa Adjoint{Float64,Vector{Float64}}
     end
 
-    VERSION > v"1.1" && @testset "allocation tests" begin
+    @testset "allocation tests" begin
         # For sure these fail on Julia 1.0, not sure about 1.3 etc.
         # We only really care about current stable anyway
         # Each "@test 33 > ..." is zero on nightly, 32 on 1.5.
