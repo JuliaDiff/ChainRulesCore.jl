@@ -8,11 +8,11 @@ LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [compat]
-BenchmarkTools = "1"
-Compat = "4"
-FiniteDifferences = "0.12"
-OffsetArrays = "1"
-StaticArrays = "1"
+BenchmarkTools = "1.5"
+Compat = "4.15"
+FiniteDifferences = "0.12.32"
+OffsetArrays = "1.14"
+StaticArrays = "1.9.2"
 julia = "1.10"
 
 [extensions]
