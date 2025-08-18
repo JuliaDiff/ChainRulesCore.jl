@@ -45,7 +45,7 @@ jobs:
             version: "1"          
             arch: aarch64
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.version }}
@@ -68,7 +68,7 @@ jobs:
       pull-requests: read  # Required when using `push_preview=true`
       statuses: write  # Optional, used to report documentation build statuses
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: julia-actions/setup-julia@v2
         with:
           version: '1.10'
