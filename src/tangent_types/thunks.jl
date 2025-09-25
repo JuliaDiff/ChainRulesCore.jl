@@ -136,6 +136,31 @@ function LinearAlgebra.LAPACK.trsyl!(transa, transb, A, B, C::AbstractThunk, isg
     return throw(MutateThunkException())
 end
 
+
+@static if VERSION > v"1.10"
+    using Base: replace_linenums!
+else
+    replace_linenums!(ex, ln::LineNumberNode) = ex
+    function replace_linenums!(ex::Expr, ln::LineNumberNode)
+        if ex.head === :block || ex.head === :quote
+            # replace line number expressions from metadata (not argument literal or inert) position
+            map!(ex.args, ex.args) do @nospecialize(x)
+                isa(x, Expr) && x.head === :line && length(x.args) == 1 && return Expr(:line, ln.line)
+                isa(x, Expr) && x.head === :line && length(x.args) == 2 && return Expr(:line, ln.line, ln.file)
+                isa(x, LineNumberNode) && return ln
+                return x
+            end
+        end
+        # preserve any linenums inside `esc(...)` guards
+        if ex.head !== :escape
+            for subex in ex.args
+                subex isa Expr && replace_linenums!(subex, ln)
+            end
+        end
+        return ex
+    end
+end
+
 """
     @thunk expr
 
@@ -144,11 +169,18 @@ Define a [`Thunk`](@ref) wrapping the `expr`, to lazily defer its evaluation.
 macro thunk(body)
     # Basically `:(Thunk(() -> $(esc(body))))` but use the location where it is defined.
     # so we get useful stack traces if it errors.
-    func = Expr(:->, Expr(:tuple), Expr(:block, __source__, body))
+    letargs = Base._lift_one_interp!(body)
+    func = replace_linenums!(:(()->($(esc(body)))), __source__)
     return quote
-        _usethunks() ?
-            Thunk($(esc(func))) :
-            $(esc(body))
+        if _usethunks()
+            let $(letargs...)
+                Thunk($func)
+            end
+        else
+            let $(letargs...)
+                $(esc(body))
+            end
+        end
     end
 end
 
