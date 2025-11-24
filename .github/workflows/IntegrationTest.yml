@@ -40,14 +40,14 @@ jobs:
             package: {user: JuliaDiff, repo: Diffractor.jl}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.julia-version }}
           arch: x64
       - uses: julia-actions/julia-buildpkg@v1
       - name: Clone Downstream
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           repository: ${{ matrix.package.user }}/${{ matrix.package.repo }}
           path: downstream
