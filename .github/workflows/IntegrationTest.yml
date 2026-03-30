@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   test:
-    name: ${{ matrix.package.repo }}
+    name: ${{ matrix.package.name }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -21,23 +21,23 @@ jobs:
         julia-version: [1]
         os: [ubuntu-latest]
         package:
-          - {user: JuliaDiff, repo: ChainRules.jl}
-          - {user: JuliaDiff, repo: ChainRulesTestUtils.jl}
-          - {user: JuliaDiff, repo: ChainRulesOverloadGeneration.jl}
-          - {user: JuliaMath, repo: SpecialFunctions.jl}
-          - {user: invenia, repo: BlockDiagonals.jl}
-          - {user: invenia, repo: PDMatsExtras.jl}
-          - {user: chrisbrahms, repo: Hankel.jl}
-          - {user: SciML, repo: DiffEqBase.jl}
-          - {user: SciML, repo: DataInterpolations.jl}
-          - {user: dfdx, repo: Yota.jl}
-          - {user: JuliaStats, repo: StatsFuns.jl}
-          - {user: JuliaStats, repo: LogExpFunctions.jl}
+          - {user: JuliaDiff, name: ChainRules}
+          - {user: JuliaDiff, name: ChainRulesTestUtils}
+          - {user: JuliaDiff, name: ChainRulesOverloadGeneration}
+          - {user: JuliaMath, name: SpecialFunctions}
+          - {user: invenia, name: BlockDiagonals}
+          - {user: invenia, name: PDMatsExtras}
+          - {user: chrisbrahms, name: Hankel}
+          - {user: SciML, name: DiffEqBase}
+          - {user: SciML, name: DataInterpolations}
+          - {user: dfdx, name: Yota}
+          - {user: JuliaStats, name: StatsFuns}
+          - {user: JuliaStats, name: LogExpFunctions}
         # Diffractor needs to run on Julia nightly
         include:
           - julia-version: nightly
             os: ubuntu-latest
-            package: {user: JuliaDiff, repo: Diffractor.jl}
+            package: {user: JuliaDiff, name: Diffractor}
 
     steps:
       - uses: actions/checkout@v6
@@ -45,21 +45,22 @@ jobs:
         with:
           version: ${{ matrix.julia-version }}
           arch: x64
+      - uses: julia-actions/cache@v3
       - uses: julia-actions/julia-buildpkg@v1
       - name: Clone Downstream
         uses: actions/checkout@v6
         with:
-          repository: ${{ matrix.package.user }}/${{ matrix.package.repo }}
+          repository: ${{ matrix.package.user }}/${{ matrix.package.name }}.jl
           path: downstream
       - name: Load this and run the downstream tests
-        shell: julia --project=downstream {0}
+        shell: julia --project=@temp {0}
         run: |
           using Pkg
           try
             # force it to use this PR's version of the package
-            Pkg.develop(PackageSpec(path="."))  # resolver may fail with main deps
+            Pkg.develop([PackageSpec(path="."), PackageSpec(path="downstream")])  # resolver may fail with main deps
             Pkg.update()
-            Pkg.test()  # resolver may fail with test time deps 
+            Pkg.test("${{ matrix.package.name }}")  # resolver may fail with test time deps
           catch err
             err isa Pkg.Resolve.ResolverError || rethrow()
             # If we can't resolve that means this is incompatible by SemVer and this is fine
