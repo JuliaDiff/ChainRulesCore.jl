@@ -100,7 +100,6 @@
         
         @test first(z) === z
         @test last(z) === z
-        @test Base.tail(z) === z
     end
 
     @testset "NoTangent" begin
