@@ -84,15 +84,11 @@ end
             @test getindex(Tangent{Tuple{Float64}}(@thunk 2.0^2), 1) == 4.0
             @test getproperty(Tangent{Tuple{Float64}}(2.0), 1) == 2.0
             @test getproperty(Tangent{Tuple{Float64}}(@thunk 2.0^2), 1) == 4.0
-            @test NoTangent() === @inferred Base.tail(tang1)
-            @test NoTangent() === @inferred Base.tail(Tangent{Tuple{}}())
             
             tang3 = Tangent{Tuple{Float64, String, Vector{Float64}}}(1.0, NoTangent(), @thunk [3.0] .+ 4)
             @test @inferred(first(tang3)) === tang3[1] === 1.0
             @test @inferred(last(tang3)) isa Thunk
             @test unthunk(last(tang3)) == [7.0]
-            @test Tuple(@inferred Base.tail(tang3))[1] === NoTangent()
-            @test Tuple(Base.tail(tang3))[end] isa Thunk
 
             NT = NamedTuple{(:a, :b),Tuple{Float64,Float64}}
             @test getindex(Tangent{NT}(; a=(@thunk 2.0^2)), :a) == 4.0
@@ -109,10 +105,6 @@ end
             @test unthunk(first(Tangent{NT}(; a=(@thunk 2.0^2)))) == 4.0
             @test last(Tangent{NT}(; a=(@thunk 2.0^2))) isa ZeroTangent
             
-            ntang1 = @inferred Base.tail(Tangent{NT}(; b=(@thunk 2.0^2)))
-            @test ntang1 isa Tangent{<:NamedTuple{(:b,)}}
-            @test NoTangent() === @inferred Base.tail(ntang1)
-
             # TODO: uncomment this once https://github.com/JuliaLang/julia/issues/35516
             # if VERSION >= v"1.8-"
             #     @test haskey(Tangent{Tuple{Float64}}(2.0), 1) == true
