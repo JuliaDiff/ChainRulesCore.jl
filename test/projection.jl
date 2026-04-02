@@ -457,7 +457,12 @@ struct NoSuperType end
         @test 0 == @ballocated $pdiag(dx) setup = (dx = Diagonal(rand(10^3)))
 
         psymm = ProjectTo(Symmetric(rand(10^3, 10^3)))
-        @test_broken 0 == @ballocated $psymm(dx) setup = (dx = Symmetric(rand(10^3, 10^3)))  # 64
+        allocs = @ballocated $psymm(dx) setup = (dx = Symmetric(rand(10^3, 10^3)))  # 64
+        if VERSION > v"1.13"
+            @test 0 == allocs
+        else
+            @test_broken 0 == allocs
+        end
     end
 
     @testset "#685" begin

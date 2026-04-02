@@ -208,16 +208,9 @@ function backing(x::T)::NamedTuple where {T}
     end
 end
 
-"""
-    _zeroed_backing(P)
-
-Returns a NamedTuple with same fields as `P`, and all values `ZeroTangent()`.
-"""
-@generated function _zeroed_backing(::Type{P}) where {P}
-    nil_base = ntuple(fieldcount(P)) do i
-        (fieldname(P, i), ZeroTangent())
-    end
-    return (; nil_base...)
+# Returns a NamedTuple with same fields as `P`, and all values `ZeroTangent()`
+function _zeroed_backing(::Type{T}) where {T}
+    return NamedTuple{fieldnames(T)}(ntuple(_ -> ZeroTangent(), fieldcount(T)))
 end
 
 """
@@ -299,7 +292,7 @@ function elementwise_add(a::NamedTuple{an}, b::NamedTuple{bn}) where {an,bn}
     end
 end
 
-elementwise_add(a::Dict, b::Dict) = merge(+, a, b)
+elementwise_add(a::Dict, b::Dict) = mergewith(+, a, b)
 
 struct PrimalAdditionFailedException{P} <: Exception
     primal::P

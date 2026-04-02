@@ -142,7 +142,7 @@ function Base.:+(a::P, d::StructuralTangent{P}) where {P}
         return construct(P, net_backing)
     end
 end
-Base.:+(a::Dict, d::Tangent{P}) where {P} = merge(+, a, backing(d))
+Base.:+(a::Dict, d::Tangent{P}) where {P} = mergewith(+, a, backing(d))
 Base.:+(a::StructuralTangent{P}, b::P) where {P} = b + a
 
 Base.:-(tangent::StructuralTangent{P}) where {P} = map(-, tangent)
