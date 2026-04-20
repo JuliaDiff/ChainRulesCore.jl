@@ -1,20 +1,20 @@
 # What to return for non-differentiable points
 !!! info "What is the short version?"
-    If the function is not-differentiable choose to return something useful rather than erroring.
-    For a branch a function is not differentiable due to e.g. a branch, like `abs`, your rule can reasonably claim the derivative at that point is the value from either branch, *or* any value in-between.
+    If the function is not differentiable choose to return something useful rather than erroring.
+    If a function is not differentiable due to e.g. a branch, like `abs`, your rule can reasonably claim the derivative at that point is the value from either branch, *or* any value in-between.
     In particular for local optima (like in the case of `abs`) claiming the derivative is 0 is a good idea.
-    Similarly, if derivative is from one side is not defined, or is not finite, return the derivative from the other side.
+    Similarly, if the derivative from one side is not defined, or is not finite, return the derivative from the other side.
     Throwing an error, or returning `NaN` is generally the least useful option.
 
-However, contrary to what calculus says most autodiff systems will return an answer for such functions.
-For example for: `abs_left(x) = (x <= 0) ? -x : x`, AD will say the derivative at `x=0` is `-1`.
-Alternatively for:  `abs_right(x) = (x < 0) ? -x : x`, AD will say the derivative at `x=0` is `1`.
+Contrary to what calculus says most autodiff systems will return a derivative even at non-differentiable points.
+For example for: `abs_left(x) = x <= 0 ? -x : x`, AD will say the derivative at `x=0` is `-1`.
+Alternatively for:  `abs_right(x) = x < 0 ? -x : x`, AD will say the derivative at `x=0` is `1`.
 Those two examples are weird since they are equal at all points, but AD claims different derivatives at `x=0`.
 The way to fix autodiff systems being weird is to write custom rules.
 So what rule should we write for this case?
 
-The obvious answer, would be to write a rule that throws an error if input at a point where calculus says the derivative is not defined.
-Another option is to return some error signally value like `NaN`.
+The obvious answer would be to write a rule that throws an error at a point where calculus says the derivative is not defined.
+Another option is to return some error signaling value like `NaN`.
 Which you *can* do.
 However, there is no where to go with an error, the user still wants a derivative; so this is not useful.
 
@@ -45,7 +45,7 @@ plot(abs)
 $$\operatorname{abs}'(0) = \lim_{h \to 0^-} \dfrac{\operatorname{abs}(0)-\operatorname{abs}(0-h)}{0-h} = -1$$
 $$\operatorname{abs}'(0) = \lim_{h \to 0^+} \dfrac{\operatorname{abs}(0)-\operatorname{abs}(0-h)}{0-h} = 1$$
 
-Now, as discussed in the introduction, the AD system would on it's own choose either 1 or -1, depending on implementation.
+Now, as discussed in the introduction, the AD system would on its own choose either 1 or -1, depending on implementation.
 
 We however have a potentially much nicer answer available to use: 0.
 
@@ -116,7 +116,7 @@ Our alternatives would be to consider the derivative at `nextfloat(0.0)` or `pre
 But this is more or less the same as choosing some large value -- in this case an extremely large value that will rapidly overflow.
 
 
-### Derivative on-finite and different on both sides
+### Derivative nonfinite and different on both sides
 
 ```@example nondiff
 plot(x-> sign(x) * cbrt(x))
