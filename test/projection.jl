@@ -1,6 +1,7 @@
 using ChainRulesCore, Test
 using LinearAlgebra, SparseArrays
 using OffsetArrays, StaticArrays, BenchmarkTools
+using Random: rand!
 
 # Like ForwardDiff.jl's Dual
 struct Dual{T<:Real} <: Real
@@ -353,6 +354,62 @@ struct NoSuperType end
 
         @test_throws DimensionMismatch pv(ones(Int, 1, 30))
         @test_throws DimensionMismatch pm(ones(Int, 5, 20))
+    end
+
+    @testset "SparseArrays: Hermitian/Symmetric" begin
+        n = 100
+
+        function rand_sparse(SymHerm, T, n, uplo; density=0.3)
+            A = sprand(T, n, n, density)
+            if uplo == :U
+                return SymHerm(triu(A), uplo)
+            else
+                return SymHerm(tril(A), uplo)
+            end
+        end
+
+        function rand_tangent(A, uplo=Symbol(A.uplo))
+            dA = similar(A)
+            rand!(nonzeros(parent(dA)))
+            return typeof(A).name.wrapper(parent(dA), uplo)
+        end
+
+        function nzmatch(A, B)
+            I, J, _ = findnz(parent(A))
+            return all(A[i, j] == B[i, j] for (i, j) in zip(I, J))
+        end
+
+        @testset "$(SymHerm){$T}, uplo=:$uplo" for
+            SymHerm in (Symmetric, Hermitian),
+            T in (Float64, ComplexF64),
+            uplo in (:U, :L)
+
+            A = rand_sparse(SymHerm, T, n, uplo)
+            P = ProjectTo(A)
+
+            # Same pattern
+            dA = rand_tangent(A)
+            @test P(dA) == dA
+
+            # Different uplo
+            other = uplo == :U ? :L : :U
+            dA2 = rand_tangent(A, other)
+            @test P(dA2) isa SymHerm{T, <:SparseMatrixCSC}
+            @test nzmatch(P(dA2), dA2)
+
+            # Different pattern
+            B = rand_sparse(SymHerm, T, n, uplo; density=0.5)
+            @test P(B) isa SymHerm{T, <:SparseMatrixCSC}
+            @test nzmatch(P(B), B)
+        end
+
+        @testset "Cross-type (real)" begin
+            AH = rand_sparse(Hermitian, Float64, n, :U)
+            AS = rand_sparse(Symmetric, Float64, n, :U)
+
+            @test ProjectTo(AH)(rand_tangent(AS)) isa Hermitian{Float64, <:SparseMatrixCSC}
+            @test ProjectTo(AS)(rand_tangent(AH)) isa Symmetric{Float64, <:SparseMatrixCSC}
+        end
     end
 
     #####
