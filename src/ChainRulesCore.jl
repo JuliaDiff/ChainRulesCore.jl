@@ -6,7 +6,7 @@ using Compat: hasfield, hasproperty, ismutabletype, Returns
 
 export frule, rrule  # core function
 # rule configurations
-export RuleConfig, HasReverseMode, NoReverseMode, HasForwardsMode, NoForwardsMode
+export RuleConfig, HasReverseMode, NoReverseMode, HasForwardsMode, NoForwardsMode, Reuseable, NotReuseable
 export frule_via_ad, rrule_via_ad
 # definition helper macros
 export @non_differentiable, @opt_out, @scalar_rule, @thunk, @not_implemented
