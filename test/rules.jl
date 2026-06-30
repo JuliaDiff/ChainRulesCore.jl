@@ -94,7 +94,7 @@ _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
     frx, nice_pushforward = frule((dself, 1), nice, 1)
     @test nice_pushforward === ZeroTangent()
     rrx, nice_pullback = rrule(nice, 1)
-    @test (NoTangent(), ZeroTangent()) === nice_pullback(1)
+    @test (NoTangent(), 0.0) === nice_pullback(1)
 
     # Test that these run. Do not care about numerical correctness.
     @test frule((nothing, 1.0, 1.0, 1.0), varargs_function, 0.5, 0.5, 0.5) == (1.5, 3.0)
