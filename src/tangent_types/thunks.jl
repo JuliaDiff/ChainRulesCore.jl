@@ -30,7 +30,6 @@ end
 
 Base.first(x::AbstractThunk) = first(unthunk(x))
 Base.last(x::AbstractThunk) = last(unthunk(x))
-Base.tail(x::AbstractThunk) = Base.tail(unthunk(x))
 
 Base.:(==)(a::AbstractThunk, b::AbstractThunk) = unthunk(a) == unthunk(b)
 
