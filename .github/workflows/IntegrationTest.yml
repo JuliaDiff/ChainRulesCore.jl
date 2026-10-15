@@ -11,6 +11,11 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 
+# needed to allow julia-actions/cache to delete old caches that it has created
+permissions:
+  actions: write
+  contents: read
+
 jobs:
   test:
     name: ${{ matrix.package.name }}
@@ -44,7 +49,6 @@ jobs:
       - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.julia-version }}
-          arch: x64
       - uses: julia-actions/cache@v3
       - uses: julia-actions/julia-buildpkg@v1
       - name: Clone Downstream

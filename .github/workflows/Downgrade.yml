@@ -10,27 +10,34 @@ on:
       - main
     paths-ignore:
       - 'docs/**'
+concurrency:
+  # Skip intermediate builds: always.
+  # Cancel intermediate builds: only if it is a pull request build.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+
+# needed to allow julia-actions/cache to delete old caches that it has created
+permissions:
+  actions: write
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        group:
-          - Core
         downgrade_mode: ['alldeps']
-        julia-version: ['1.10']
+        julia-version: ['lts']
     steps:
       - uses: actions/checkout@v7
       - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.julia-version }}
+      - uses: julia-actions/cache@v3
       - uses: julia-actions/julia-downgrade-compat@v2
-#        if: ${{ matrix.version == '1.6' }}
         with:
-          skip: Pkg,TOML
+          mode: ${{ matrix.downgrade_mode }}
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
         with:
           ALLOW_RERESOLVE: false
-        env:
-          GROUP: ${{ matrix.group }}
