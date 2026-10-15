@@ -457,12 +457,11 @@ struct NoSuperType end
         @test 0 == @ballocated $pdiag(dx) setup = (dx = Diagonal(rand(10^3)))
 
         psymm = ProjectTo(Symmetric(rand(10^3, 10^3)))
-        allocs = @ballocated $psymm(dx) setup = (dx = Symmetric(rand(10^3, 10^3)))  # 64
-        if VERSION > v"1.13"
-            @test 0 == allocs
-        else
-            @test_broken 0 == allocs
-        end
+        # The Union{Symmetric{…,Matrix}, Symmetric{…,ReshapedArray}} return value is only
+        # unboxed since JuliaLang/julia#55045 (sret_union ABI for pointer-ful types)
+        @test 0 == @ballocated($psymm(dx), setup = (dx = Symmetric(rand(10^3, 10^3)))) broken = (
+            VERSION < v"1.14.0-DEV.1348"
+        )
     end
 
     @testset "#685" begin

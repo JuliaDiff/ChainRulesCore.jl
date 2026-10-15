@@ -29,6 +29,10 @@ struct NonDiffCounterExample
     x
 end
 
+struct NonDiffTypeExample
+    x
+end
+
 module NonDiffModuleExample
 nondiff_2_1(x, y) = fill(7.5, 100)[x + y]
 end
@@ -142,6 +146,15 @@ end
             # make sure that isn't happenning
             @test frule((ZeroTangent(), 1.2), NonDiffCounterExample, 2.0) === nothing
             @test rrule(NonDiffCounterExample, 2.0) === nothing
+
+            # https://github.com/JuliaDiff/ChainRulesCore.jl/issues/713
+            # a more specific hand-written `::Type{T}` rule must not be ambiguous
+            @non_differentiable NonDiffTypeExample(::Any)
+            function ChainRulesCore.rrule(::Type{NonDiffTypeExample}, x::Float64)
+                return NonDiffTypeExample(x), Δ -> (NoTangent(), 2Δ)
+            end
+            @test rrule(NonDiffTypeExample, 2.0)[2](1.2) == (NoTangent(), 2.4)
+            @test rrule(NonDiffTypeExample, 2)[2](1.2) == (NoTangent(), NoTangent())
         end
 
         @testset "Varargs" begin
