@@ -43,10 +43,10 @@ function ChainRulesCore.frule(
     return type_constraints(x, y), Δx + Δy
 end
 
-mixed_vararg_type_constaint(x::Float64, y::Real, z::Vararg{Float64}) = x + y + sum(z)
+mixed_vararg_type_constraint(x::Float64, y::Real, z::Vararg{Float64}) = x + y + sum(z)
 function ChainRulesCore.frule(
     dargs::Tuple{Any,Float64,Real,Vararg{Float64}},
-    ::typeof(mixed_vararg_type_constaint),
+    ::typeof(mixed_vararg_type_constraint),
     x::Float64,
     y::Real,
     z::Vararg{Float64},
@@ -107,12 +107,12 @@ _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
 
     @test(
         frule(
-            (nothing, 3.0, 2.0, 1.0, 0.0), mixed_vararg_type_constaint, 3.0, 2.0, 1.0, 0.0
+            (nothing, 3.0, 2.0, 1.0, 0.0), mixed_vararg_type_constraint, 3.0, 2.0, 1.0, 0.0
         ) == (6.0, 6.0)
     )
 
     # violates type constraints, thus an frule should not be found.
-    @test frule((nothing, 3, 2.0, 1.0, 5.0), mixed_vararg_type_constaint, 3, 2.0, 1.0, 0) ==
+    @test frule((nothing, 3, 2.0, 1.0, 5.0), mixed_vararg_type_constraint, 3, 2.0, 1.0, 0) ==
           nothing
 
     @test frule((nothing, nothing, 5.0), Core._apply, dummy_identity, 4.0) == (4.0, 5.0)

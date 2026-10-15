@@ -183,7 +183,7 @@ end
 (::ProjectTo{T})(dx::Integer) where {T<:Complex{<:AbstractFloat}} = convert(T, dx)
 
 # Other numbers, including e.g. ForwardDiff.Dual and Symbolics.Sym, should pass through.
-# We assume (lacking evidence to the contrary) that it is the right subspace of numebers.
+# We assume (lacking evidence to the contrary) that it is the right subspace of numbers.
 (::ProjectTo{<:Number})(dx::Number) = dx
 
 (project::ProjectTo{<:Real})(dx::Complex) = project(real(dx))
@@ -275,7 +275,7 @@ end
 #####
 
 # Ref
-# Note that Ref is mutable. This causes Zygote to represent its structral tangent not as a NamedTuple,
+# Note that Ref is mutable. This causes Zygote to represent its structural tangent not as a NamedTuple,
 # but as `Ref{Any}((x=val,))`. Here we use a Tangent, there is at present no mutable version, but see
 # https://github.com/JuliaDiff/ChainRulesCore.jl/issues/105
 function ProjectTo(x::Ref)

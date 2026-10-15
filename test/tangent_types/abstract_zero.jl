@@ -104,22 +104,22 @@
     end
 
     @testset "NoTangent" begin
-        dne = NoTangent()
-        @test dne + dne == dne
-        @test dne + 1 == 1
-        @test 1 + dne == 1
-        @test dne - dne == dne
-        @test dne - 1 == -1
-        @test 1 - dne == 1
-        @test -dne == dne
-        @test dne * dne == dne
-        @test dne * 11.1 == dne
-        @test 12.1 * dne == dne
-        @test dot(dne, dne) == dne
-        @test dot(dne, 17.2) == dne
-        @test dot(11.9, dne) == dne
+        nt = NoTangent()
+        @test nt + nt == nt
+        @test nt + 1 == 1
+        @test 1 + nt == 1
+        @test nt - nt == nt
+        @test nt - 1 == -1
+        @test 1 - nt == 1
+        @test -nt == nt
+        @test nt * nt == nt
+        @test nt * 11.1 == nt
+        @test 12.1 * nt == nt
+        @test dot(nt, nt) == nt
+        @test dot(nt, 17.2) == nt
+        @test dot(11.9, nt) == nt
 
-        @test eltype(dne) === NoTangent
+        @test eltype(nt) === NoTangent
         @test eltype(NoTangent) === NoTangent
 
         @test promote_type(NoTangent, Bool) == Bool
@@ -131,36 +131,36 @@
         @test promote_type(NoTangent, ComplexF64) == ComplexF64
         @test promote_type(ComplexF64, NoTangent) == ComplexF64
 
-        @test ZeroTangent() + dne == dne
-        @test dne + ZeroTangent() == dne
-        @test ZeroTangent() - dne == dne
-        @test dne - ZeroTangent() == dne
+        @test ZeroTangent() + nt == nt
+        @test nt + ZeroTangent() == nt
+        @test ZeroTangent() - nt == nt
+        @test nt - ZeroTangent() == nt
 
-        @test ZeroTangent() * dne == ZeroTangent()
-        @test dne * ZeroTangent() == ZeroTangent()
-        @test dot(ZeroTangent(), dne) == ZeroTangent()
-        @test dot(dne, ZeroTangent()) == ZeroTangent()
+        @test ZeroTangent() * nt == ZeroTangent()
+        @test nt * ZeroTangent() == ZeroTangent()
+        @test dot(ZeroTangent(), nt) == ZeroTangent()
+        @test dot(nt, ZeroTangent()) == ZeroTangent()
 
         @test norm(ZeroTangent()) == 0
         @test norm(ZeroTangent(), 0.4) == 0
 
-        for x in dne
-            @test x === dne
+        for x in nt
+            @test x === nt
         end
-        @test broadcastable(dne) isa Ref{NoTangent}
+        @test broadcastable(nt) isa Ref{NoTangent}
         for f in (transpose, adjoint, conj)
-            @test f(dne) === dne
+            @test f(nt) === nt
         end
-        @test dne / 2 === dne / [1, 3] === dne
+        @test nt / 2 === nt / [1, 3] === nt
 
         @test convert(Int64, NoTangent()) == 0
         @test convert(Float64, NoTangent()) == 0.0
 
-        @test dne[1] === dne
-        @test dne[1:3] === dne
-        @test dne[1, 2] === dne
-        @test getindex(dne) === dne
-        @test dne.foo === dne
+        @test nt[1] === nt
+        @test nt[1:3] === nt
+        @test nt[1, 2] === nt
+        @test getindex(nt) === nt
+        @test nt.foo === nt
     end
 
     @testset "ambiguities" begin
@@ -228,7 +228,7 @@ end
     end
 
     @testset "Weird types" begin
-        @test iszero(zero_tangent(typeof(Int)))  # primative type
+        @test iszero(zero_tangent(typeof(Int)))  # primitive type
         @test iszero(zero_tangent(typeof(Base.RefValue)))  # struct
         @test iszero(zero_tangent(Vector))  # UnionAll
         @test iszero(zero_tangent(Union{Int, Float64}))  # Union

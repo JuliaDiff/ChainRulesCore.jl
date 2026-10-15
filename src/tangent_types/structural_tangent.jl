@@ -4,12 +4,12 @@
 Representing the type of the tangent of a `struct` `P` (or a `Tuple`/`NamedTuple`).
 as an object with mirroring fields.
 
-!!! warning "Exprimental"
+!!! warning "Experimental"
     `StructuralTangent` is an experimental feature, and is part of the mutation support featureset.
     The `StructuralTangent` constructor returns a `MutableTangent` for mutable structs.
     `MutableTangent` is an experimental feature.
     Thus use of `StructuralTangent` (rather than `Tangent` directly) is also experimental.
-    While this notice remains it may have changes in behavour, and interface in any _minor_ version of ChainRulesCore.
+    While this notice remains it may have changes in behaviour, and interface in any _minor_ version of ChainRulesCore.
 """
 abstract type StructuralTangent{P} <: AbstractTangent end
 
@@ -32,7 +32,7 @@ For `Tangent`s of `Tuple`s, `iterate` and `getindex` are overloaded to behave si
 to for a tuple.
 For `Tangent`s of `struct`s, `getproperty` is overloaded to allow for accessing values
 via `tangent.fieldname`.
-Any fields not explictly present in the `Tangent` are treated as being set to `ZeroTangent()`.
+Any fields not explicitly present in the `Tangent` are treated as being set to `ZeroTangent()`.
 To make a `Tangent` have all the fields of the primal the [`canonicalize`](@ref)
 function is provided.
 """
@@ -60,15 +60,15 @@ end
 This type represents the tangent to a mutable struct.
 It itself is also mutable.
 
-!!! warning "Exprimental"
+!!! warning "Experimental"
     MutableTangent is an experimental feature, and is part of the mutation support featureset.
-    While this notice remains it may have changes in behavour, and interface in any _minor_ version of ChainRulesCore.
+    While this notice remains it may have changes in behaviour, and interface in any _minor_ version of ChainRulesCore.
     Exactly how it should be used (e.g. is it forward-mode only?)
 
 !!! warning "Do not directly mess with the tangent backing data"
     It is relatively straight forward for a forwards-mode AD to work correctly in the presence of mutation and aliasing of primal values.
     However, this requires that the tangent is aliased in turn and conversely that it is copied when the primal is).
-    If you seperately alias the backing data, etc by using the internal `ChainRulesCore.backing` function you can break this.
+    If you separately alias the backing data, etc by using the internal `ChainRulesCore.backing` function you can break this.
 """
 struct MutableTangent{P,F} <: StructuralTangent{P}
     backing::F
@@ -127,7 +127,7 @@ Base.iszero(t::StructuralTangent) = all(iszero, backing(t))
 
 function Base.map(f, tangent::StructuralTangent{P}) where {P}
     #TODO: is it even useful to support this on MutableTangents?
-    #TODO: we implictly assume only linear `f` are called and that it is safe to ignore noncanonical Zeros
+    #TODO: we implicitly assume only linear `f` are called and that it is safe to ignore noncanonical Zeros
     # This feels like a fair assumption since all normal operations on tangents are linear
     L = propertynames(backing(tangent))
     vals = map(f, Tuple(backing(tangent)))
@@ -185,7 +185,7 @@ backing(x::MutableTangent) = map(getindex, getfield(x, :backing))
 # For generic structs
 function backing(x::T)::NamedTuple where {T}
     # note: all computation outside the if @generated happens at runtime.
-    # so the first 4 lines of the branchs look the same, but can not be moved out.
+    # so the first 4 lines of the branches look the same, but can not be moved out.
     # see https://github.com/JuliaLang/julia/issues/34283
     if @generated
         !isstructtype(T) &&
@@ -223,7 +223,7 @@ This internally is called to construct structs of the primal type `T`,
 after an operation such as the addition of a primal to a tangent
 
 It should be overloaded, if `T` does not have a default constructor,
-or if `T` needs to maintain some invarients between its fields.
+or if `T` needs to maintain some invariants between its fields.
 """
 function construct(::Type{T}, fields::NamedTuple{L}) where {T,L}
     # Tested and verified that that this avoids a ton of allocations
@@ -246,7 +246,7 @@ construct(::Type{T}, fields::T) where {T<:Tuple} = fields
 elementwise_add(a::Tuple, b::Tuple) = map(+, a, b)
 
 function elementwise_add(a::NamedTuple{an}, b::NamedTuple{bn}) where {an,bn}
-    # Rule of Tangent addition: any fields not present are implict hard Zeros
+    # Rule of Tangent addition: any fields not present are implicit hard Zeros
 
     # Base on the `merge(:;NamedTuple, ::NamedTuple)` code from Base.
     # https://github.com/JuliaLang/julia/blob/592748adb25301a45bd6edef3ac0a93eed069852/base/namedtuple.jl#L220-L231
@@ -422,7 +422,7 @@ Base.conj(tangent::Tangent) = map(conj, tangent)
 
 Return the canonical `Tangent` for the primal type `P`.
 The property names of the returned `Tangent` match the field names of the primal,
-and all fields of `P` not present in the input `tangent` are explictly set to `ZeroTangent()`.
+and all fields of `P` not present in the input `tangent` are explicitly set to `ZeroTangent()`.
 """
 function canonicalize(tangent::Tangent{P,<:NamedTuple{L}}) where {P,L}
     nil = _zeroed_backing(P)

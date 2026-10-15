@@ -14,7 +14,7 @@
 
 | ⚠️ The ChainRules project is currently seeking a new primary maintainer ⚠️                                                                                                                                                                                                                                                                    |
 |---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| See this [Discourse thread](https://discourse.julialang.org/t/chainrules-project-looking-for-a-new-primary-maintainer/115636). We currently have many secondary maintainers and contributors with commit rights, but noone who has committed to leading the efforts. Until this is resolved PRs and issues may not recieve timely response. |
+| See this [Discourse thread](https://discourse.julialang.org/t/chainrules-project-looking-for-a-new-primary-maintainer/115636). We currently have many secondary maintainers and contributors with commit rights, but noone who has committed to leading the efforts. Until this is resolved PRs and issues may not receive timely response. |
 
 The ChainRulesCore package provides a light-weight dependency for defining sensitivities for functions in your packages, without you needing to depend on ChainRules itself.
 

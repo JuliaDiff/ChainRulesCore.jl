@@ -143,7 +143,7 @@ end
 
             # https://github.com/JuliaDiff/ChainRulesCore.jl/issues/213
             # problem was that `@nondiff Foo(x)` was also defining rules for other types.
-            # make sure that isn't happenning
+            # make sure that isn't happening
             @test frule((ZeroTangent(), 1.2), NonDiffCounterExample, 2.0) === nothing
             @test rrule(NonDiffCounterExample, 2.0) === nothing
 
