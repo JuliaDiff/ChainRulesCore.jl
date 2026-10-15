@@ -108,33 +108,6 @@ Use `Type{<:Bar}` (with the `<:`) for non-concrete types, such that the `rrule` 
 In particular, be careful not to use `typeof(Bar)` here.
 Because `typeof(Bar)` is `DataType`, using this to define an `rrule`/`frule` will define an `rrule`/`frule` for all constructors.
 
-You can check which to use with `Core.Typeof`:
-
-```julia-repl
-julia> function foo end
-foo (generic function with 0 methods)
-
-julia> typeof(foo)
-typeof(foo)
-
-julia> Core.Typeof(foob)
-typeof(foo)
-
-julia> typeof(Bar)
-DataType
-
-julia> Core.Typeof(Bar)
-Type{Bar}
-
-julia> abstract type AbstractT end
-
-julia> typeof(AbstractT)
-DataType
-
-julia> Core.Typeof(AbstractT)
-Type{AbstractT}
-```
-
 ### Functors (callable objects)
 
 In contrast to defining a rule for a constructor, it is possible to define rules for calling an instance of an object.
