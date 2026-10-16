@@ -224,9 +224,11 @@ function (project::ProjectTo{AbstractArray})(dx::AbstractArray{S,M}) where {S,M}
     dy = if axes(dx) === project.axes
         dx
     else
-        for d in 1:max(M, length(project.axes))
-            if size(dx, d) != length(get(project.axes, d, 1))
-                throw(_projection_mismatch(project.axes, size(dx)))
+        if !isempty(dx)
+            for d in 1:max(M, length(project.axes))
+                if size(dx, d) != length(get(project.axes, d, 1))
+                    throw(_projection_mismatch(project.axes, size(dx)))
+                end
             end
         end
         reshape(dx, project.axes)
