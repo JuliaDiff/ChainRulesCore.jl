@@ -275,7 +275,7 @@ end
 """
     _propagator_inputs(n)
 
-Declares properly hygenic inputs for propagation expressions
+Declares properly hygienic inputs for propagation expressions
 """
 _propagator_inputs(n) = [esc(gensym(Symbol(:Δ, i))) for i in 1:n]
 
@@ -487,7 +487,7 @@ end
 This allows you to opt-out of an `frule` or an `rrule` by providing a more specific method,
 that says to use the AD system to differentiate it.
 
-For example, consider some function `foo(x::AbtractArray)`.
+For example, consider some function `foo(x::AbstractArray)`.
 In general, you know an efficient and generic way to implement its `rrule`.
 You do so, (likely making use of [`ProjectTo`](@ref)).
 But it actually turns out that for some `FancyArray` type it is better to let the AD do its

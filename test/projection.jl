@@ -458,7 +458,7 @@ struct NoSuperType end
 
         psymm = ProjectTo(Symmetric(rand(10^3, 10^3)))
         # The Union{Symmetric{…,Matrix}, Symmetric{…,ReshapedArray}} return value is only
-        # unboxed since JuliaLang/julia#55045 (sret_union ABI for pointer-ful types)
+        # unboxed since JuliaLang/julia#55045 (sret_union ABI for types containing pointers)
         @test 0 == @ballocated($psymm(dx), setup = (dx = Symmetric(rand(10^3, 10^3)))) broken = (
             VERSION < v"1.14.0-DEV.1348"
         )

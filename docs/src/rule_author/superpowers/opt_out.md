@@ -24,7 +24,7 @@ end
 That is a fairly reasonable `rrule` for the vast majority of cases.
 You might have a custom array type for which you could write a faster rule.
 In which case you would do that, by writing a faster, more specific, `rrule`.
-But sometimes, it is the case that ADing the (faster, more specific) primal for your custom array type would yeild the faster pullback without you having to write a `rrule` by hand.
+But sometimes, it is the case that ADing the (faster, more specific) primal for your custom array type would yield the faster pullback without you having to write a `rrule` by hand.
 
 Consider a summing  [`SkewSymmetric` (anti-symmetric)](https://en.wikipedia.org/wiki/Skew-symmetric_matrix) matrix.
 The skew symmetric matrix has structural zeros on the diagonal, and off-diagonals are paired with their negation.

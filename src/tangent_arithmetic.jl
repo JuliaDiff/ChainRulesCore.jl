@@ -10,7 +10,7 @@ Notice:
     The precedence goes:
     `NotImplemented, NoTangent, ZeroTangent, AbstractThunk, Tangent, Any`
     Thus each of the @eval loops create most definitions of + and *
-    defines the combination this type with all types of  lower precidence.
+    defines the combination this type with all types of  lower precedence.
     This means each eval loops is 1 item smaller than the previous.
 ==#
 
