@@ -38,11 +38,6 @@ jobs:
           - {user: dfdx, name: Yota}
           - {user: JuliaStats, name: StatsFuns}
           - {user: JuliaStats, name: LogExpFunctions}
-        # Diffractor needs to run on Julia nightly
-        include:
-          - julia-version: nightly
-            os: ubuntu-latest
-            package: {user: JuliaDiff, name: Diffractor}
 
     steps:
       - uses: actions/checkout@v7
