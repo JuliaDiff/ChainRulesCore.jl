@@ -457,11 +457,16 @@ struct NoSuperType end
         @test 0 == @ballocated $pdiag(dx) setup = (dx = Diagonal(rand(10^3)))
 
         psymm = ProjectTo(Symmetric(rand(10^3, 10^3)))
-        # The Union{Symmetric{…,Matrix}, Symmetric{…,ReshapedArray}} return value is only
-        # unboxed since JuliaLang/julia#55045 (sret_union ABI for pointer-ful types)
-        @test 0 == @ballocated($psymm(dx), setup = (dx = Symmetric(rand(10^3, 10^3)))) broken = (
-            VERSION < v"1.14.0-DEV.1348"
-        )
+        @test 0 == @ballocated $psymm(dx) setup = (dx = Symmetric(rand(10^3, 10^3)))
+    end
+
+    @testset "#407" begin
+        @test @inferred(ProjectTo(rand(3, 3))(Diagonal(rand(3)))) isa Diagonal{Float64}
+        pupp = ProjectTo(UpperTriangular(rand(3, 3)))
+        @test @inferred(pupp(UpperTriangular(rand(3, 3)))) isa UpperTriangular{Float64}
+        psymm = ProjectTo(Symmetric(rand(3, 3)))
+        @test @inferred(psymm(Symmetric(rand(3, 3)))) isa Symmetric{Float64}
+        @test_throws DimensionMismatch ProjectTo(rand(3, 3))(Diagonal(rand(2)))
     end
 
     @testset "#685" begin
