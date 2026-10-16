@@ -134,7 +134,7 @@ end
                 zero_tangent(getfield(primal, $(QuoteNode(fname))))
             else
                 # This is going to be potentially bad, but that's what they get for not giving us a primal
-                # This will never me mutated inplace, rather it will always be replaced with an actual value first
+                # This will never be mutated inplace, rather it will always be replaced with an actual value first
                 ZeroTangent()
             end
         )

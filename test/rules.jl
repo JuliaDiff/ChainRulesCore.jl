@@ -112,8 +112,9 @@ _second(t) = Base.tuple_type_head(Base.tuple_type_tail(t))
     )
 
     # violates type constraints, thus an frule should not be found.
-    @test frule((nothing, 3, 2.0, 1.0, 5.0), mixed_vararg_type_constraint, 3, 2.0, 1.0, 0) ==
-          nothing
+    @test frule(
+        (nothing, 3, 2.0, 1.0, 5.0), mixed_vararg_type_constraint, 3, 2.0, 1.0, 0
+    ) == nothing
 
     @test frule((nothing, nothing, 5.0), Core._apply, dummy_identity, 4.0) == (4.0, 5.0)
 

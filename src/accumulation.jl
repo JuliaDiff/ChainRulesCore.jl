@@ -93,8 +93,7 @@ function Base.showerror(io::IO, err::BadInplaceException)
 
     if err.accumuland == err.returned_value
         println(
-            io,
-            "Which in this case happened to be equal. But they are not the same object.",
+            io, "Which in this case happened to be equal. But they are not the same object."
         )
     end
 end

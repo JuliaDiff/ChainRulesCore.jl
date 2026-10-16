@@ -188,7 +188,7 @@ julia> unthunk(t)
 ### When to `@thunk`?
 When writing `rrule`s (and to a lesser extent `frule`s), it is important to `@thunk`
 appropriately.
-Propagation rules that return multiple derivatives may not have all deriviatives used.
+Propagation rules that return multiple derivatives may not have all derivatives used.
  By `@thunk`ing the work required for each derivative, they then compute only what is needed.
 
 #### How do thunks prevent work?

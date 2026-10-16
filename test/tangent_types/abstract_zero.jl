@@ -104,22 +104,22 @@
     end
 
     @testset "NoTangent" begin
-        nt = NoTangent()
-        @test nt + nt == nt
-        @test nt + 1 == 1
-        @test 1 + nt == 1
-        @test nt - nt == nt
-        @test nt - 1 == -1
-        @test 1 - nt == 1
-        @test -nt == nt
-        @test nt * nt == nt
-        @test nt * 11.1 == nt
-        @test 12.1 * nt == nt
-        @test dot(nt, nt) == nt
-        @test dot(nt, 17.2) == nt
-        @test dot(11.9, nt) == nt
+        no_tangent = NoTangent()
+        @test no_tangent + no_tangent == no_tangent
+        @test no_tangent + 1 == 1
+        @test 1 + no_tangent == 1
+        @test no_tangent - no_tangent == no_tangent
+        @test no_tangent - 1 == -1
+        @test 1 - no_tangent == 1
+        @test -no_tangent == no_tangent
+        @test no_tangent * no_tangent == no_tangent
+        @test no_tangent * 11.1 == no_tangent
+        @test 12.1 * no_tangent == no_tangent
+        @test dot(no_tangent, no_tangent) == no_tangent
+        @test dot(no_tangent, 17.2) == no_tangent
+        @test dot(11.9, no_tangent) == no_tangent
 
-        @test eltype(nt) === NoTangent
+        @test eltype(no_tangent) === NoTangent
         @test eltype(NoTangent) === NoTangent
 
         @test promote_type(NoTangent, Bool) == Bool
@@ -131,36 +131,36 @@
         @test promote_type(NoTangent, ComplexF64) == ComplexF64
         @test promote_type(ComplexF64, NoTangent) == ComplexF64
 
-        @test ZeroTangent() + nt == nt
-        @test nt + ZeroTangent() == nt
-        @test ZeroTangent() - nt == nt
-        @test nt - ZeroTangent() == nt
+        @test ZeroTangent() + no_tangent == no_tangent
+        @test no_tangent + ZeroTangent() == no_tangent
+        @test ZeroTangent() - no_tangent == no_tangent
+        @test no_tangent - ZeroTangent() == no_tangent
 
-        @test ZeroTangent() * nt == ZeroTangent()
-        @test nt * ZeroTangent() == ZeroTangent()
-        @test dot(ZeroTangent(), nt) == ZeroTangent()
-        @test dot(nt, ZeroTangent()) == ZeroTangent()
+        @test ZeroTangent() * no_tangent == ZeroTangent()
+        @test no_tangent * ZeroTangent() == ZeroTangent()
+        @test dot(ZeroTangent(), no_tangent) == ZeroTangent()
+        @test dot(no_tangent, ZeroTangent()) == ZeroTangent()
 
         @test norm(ZeroTangent()) == 0
         @test norm(ZeroTangent(), 0.4) == 0
 
-        for x in nt
-            @test x === nt
+        for x in no_tangent
+            @test x === no_tangent
         end
-        @test broadcastable(nt) isa Ref{NoTangent}
+        @test broadcastable(no_tangent) isa Ref{NoTangent}
         for f in (transpose, adjoint, conj)
-            @test f(nt) === nt
+            @test f(no_tangent) === no_tangent
         end
-        @test nt / 2 === nt / [1, 3] === nt
+        @test no_tangent / 2 === no_tangent / [1, 3] === no_tangent
 
         @test convert(Int64, NoTangent()) == 0
         @test convert(Float64, NoTangent()) == 0.0
 
-        @test nt[1] === nt
-        @test nt[1:3] === nt
-        @test nt[1, 2] === nt
-        @test getindex(nt) === nt
-        @test nt.foo === nt
+        @test no_tangent[1] === no_tangent
+        @test no_tangent[1:3] === no_tangent
+        @test no_tangent[1, 2] === no_tangent
+        @test getindex(no_tangent) === no_tangent
+        @test no_tangent.foo === no_tangent
     end
 
     @testset "ambiguities" begin
