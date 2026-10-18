@@ -173,7 +173,7 @@ They can be thought of as a wrapper of the value the computation returns.
 In this sense they wrap either a natural or structural tangent.
 
 !!! warning "You should support AbstractThunk inputs even if you don't use thunks"
-     Unfortunately the AD sytems do not know which rules support thunks and which do not.
+     Unfortunately the AD systems do not know which rules support thunks and which do not.
      So all rules have to; at least if they want to play nicely with arbitrary AD systems.
      Luckily it is not hard: much of the time they will duck-type as the object they wrap.
      If not, then just add a [`unthunk`](@ref) after the start of your pullback.
@@ -181,7 +181,7 @@ In this sense they wrap either a natural or structural tangent.
      If you are using [`@thunk`](@ref) and the input is only needed for one of them then the `unthunk` should be in that one.
      If not, and you have a bunch of pullbacks you might like to write a little helper `unthunking(f) = x̄ -> f(unthunk(x̄))` that you can wrap your pullback function in before returning it from the `rrule`.
      Yes, this is a bit of boiler-plate, and it is unfortunate.
-     Sadly, it is needed because if the AD wants to benefit it can't get that benifit unless things are not unthunked unnecessarily.
+     Sadly, it is needed because if the AD wants to benefit it can't get that benefit unless things are not unthunked unnecessarily.
      Which eventually allows them in some cases to never be unthunked at all.
      There are two ways common things are never unthunked.
      One is if the unthunking happens inside a `@thunk` which is never unthunked itself because it is the tangent for a primal input that never has it's tangent queried.
@@ -226,7 +226,7 @@ function ChainRulesCore.rrule(::typeof(double_it), x)
     return double_it(x), double_it_pullback
 end
 ```
-Ends up infering a return type of `Any`
+Ends up inferring a return type of `Any`
 ```julia-repl
 julia> _, pullback = rrule(double_it, [2.0, 3.0])
 ([4.0, 6.0], var"#double_it_pullback#8"(Core.Box(var"#double_it_pullback#8"(#= circular reference @-2 =#))))

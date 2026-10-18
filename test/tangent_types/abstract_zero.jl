@@ -104,22 +104,22 @@
     end
 
     @testset "NoTangent" begin
-        dne = NoTangent()
-        @test dne + dne == dne
-        @test dne + 1 == 1
-        @test 1 + dne == 1
-        @test dne - dne == dne
-        @test dne - 1 == -1
-        @test 1 - dne == 1
-        @test -dne == dne
-        @test dne * dne == dne
-        @test dne * 11.1 == dne
-        @test 12.1 * dne == dne
-        @test dot(dne, dne) == dne
-        @test dot(dne, 17.2) == dne
-        @test dot(11.9, dne) == dne
+        no_tangent = NoTangent()
+        @test no_tangent + no_tangent == no_tangent
+        @test no_tangent + 1 == 1
+        @test 1 + no_tangent == 1
+        @test no_tangent - no_tangent == no_tangent
+        @test no_tangent - 1 == -1
+        @test 1 - no_tangent == 1
+        @test -no_tangent == no_tangent
+        @test no_tangent * no_tangent == no_tangent
+        @test no_tangent * 11.1 == no_tangent
+        @test 12.1 * no_tangent == no_tangent
+        @test dot(no_tangent, no_tangent) == no_tangent
+        @test dot(no_tangent, 17.2) == no_tangent
+        @test dot(11.9, no_tangent) == no_tangent
 
-        @test eltype(dne) === NoTangent
+        @test eltype(no_tangent) === NoTangent
         @test eltype(NoTangent) === NoTangent
 
         @test promote_type(NoTangent, Bool) == Bool
@@ -131,36 +131,36 @@
         @test promote_type(NoTangent, ComplexF64) == ComplexF64
         @test promote_type(ComplexF64, NoTangent) == ComplexF64
 
-        @test ZeroTangent() + dne == dne
-        @test dne + ZeroTangent() == dne
-        @test ZeroTangent() - dne == dne
-        @test dne - ZeroTangent() == dne
+        @test ZeroTangent() + no_tangent == no_tangent
+        @test no_tangent + ZeroTangent() == no_tangent
+        @test ZeroTangent() - no_tangent == no_tangent
+        @test no_tangent - ZeroTangent() == no_tangent
 
-        @test ZeroTangent() * dne == ZeroTangent()
-        @test dne * ZeroTangent() == ZeroTangent()
-        @test dot(ZeroTangent(), dne) == ZeroTangent()
-        @test dot(dne, ZeroTangent()) == ZeroTangent()
+        @test ZeroTangent() * no_tangent == ZeroTangent()
+        @test no_tangent * ZeroTangent() == ZeroTangent()
+        @test dot(ZeroTangent(), no_tangent) == ZeroTangent()
+        @test dot(no_tangent, ZeroTangent()) == ZeroTangent()
 
         @test norm(ZeroTangent()) == 0
         @test norm(ZeroTangent(), 0.4) == 0
 
-        for x in dne
-            @test x === dne
+        for x in no_tangent
+            @test x === no_tangent
         end
-        @test broadcastable(dne) isa Ref{NoTangent}
+        @test broadcastable(no_tangent) isa Ref{NoTangent}
         for f in (transpose, adjoint, conj)
-            @test f(dne) === dne
+            @test f(no_tangent) === no_tangent
         end
-        @test dne / 2 === dne / [1, 3] === dne
+        @test no_tangent / 2 === no_tangent / [1, 3] === no_tangent
 
         @test convert(Int64, NoTangent()) == 0
         @test convert(Float64, NoTangent()) == 0.0
 
-        @test dne[1] === dne
-        @test dne[1:3] === dne
-        @test dne[1, 2] === dne
-        @test getindex(dne) === dne
-        @test dne.foo === dne
+        @test no_tangent[1] === no_tangent
+        @test no_tangent[1:3] === no_tangent
+        @test no_tangent[1, 2] === no_tangent
+        @test getindex(no_tangent) === no_tangent
+        @test no_tangent.foo === no_tangent
     end
 
     @testset "ambiguities" begin
@@ -228,7 +228,7 @@ end
     end
 
     @testset "Weird types" begin
-        @test iszero(zero_tangent(typeof(Int)))  # primative type
+        @test iszero(zero_tangent(typeof(Int)))  # primitive type
         @test iszero(zero_tangent(typeof(Base.RefValue)))  # struct
         @test iszero(zero_tangent(Vector))  # UnionAll
         @test iszero(zero_tangent(Union{Int, Float64}))  # Union

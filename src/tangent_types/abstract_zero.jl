@@ -106,9 +106,9 @@ and suitable for accumulating against.
 For types without a tangent space (e.g. singleton structs) this returns `NoTangent()`.
 In general, it is more likely to produce a structural tangent.
 
-!!! warning "Exprimental"
+!!! warning "Experimental"
     `zero_tangent`is an experimental feature, and is part of the mutation support featureset.
-    While this notice remains it may have changes in behavour, and interface in any _minor_ version of ChainRulesCore.
+    While this notice remains it may have changes in behaviour, and interface in any _minor_ version of ChainRulesCore.
     Exactly how it should be used (e.g. is it forward-mode only?)
 """
 function zero_tangent end
@@ -134,7 +134,7 @@ end
                 zero_tangent(getfield(primal, $(QuoteNode(fname))))
             else
                 # This is going to be potentially bad, but that's what they get for not giving us a primal
-                # This will never me mutated inplace, rather it will alway be replaced with an actual value first
+                # This will never be mutated inplace, rather it will always be replaced with an actual value first
                 ZeroTangent()
             end
         )
@@ -191,7 +191,7 @@ end
 guess_zero_tangent_type(T::Type) = Any
 guess_zero_tangent_type(::Type{Union{}}) = Union{}  # This will only show up for empty containers
 
-# Stuff that conceptually has its own identity regardless of structual implementation and doesn't have a tangent
+# Stuff that conceptually has its own identity regardless of structural implementation and doesn't have a tangent
 zero_tangent(::Base.AbstractLogger) = NoTangent()
 
 # Prevent zero_tangent going wild on the internals
