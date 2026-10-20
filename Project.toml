@@ -33,3 +33,6 @@ test = ["Test", "BenchmarkTools", "FiniteDifferences", "OffsetArrays", "SparseAr
 
 [weakdeps]
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+
+[workspace]
+projects = ["docs"]
