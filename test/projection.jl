@@ -60,11 +60,14 @@ struct NoSuperType end
         @test ProjectTo(Dual(1.0, 2.0))(Tangent{Dual}(; value=1.0)) isa Tangent
     end
 
-    @testset "BFloat16" begin
-        @test ProjectTo(BFloat16(1))(2.5f0) === BFloat16(2.5)
-        @test ProjectTo(BFloat16(1))(2.5) === BFloat16(2.5)
-        @test ProjectTo(BFloat16(1))(2) === BFloat16(2)
-        @test ProjectTo(BFloat16[1, 2])([1.5f0, 2.5f0]) isa Vector{BFloat16}
+    # BFloat16s.jl's own BFloat16, used where LLVM lacks bf16 support, is not covered
+    if isdefined(Core, :BFloat16) && BFloat16 === Core.BFloat16
+        @testset "BFloat16" begin
+            @test ProjectTo(BFloat16(1))(2.5f0) === BFloat16(2.5)
+            @test ProjectTo(BFloat16(1))(2.5) === BFloat16(2.5)
+            @test ProjectTo(BFloat16(1))(2) === BFloat16(2)
+            @test ProjectTo(BFloat16[1, 2])([1.5f0, 2.5f0]) isa Vector{BFloat16}
+        end
     end
 
     @testset "Base: arrays of numbers" begin

@@ -168,6 +168,9 @@ ProjectTo(x::Complex{<:Integer}) = ProjectTo(float(x))
 for T in (Float16, Float32, Float64, ComplexF16, ComplexF32, ComplexF64)
     @eval ProjectTo(::$T) = ProjectTo{$T}()
 end
+@static if isdefined(Core, :BFloat16)
+    ProjectTo(::Core.BFloat16) = ProjectTo{Core.BFloat16}()
+end
 
 # In these cases we can just `convert` as we know we are dealing with plain and simple types
 (::ProjectTo{T})(dx::AbstractFloat) where {T<:AbstractFloat} = convert(T, dx)
