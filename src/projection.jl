@@ -223,6 +223,10 @@ function (project::ProjectTo{AbstractArray})(dx::AbstractArray{S,M}) where {S,M}
     # like dx = ones(4,1), where x = ones(4), but throw an error on dx = ones(1,4) etc.
     dy = if axes(dx) === project.axes
         dx
+    elseif project.axes isa Tuple{Vararg{Base.OneTo}} && axes(dx) isa typeof(project.axes)
+        # Same number of `OneTo` axes that are not identical: the sizes differ. Resolved from
+        # the types alone, so inference does not see the type-unstable `reshape` below.
+        throw(_projection_mismatch(project.axes, size(dx)))
     else
         for d in 1:max(M, length(project.axes))
             if size(dx, d) != length(get(project.axes, d, 1))
