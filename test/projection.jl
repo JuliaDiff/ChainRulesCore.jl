@@ -1,6 +1,7 @@
 using ChainRulesCore, Test
 using LinearAlgebra, SparseArrays
 using OffsetArrays, StaticArrays, BenchmarkTools
+using BFloat16s
 
 # Like ForwardDiff.jl's Dual
 struct Dual{T<:Real} <: Real
@@ -57,6 +58,13 @@ struct NoSuperType end
 
         # Tangent
         @test ProjectTo(Dual(1.0, 2.0))(Tangent{Dual}(; value=1.0)) isa Tangent
+    end
+
+    @testset "BFloat16" begin
+        @test ProjectTo(BFloat16(1))(2.5f0) === BFloat16(2.5)
+        @test ProjectTo(BFloat16(1))(2.5) === BFloat16(2.5)
+        @test ProjectTo(BFloat16(1))(2) === BFloat16(2)
+        @test ProjectTo(BFloat16[1, 2])([1.5f0, 2.5f0]) isa Vector{BFloat16}
     end
 
     @testset "Base: arrays of numbers" begin
