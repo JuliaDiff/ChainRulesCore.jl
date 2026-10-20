@@ -1,5 +1,4 @@
 [deps]
-BFloat16s = "ab4f0b2a-ad5b-11e8-123f-65d77653426b"
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 FiniteDifferences = "26cc04aa-876d-5657-8c51-4c34ba976000"
@@ -10,7 +9,6 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [compat]
-BFloat16s = "0.6"
 BenchmarkTools = "1.5"
 ChainRulesCore = "1"
 FiniteDifferences = "0.12.32"

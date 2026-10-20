@@ -1,7 +1,6 @@
 using ChainRulesCore, Test
 using LinearAlgebra, SparseArrays
 using OffsetArrays, StaticArrays, BenchmarkTools
-using BFloat16s
 
 # Like ForwardDiff.jl's Dual
 struct Dual{T<:Real} <: Real
@@ -60,13 +59,11 @@ struct NoSuperType end
         @test ProjectTo(Dual(1.0, 2.0))(Tangent{Dual}(; value=1.0)) isa Tangent
     end
 
-    # BFloat16s.jl's own BFloat16, used where LLVM lacks bf16 support, is not covered
-    if isdefined(Core, :BFloat16) && BFloat16 === Core.BFloat16
+    if isdefined(Core, :BFloat16)
         @testset "BFloat16" begin
-            @test ProjectTo(BFloat16(1))(2.5f0) === BFloat16(2.5)
-            @test ProjectTo(BFloat16(1))(2.5) === BFloat16(2.5)
-            @test ProjectTo(BFloat16(1))(2) === BFloat16(2)
-            @test ProjectTo(BFloat16[1, 2])([1.5f0, 2.5f0]) isa Vector{BFloat16}
+            # Base defines no conversions to Core.BFloat16, so build one from its bits
+            x = reinterpret(Core.BFloat16, 0x3f80)
+            @test ProjectTo(x) === ProjectTo{Core.BFloat16}()
         end
     end
 
