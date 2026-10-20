@@ -59,6 +59,14 @@ struct NoSuperType end
         @test ProjectTo(Dual(1.0, 2.0))(Tangent{Dual}(; value=1.0)) isa Tangent
     end
 
+    if isdefined(Core, :BFloat16)
+        @testset "BFloat16" begin
+            # Base defines no conversions to Core.BFloat16, so build one from its bits
+            x = reinterpret(Core.BFloat16, 0x3f80)
+            @test ProjectTo(x) === ProjectTo{Core.BFloat16}()
+        end
+    end
+
     @testset "Base: arrays of numbers" begin
         pvec3 = ProjectTo([1, 2, 3])
         @test pvec3(1.0:3.0) === 1.0:3.0
