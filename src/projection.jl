@@ -231,9 +231,11 @@ function (project::ProjectTo{AbstractArray})(dx::AbstractArray{S,M}) where {S,M}
         # the types alone, so inference does not see the type-unstable `reshape` below.
         throw(_projection_mismatch(project.axes, size(dx)))
     else
-        for d in 1:max(M, length(project.axes))
-            if size(dx, d) != length(get(project.axes, d, 1))
-                throw(_projection_mismatch(project.axes, size(dx)))
+        if !isempty(dx)
+            for d in 1:max(M, length(project.axes))
+                if size(dx, d) != length(get(project.axes, d, 1))
+                    throw(_projection_mismatch(project.axes, size(dx)))
+                end
             end
         end
         reshape(dx, project.axes)
