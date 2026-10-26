@@ -322,6 +322,18 @@ struct NoSuperType end
         @test pstri(stri) == real(stri)
         @test_throws DimensionMismatch pstri(rand(ComplexF32, 3, 2))
 
+        # same shape rules as ProjectTo{AbstractArray}, e.g. trailing singleton dimensions
+        for p in (pdiag, pbi, pstri)
+            @test @inferred(p(reshape(1:9, 3, 3, 1))) == p(reshape(1:9, 3, 3))
+            @test p(reshape(1:9, 3, 3, 1, 1)) == p(reshape(1:9, 3, 3))
+            @test p(rand(ComplexF32, 3, 3, 1)) isa typeof(p(rand(3, 3)))
+            @test_throws DimensionMismatch p(rand(3, 3, 2))
+            @test_throws DimensionMismatch p(rand(3, 1, 3))
+            @test_throws DimensionMismatch p(rand(3, 4))
+        end
+        psdiag = ProjectTo(Diagonal(SA[1.0, 2.0, 3.0]))
+        @test psdiag(reshape(1:9, 3, 3, 1)) == psdiag(reshape(1:9, 3, 3))
+
         ptri = ProjectTo(Tridiagonal(rand(3, 3)))
         @test ptri(reshape(1:9, 3, 3)) == [1.0 4.0 0.0; 2.0 5.0 8.0; 0.0 6.0 9.0]
         @test ptri(ptri(reshape(1:9, 3, 3))) == ptri(reshape(1:9, 3, 3))
