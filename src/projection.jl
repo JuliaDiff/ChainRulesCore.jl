@@ -221,23 +221,9 @@ function ProjectTo(xs::AbstractArray)
     end
 end
 
-function (project::ProjectTo{AbstractArray})(dx::AbstractArray{S,M}) where {S,M}
-    # First deal with shape. The rule is that we reshape to add or remove trivial dimensions
-    # like dx = ones(4,1), where x = ones(4), but throw an error on dx = ones(1,4) etc.
-    dy = if axes(dx) === project.axes
-        dx
-    elseif project.axes isa Tuple{Vararg{Base.OneTo}} && axes(dx) isa typeof(project.axes)
-        # Same number of `OneTo` axes that are not identical: the sizes differ. Resolved from
-        # the types alone, so inference does not see the type-unstable `reshape` below.
-        throw(_projection_mismatch(project.axes, size(dx)))
-    else
-        for d in 1:max(M, length(project.axes))
-            if size(dx, d) != length(get(project.axes, d, 1))
-                throw(_projection_mismatch(project.axes, size(dx)))
-            end
-        end
-        reshape(dx, project.axes)
-    end
+function (project::ProjectTo{AbstractArray})(dx::AbstractArray{S}) where {S}
+    # First deal with shape:
+    dy = _projection_reshape(project.axes, dx)
     # Then deal with the elements. One projector if AbstractArray{<:Number},
     # or one per element for arrays of anything else, including arrays of arrays:
     dz = if hasproperty(project, :element)
@@ -268,6 +254,25 @@ function (project::ProjectTo{AbstractArray})(dx::Number) # ... so we restore fro
         )
     end
     return fill(project.element(dx))
+end
+
+# Reshape dx to axes_x, adding or removing trivial dimensions like dx = ones(4,1),
+# where x = ones(4), but throw an error on dx = ones(1,4) etc.
+function _projection_reshape(axes_x::Tuple, dx::AbstractArray)
+    return if axes(dx) === axes_x
+        dx
+    elseif axes_x isa Tuple{Vararg{Base.OneTo}} && axes(dx) isa typeof(axes_x)
+        # Same number of `OneTo` axes that are not identical: the sizes differ. Resolved from
+        # the types alone, so inference does not see the type-unstable `reshape` below.
+        throw(_projection_mismatch(axes_x, size(dx)))
+    else
+        for d in 1:max(ndims(dx), length(axes_x))
+            if size(dx, d) != length(get(axes_x, d, 1))
+                throw(_projection_mismatch(axes_x, size(dx)))
+            end
+        end
+        reshape(dx, axes_x)
+    end
 end
 
 function _projection_mismatch(axes_x::Tuple, size_dx::Tuple)
@@ -439,7 +444,11 @@ end
 
 # Diagonal
 ProjectTo(x::Diagonal) = ProjectTo{Diagonal}(; diag=ProjectTo(x.diag))
-(project::ProjectTo{Diagonal})(dx::AbstractMatrix) = Diagonal(project.diag(diag(dx)))
+function (project::ProjectTo{Diagonal})(dx::AbstractArray)
+    ax = only(project.diag.axes)
+    dy = _projection_reshape((ax, ax), dx)
+    return Diagonal(project.diag(diag(dy)))
+end
 (project::ProjectTo{Diagonal})(dx::Diagonal) = Diagonal(project.diag(dx.diag))
 
 # Symmetric
@@ -489,10 +498,12 @@ end
 # Weird -- not exhaustive!
 # one strategy is to recurse into the struct:
 ProjectTo(x::Bidiagonal{T}) where {T<:Number} = generic_projector(x)
-function (project::ProjectTo{Bidiagonal})(dx::AbstractMatrix)
+function (project::ProjectTo{Bidiagonal})(dx::AbstractArray)
+    ax = only(project.dv.axes)
+    dy = _projection_reshape((ax, ax), dx)
     uplo = LinearAlgebra.sym_uplo(project.uplo)
-    dv = project.dv(diag(dx))
-    ev = project.ev(uplo === :U ? diag(dx, 1) : diag(dx, -1))
+    dv = project.dv(diag(dy))
+    ev = project.ev(uplo === :U ? diag(dy, 1) : diag(dy, -1))
     return Bidiagonal(dv, ev, uplo)
 end
 function (project::ProjectTo{Bidiagonal})(dx::Bidiagonal)
@@ -507,9 +518,11 @@ function (project::ProjectTo{Bidiagonal})(dx::Bidiagonal)
 end
 
 ProjectTo(x::SymTridiagonal{T}) where {T<:Number} = generic_projector(x)
-function (project::ProjectTo{SymTridiagonal})(dx::AbstractMatrix)
-    dv = project.dv(diag(dx))
-    ev = project.ev((diag(dx, 1) .+ diag(dx, -1)) ./ 2)
+function (project::ProjectTo{SymTridiagonal})(dx::AbstractArray)
+    ax = only(project.dv.axes)
+    dy = _projection_reshape((ax, ax), dx)
+    dv = project.dv(diag(dy))
+    ev = project.ev((diag(dy, 1) .+ diag(dy, -1)) ./ 2)
     return SymTridiagonal(dv, ev)
 end
 (project::ProjectTo{SymTridiagonal})(dx::SymTridiagonal) = generic_projection(project, dx)
