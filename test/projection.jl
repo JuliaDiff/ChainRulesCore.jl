@@ -284,6 +284,18 @@ struct NoSuperType end
         @test pherm(pherm(reshape(1:9, 3, 3))) == pherm(reshape(1:9, 3, 3))
         @test pherm(rand(ComplexF32, 3, 3, 1)) isa Hermitian{ComplexF64}
 
+        @testset "input with other uplo" begin
+            for dx in (Symmetric(rand(3, 3), :L), Hermitian(rand(3, 3), :L))
+                @test @inferred(psymm(dx)) == dx
+                @test psymm(dx).uplo == 'U'
+            end
+            dx = Hermitian(rand(ComplexF64, 3, 3), :U)
+            @test @inferred(pherm(dx)) == dx
+            @test pherm(dx).uplo == 'L'
+            dx = Symmetric(rand(ComplexF64, 3, 3), :L)
+            @test @inferred(ProjectTo(Symmetric(rand(ComplexF64, 3, 3)))(dx)) == dx
+        end
+
         pupp = ProjectTo(UpperTriangular(rand(3, 3)))
         @test pupp(reshape(1:9, 3, 3)) == [1.0 4.0 7.0; 0.0 5.0 8.0; 0.0 0.0 9.0]
         @test pupp(pupp(reshape(1:9, 3, 3))) == pupp(reshape(1:9, 3, 3))
