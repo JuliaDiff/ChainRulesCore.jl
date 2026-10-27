@@ -452,7 +452,9 @@ end
 (project::ProjectTo{Diagonal})(dx::Diagonal) = Diagonal(project.diag(dx.diag))
 
 # Symmetric
-_same_uplo(dx::LinearAlgebra.HermOrSym, uplo::Symbol) = LinearAlgebra.sym_uplo(dx.uplo) === uplo
+function _same_uplo(dx::LinearAlgebra.HermOrSym, uplo::Symbol)
+    return LinearAlgebra.sym_uplo(dx.uplo) === uplo
+end
 _same_uplo(dx, uplo::Symbol) = true
 for (SymHerm, chk, fun) in
     ((:Symmetric, :issymmetric, :transpose), (:Hermitian, :ishermitian, :adjoint))
