@@ -490,9 +490,8 @@ end
 _project_diag(::ProjectTo{Symmetric}, sub_one, diag) = sub_one(diag)
 function _project_diag(::ProjectTo{Hermitian}, sub_one, diag)
     dy = sub_one(diag)
-    # The diagonal of a Hermitian matrix is real. Like `LinearAlgebra.hermitian(::Number)`,
-    # `oftype` keeps the element type, e.g. for quaternions
-    if eltype(dy) <: Real
+    # The diagonal of a Hermitian matrix is real
+    if eltype(diag) <: Real || eltype(dy) <: Real
         return dy
     else
         return map(y -> oftype(y, real(y)), dy)
