@@ -520,10 +520,10 @@ struct NoSuperType end
         pherm = ProjectTo(Hermitian(rand(10^3, 10^3)))
         @test 0 == @ballocated $pherm(dx) setup = (dx = Diagonal(rand(10^3)))
 
-        # a real tangent onto complex Hermitian is copied once, when converted to complex
-        pherm = ProjectTo(Hermitian(rand(ComplexF64, 10^3, 10^3)))
+        # a real tangent onto complex Hermitian is copied only once
+        pherm_c = ProjectTo(Hermitian(rand(ComplexF64, 10^3, 10^3)))
         @test 2 * sizeof(ComplexF64) * 10^3 >
-            @ballocated $pherm(dx) setup = (dx = Diagonal(rand(10^3)))
+            @ballocated $pherm_c(dx) setup = (dx = Diagonal(rand(10^3)))
     end
 
     @testset "#407" begin
