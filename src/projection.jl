@@ -452,6 +452,10 @@ end
 (project::ProjectTo{Diagonal})(dx::Diagonal) = Diagonal(project.diag(dx.diag))
 
 # Symmetric
+function _same_uplo(dx::LinearAlgebra.HermOrSym, uplo::Symbol)
+    return LinearAlgebra.sym_uplo(dx.uplo) === uplo
+end
+_same_uplo(dx, uplo::Symbol) = true
 for (SymHerm, chk, fun) in
     ((:Symmetric, :issymmetric, :transpose), (:Hermitian, :ishermitian, :adjoint))
     @eval begin
@@ -465,7 +469,11 @@ for (SymHerm, chk, fun) in
             dy = project.parent(dx)
             # Here $chk means this is efficient on same-type.
             # If we could mutate dx, then that could speed up action on dx::Matrix.
-            dz = $chk(dy) ? dy : (dy .+ $fun(dy)) ./ 2
+            # Separate returns avoid a type-unstable `dz`, which allocates on Julia 1.10.
+            if $chk(dy) && _same_uplo(dy, project.uplo)
+                return $SymHerm(project.parent(dy), project.uplo)
+            end
+            dz = (dy .+ $fun(dy)) ./ 2
             return $SymHerm(project.parent(dz), project.uplo)
         end
         # This is an example of a subspace which is not a subtype,
