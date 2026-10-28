@@ -314,6 +314,19 @@ struct NoSuperType end
         # an experiment with allowing subspaces which aren't subtypes
         @test psymm(Diagonal([1, 2, 3])) isa Diagonal{Float64}
         @test pupp(Diagonal([1, 2, 3 + 4im])) isa Diagonal{Float64}
+
+        @testset "Diagonal input to Hermitian has real diagonal" begin
+            dx = Diagonal([1 + 2im, 3im, 4.0])
+            @test @inferred(pherm(dx)) == Diagonal([1.0, 0.0, 4.0])
+            @test pherm(dx) isa Diagonal{ComplexF64}
+            @test pherm(dx) == pherm(Matrix(dx))
+            @test pherm(Diagonal([1.0, 2.0, 3.0])) isa Diagonal{ComplexF64}
+            pherm32 = ProjectTo(Hermitian(rand(ComplexF32, 3, 3)))
+            @test @inferred(pherm32(dx)) isa Diagonal{ComplexF32}
+            @test @inferred(ProjectTo(Hermitian(rand(3, 3)))(dx)) ==
+                Diagonal([1.0, 0.0, 4.0])
+            @test_throws DimensionMismatch pherm(Diagonal(rand(ComplexF64, 2)))
+        end
     end
 
     @testset "LinearAlgebra: sparse structured matrices" begin
@@ -499,6 +512,9 @@ struct NoSuperType end
 
         psymm = ProjectTo(Symmetric(rand(10^3, 10^3)))
         @test 0 == @ballocated $psymm(dx) setup = (dx = Symmetric(rand(10^3, 10^3)))
+
+        pherm = ProjectTo(Hermitian(rand(10^3, 10^3)))
+        @test 0 == @ballocated $pherm(dx) setup = (dx = Diagonal(rand(10^3)))
     end
 
     @testset "#407" begin

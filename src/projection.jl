@@ -483,8 +483,19 @@ for (SymHerm, chk, fun) in
             sub_one = ProjectTo{project_type(sub)}(;
                 element=sub.element, axes=(sub.axes[1],)
             )
-            return Diagonal(sub_one(dx.diag))
+            return Diagonal(_project_diag(project, sub_one, dx.diag))
         end
+    end
+end
+_project_diag(::ProjectTo{Symmetric}, sub_one, diag) = sub_one(diag)
+function _project_diag(::ProjectTo{Hermitian}, sub_one, diag)
+    dy = sub_one(diag)
+    # The diagonal of a Hermitian matrix is real. Like `LinearAlgebra.hermitian(::Number)`,
+    # `oftype` keeps the element type, e.g. for quaternions
+    if eltype(dy) <: Real
+        return dy
+    else
+        return map(y -> oftype(y, real(y)), dy)
     end
 end
 
