@@ -140,6 +140,18 @@ end
             @inferred _unpack2tuple(ctup)
             @test _unpack2tuple(ctup) === (2.0, 3)
 
+            # Test broadcastable
+            @test broadcastable(ctup) === (2.0, 3)
+            @test @inferred(Tangent{Any}(1.0, [2.0]) .* 2) == (2.0, [4.0])
+            @test ctup .+ [1, 2] == [3.0, 5.0]
+            tfoo = Tangent{Foo}(; y=2.0, x=1.0)
+            @test broadcastable(tfoo) isa Ref{typeof(tfoo)}
+            @test @inferred(tfoo .* 2) == Tangent{Foo}(; x=2.0, y=4.0)
+            @test tfoo .* [1, 2] == [tfoo, 2 * tfoo]
+            tdict = Tangent{Dict}(Dict(:a => 1.0))
+            @test broadcastable(tdict) isa Ref{typeof(tdict)}
+            @test tdict .* 2 == Tangent{Dict}(Dict(:a => 2.0))
+
             # Test getproperty is inferrable
             _unpacknamedtuple = tangent -> (tangent.x, tangent.y)
             @inferred _unpacknamedtuple(Tangent{Foo}(; x=2, y=3.0))

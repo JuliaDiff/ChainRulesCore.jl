@@ -405,6 +405,10 @@ function Base.indexed_iterate(tangent::Tangent{P,<:Tuple}, i::Int, state=1) wher
     return Base.indexed_iterate(backing(tangent), i, state)
 end
 
+# Broadcast like the primal: tuples as containers, everything else (e.g. structs) as scalars
+Base.Broadcast.broadcastable(tangent::Tangent{<:Any,<:Tuple}) = backing(tangent)
+Base.Broadcast.broadcastable(tangent::Tangent) = Ref(tangent)
+
 function Base.map(f, tangent::Tangent{P,<:Tuple}) where {P}
     vals::Tuple = map(f, backing(tangent))
     return Tangent{P,typeof(vals)}(vals)
