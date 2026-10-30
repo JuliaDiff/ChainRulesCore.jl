@@ -339,7 +339,7 @@ function (project::ProjectTo{<:Tangent{<:Tuple}})(dx::Tuple)
     end
     # Here map will fail if the lengths don't match, but gives a much less helpful error:
     dy = map((f, x) -> f(x), project.elements, dx)
-    if all(d -> d isa AbstractZero, dy)
+    if dy isa Tuple{Vararg{AbstractZero}}
         return NoTangent()
     else
         return project_type(project)(dy...)
@@ -392,7 +392,7 @@ function (project::ProjectTo{<:Tangent{<:Tuple}})(dx::AbstractArray)
     end
     dy = reshape(dx, axes(project.elements))  # allows for dx::OffsetArray
     dz = ntuple(i -> project.elements[i](dy[i]), length(project.elements))
-    if all(d -> d isa AbstractZero, dy)
+    if dz isa Tuple{Vararg{AbstractZero}}
         return NoTangent()
     else
         return project_type(project)(dz...)
