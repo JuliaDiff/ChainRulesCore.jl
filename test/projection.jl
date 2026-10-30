@@ -176,7 +176,8 @@ struct NoSuperType end
 
         pt2 = ProjectTo((1.0, 2.0))
         @test @inferred(pt2([3, 4])) == Tangent{Tuple{Float64,Float64}}(3.0, 4.0)
-        @test @inferred(pt2((ZeroTangent(), 1))) == Tangent{Tuple{Float64,Float64}}(ZeroTangent(), 1.0)
+        @test @inferred(pt2((ZeroTangent(), 1))) ==
+            Tangent{Tuple{Float64,Float64}}(ZeroTangent(), 1.0)
         @test @inferred(pt2((ZeroTangent(), NoTangent()))) === NoTangent()
         @test pt2([ZeroTangent(), NoTangent()]) === NoTangent()
 
