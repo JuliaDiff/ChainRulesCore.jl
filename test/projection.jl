@@ -173,6 +173,17 @@ struct NoSuperType end
         pt3 = ProjectTo(([1, 2, 3], false, :gamma)) # partly non-differentiable
         @test pt3((1:3, 4, 5)) == Tangent{Tuple{Vector{Int}, Bool, Symbol}}([1.0, 2.0, 3.0], NoTangent(), NoTangent())
         @test ProjectTo((true, [false])) isa ProjectTo{NoTangent}
+
+        pt2 = ProjectTo((1.0, 2.0))
+        @test @inferred(pt2([3, 4])) == Tangent{Tuple{Float64,Float64}}(3.0, 4.0)
+        @test @inferred(pt2((ZeroTangent(), 1))) == Tangent{Tuple{Float64,Float64}}(ZeroTangent(), 1.0)
+        @test @inferred(pt2((ZeroTangent(), NoTangent()))) === NoTangent()
+        @test pt2([ZeroTangent(), NoTangent()]) === NoTangent()
+
+        ptb = ProjectTo((true, 1.0))
+        @test @inferred(ptb((2.0, ZeroTangent()))) === NoTangent()
+        @test ptb(Any[2.0, ZeroTangent()]) === NoTangent()  # collapse all-zero after projection
+        @test ptb([2.0, 3.0]) == Tangent{Tuple{Bool,Float64}}(NoTangent(), 3.0)
     end
 
     @testset "Base: NamedTuple" begin
