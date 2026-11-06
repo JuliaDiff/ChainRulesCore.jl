@@ -39,7 +39,7 @@
     end
 
     @testset "erroring thunks should include the source in the backtrack" begin
-        expected_line = (@__LINE__) + 2  # for testing it is at right palce
+        expected_line = (@__LINE__) + 2  # for testing it is at right place
         try
             x = @thunk(error())
             unthunk(x)
@@ -156,7 +156,7 @@
 
         @test diagm(0 => v) == diagm(0 => tv)
         @test diagm(3, 4, 0 => v) == diagm(3, 4, 0 => tv)
-        # Check against accidential type piracy
+        # Check against accidental type piracy
         # https://github.com/JuliaDiff/ChainRulesCore.jl/issues/472
         @test Base.which(diagm, Tuple{}()).module != ChainRulesCore
         @test Base.which(diagm, Tuple{Int,Int}).module != ChainRulesCore

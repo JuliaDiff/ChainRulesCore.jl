@@ -45,7 +45,7 @@ end
 #define some functions for testing
 
 @testset "config.jl" begin
-    @testset "basic fall to two arg verion for $Config" for Config in (
+    @testset "basic fall to two arg version for $Config" for Config in (
         MostBoringConfig, MockForwardsConfig, MockReverseConfig, MockBothConfig
     )
         counting_id_count = Ref(0)

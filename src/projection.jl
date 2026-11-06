@@ -168,6 +168,9 @@ ProjectTo(x::Complex{<:Integer}) = ProjectTo(float(x))
 for T in (Float16, Float32, Float64, ComplexF16, ComplexF32, ComplexF64)
     @eval ProjectTo(::$T) = ProjectTo{$T}()
 end
+@static if isdefined(Core, :BFloat16)
+    ProjectTo(::Core.BFloat16) = ProjectTo{Core.BFloat16}()
+end
 
 # In these cases we can just `convert` as we know we are dealing with plain and simple types
 (::ProjectTo{T})(dx::AbstractFloat) where {T<:AbstractFloat} = convert(T, dx)
@@ -183,7 +186,7 @@ end
 (::ProjectTo{T})(dx::Integer) where {T<:Complex{<:AbstractFloat}} = convert(T, dx)
 
 # Other numbers, including e.g. ForwardDiff.Dual and Symbolics.Sym, should pass through.
-# We assume (lacking evidence to the contrary) that it is the right subspace of numebers.
+# We assume (lacking evidence to the contrary) that it is the right subspace of numbers.
 (::ProjectTo{<:Number})(dx::Number) = dx
 
 (project::ProjectTo{<:Real})(dx::Complex) = project(real(dx))
@@ -218,21 +221,9 @@ function ProjectTo(xs::AbstractArray)
     end
 end
 
-function (project::ProjectTo{AbstractArray})(dx::AbstractArray{S,M}) where {S,M}
-    # First deal with shape. The rule is that we reshape to add or remove trivial dimensions
-    # like dx = ones(4,1), where x = ones(4), but throw an error on dx = ones(1,4) etc.
-    dy = if axes(dx) === project.axes
-        dx
-    else
-        if !isempty(dx)
-            for d in 1:max(M, length(project.axes))
-                if size(dx, d) != length(get(project.axes, d, 1))
-                    throw(_projection_mismatch(project.axes, size(dx)))
-                end
-            end
-        end
-        reshape(dx, project.axes)
-    end
+function (project::ProjectTo{AbstractArray})(dx::AbstractArray{S}) where {S}
+    # First deal with shape:
+    dy = _projection_reshape(project.axes, dx)
     # Then deal with the elements. One projector if AbstractArray{<:Number},
     # or one per element for arrays of anything else, including arrays of arrays:
     dz = if hasproperty(project, :element)
@@ -265,6 +256,25 @@ function (project::ProjectTo{AbstractArray})(dx::Number) # ... so we restore fro
     return fill(project.element(dx))
 end
 
+# Reshape dx to axes_x, adding or removing trivial dimensions like dx = ones(4,1),
+# where x = ones(4), but throw an error on dx = ones(1,4) etc.
+function _projection_reshape(axes_x::Tuple, dx::AbstractArray)
+    return if axes(dx) === axes_x
+        dx
+    elseif axes_x isa Tuple{Vararg{Base.OneTo}} && axes(dx) isa typeof(axes_x)
+        # Same number of `OneTo` axes that are not identical: the sizes differ. Resolved from
+        # the types alone, so inference does not see the type-unstable `reshape` below.
+        throw(_projection_mismatch(axes_x, size(dx)))
+    else
+        for d in 1:max(ndims(dx), length(axes_x))
+            if size(dx, d) != length(get(axes_x, d, 1))
+                throw(_projection_mismatch(axes_x, size(dx)))
+            end
+        end
+        reshape(dx, axes_x)
+    end
+end
+
 function _projection_mismatch(axes_x::Tuple, size_dx::Tuple)
     size_x = map(length, axes_x)
     return DimensionMismatch(
@@ -277,7 +287,7 @@ end
 #####
 
 # Ref
-# Note that Ref is mutable. This causes Zygote to represent its structral tangent not as a NamedTuple,
+# Note that Ref is mutable. This causes Zygote to represent its structural tangent not as a NamedTuple,
 # but as `Ref{Any}((x=val,))`. Here we use a Tangent, there is at present no mutable version, but see
 # https://github.com/JuliaDiff/ChainRulesCore.jl/issues/105
 function ProjectTo(x::Ref)
@@ -329,7 +339,7 @@ function (project::ProjectTo{<:Tangent{<:Tuple}})(dx::Tuple)
     end
     # Here map will fail if the lengths don't match, but gives a much less helpful error:
     dy = map((f, x) -> f(x), project.elements, dx)
-    if all(d -> d isa AbstractZero, dy)
+    if dy isa Tuple{Vararg{AbstractZero}}
         return NoTangent()
     else
         return project_type(project)(dy...)
@@ -382,7 +392,7 @@ function (project::ProjectTo{<:Tangent{<:Tuple}})(dx::AbstractArray)
     end
     dy = reshape(dx, axes(project.elements))  # allows for dx::OffsetArray
     dz = ntuple(i -> project.elements[i](dy[i]), length(project.elements))
-    if all(d -> d isa AbstractZero, dy)
+    if dz isa Tuple{Vararg{AbstractZero}}
         return NoTangent()
     else
         return project_type(project)(dz...)
@@ -434,10 +444,18 @@ end
 
 # Diagonal
 ProjectTo(x::Diagonal) = ProjectTo{Diagonal}(; diag=ProjectTo(x.diag))
-(project::ProjectTo{Diagonal})(dx::AbstractMatrix) = Diagonal(project.diag(diag(dx)))
+function (project::ProjectTo{Diagonal})(dx::AbstractArray)
+    ax = only(project.diag.axes)
+    dy = _projection_reshape((ax, ax), dx)
+    return Diagonal(project.diag(diag(dy)))
+end
 (project::ProjectTo{Diagonal})(dx::Diagonal) = Diagonal(project.diag(dx.diag))
 
 # Symmetric
+function _same_uplo(dx::LinearAlgebra.HermOrSym, uplo::Symbol)
+    return LinearAlgebra.sym_uplo(dx.uplo) === uplo
+end
+_same_uplo(dx, uplo::Symbol) = true
 for (SymHerm, chk, fun) in
     ((:Symmetric, :issymmetric, :transpose), (:Hermitian, :ishermitian, :adjoint))
     @eval begin
@@ -451,7 +469,11 @@ for (SymHerm, chk, fun) in
             dy = project.parent(dx)
             # Here $chk means this is efficient on same-type.
             # If we could mutate dx, then that could speed up action on dx::Matrix.
-            dz = $chk(dy) ? dy : (dy .+ $fun(dy)) ./ 2
+            # Separate returns avoid a type-unstable `dz`, which allocates on Julia 1.10.
+            if $chk(dy) && _same_uplo(dy, project.uplo)
+                return $SymHerm(project.parent(dy), project.uplo)
+            end
+            dz = (dy .+ $fun(dy)) ./ 2
             return $SymHerm(project.parent(dz), project.uplo)
         end
         # This is an example of a subspace which is not a subtype,
@@ -461,8 +483,18 @@ for (SymHerm, chk, fun) in
             sub_one = ProjectTo{project_type(sub)}(;
                 element=sub.element, axes=(sub.axes[1],)
             )
-            return Diagonal(sub_one(dx.diag))
+            return Diagonal(_project_diag(project, sub_one, dx.diag))
         end
+    end
+end
+_project_diag(::ProjectTo{Symmetric}, sub_one, diag) = sub_one(diag)
+function _project_diag(::ProjectTo{Hermitian}, sub_one, diag)
+    dy = sub_one(diag)
+    # The diagonal of a Hermitian matrix is real
+    if eltype(diag) <: Real || eltype(dy) <: Real
+        return dy
+    else
+        return map(y -> oftype(y, real(y)), dy)
     end
 end
 
@@ -484,10 +516,12 @@ end
 # Weird -- not exhaustive!
 # one strategy is to recurse into the struct:
 ProjectTo(x::Bidiagonal{T}) where {T<:Number} = generic_projector(x)
-function (project::ProjectTo{Bidiagonal})(dx::AbstractMatrix)
+function (project::ProjectTo{Bidiagonal})(dx::AbstractArray)
+    ax = only(project.dv.axes)
+    dy = _projection_reshape((ax, ax), dx)
     uplo = LinearAlgebra.sym_uplo(project.uplo)
-    dv = project.dv(diag(dx))
-    ev = project.ev(uplo === :U ? diag(dx, 1) : diag(dx, -1))
+    dv = project.dv(diag(dy))
+    ev = project.ev(uplo === :U ? diag(dy, 1) : diag(dy, -1))
     return Bidiagonal(dv, ev, uplo)
 end
 function (project::ProjectTo{Bidiagonal})(dx::Bidiagonal)
@@ -502,9 +536,11 @@ function (project::ProjectTo{Bidiagonal})(dx::Bidiagonal)
 end
 
 ProjectTo(x::SymTridiagonal{T}) where {T<:Number} = generic_projector(x)
-function (project::ProjectTo{SymTridiagonal})(dx::AbstractMatrix)
-    dv = project.dv(diag(dx))
-    ev = project.ev((diag(dx, 1) .+ diag(dx, -1)) ./ 2)
+function (project::ProjectTo{SymTridiagonal})(dx::AbstractArray)
+    ax = only(project.dv.axes)
+    dy = _projection_reshape((ax, ax), dx)
+    dv = project.dv(diag(dy))
+    ev = project.ev((diag(dy, 1) .+ diag(dy, -1)) ./ 2)
     return SymTridiagonal(dv, ev)
 end
 (project::ProjectTo{SymTridiagonal})(dx::SymTridiagonal) = generic_projection(project, dx)

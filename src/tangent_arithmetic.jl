@@ -10,7 +10,7 @@ Notice:
     The precedence goes:
     `NotImplemented, NoTangent, ZeroTangent, AbstractThunk, Tangent, Any`
     Thus each of the @eval loops create most definitions of + and *
-    defines the combination this type with all types of  lower precidence.
+    defines the combination this type with all types of  lower precedence.
     This means each eval loops is 1 item smaller than the previous.
 ==#
 
@@ -142,7 +142,7 @@ function Base.:+(a::P, d::StructuralTangent{P}) where {P}
         return construct(P, net_backing)
     end
 end
-Base.:+(a::Dict, d::Tangent{P}) where {P} = merge(+, a, backing(d))
+Base.:+(a::Dict, d::Tangent{P}) where {P} = mergewith(+, a, backing(d))
 Base.:+(a::StructuralTangent{P}, b::P) where {P} = b + a
 
 Base.:-(tangent::StructuralTangent{P}) where {P} = map(-, tangent)

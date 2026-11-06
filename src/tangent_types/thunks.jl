@@ -179,17 +179,16 @@ To evaluate the wrapped closure, call [`unthunk`](@ref) which is a no-op when th
 argument is not a `Thunk`.
 
 ```jldoctest
-julia> t = @thunk(3)
-Thunk(var"#4#5"())
+julia> t = @thunk(3);
 
 julia> unthunk(t)
 3
 ```
 
 ### When to `@thunk`?
-When writing `rrule`s (and to a lesser exent `frule`s), it is important to `@thunk`
+When writing `rrule`s (and to a lesser extent `frule`s), it is important to `@thunk`
 appropriately.
-Propagation rules that return multiple derivatives may not have all deriviatives used.
+Propagation rules that return multiple derivatives may not have all derivatives used.
  By `@thunk`ing the work required for each derivative, they then compute only what is needed.
 
 #### How do thunks prevent work?
@@ -232,7 +231,7 @@ Base.convert(::Type{<:Thunk}, a::AbstractZero) = @thunk(a)
 A wrapper for a `Thunk`, that allows it to define an inplace `add!` function.
 
 `add!` should be defined such that: `ithunk.add!(Δ) = Δ .+= ithunk.val`
-but it should do this more efficently than simply doing this directly.
+but it should do this more efficiently than simply doing this directly.
 (Otherwise one can just use a normal `Thunk`).
 
 Most operations on an `InplaceableThunk` treat it just like a normal `Thunk`;

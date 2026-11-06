@@ -9,25 +9,25 @@ It captures the functionality of both `Zygote.ignore` and `Zygote.dropgrad`.
 
 For example, Zygote does not support mutation, so it will break if you try to store intermediate values as in the following example:
 ```julia
-somes = []
+results = []
 things = []
 
 function loss(x, y)
-    some = f(x, y)
+    result = f(x, y)
     thing = g(x)
     
     # log
-    push!(somes, some)
+    push!(results, result)
     push!(things, thing)
 
-    return some + thing
+    return result + thing
 end
 ```
 
 It is possible to get around this by using the `ignore_derivatives` function
 ```julia
 ignore_derivatives() do
-    push!(somes, some)
+    push!(results, result)
     push!(things, thing)
 end
 ```

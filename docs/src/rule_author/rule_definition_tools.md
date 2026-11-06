@@ -11,10 +11,10 @@ For example, instead of manually defining the `frule` and the `rrule` for string
 ```
 defines the following `frule` and `rrule` automatically
 ```julia
-function ChainRulesCore.frule(var"##_#1600", ::Core.Typeof(*), String::Any...; kwargs...)
+function ChainRulesCore.frule(var"##_#1600", ::typeof(*), String::Any...; kwargs...)
     return (*(String...; kwargs...), NoTangent())
 end
-function ChainRulesCore.rrule(::Core.Typeof(*), String::Any...; kwargs...)
+function ChainRulesCore.rrule(::typeof(*), String::Any...; kwargs...)
     return (*(String...; kwargs...), function var"*_pullback"(_)
         (ZeroTangent(), ntuple((_->NoTangent()), 0 + length(String))...)
     end)

@@ -1,5 +1,5 @@
 using Pkg: @pkg_str
-# For reproducability only dependency this has is Luxor,
+# For reproducibility only dependency this has is Luxor,
 # and it was created with Luxor v1.6.0
 pkg"add Luxor@v1.6"
 

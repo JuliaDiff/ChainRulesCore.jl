@@ -14,7 +14,7 @@ struct Bar
     x::Float64
 end
 
-# For testing Tangent: it is an invarient of the type that x2 = 2x
+# For testing Tangent: it is an invariant of the type that x2 = 2x
 # so simple addition can not be defined
 struct StructWithInvariant
     x
@@ -306,8 +306,8 @@ end
                 ChainRulesCore.debug_mode() = false  # disable it again
             end
 
-            # Now we define constuction for ChainRulesCore.jl's purposes:
-            # It is going to determine the root quanity of the invarient
+            # Now we define construction for ChainRulesCore.jl's purposes:
+            # It is going to determine the root quantity of the invariant
             function ChainRulesCore.construct(::Type{StructWithInvariant}, nt::NamedTuple)
                 x = (nt.x + nt.x2 / 2) / 2
                 return StructWithInvariant(x)
@@ -407,7 +407,7 @@ end
 
         @testset "show" begin
             @test repr(Tangent{Foo}(; x=1)) == "Tangent{Foo}(x = 1,)"
-            # check for exact regex match not occurence( `^...$`)
+            # check for exact regex match not occurrence( `^...$`)
             # and allowing optional whitespace (`\s?`)
             @test occursin(
                 r"^Tangent{Tuple{Int64,\s?Int64}}\(1,\s?2\)$",
@@ -423,7 +423,7 @@ end
         end
 
         @testset "internals" begin
-            @testset "Can't do backing on primative type" begin
+            @testset "Can't do backing on primitive type" begin
                 @test_throws Exception ChainRulesCore.backing(1.4)
             end
 

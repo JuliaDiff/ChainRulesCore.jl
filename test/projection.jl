@@ -59,6 +59,14 @@ struct NoSuperType end
         @test ProjectTo(Dual(1.0, 2.0))(Tangent{Dual}(; value=1.0)) isa Tangent
     end
 
+    if isdefined(Core, :BFloat16)
+        @testset "BFloat16" begin
+            # Base defines no conversions to Core.BFloat16, so build one from its bits
+            x = reinterpret(Core.BFloat16, 0x3f80)
+            @test ProjectTo(x) === ProjectTo{Core.BFloat16}()
+        end
+    end
+
     @testset "Base: arrays of numbers" begin
         pvec3 = ProjectTo([1, 2, 3])
         @test pvec3(1.0:3.0) === 1.0:3.0
@@ -165,6 +173,18 @@ struct NoSuperType end
         pt3 = ProjectTo(([1, 2, 3], false, :gamma)) # partly non-differentiable
         @test pt3((1:3, 4, 5)) == Tangent{Tuple{Vector{Int}, Bool, Symbol}}([1.0, 2.0, 3.0], NoTangent(), NoTangent())
         @test ProjectTo((true, [false])) isa ProjectTo{NoTangent}
+
+        pt2 = ProjectTo((1.0, 2.0))
+        @test @inferred(pt2([3, 4])) == Tangent{Tuple{Float64,Float64}}(3.0, 4.0)
+        @test @inferred(pt2((ZeroTangent(), 1))) ==
+            Tangent{Tuple{Float64,Float64}}(ZeroTangent(), 1.0)
+        @test @inferred(pt2((ZeroTangent(), NoTangent()))) === NoTangent()
+        @test pt2([ZeroTangent(), NoTangent()]) === NoTangent()
+
+        ptb = ProjectTo((true, 1.0))
+        @test @inferred(ptb((2.0, ZeroTangent()))) === NoTangent()
+        @test ptb(Any[2.0, ZeroTangent()]) === NoTangent()  # collapse all-zero after projection
+        @test ptb([2.0, 3.0]) == Tangent{Tuple{Bool,Float64}}(NoTangent(), 3.0)
     end
 
     @testset "Base: NamedTuple" begin
@@ -276,6 +296,27 @@ struct NoSuperType end
         @test pherm(pherm(reshape(1:9, 3, 3))) == pherm(reshape(1:9, 3, 3))
         @test pherm(rand(ComplexF32, 3, 3, 1)) isa Hermitian{ComplexF64}
 
+        @testset "input with other uplo" begin
+            for dx in (Symmetric(rand(3, 3), :L), Hermitian(rand(3, 3), :L))
+                @test @inferred(psymm(dx)) == dx
+                @test psymm(dx).uplo == 'U'
+            end
+            dx = Hermitian(rand(ComplexF64, 3, 3), :U)
+            @test @inferred(pherm(dx)) == dx
+            @test pherm(dx).uplo == 'L'
+            dx = Symmetric(rand(ComplexF64, 3, 3), :L)
+            @test @inferred(ProjectTo(Symmetric(rand(ComplexF64, 3, 3)))(dx)) == dx
+        end
+
+        @testset "plain matrix input that is already symmetric/hermitian" begin
+            dx = [1.0 2.0 3.0; 2.0 4.0 5.0; 3.0 5.0 6.0]
+            @test @inferred(psymm(dx)) == dx
+            @test psymm(dx) isa Symmetric{Float64}
+            dx = [1.0 2.0+im 3.0; 2.0-im 4.0 5.0im; 3.0 -5.0im 6.0]
+            @test @inferred(pherm(dx)) == dx
+            @test pherm(dx) isa Hermitian{ComplexF64}
+        end
+
         pupp = ProjectTo(UpperTriangular(rand(3, 3)))
         @test pupp(reshape(1:9, 3, 3)) == [1.0 4.0 7.0; 0.0 5.0 8.0; 0.0 0.0 9.0]
         @test pupp(pupp(reshape(1:9, 3, 3))) == pupp(reshape(1:9, 3, 3))
@@ -285,6 +326,23 @@ struct NoSuperType end
         # an experiment with allowing subspaces which aren't subtypes
         @test psymm(Diagonal([1, 2, 3])) isa Diagonal{Float64}
         @test pupp(Diagonal([1, 2, 3 + 4im])) isa Diagonal{Float64}
+
+        @testset "Diagonal input to Hermitian has real diagonal" begin
+            dx = Diagonal([1 + 2im, 3im, 4.0])
+            @test @inferred(pherm(dx)) == Diagonal([1.0, 0.0, 4.0])
+            @test pherm(dx) isa Diagonal{ComplexF64}
+            @test pherm(dx) == pherm(Matrix(dx))
+            @test @inferred(pherm(Diagonal([1.0, 2.0, 3.0]))) == Diagonal([1.0, 2.0, 3.0])
+            @test pherm(Diagonal([1.0, 2.0, 3.0])) isa Diagonal{ComplexF64}
+            pherm32 = ProjectTo(Hermitian(rand(ComplexF32, 3, 3)))
+            @test @inferred(pherm32(dx)) isa Diagonal{ComplexF32}
+            @test @inferred(ProjectTo(Hermitian(rand(3, 3)))(dx)) ==
+                Diagonal([1.0, 0.0, 4.0])
+            @test_throws DimensionMismatch pherm(Diagonal(rand(ComplexF64, 2)))
+
+            # Symmetric keeps a complex diagonal
+            @test @inferred(ProjectTo(Symmetric(rand(ComplexF64, 3, 3)))(dx)) == dx
+        end
     end
 
     @testset "LinearAlgebra: sparse structured matrices" begin
@@ -313,6 +371,18 @@ struct NoSuperType end
         stri = SymTridiagonal(Symmetric(rand(3, 3) .+ im))
         @test pstri(stri) == real(stri)
         @test_throws DimensionMismatch pstri(rand(ComplexF32, 3, 2))
+
+        # same shape rules as ProjectTo{AbstractArray}, e.g. trailing singleton dimensions
+        for p in (pdiag, pbi, pstri)
+            @test @inferred(p(reshape(1:9, 3, 3, 1))) == p(reshape(1:9, 3, 3))
+            @test p(reshape(1:9, 3, 3, 1, 1)) == p(reshape(1:9, 3, 3))
+            @test p(rand(ComplexF32, 3, 3, 1)) isa typeof(p(rand(3, 3)))
+            @test_throws DimensionMismatch p(rand(3, 3, 2))
+            @test_throws DimensionMismatch p(rand(3, 1, 3))
+            @test_throws DimensionMismatch p(rand(3, 4))
+        end
+        psdiag = ProjectTo(Diagonal(SA[1.0, 2.0, 3.0]))
+        @test psdiag(reshape(1:9, 3, 3, 1)) == psdiag(reshape(1:9, 3, 3))
 
         ptri = ProjectTo(Tridiagonal(rand(3, 3)))
         @test ptri(reshape(1:9, 3, 3)) == [1.0 4.0 0.0; 2.0 5.0 8.0; 0.0 6.0 9.0]
@@ -457,7 +527,24 @@ struct NoSuperType end
         @test 0 == @ballocated $pdiag(dx) setup = (dx = Diagonal(rand(10^3)))
 
         psymm = ProjectTo(Symmetric(rand(10^3, 10^3)))
-        @test_broken 0 == @ballocated $psymm(dx) setup = (dx = Symmetric(rand(10^3, 10^3)))  # 64
+        @test 0 == @ballocated $psymm(dx) setup = (dx = Symmetric(rand(10^3, 10^3)))
+
+        pherm = ProjectTo(Hermitian(rand(10^3, 10^3)))
+        @test 0 == @ballocated $pherm(dx) setup = (dx = Diagonal(rand(10^3)))
+
+        # a real tangent onto complex Hermitian is copied only once
+        pherm_c = ProjectTo(Hermitian(rand(ComplexF64, 10^3, 10^3)))
+        @test 2 * sizeof(ComplexF64) * 10^3 >
+            @ballocated $pherm_c(dx) setup = (dx = Diagonal(rand(10^3)))
+    end
+
+    @testset "#407" begin
+        @test @inferred(ProjectTo(rand(3, 3))(Diagonal(rand(3)))) isa Diagonal{Float64}
+        pupp = ProjectTo(UpperTriangular(rand(3, 3)))
+        @test @inferred(pupp(UpperTriangular(rand(3, 3)))) isa UpperTriangular{Float64}
+        psymm = ProjectTo(Symmetric(rand(3, 3)))
+        @test @inferred(psymm(Symmetric(rand(3, 3)))) isa Symmetric{Float64}
+        @test_throws DimensionMismatch ProjectTo(rand(3, 3))(Diagonal(rand(2)))
     end
 
     @testset "#685" begin

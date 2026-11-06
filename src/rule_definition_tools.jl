@@ -5,6 +5,9 @@ macro strip_linenos(expr)
     return esc(Base.remove_linenums!(expr))
 end
 
+# `Core.Typeof` before Julia 1.14 (now `Core.TypeEqOf`), see JuliaLang/julia#62001
+_selftype(@nospecialize(x)) = isa(x, Type) ? Type{x} : typeof(x)
+
 ############################################################################################
 ### @scalar_rule
 
@@ -183,7 +186,7 @@ function derivatives_given_output end
 function scalar_derivative_expr(__source__, f, setup_stmts, inputs, partials)
     return @strip_linenos quote
         function ChainRulesCore.derivatives_given_output(
-            $(esc(:Ω)), ::Core.Typeof($f), $(inputs...)
+            $(esc(:Ω)), ::$_selftype($f), $(inputs...)
         )
             $(__source__)
             $(setup_stmts...)
@@ -215,7 +218,7 @@ function scalar_frule_expr(__source__, f, call, setup_stmts, inputs, partials)
     return @strip_linenos quote
         # _ is the input derivative w.r.t. function internals. since we do not
         # allow closures/functors with @scalar_rule, it is always ignored
-        function ChainRulesCore.frule((_, $(Δs...)), ::Core.Typeof($f), $(inputs...))
+        function ChainRulesCore.frule((_, $(Δs...)), ::$_selftype($f), $(inputs...))
             $(__source__)
             $(esc(:Ω)) = $call
             $(setup_stmts...)
@@ -255,7 +258,7 @@ function scalar_rrule_expr(__source__, f, call, setup_stmts, inputs, partials)
     end
 
     return @strip_linenos quote
-        function ChainRulesCore.rrule(::Core.Typeof($f), $(inputs...))
+        function ChainRulesCore.rrule(::$_selftype($f), $(inputs...))
             $(__source__)
             $(esc(:Ω)) = $call
             $(setup_stmts...)
@@ -272,7 +275,7 @@ end
 """
     _propagator_inputs(n)
 
-Declares properly hygenic inputs for propagation expressions
+Declares properly hygienic inputs for propagation expressions
 """
 _propagator_inputs(n) = [esc(gensym(Symbol(:Δ, i))) for i in 1:n]
 
@@ -484,7 +487,7 @@ end
 This allows you to opt-out of an `frule` or an `rrule` by providing a more specific method,
 that says to use the AD system to differentiate it.
 
-For example, consider some function `foo(x::AbtractArray)`.
+For example, consider some function `foo(x::AbstractArray)`.
 In general, you know an efficient and generic way to implement its `rrule`.
 You do so, (likely making use of [`ProjectTo`](@ref)).
 But it actually turns out that for some `FancyArray` type it is better to let the AD do its
@@ -607,7 +610,7 @@ function _split_primal_name(primal_name)
     is_qualified = Meta.isexpr(primal_name, :(.))
     is_parameterized = Meta.isexpr(primal_name, :curly)
     if is_plain || is_qualified || is_parameterized
-        primal_name_sig = :(::$Core.Typeof($primal_name))
+        primal_name_sig = :(::$_selftype($primal_name))
         return primal_name_sig, primal_name
     elseif Meta.isexpr(primal_name, :(::))  # e.g. (::T)(x, y)
         _primal_name = gensym(Symbol(:instance_, primal_name.args[end]))
