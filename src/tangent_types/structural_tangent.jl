@@ -405,6 +405,14 @@ function Base.indexed_iterate(tangent::Tangent{P,<:Tuple}, i::Int, state=1) wher
     return Base.indexed_iterate(backing(tangent), i, state)
 end
 
+# Whether a structural tangent should broadcast as a container (e.g. a tuple broadcast) or
+# as a scalar (e.g. a 0-dim broadcast with a struct-valued output) depends on the broadcast,
+# and in general can't be determined from the tangent alone (e.g. for `Tangent{Any}`)
+function Base.Broadcast.broadcastable(::StructuralTangent)
+    msg = "broadcasting over structural tangents is not supported; use `map` or arithmetic"
+    return throw(ArgumentError(msg))
+end
+
 function Base.map(f, tangent::Tangent{P,<:Tuple}) where {P}
     vals::Tuple = map(f, backing(tangent))
     return Tangent{P,typeof(vals)}(vals)

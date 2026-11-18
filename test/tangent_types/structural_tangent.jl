@@ -140,6 +140,15 @@ end
             @inferred _unpack2tuple(ctup)
             @test _unpack2tuple(ctup) === (2.0, 3)
 
+            # Test broadcasting is not supported
+            @test_throws ArgumentError ctup .* 2
+            @test_throws ArgumentError Tangent{Any}(1.0, [2.0]) .* 2
+            @test_throws ArgumentError ctup .+ [1, 2]
+            @test_throws ArgumentError Tangent{Foo}(; y=2.0, x=1.0) .* 2
+            @test_throws ArgumentError Tangent{Dict}(Dict(:a => 1.0)) .* 2
+            @test_throws ArgumentError MutableTangent{MFoo}(; x=1.5, y=1.5) .* 2
+            @test_throws ArgumentError @thunk(ctup) .* 2
+
             # Test getproperty is inferrable
             _unpacknamedtuple = tangent -> (tangent.x, tangent.y)
             @inferred _unpacknamedtuple(Tangent{Foo}(; x=2, y=3.0))
